@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+dist/
+build/
+*.min.js.map
+*.min.css.map
+
+# Package managers
+package-lock.json
+composer.lock
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# WordPress
+wp-config.php
+wp-content/uploads/
+wp-content/upgrade/
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+debug.log
+error_log
+
+# Archives / Releases
+*.zip
+*.tar.gz
+*.rar
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+phpcs.xml
+.phpcs.xml
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Claude Code / AI
+.claude/
+CLAUDE.md
+claude.md
+.claude.md
+*.plan.md
+
+# Misc
+*.bak
+*.orig
+*.tmp
+.sass-cache/

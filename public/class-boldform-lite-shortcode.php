@@ -1,0 +1,1422 @@
+<?php
+/**
+ * Frontend shortcode renderer.
+ *
+ * @package BoldFormLite
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Handles frontend form shortcode output.
+ */
+class BoldForm_Lite_Shortcode {
+
+	/**
+	 * Main plugin instance.
+	 *
+	 * @var BoldForm_Lite
+	 */
+	private $plugin;
+
+	/**
+	 * Frontend form submission handler.
+	 *
+	 * @var BoldForm_Lite_Form_Handler
+	 */
+	private $form_handler;
+
+	/**
+	 * Tracks whether frontend script data has already been localized.
+	 *
+	 * @var bool
+	 */
+	private $frontend_script_localized = false;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param BoldForm_Lite $plugin Main plugin instance.
+	 */
+	public function __construct( $plugin, $form_handler ) {
+		$this->plugin       = $plugin;
+		$this->form_handler = $form_handler;
+	}
+
+	/**
+	 * Registers frontend assets.
+	 *
+	 * @return void
+	 */
+	public function register_assets() {
+		wp_register_style(
+			'boldform-lite-flatpickr',
+			BOLDFORM_LITE_URL . 'assets/css/flatpickr.min.css',
+			array(),
+			'4.6.13'
+		);
+
+		wp_register_script(
+			'boldform-lite-flatpickr',
+			BOLDFORM_LITE_URL . 'assets/js/flatpickr.min.js',
+			array(),
+			'4.6.13',
+			true
+		);
+
+		wp_register_style(
+			'boldform-lite-frontend',
+			BOLDFORM_LITE_URL . 'assets/css/frontend.css',
+			array(),
+			BOLDFORM_LITE_VERSION
+		);
+
+		wp_register_script(
+			'boldform-lite-frontend',
+			BOLDFORM_LITE_URL . 'assets/js/frontend.js',
+			array( 'jquery' ),
+			BOLDFORM_LITE_VERSION,
+			true
+		);
+
+		if ( $this->has_script_translation_files() ) {
+			wp_set_script_translations( 'boldform-lite-frontend', 'boldform-lite', BOLDFORM_LITE_PATH . 'languages' );
+		}
+	}
+
+	/**
+	 * Determines whether script translation JSON files exist.
+	 *
+	 * @return bool
+	 */
+	private function has_script_translation_files() {
+		$translation_files = glob( BOLDFORM_LITE_PATH . 'languages/*.json' );
+
+		return ! empty( $translation_files );
+	}
+
+	/**
+	 * Registers the [boldform] shortcode.
+	 *
+	 * @return void
+	 */
+	public function register_shortcode() {
+		add_shortcode( 'boldform', array( $this, 'render_shortcode' ) );
+	}
+
+	/**
+	 * Renders the shortcode output.
+	 *
+	 * @param array<string, mixed> $atts Shortcode attributes.
+	 * @return string
+	 */
+	public function render_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'id' => 0,
+			),
+			(array) $atts,
+			'boldform'
+		);
+
+		$form_id = absint( $atts['id'] );
+
+		if ( ! $form_id ) {
+			return '';
+		}
+
+		$form_record = $this->get_form( $form_id );
+
+		if ( ! $form_record ) {
+			return '';
+		}
+
+		$structure     = $this->extract_structure_from_record( $form_record );
+		$form_settings = $this->extract_settings_from_record( $form_record );
+		$this->current_form_settings = $form_settings;
+		if ( ! $this->structure_has_fields( $structure ) ) {
+			return '';
+		}
+
+		wp_enqueue_style( 'boldform-lite-frontend' );
+		wp_enqueue_script( 'boldform-lite-frontend' );
+		$this->localize_frontend_script();
+		$this->maybe_enqueue_captcha_assets( $structure );
+
+		// Enqueue flatpickr only when form has date or time fields.
+		if ( $this->structure_contains_field_type( $structure, 'date' ) || $this->structure_contains_field_type( $structure, 'time' ) ) {
+			wp_enqueue_style( 'boldform-lite-flatpickr' );
+			wp_enqueue_script( 'boldform-lite-flatpickr' );
+		}
+
+		$status     = $this->get_form_status_message( $form_id );
+		$style_mode = $this->get_form_style_mode();
+		$form_class = 'boldform-lite-form' . ( 'theme' === $style_mode ? ' boldform-lite-form--theme' : '' );
+
+		// Output buffering keeps the template readable while still returning a shortcode string.
+		ob_start();
+		?>
+		<form
+			class="<?php echo esc_attr( $form_class ); ?>"
+			style="<?php echo esc_attr( $this->build_form_style_variables( $form_settings ) ); ?>"
+			method="post"
+			enctype="multipart/form-data"
+			data-form-id="<?php echo esc_attr( $form_id ); ?>"
+			data-enable-ajax="<?php echo esc_attr( $form_settings['enable_ajax'] ? '1' : '0' ); ?>"
+			data-enable-redirect="<?php echo esc_attr( $form_settings['enable_redirect'] ? '1' : '0' ); ?>"
+			data-redirect-url="<?php echo esc_attr( $form_settings['redirect_url'] ); ?>"
+		>
+			<?php if ( ! empty( $form_record->title ) ) : ?>
+				<h3 class="boldform-lite-form__title"><?php echo esc_html( (string) $form_record->title ); ?></h3>
+			<?php endif; ?>
+
+			<div class="boldform-lite-form__message<?php echo $status ? ' is-visible is-' . esc_attr( $status['type'] ) : ''; ?>" data-boldform-message aria-live="polite">
+				<?php echo $status ? esc_html( $status['message'] ) : ''; ?>
+			</div>
+
+			<?php $has_submit_field = $this->structure_contains_field_type( $structure, 'submit' ); ?>
+			<div class="boldform-lite-form__fields">
+				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
+					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; ?>
+				<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
+						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
+							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
+								<?php foreach ( $column['fields'] as $field_index => $field ) : ?>
+									<?php echo $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+								<?php endforeach; ?>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				<?php endforeach; ?>
+			</div>
+			<div style="position:absolute;left:-9999px;" aria-hidden="true">
+				<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off">
+			</div>
+			<input type="hidden" name="action" value="boldform_lite_submit_form">
+			<input type="hidden" name="boldform_action" value="submit_form">
+			<input type="hidden" name="boldform_form_id" value="<?php echo esc_attr( $form_id ); ?>">
+			<input type="hidden" name="boldform_nonce" value="<?php echo esc_attr( wp_create_nonce( 'boldform_lite_submit_form_' . $form_id ) ); ?>">
+			<?php if ( ! $has_submit_field ) : ?>
+			<div class="boldform-lite-form__actions is-align-<?php echo esc_attr( $form_settings['button_alignment'] ); ?>">
+				<button type="submit" class="boldform-lite-form__submit"><?php echo $this->build_button_content( $form_settings ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in build_button_content. ?></button>
+			</div>
+			<?php endif; ?>
+		</form>
+		<?php
+
+		return (string) apply_filters( 'boldform_lite_form_output', (string) ob_get_clean(), $form_id, $form_record );
+	}
+
+	/**
+	 * Returns a single form row by ID.
+	 *
+	 * @param int $form_id Form ID.
+	 * @return object|null
+	 */
+	private function get_form( $form_id ) {
+		global $wpdb;
+
+		$table_name = $this->plugin->get_forms_table_name();
+
+		$safe_table = esc_sql( $table_name );
+
+		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"SELECT * FROM `{$safe_table}` WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$form_id
+			)
+		);
+	}
+
+	/**
+	 * Extracts form structure from the saved JSON payload.
+	 *
+	 * @param object|null $form_record Form database record.
+	 * @return array<string, array<int, array<string, mixed>>>
+	 */
+	private function extract_structure_from_record( $form_record ) {
+		if ( ! $form_record || empty( $form_record->fields_json ) ) {
+			return array( 'rows' => array() );
+		}
+
+		$decoded = json_decode( (string) $form_record->fields_json, true );
+
+		if ( isset( $decoded['rows'] ) && is_array( $decoded['rows'] ) ) {
+			return array( 'rows' => $decoded['rows'] );
+		}
+
+		if ( isset( $decoded['fields'] ) && is_array( $decoded['fields'] ) ) {
+			return array(
+				'rows' => array(
+					array(
+						'columns' => array(
+							array(
+								'width'  => '100%',
+								'fields' => $decoded['fields'],
+							),
+						),
+					),
+				),
+			);
+		}
+
+		if ( is_array( $decoded ) ) {
+			return array(
+				'rows' => array(
+					array(
+						'columns' => array(
+							array(
+								'width'  => '100%',
+								'fields' => $decoded,
+							),
+						),
+					),
+				),
+			);
+		}
+
+		return array( 'rows' => array() );
+	}
+
+	/**
+	 * Extracts normalized form submission settings.
+	 *
+	 * @param object|null $form_record Form database record.
+	 * @return array<string, mixed>
+	 */
+	private function extract_settings_from_record( $form_record ) {
+		$defaults = array(
+			'submission_type'   => 'ajax',
+			'enable_ajax'       => true,
+			'enable_redirect'   => false,
+			'redirect_url'      => '',
+			'thank_you_message' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+			'button_text'       => __( 'Submit', 'boldform-lite' ),
+			'button_alignment'  => 'left',
+			'button_color'      => 'teal',
+			'field_style'       => '',
+			'field_size'        => '',
+			'field_focus_color' => '',
+			'field_border_width'=> '',
+			'field_border_radius'=> '',
+			'field_background_color' => '',
+			'field_border_color' => '',
+			'field_text_color'  => '',
+			'label_size'        => '',
+			'label_color'       => '',
+			'label_subtext_color' => '',
+			'error_color'       => '',
+			'button_size'       => '',
+			'button_border_style' => '',
+			'button_border_width' => '',
+			'button_border_radius' => '',
+			'button_background_color' => '',
+			'button_border_color' => '',
+			'button_text_color' => '',
+			'admin_email_type'  => 'site_admin',
+			'enable_admin_email'=> true,
+			'enable_user_email' => true,
+			'admin_email'       => '',
+		);
+
+		if ( ! $form_record || empty( $form_record->settings_json ) ) {
+			return $defaults;
+		}
+
+		$decoded = json_decode( (string) $form_record->settings_json, true );
+
+		if ( ! is_array( $decoded ) ) {
+			return $defaults;
+		}
+
+		$submission_type  = isset( $decoded['submission_type'] ) && in_array( $decoded['submission_type'], array( 'ajax', 'redirect' ), true )
+			? $decoded['submission_type']
+			: ( ! empty( $decoded['enable_redirect'] ) ? 'redirect' : 'ajax' );
+		$admin_email      = isset( $decoded['admin_email'] ) ? sanitize_email( (string) $decoded['admin_email'] ) : $defaults['admin_email'];
+		$admin_email_type = isset( $decoded['admin_email_type'] ) && in_array( $decoded['admin_email_type'], array( 'site_admin', 'custom' ), true )
+			? $decoded['admin_email_type']
+			: ( $admin_email ? 'custom' : 'site_admin' );
+
+		return array(
+			'submission_type'   => $submission_type,
+			'enable_ajax'       => 'ajax' === $submission_type,
+			'enable_redirect'   => 'redirect' === $submission_type,
+			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
+			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
+			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
+			'field_style'       => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
+			'field_size'        => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
+			'field_focus_color' => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
+			'field_border_width'=> isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
+			'field_border_radius'=> isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
+			'field_background_color' => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
+			'field_border_color' => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
+			'field_text_color'  => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
+			'label_size'        => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
+			'label_color'       => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
+			'label_subtext_color' => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
+			'error_color'       => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
+			'button_size'       => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
+			'button_border_style' => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
+			'button_border_width' => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
+			'button_border_radius' => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
+			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
+			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
+			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'admin_email_type'  => $admin_email_type,
+			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'       => $admin_email,
+		);
+	}
+
+	/**
+	 * Returns normalized captcha settings from global plugin options.
+	 *
+	 * @return array<string, string|bool>
+	 */
+	private function get_captcha_settings() {
+		$saved = get_option( 'boldform_lite_settings', array() );
+		$saved = is_array( $saved ) ? $saved : array();
+
+		$provider = isset( $saved['captcha_provider'] ) ? sanitize_key( (string) $saved['captcha_provider'] ) : 'simple_math';
+		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $provider : 'simple_math';
+
+		return array(
+			'provider'           => $provider,
+			'recaptcha_site_key' => isset( $saved['recaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['recaptcha_site_key'] ) : '',
+			'hcaptcha_site_key'  => isset( $saved['hcaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['hcaptcha_site_key'] ) : '',
+		);
+	}
+
+	/**
+	 * Enqueues the selected captcha provider script when a captcha field is present.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $structure Form structure.
+	 * @return void
+	 */
+	private function maybe_enqueue_captcha_assets( $structure ) {
+		if ( ! $this->structure_contains_field_type( $structure, 'captcha' ) ) {
+			return;
+		}
+
+		$captcha = $this->get_captcha_settings();
+
+		if ( 'recaptcha' === $captcha['provider'] && ! empty( $captcha['recaptcha_site_key'] ) ) {
+			wp_enqueue_script(
+				'boldform-lite-recaptcha',
+				'https://www.google.com/recaptcha/api.js',
+				array(),
+				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
+				true
+			);
+		}
+
+		if ( 'hcaptcha' === $captcha['provider'] && ! empty( $captcha['hcaptcha_site_key'] ) ) {
+			wp_enqueue_script(
+				'boldform-lite-hcaptcha',
+				'https://js.hcaptcha.com/1/api.js',
+				array(),
+				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
+				true
+			);
+		}
+	}
+
+	/**
+	 * Determines whether the structure contains a given field type.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $structure Form structure.
+	 * @param string                                          $field_type Field type.
+	 * @return bool
+	 */
+	private function structure_contains_field_type( $structure, $field_type ) {
+		if ( empty( $structure['rows'] ) || ! is_array( $structure['rows'] ) ) {
+			return false;
+		}
+
+		foreach ( $structure['rows'] as $row ) {
+			if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+				continue;
+			}
+
+			foreach ( $row['columns'] as $column ) {
+				if ( empty( $column['fields'] ) || ! is_array( $column['fields'] ) ) {
+					continue;
+				}
+
+				foreach ( $column['fields'] as $field ) {
+					if ( isset( $field['type'] ) && $field_type === $field['type'] ) {
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Renders the captcha widget for the selected provider.
+	 *
+	 * @param array<string, string|bool> $captcha Captcha settings.
+	 * @return string
+	 */
+	private function render_captcha_field( $captcha ) {
+		if ( 'recaptcha' === $captcha['provider'] && ! empty( $captcha['recaptcha_site_key'] ) ) {
+			return sprintf(
+				'<div class="boldform-lite-form__captcha"><div class="g-recaptcha" data-sitekey="%s"></div></div>',
+				esc_attr( (string) $captcha['recaptcha_site_key'] )
+			);
+		}
+
+		if ( 'hcaptcha' === $captcha['provider'] && ! empty( $captcha['hcaptcha_site_key'] ) ) {
+			return sprintf(
+				'<div class="boldform-lite-form__captcha"><div class="h-captcha" data-sitekey="%s"></div></div>',
+				esc_attr( (string) $captcha['hcaptcha_site_key'] )
+			);
+		}
+
+		if ( 'simple_math' === $captcha['provider'] ) {
+			$first_number  = wp_rand( 1, 9 );
+			$second_number = wp_rand( 1, 9 );
+			$answer        = $first_number + $second_number;
+			$challenge     = sprintf( '%d+%d', $first_number, $second_number );
+			$answer_hash   = wp_hash( $challenge . '|' . $answer );
+
+			return sprintf(
+				'<div class="boldform-lite-form__captcha"><label class="boldform-lite-form__label" for="boldform_math_captcha_answer">%1$s</label><input id="boldform_math_captcha_answer" type="number" name="boldform_math_captcha_answer" inputmode="numeric" autocomplete="off" required><input type="hidden" name="boldform_math_captcha_challenge" value="%2$s"><input type="hidden" name="boldform_math_captcha_hash" value="%3$s"></div>',
+				esc_html( sprintf(
+					/* translators: %s: simple math question */
+					__( 'Solve this math question: %s', 'boldform-lite' ),
+					$challenge
+				) ),
+				esc_attr( $challenge ),
+				esc_attr( $answer_hash )
+			);
+		}
+
+		return '';
+	}
+
+	/**
+	 * Determines whether the structure contains fields.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $structure Form structure.
+	 * @return bool
+	 */
+	private function structure_has_fields( $structure ) {
+		if ( empty( $structure['rows'] ) || ! is_array( $structure['rows'] ) ) {
+			return false;
+		}
+
+		foreach ( $structure['rows'] as $row ) {
+			if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+				continue;
+			}
+
+			foreach ( $row['columns'] as $column ) {
+				if ( ! empty( $column['fields'] ) && is_array( $column['fields'] ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Renders one field wrapper.
+	 *
+	 * @param array<string, mixed> $field Field configuration.
+	 * @param int                  $index Field index.
+	 * @return string
+	 */
+	private function render_field( $field, $index ) {
+		$type           = isset( $field['type'] ) ? sanitize_key( (string) $field['type'] ) : 'text';
+		$label          = isset( $field['label'] ) ? (string) $field['label'] : '';
+		$placeholder    = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
+		$default        = isset( $field['default_value'] ) ? (string) $field['default_value'] : '';
+		$required       = ! empty( $field['required'] );
+		$custom_error   = isset( $field['custom_error'] ) ? (string) $field['custom_error'] : '';
+		$options        = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
+		$options_layout = isset( $field['options_layout'] ) && 'inline' === $field['options_layout'] ? 'inline' : 'block';
+		$content        = isset( $field['content'] ) ? (string) $field['content'] : '';
+		$description    = isset( $field['description'] ) ? (string) $field['description'] : '';
+		$field_id       = ! empty( $field['id'] ) ? sanitize_html_class( (string) $field['id'] ) : 'field_' . (int) $index;
+		$field_name     = 'boldform_' . $field_id;
+
+		if ( 'file' === $type ) {
+			$accept   = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
+			$max_size = isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : 5;
+			$accept_attr = $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
+			// Fall through to render as a normal field wrapper with file input.
+		}
+
+		if ( 'submit' === $type ) {
+			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit">' . $this->build_button_content( $this->current_form_settings ?? array() ) . '</button></div>';
+		}
+
+		if ( 'section_break' === $type ) {
+			return $this->render_section_break( $label, $description );
+		}
+
+		if ( 'paragraph' === $type ) {
+			return '<div class="boldform-lite-form__paragraph">' . wp_kses_post( $content ) . '</div>';
+		}
+
+		if ( 'html_editor' === $type ) {
+			return '<div class="boldform-lite-form__html-content">' . wp_kses_post( $content ) . '</div>';
+		}
+
+		if ( 'terms_conditions' === $type ) {
+			return $this->render_terms_field( $field_name, $content, $required );
+		}
+
+		if ( 'name' === $type ) {
+			$show_middle = ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] );
+			$show_last   = ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] );
+
+			ob_start();
+			?>
+			<?php $field_css_name = isset( $field['css_class'] ) && '' !== $field['css_class'] ? ' ' . sanitize_html_class( $field['css_class'] ) : ''; ?>
+			<?php $label_pos_name = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom' ), true ) ? $field['label_placement'] : 'top'; ?>
+			<div class="boldform-lite-form__field boldform-lite-form__field--name boldform-lite-label-<?php echo esc_attr( $label_pos_name ); ?><?php echo esc_attr( $field_css_name ); ?>">
+				<?php if ( '' !== $label ) : ?>
+					<label class="boldform-lite-form__label">
+						<?php echo esc_html( $label ); ?>
+						<?php if ( $required ) : ?>
+							<span class="boldform-lite-form__required">*</span>
+						<?php endif; ?>
+					</label>
+				<?php endif; ?>
+				<div class="boldform-lite-form__control">
+					<div class="boldform-lite-name">
+						<div class="boldform-lite-name__field">
+							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_first" name="<?php echo esc_attr( $field_name ); ?>[first]" placeholder="<?php esc_attr_e( 'First Name', 'boldform-lite' ); ?>"<?php echo $required ? ' required' : ''; ?>>
+							<span class="boldform-lite-name__sub"><?php esc_html_e( 'First Name', 'boldform-lite' ); ?></span>
+						</div>
+						<?php if ( $show_middle ) : ?>
+						<div class="boldform-lite-name__field">
+							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_middle" name="<?php echo esc_attr( $field_name ); ?>[middle]" placeholder="<?php esc_attr_e( 'Middle Name', 'boldform-lite' ); ?>">
+							<span class="boldform-lite-name__sub"><?php esc_html_e( 'Middle Name', 'boldform-lite' ); ?></span>
+						</div>
+						<?php endif; ?>
+						<?php if ( $show_last ) : ?>
+						<div class="boldform-lite-name__field">
+							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_last" name="<?php echo esc_attr( $field_name ); ?>[last]" placeholder="<?php esc_attr_e( 'Last Name', 'boldform-lite' ); ?>"<?php echo $required ? ' required' : ''; ?>>
+							<span class="boldform-lite-name__sub"><?php esc_html_e( 'Last Name', 'boldform-lite' ); ?></span>
+						</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+			<?php
+			return (string) ob_get_clean();
+		}
+
+		if ( 'captcha' === $type ) {
+			return $this->render_captcha_field( $this->get_captcha_settings() );
+		}
+
+		ob_start();
+		?>
+		<?php
+		$error_msg = '';
+		if ( $required ) {
+			if ( $custom_error ) {
+				$error_msg = $custom_error;
+			} else {
+				$global_settings = isset( $this->current_form_settings ) ? get_option( 'boldform_lite_settings', array() ) : array();
+				$type_msg        = ! empty( $global_settings[ 'required_msg_' . $type ] ) ? $global_settings[ 'required_msg_' . $type ] : '';
+				/* translators: %s: field label */
+				$error_msg       = $type_msg ? $type_msg : sprintf( __( '%s is required.', 'boldform-lite' ), $label ? $label : __( 'This field', 'boldform-lite' ) );
+			}
+		}
+		?>
+		<?php $field_css = isset( $field['css_class'] ) && '' !== $field['css_class'] ? ' ' . sanitize_html_class( $field['css_class'] ) : ''; ?>
+		<?php $label_pos = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom' ), true ) ? $field['label_placement'] : 'top'; ?>
+		<?php
+		$cond_attrs = '';
+		if ( ! empty( $field['conditional']['enabled'] ) && ! empty( $field['conditional']['field_id'] ) ) {
+			$cond_attrs .= ' data-cond-action="' . esc_attr( $field['conditional']['action'] ?? 'show' ) . '"';
+			$cond_attrs .= ' data-cond-field="boldform_' . esc_attr( $field['conditional']['field_id'] ) . '"';
+			$cond_attrs .= ' data-cond-operator="' . esc_attr( $field['conditional']['operator'] ?? 'is' ) . '"';
+			$cond_attrs .= ' data-cond-value="' . esc_attr( $field['conditional']['value'] ?? '' ) . '"';
+		}
+		?>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+			<?php if ( '' !== $label ) : ?>
+				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name ); ?>">
+					<?php echo esc_html( $label ); ?>
+					<?php if ( $required ) : ?>
+						<span class="boldform-lite-form__required">*</span>
+					<?php endif; ?>
+				</label>
+			<?php endif; ?>
+
+			<div class="boldform-lite-form__control">
+				<?php echo $this->render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			</div>
+		</div>
+		<?php
+
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Renders a section break field.
+	 *
+	 * @param string $label Section label.
+	 * @param string $description Section description.
+	 * @return string
+	 */
+	private function render_section_break( $label, $description ) {
+		ob_start();
+		?>
+		<div class="boldform-lite-form__section-break">
+			<?php if ( '' !== $label ) : ?>
+				<h4 class="boldform-lite-form__section-title"><?php echo esc_html( $label ); ?></h4>
+			<?php endif; ?>
+			<?php if ( '' !== $description ) : ?>
+				<p class="boldform-lite-form__section-description"><?php echo esc_html( $description ); ?></p>
+			<?php endif; ?>
+		</div>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Renders a terms and conditions field.
+	 *
+	 * @param string $field_name Field input name.
+	 * @param string $content Terms copy.
+	 * @param bool   $required Required flag.
+	 * @return string
+	 */
+	/**
+	 * Builds the submit button inner HTML including optional icon.
+	 *
+	 * @param array<string, mixed> $settings Form settings.
+	 * @return string
+	 */
+	private function build_button_content( $settings ) {
+		$text      = esc_html( $settings['button_text'] ?? __( 'Submit', 'boldform-lite' ) );
+		$icon_type = $settings['button_icon_type'] ?? 'none';
+
+		if ( 'none' === $icon_type ) {
+			return $text;
+		}
+
+		$icon     = '';
+		$position = $settings['button_icon_position'] ?? 'right';
+		$gap      = absint( $settings['button_icon_gap'] ?? 8 );
+
+		if ( 'dashicon' === $icon_type && ! empty( $settings['button_icon_dashicon'] ) ) {
+			$icon = '<span class="dashicons ' . esc_attr( $settings['button_icon_dashicon'] ) . '"></span>';
+		} elseif ( 'svg' === $icon_type && ! empty( $settings['button_icon_svg'] ) ) {
+			$icon = '<span class="boldform-btn-icon-svg">' . $settings['button_icon_svg'] . '</span>';
+		}
+
+		if ( ! $icon ) {
+			return $text;
+		}
+
+		$inner = 'left' === $position ? $icon . $text : $text . $icon;
+
+		return '<span class="boldform-btn-inner" style="display:inline-flex;align-items:center;gap:' . esc_attr( $gap ) . 'px;">' . $inner . '</span>';
+	}
+
+	private function render_terms_field( $field_name, $content, $required ) {
+		$required_attr = $required ? ' required' : '';
+		ob_start();
+		?>
+		<div class="boldform-lite-form__field boldform-lite-form__field--terms_conditions">
+			<label class="boldform-lite-form__choice boldform-lite-form__terms">
+				<input type="checkbox" name="<?php echo esc_attr( $field_name ); ?>" value="1"<?php echo esc_attr( $required_attr ); ?>>
+				<span>
+					<?php if ( '' !== $content ) : ?>
+						<span class="boldform-lite-form__terms-copy"><?php echo wp_kses_post( $content ); ?></span>
+					<?php endif; ?>
+				</span>
+			</label>
+		</div>
+		<?php
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Renders the form control based on field type.
+	 *
+	 * @param string                     $type           Field type.
+	 * @param string                     $field_name     Field name and ID.
+	 * @param string                     $placeholder    Placeholder text.
+	 * @param string                     $default        Default value.
+	 * @param bool                       $required       Required state.
+	 * @param array<int, string|mixed>   $options        Choice options.
+	 * @param string                     $options_layout 'block' or 'inline'.
+	 * @return string
+	 */
+	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
+		$required_attr = $required ? ' required' : '';
+		$default       = trim( (string) $default );
+
+		// Choice-based fields need custom markup, while simple inputs can be rendered from one format string.
+		if ( 'textarea' === $type ) {
+			return sprintf(
+				'<textarea id="%1$s" name="%1$s" placeholder="%2$s"%3$s>%4$s</textarea>',
+				esc_attr( $field_name ),
+				esc_attr( $placeholder ),
+				$required_attr,
+				esc_textarea( $default )
+			);
+		}
+
+		if ( 'select' === $type || 'multiselect' === $type ) {
+			$is_multiple    = 'multiselect' === $type;
+			$is_searchable  = ! $is_multiple && ! empty( $field['select_searchable'] );
+			$select_name    = $is_multiple ? $field_name . '[]' : $field_name;
+			$default_values = $is_multiple ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
+			$extra_attrs    = ' data-boldform-select="1"';
+
+			if ( $is_multiple ) {
+				$extra_attrs .= ' data-multiple="1"';
+			}
+			if ( $is_searchable ) {
+				$extra_attrs .= ' data-searchable="1"';
+			}
+
+			$html = sprintf(
+				'<select id="%1$s" name="%2$s"%3$s%4$s style="display:none">',
+				esc_attr( $field_name ),
+				esc_attr( $select_name ),
+				$required_attr,
+				$extra_attrs
+			);
+
+			if ( '' !== $placeholder && ! $is_multiple ) {
+				$html .= sprintf(
+					'<option value="">%1$s</option>',
+					esc_html( $placeholder )
+				);
+			}
+
+			foreach ( $this->normalize_options( $options ) as $option ) {
+				$is_selected = in_array( $option, $default_values, true ) ? ' selected' : '';
+				$html       .= sprintf(
+					'<option value="%1$s"%2$s>%3$s</option>',
+					esc_attr( $option ),
+					$is_selected,
+					esc_html( $option )
+				);
+			}
+
+			$html .= '</select>';
+
+			return $html;
+		}
+
+		if ( 'checkbox' === $type || 'radio' === $type ) {
+			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' );
+			$html           = '<div class="' . esc_attr( $choices_class ) . '">';
+			$default_values = 'checkbox' === $type ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
+
+			foreach ( $this->normalize_options( $options ) as $option_index => $option ) {
+				$choice_id = $field_name . '_' . $option_index;
+				$name_attr = 'checkbox' === $type ? $field_name . '[]' : $field_name;
+				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
+
+				$html .= sprintf(
+					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span>%7$s</span></label>',
+					esc_attr( $choice_id ),
+					esc_attr( $type ),
+					esc_attr( $name_attr ),
+					esc_attr( $option ),
+					$checked,
+					$required_attr,
+					esc_html( $option )
+				);
+			}
+
+			$html .= '</div>';
+
+			return $html;
+		}
+
+		if ( 'file' === $type ) {
+			$accept_attr = isset( $accept_attr ) ? $accept_attr : '';
+			return sprintf(
+				'<input id="%1$s" type="file" name="%1$s"%2$s%3$s>',
+				esc_attr( $field_name ),
+				$accept_attr,
+				$required_attr
+			);
+		}
+
+		// Date and time fields: render as text with a hidden native picker for cross-browser consistency.
+		if ( 'date' === $type || 'time' === $type ) {
+			$placeholder = $placeholder ? $placeholder : ( 'date' === $type ? __( 'Select date', 'boldform-lite' ) : __( 'Select time', 'boldform-lite' ) );
+
+			return sprintf(
+				'<input id="%1$s" type="text" name="%1$s" placeholder="%2$s" value="%3$s" data-boldform-picker="%4$s" readonly%5$s>',
+				esc_attr( $field_name ),
+				esc_attr( $placeholder ),
+				esc_attr( $default ),
+				esc_attr( $type ),
+				$required_attr
+			);
+		}
+
+
+		if ( 'input_mask' === $type ) {
+			$mask = isset( $field['mask_pattern'] ) ? (string) $field['mask_pattern'] : '';
+			return sprintf(
+				'<input type="text" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s data-mask="%5$s">',
+				esc_attr( $field_name ),
+				esc_attr( $placeholder ),
+				esc_attr( $default ),
+				$required_attr,
+				esc_attr( $mask )
+			);
+		}
+
+		if ( 'numeric' === $type ) {
+			$min = isset( $field['min_value'] ) && '' !== $field['min_value'] ? ' min="' . esc_attr( $field['min_value'] ) . '"' : '';
+			$max = isset( $field['max_value'] ) && '' !== $field['max_value'] ? ' max="' . esc_attr( $field['max_value'] ) . '"' : '';
+			$step = isset( $field['step_value'] ) && '' !== $field['step_value'] ? ' step="' . esc_attr( $field['step_value'] ) . '"' : '';
+			return sprintf(
+				'<input type="number" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s%5$s%6$s%7$s>',
+				esc_attr( $field_name ),
+				esc_attr( $placeholder ),
+				esc_attr( $default ),
+				$required_attr,
+				$min,
+				$max,
+				$step
+			);
+		}
+
+		if ( 'address' === $type ) {
+			$af          = isset( $field['address_fields'] ) && is_array( $field['address_fields'] ) ? $field['address_fields'] : array();
+			$addr_order  = isset( $field['address_order'] ) && is_array( $field['address_order'] ) ? $field['address_order'] : array( 'street', 'city', 'state', 'zip', 'country' );
+			$addr_labels = array(
+				'street'  => __( 'Street Address', 'boldform-lite' ),
+				'city'    => __( 'City', 'boldform-lite' ),
+				'state'   => __( 'State / Province', 'boldform-lite' ),
+				'zip'     => __( 'ZIP / Postal Code', 'boldform-lite' ),
+				'country' => __( 'Country', 'boldform-lite' ),
+			);
+
+			// Get enabled fields in order.
+			$enabled = array();
+			foreach ( $addr_order as $key ) {
+				if ( ! isset( $af[ $key ] ) || ! empty( $af[ $key ] ) ) {
+					$enabled[] = $key;
+				}
+			}
+
+			$html = '<div class="boldform-lite-address">';
+
+			// Render in exact order. Street = full width row, others pair up in sequence.
+			$pair_buffer = array();
+			foreach ( $enabled as $key ) {
+				if ( 'street' === $key ) {
+					// Flush pending pair first.
+					if ( ! empty( $pair_buffer ) ) {
+						$row_class = count( $pair_buffer ) === 2 ? ' boldform-lite-address__row--half' : '';
+						$html .= '<div class="boldform-lite-address__row' . $row_class . '">';
+						foreach ( $pair_buffer as $pk ) {
+							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+						}
+						$html .= '</div>';
+						$pair_buffer = array();
+					}
+					$html .= sprintf(
+						'<div class="boldform-lite-address__row"><input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s"%4$s></div>',
+						esc_attr( $field_name ),
+						esc_attr( $key ),
+						esc_attr( $addr_labels[ $key ] ),
+						$required_attr
+					);
+				} else {
+					$pair_buffer[] = $key;
+					if ( count( $pair_buffer ) === 2 ) {
+						$html .= '<div class="boldform-lite-address__row boldform-lite-address__row--half">';
+						foreach ( $pair_buffer as $pk ) {
+							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+						}
+						$html .= '</div>';
+						$pair_buffer = array();
+					}
+				}
+			}
+			// Flush remaining single field.
+			if ( ! empty( $pair_buffer ) ) {
+				$html .= '<div class="boldform-lite-address__row">';
+				foreach ( $pair_buffer as $pk ) {
+					$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+				}
+				$html .= '</div>';
+			}
+
+			$html .= '</div>';
+			return $html;
+		}
+
+		if ( 'country' === $type ) {
+			$countries = $this->get_country_list();
+			$html = sprintf(
+				'<select id="%1$s" name="%1$s"%2$s data-boldform-select="1" data-searchable="1" style="display:none">',
+				esc_attr( $field_name ),
+				$required_attr
+			);
+			$html .= sprintf( '<option value="">%s</option>', esc_html( $placeholder ? $placeholder : __( 'Select a country', 'boldform-lite' ) ) );
+			foreach ( $countries as $code => $name ) {
+				$sel = $default === $code ? ' selected' : '';
+				$html .= sprintf( '<option value="%s"%s>%s</option>', esc_attr( $code ), $sel, esc_html( $name ) );
+			}
+			$html .= '</select>';
+			return $html;
+		}
+
+		if ( 'star_rating' === $type ) {
+			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
+			$def        = (int) $default;
+			$star_color = ! empty( $field['star_color'] ) ? $field['star_color'] : '#f59e0b';
+			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 28;
+			$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';--bf-star-size:' . $star_size . 'px';
+			$html = sprintf( '<input type="hidden" id="%1$s" name="%1$s" value="%2$s"%3$s>', esc_attr( $field_name ), esc_attr( $def ), $required_attr );
+			$html .= '<div class="boldform-lite-star-rating" data-max="' . $max . '" data-field="' . esc_attr( $field_name ) . '" style="' . $star_style . '">';
+			for ( $i = 1; $i <= $max; $i++ ) {
+				$active = $i <= $def ? ' is-active' : '';
+				$html .= '<span class="boldform-lite-star' . $active . '" data-value="' . $i . '">&#9733;</span>';
+			}
+			$html .= '</div>';
+			return $html;
+		}
+
+		if ( 'slider_range' === $type ) {
+			$min          = isset( $field['min_value'] ) && '' !== $field['min_value'] ? (string) $field['min_value'] : '0';
+			$max          = isset( $field['max_value'] ) && '' !== $field['max_value'] ? (string) $field['max_value'] : '100';
+			$step         = isset( $field['step_value'] ) && '' !== $field['step_value'] ? (string) $field['step_value'] : '1';
+			$def          = '' !== $default ? $default : $min;
+			$slider_color = ! empty( $field['slider_color'] ) ? $field['slider_color'] : '';
+			$slider_h     = ! empty( $field['slider_height'] ) ? (int) $field['slider_height'] : '';
+			$sl_style     = '';
+			if ( $slider_color ) {
+				$sl_style .= '--bf-slider-color:' . esc_attr( $slider_color ) . ';';
+			}
+			if ( $slider_h ) {
+				$sl_style .= '--bf-slider-height:' . $slider_h . 'px;';
+			}
+			$html = '<div class="boldform-lite-slider"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
+			$html .= sprintf(
+				'<input type="range" id="%1$s" name="%1$s" min="%2$s" max="%3$s" step="%4$s" value="%5$s"%6$s>',
+				esc_attr( $field_name ), esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $def ), $required_attr
+			);
+			$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $def ) . '</span><span>' . esc_html( $max ) . '</span></div>';
+			$html .= '</div>';
+			return $html;
+		}
+
+		$allowed_input_types = array( 'text', 'email', 'number', 'tel', 'url' );
+		$input_type          = in_array( $type, $allowed_input_types, true ) ? $type : 'text';
+
+		return sprintf(
+			'<input id="%1$s" type="%2$s" name="%1$s" placeholder="%3$s" value="%4$s"%5$s>',
+			esc_attr( $field_name ),
+			esc_attr( $input_type ),
+			esc_attr( $placeholder ),
+			esc_attr( $default ),
+			$required_attr
+		);
+	}
+
+	/**
+	 * Normalizes select, checkbox, and radio options.
+	 *
+	 * @param array<int, string|mixed> $options Raw option values.
+	 * @return array<int, string>
+	 */
+	private function normalize_options( $options ) {
+		$normalized = array();
+
+		foreach ( $options as $option ) {
+			$option = trim( (string) $option );
+
+			if ( '' !== $option ) {
+				$normalized[] = $option;
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Returns a redirect-based status message for the current form.
+	 *
+	 * @param int $form_id Form ID.
+	 * @return array<string, string>|null
+	 */
+	private function get_form_status_message( $form_id ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display of redirect query params; no data is modified.
+		$status_form_id = isset( $_GET['boldform_form_id'] ) ? absint( wp_unslash( $_GET['boldform_form_id'] ) ) : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$status         = isset( $_GET['boldform_status'] ) ? sanitize_key( wp_unslash( $_GET['boldform_status'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via sanitize_text_field().
+		$message        = isset( $_GET['boldform_message'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['boldform_message'] ) ) ) : '';
+
+		// Only show redirect messages on the form instance that initiated the submission.
+		if ( $form_id !== $status_form_id || '' === $status || '' === $message ) {
+			return null;
+		}
+
+		return array(
+			'type'    => 'success' === $status ? 'success' : 'error',
+			'message' => $message,
+		);
+	}
+
+	/**
+	 * Localizes shared frontend script data once per request.
+	 *
+	 * @return void
+	 */
+	private function localize_frontend_script() {
+		if ( $this->frontend_script_localized ) {
+			return;
+		}
+
+		wp_localize_script(
+			'boldform-lite-frontend',
+			'boldformLiteFrontend',
+			array(
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'ajaxAction'     => 'boldform_lite_submit_form',
+				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
+				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
+				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
+			)
+		);
+
+		$this->frontend_script_localized = true;
+	}
+
+	/**
+	 * Builds inline CSS variables for frontend form styling.
+	 *
+	 * @return string 'plugin' or 'theme'.
+	 */
+	private function get_form_style_mode() {
+		$saved = get_option( 'boldform_lite_settings', array() );
+
+		if ( is_array( $saved ) && isset( $saved['form_style_mode'] ) && 'theme' === $saved['form_style_mode'] ) {
+			return 'theme';
+		}
+
+		return 'plugin';
+	}
+
+	/**
+	 * Builds inline CSS variables for frontend form styling.
+	 *
+	 * @param array<string, mixed> $settings Form settings.
+	 * @return string
+	 */
+	private function build_form_style_variables( $settings ) {
+		$field_size = isset( $settings['field_size'] ) ? (string) $settings['field_size'] : '';
+		$label_size = isset( $settings['label_size'] ) ? (string) $settings['label_size'] : '';
+		$button_size = isset( $settings['button_size'] ) ? (string) $settings['button_size'] : '';
+		$field_style = isset( $settings['field_style'] ) ? (string) $settings['field_style'] : '';
+		$size_map = array(
+			'small'       => array( 'field_y' => '10px', 'field_x' => '12px', 'field_font' => '14px', 'label_font' => '14px', 'button_y' => '10px', 'button_x' => '16px', 'button_font' => '14px' ),
+			'medium'      => array( 'field_y' => '12px', 'field_x' => '14px', 'field_font' => '15px', 'label_font' => '16px', 'button_y' => '12px', 'button_x' => '18px', 'button_font' => '15px' ),
+			'large'       => array( 'field_y' => '15px', 'field_x' => '16px', 'field_font' => '16px', 'label_font' => '18px', 'button_y' => '14px', 'button_x' => '20px', 'button_font' => '16px' ),
+			'compact'     => array( 'field_y' => '10px', 'field_x' => '12px', 'field_font' => '14px', 'label_font' => '14px', 'button_y' => '10px', 'button_x' => '16px', 'button_font' => '14px' ),
+			'comfortable' => array( 'field_y' => '12px', 'field_x' => '14px', 'field_font' => '15px', 'label_font' => '16px', 'button_y' => '12px', 'button_x' => '18px', 'button_font' => '15px' ),
+			'spacious'    => array( 'field_y' => '15px', 'field_x' => '16px', 'field_font' => '16px', 'label_font' => '18px', 'button_y' => '14px', 'button_x' => '20px', 'button_font' => '16px' ),
+		);
+		$field_scale = isset( $size_map[ $field_size ] ) ? $size_map[ $field_size ] : null;
+		$label_scale = isset( $size_map[ $label_size ] ) ? $size_map[ $label_size ] : null;
+		$button_scale = isset( $size_map[ $button_size ] ) ? $size_map[ $button_size ] : null;
+		$variables = array();
+
+		if ( in_array( $field_style, array( 'outline', 'soft', 'minimal' ), true ) ) {
+			$field_style = 'solid';
+		}
+
+		if ( '' !== $field_style ) {
+			$variables[] = '--bf-field-border-style:' . ( 'none' === $field_style ? 'none' : $field_style );
+		}
+		if ( isset( $settings['field_border_width'] ) && '' !== $settings['field_border_width'] ) {
+			$variables[] = '--bf-field-border-width:' . (int) $settings['field_border_width'] . 'px';
+		}
+		if ( isset( $settings['field_border_radius'] ) && '' !== $settings['field_border_radius'] ) {
+			$variables[] = '--bf-field-radius:' . (int) $settings['field_border_radius'] . 'px';
+		}
+		if ( ! empty( $settings['field_background_color'] ) ) {
+			$variables[] = '--bf-field-bg:' . (string) $settings['field_background_color'];
+		}
+		if ( ! empty( $settings['field_border_color'] ) ) {
+			$variables[] = '--bf-field-border:' . (string) $settings['field_border_color'];
+		}
+		if ( ! empty( $settings['field_text_color'] ) ) {
+			$variables[] = '--bf-field-text:' . (string) $settings['field_text_color'];
+		}
+		if ( ! empty( $settings['field_focus_color'] ) ) {
+			$variables[] = '--bf-focus-color:' . ( 'blue' === ( $settings['field_focus_color'] ?? '' ) ? '#2563eb' : ( 'green' === ( $settings['field_focus_color'] ?? '' ) ? '#16a34a' : ( 'dark' === ( $settings['field_focus_color'] ?? '' ) ? '#334155' : '#0f766e' ) ) );
+		}
+		if ( ! empty( $settings['label_color'] ) ) {
+			$variables[] = '--bf-label-color:' . (string) $settings['label_color'];
+		}
+		if ( ! empty( $settings['label_subtext_color'] ) ) {
+			$variables[] = '--bf-subtext-color:' . (string) $settings['label_subtext_color'];
+		}
+		if ( ! empty( $settings['error_color'] ) ) {
+			$variables[] = '--bf-error-color:' . (string) $settings['error_color'];
+		}
+		if ( $label_scale ) {
+			$variables[] = '--bf-label-font-size:' . $label_scale['label_font'];
+		}
+		if ( $field_scale ) {
+			$variables[] = '--bf-field-padding-y:' . $field_scale['field_y'];
+			$variables[] = '--bf-field-padding-x:' . $field_scale['field_x'];
+			$variables[] = '--bf-field-font-size:' . $field_scale['field_font'];
+		}
+		if ( ! empty( $settings['button_border_style'] ) ) {
+			$variables[] = '--bf-button-border-style:' . (string) $settings['button_border_style'];
+		}
+		if ( isset( $settings['button_border_width'] ) && '' !== $settings['button_border_width'] ) {
+			$variables[] = '--bf-button-border-width:' . (int) $settings['button_border_width'] . 'px';
+		}
+		if ( isset( $settings['button_border_radius'] ) && '' !== $settings['button_border_radius'] ) {
+			$variables[] = '--bf-button-radius:' . (int) $settings['button_border_radius'] . 'px';
+		}
+		if ( ! empty( $settings['button_background_color'] ) ) {
+			$variables[] = '--bf-button-bg:' . (string) $settings['button_background_color'];
+		}
+		if ( ! empty( $settings['button_border_color'] ) ) {
+			$variables[] = '--bf-button-border:' . (string) $settings['button_border_color'];
+		}
+		if ( ! empty( $settings['button_text_color'] ) ) {
+			$variables[] = '--bf-button-text:' . (string) $settings['button_text_color'];
+		}
+		if ( $button_scale ) {
+			$variables[] = '--bf-button-padding-y:' . $button_scale['button_y'];
+			$variables[] = '--bf-button-padding-x:' . $button_scale['button_x'];
+			$variables[] = '--bf-button-font-size:' . $button_scale['button_font'];
+		}
+
+		return empty( $variables ) ? '' : implode( ';', $variables ) . ';';
+	}
+
+	/**
+	 * Returns an associative array of ISO country codes to country names.
+	 *
+	 * @return array<string, string>
+	 */
+	private function get_country_list() {
+		return array(
+			'AF' => __( 'Afghanistan', 'boldform-lite' ),
+			'AL' => __( 'Albania', 'boldform-lite' ),
+			'DZ' => __( 'Algeria', 'boldform-lite' ),
+			'AD' => __( 'Andorra', 'boldform-lite' ),
+			'AO' => __( 'Angola', 'boldform-lite' ),
+			'AG' => __( 'Antigua and Barbuda', 'boldform-lite' ),
+			'AR' => __( 'Argentina', 'boldform-lite' ),
+			'AM' => __( 'Armenia', 'boldform-lite' ),
+			'AU' => __( 'Australia', 'boldform-lite' ),
+			'AT' => __( 'Austria', 'boldform-lite' ),
+			'AZ' => __( 'Azerbaijan', 'boldform-lite' ),
+			'BS' => __( 'Bahamas', 'boldform-lite' ),
+			'BH' => __( 'Bahrain', 'boldform-lite' ),
+			'BD' => __( 'Bangladesh', 'boldform-lite' ),
+			'BB' => __( 'Barbados', 'boldform-lite' ),
+			'BY' => __( 'Belarus', 'boldform-lite' ),
+			'BE' => __( 'Belgium', 'boldform-lite' ),
+			'BZ' => __( 'Belize', 'boldform-lite' ),
+			'BJ' => __( 'Benin', 'boldform-lite' ),
+			'BT' => __( 'Bhutan', 'boldform-lite' ),
+			'BO' => __( 'Bolivia', 'boldform-lite' ),
+			'BA' => __( 'Bosnia and Herzegovina', 'boldform-lite' ),
+			'BW' => __( 'Botswana', 'boldform-lite' ),
+			'BR' => __( 'Brazil', 'boldform-lite' ),
+			'BN' => __( 'Brunei', 'boldform-lite' ),
+			'BG' => __( 'Bulgaria', 'boldform-lite' ),
+			'BF' => __( 'Burkina Faso', 'boldform-lite' ),
+			'BI' => __( 'Burundi', 'boldform-lite' ),
+			'CV' => __( 'Cabo Verde', 'boldform-lite' ),
+			'KH' => __( 'Cambodia', 'boldform-lite' ),
+			'CM' => __( 'Cameroon', 'boldform-lite' ),
+			'CA' => __( 'Canada', 'boldform-lite' ),
+			'CF' => __( 'Central African Republic', 'boldform-lite' ),
+			'TD' => __( 'Chad', 'boldform-lite' ),
+			'CL' => __( 'Chile', 'boldform-lite' ),
+			'CN' => __( 'China', 'boldform-lite' ),
+			'CO' => __( 'Colombia', 'boldform-lite' ),
+			'KM' => __( 'Comoros', 'boldform-lite' ),
+			'CG' => __( 'Congo', 'boldform-lite' ),
+			'CD' => __( 'Congo (Democratic Republic)', 'boldform-lite' ),
+			'CR' => __( 'Costa Rica', 'boldform-lite' ),
+			'CI' => __( "Cote d'Ivoire", 'boldform-lite' ),
+			'HR' => __( 'Croatia', 'boldform-lite' ),
+			'CU' => __( 'Cuba', 'boldform-lite' ),
+			'CY' => __( 'Cyprus', 'boldform-lite' ),
+			'CZ' => __( 'Czech Republic', 'boldform-lite' ),
+			'DK' => __( 'Denmark', 'boldform-lite' ),
+			'DJ' => __( 'Djibouti', 'boldform-lite' ),
+			'DM' => __( 'Dominica', 'boldform-lite' ),
+			'DO' => __( 'Dominican Republic', 'boldform-lite' ),
+			'EC' => __( 'Ecuador', 'boldform-lite' ),
+			'EG' => __( 'Egypt', 'boldform-lite' ),
+			'SV' => __( 'El Salvador', 'boldform-lite' ),
+			'GQ' => __( 'Equatorial Guinea', 'boldform-lite' ),
+			'ER' => __( 'Eritrea', 'boldform-lite' ),
+			'EE' => __( 'Estonia', 'boldform-lite' ),
+			'SZ' => __( 'Eswatini', 'boldform-lite' ),
+			'ET' => __( 'Ethiopia', 'boldform-lite' ),
+			'FJ' => __( 'Fiji', 'boldform-lite' ),
+			'FI' => __( 'Finland', 'boldform-lite' ),
+			'FR' => __( 'France', 'boldform-lite' ),
+			'GA' => __( 'Gabon', 'boldform-lite' ),
+			'GM' => __( 'Gambia', 'boldform-lite' ),
+			'GE' => __( 'Georgia', 'boldform-lite' ),
+			'DE' => __( 'Germany', 'boldform-lite' ),
+			'GH' => __( 'Ghana', 'boldform-lite' ),
+			'GR' => __( 'Greece', 'boldform-lite' ),
+			'GD' => __( 'Grenada', 'boldform-lite' ),
+			'GT' => __( 'Guatemala', 'boldform-lite' ),
+			'GN' => __( 'Guinea', 'boldform-lite' ),
+			'GW' => __( 'Guinea-Bissau', 'boldform-lite' ),
+			'GY' => __( 'Guyana', 'boldform-lite' ),
+			'HT' => __( 'Haiti', 'boldform-lite' ),
+			'HN' => __( 'Honduras', 'boldform-lite' ),
+			'HU' => __( 'Hungary', 'boldform-lite' ),
+			'IS' => __( 'Iceland', 'boldform-lite' ),
+			'IN' => __( 'India', 'boldform-lite' ),
+			'ID' => __( 'Indonesia', 'boldform-lite' ),
+			'IR' => __( 'Iran', 'boldform-lite' ),
+			'IQ' => __( 'Iraq', 'boldform-lite' ),
+			'IE' => __( 'Ireland', 'boldform-lite' ),
+			'IL' => __( 'Israel', 'boldform-lite' ),
+			'IT' => __( 'Italy', 'boldform-lite' ),
+			'JM' => __( 'Jamaica', 'boldform-lite' ),
+			'JP' => __( 'Japan', 'boldform-lite' ),
+			'JO' => __( 'Jordan', 'boldform-lite' ),
+			'KZ' => __( 'Kazakhstan', 'boldform-lite' ),
+			'KE' => __( 'Kenya', 'boldform-lite' ),
+			'KI' => __( 'Kiribati', 'boldform-lite' ),
+			'KP' => __( 'Korea (North)', 'boldform-lite' ),
+			'KR' => __( 'Korea (South)', 'boldform-lite' ),
+			'KW' => __( 'Kuwait', 'boldform-lite' ),
+			'KG' => __( 'Kyrgyzstan', 'boldform-lite' ),
+			'LA' => __( 'Laos', 'boldform-lite' ),
+			'LV' => __( 'Latvia', 'boldform-lite' ),
+			'LB' => __( 'Lebanon', 'boldform-lite' ),
+			'LS' => __( 'Lesotho', 'boldform-lite' ),
+			'LR' => __( 'Liberia', 'boldform-lite' ),
+			'LY' => __( 'Libya', 'boldform-lite' ),
+			'LI' => __( 'Liechtenstein', 'boldform-lite' ),
+			'LT' => __( 'Lithuania', 'boldform-lite' ),
+			'LU' => __( 'Luxembourg', 'boldform-lite' ),
+			'MG' => __( 'Madagascar', 'boldform-lite' ),
+			'MW' => __( 'Malawi', 'boldform-lite' ),
+			'MY' => __( 'Malaysia', 'boldform-lite' ),
+			'MV' => __( 'Maldives', 'boldform-lite' ),
+			'ML' => __( 'Mali', 'boldform-lite' ),
+			'MT' => __( 'Malta', 'boldform-lite' ),
+			'MH' => __( 'Marshall Islands', 'boldform-lite' ),
+			'MR' => __( 'Mauritania', 'boldform-lite' ),
+			'MU' => __( 'Mauritius', 'boldform-lite' ),
+			'MX' => __( 'Mexico', 'boldform-lite' ),
+			'FM' => __( 'Micronesia', 'boldform-lite' ),
+			'MD' => __( 'Moldova', 'boldform-lite' ),
+			'MC' => __( 'Monaco', 'boldform-lite' ),
+			'MN' => __( 'Mongolia', 'boldform-lite' ),
+			'ME' => __( 'Montenegro', 'boldform-lite' ),
+			'MA' => __( 'Morocco', 'boldform-lite' ),
+			'MZ' => __( 'Mozambique', 'boldform-lite' ),
+			'MM' => __( 'Myanmar', 'boldform-lite' ),
+			'NA' => __( 'Namibia', 'boldform-lite' ),
+			'NR' => __( 'Nauru', 'boldform-lite' ),
+			'NP' => __( 'Nepal', 'boldform-lite' ),
+			'NL' => __( 'Netherlands', 'boldform-lite' ),
+			'NZ' => __( 'New Zealand', 'boldform-lite' ),
+			'NI' => __( 'Nicaragua', 'boldform-lite' ),
+			'NE' => __( 'Niger', 'boldform-lite' ),
+			'NG' => __( 'Nigeria', 'boldform-lite' ),
+			'MK' => __( 'North Macedonia', 'boldform-lite' ),
+			'NO' => __( 'Norway', 'boldform-lite' ),
+			'OM' => __( 'Oman', 'boldform-lite' ),
+			'PK' => __( 'Pakistan', 'boldform-lite' ),
+			'PW' => __( 'Palau', 'boldform-lite' ),
+			'PS' => __( 'Palestine', 'boldform-lite' ),
+			'PA' => __( 'Panama', 'boldform-lite' ),
+			'PG' => __( 'Papua New Guinea', 'boldform-lite' ),
+			'PY' => __( 'Paraguay', 'boldform-lite' ),
+			'PE' => __( 'Peru', 'boldform-lite' ),
+			'PH' => __( 'Philippines', 'boldform-lite' ),
+			'PL' => __( 'Poland', 'boldform-lite' ),
+			'PT' => __( 'Portugal', 'boldform-lite' ),
+			'QA' => __( 'Qatar', 'boldform-lite' ),
+			'RO' => __( 'Romania', 'boldform-lite' ),
+			'RU' => __( 'Russia', 'boldform-lite' ),
+			'RW' => __( 'Rwanda', 'boldform-lite' ),
+			'KN' => __( 'Saint Kitts and Nevis', 'boldform-lite' ),
+			'LC' => __( 'Saint Lucia', 'boldform-lite' ),
+			'VC' => __( 'Saint Vincent and the Grenadines', 'boldform-lite' ),
+			'WS' => __( 'Samoa', 'boldform-lite' ),
+			'SM' => __( 'San Marino', 'boldform-lite' ),
+			'ST' => __( 'Sao Tome and Principe', 'boldform-lite' ),
+			'SA' => __( 'Saudi Arabia', 'boldform-lite' ),
+			'SN' => __( 'Senegal', 'boldform-lite' ),
+			'RS' => __( 'Serbia', 'boldform-lite' ),
+			'SC' => __( 'Seychelles', 'boldform-lite' ),
+			'SL' => __( 'Sierra Leone', 'boldform-lite' ),
+			'SG' => __( 'Singapore', 'boldform-lite' ),
+			'SK' => __( 'Slovakia', 'boldform-lite' ),
+			'SI' => __( 'Slovenia', 'boldform-lite' ),
+			'SB' => __( 'Solomon Islands', 'boldform-lite' ),
+			'SO' => __( 'Somalia', 'boldform-lite' ),
+			'ZA' => __( 'South Africa', 'boldform-lite' ),
+			'SS' => __( 'South Sudan', 'boldform-lite' ),
+			'ES' => __( 'Spain', 'boldform-lite' ),
+			'LK' => __( 'Sri Lanka', 'boldform-lite' ),
+			'SD' => __( 'Sudan', 'boldform-lite' ),
+			'SR' => __( 'Suriname', 'boldform-lite' ),
+			'SE' => __( 'Sweden', 'boldform-lite' ),
+			'CH' => __( 'Switzerland', 'boldform-lite' ),
+			'SY' => __( 'Syria', 'boldform-lite' ),
+			'TW' => __( 'Taiwan', 'boldform-lite' ),
+			'TJ' => __( 'Tajikistan', 'boldform-lite' ),
+			'TZ' => __( 'Tanzania', 'boldform-lite' ),
+			'TH' => __( 'Thailand', 'boldform-lite' ),
+			'TL' => __( 'Timor-Leste', 'boldform-lite' ),
+			'TG' => __( 'Togo', 'boldform-lite' ),
+			'TO' => __( 'Tonga', 'boldform-lite' ),
+			'TT' => __( 'Trinidad and Tobago', 'boldform-lite' ),
+			'TN' => __( 'Tunisia', 'boldform-lite' ),
+			'TR' => __( 'Turkey', 'boldform-lite' ),
+			'TM' => __( 'Turkmenistan', 'boldform-lite' ),
+			'TV' => __( 'Tuvalu', 'boldform-lite' ),
+			'UG' => __( 'Uganda', 'boldform-lite' ),
+			'UA' => __( 'Ukraine', 'boldform-lite' ),
+			'AE' => __( 'United Arab Emirates', 'boldform-lite' ),
+			'GB' => __( 'United Kingdom', 'boldform-lite' ),
+			'US' => __( 'United States', 'boldform-lite' ),
+			'UY' => __( 'Uruguay', 'boldform-lite' ),
+			'UZ' => __( 'Uzbekistan', 'boldform-lite' ),
+			'VU' => __( 'Vanuatu', 'boldform-lite' ),
+			'VA' => __( 'Vatican City', 'boldform-lite' ),
+			'VE' => __( 'Venezuela', 'boldform-lite' ),
+			'VN' => __( 'Vietnam', 'boldform-lite' ),
+			'YE' => __( 'Yemen', 'boldform-lite' ),
+			'ZM' => __( 'Zambia', 'boldform-lite' ),
+			'ZW' => __( 'Zimbabwe', 'boldform-lite' ),
+		);
+	}
+}

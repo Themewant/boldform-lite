@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "boldform/form",
+  "version": "1.0.0",
+  "title": "BoldForm",
+  "category": "widgets",
+  "icon": "feedback",
+  "description": "Display a BoldForm form.",
+  "textdomain": "boldform-lite",
+  "attributes": {
+    "formId": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "editorScript": "boldform-lite-block-editor",
+  "supports": {
+    "html": false
+  }
+}

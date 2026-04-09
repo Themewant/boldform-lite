@@ -1,0 +1,1536 @@
+/* BoldForm Lite — Admin Topbar */
+.boldform-admin-topbar {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	margin: -1px -20px 24px;
+	padding: 0 24px;
+	background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+	min-height: 56px;
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+	position: relative;
+	z-index: 10;
+}
+
+.boldform-admin-topbar__brand {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #fff;
+	flex-shrink: 0;
+	padding-right: 20px;
+	margin-right: 4px;
+	border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.boldform-admin-topbar__brand > .dashicons {
+	width: 24px;
+	height: 24px;
+	font-size: 24px;
+	line-height: 24px;
+	color: #60a5fa;
+	filter: drop-shadow(0 0 6px rgba(96, 165, 250, 0.4));
+}
+
+.boldform-admin-topbar__name {
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.03em;
+	background: linear-gradient(135deg, #fff 0%, #93c5fd 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+.boldform-admin-topbar__version {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: rgba(96, 165, 250, 0.15);
+	border: 1px solid rgba(96, 165, 250, 0.2);
+	font-size: 10px;
+	font-weight: 700;
+	color: #93c5fd;
+	letter-spacing: 0.03em;
+}
+
+.boldform-admin-topbar__nav {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.boldform-admin-topbar__link {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #94a3b8;
+	text-decoration: none;
+	border-radius: 8px;
+	transition: all 0.18s ease;
+}
+
+.boldform-admin-topbar__link:hover {
+	color: #e2e8f0;
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.boldform-admin-topbar__link:focus {
+	color: #e2e8f0;
+	outline: none;
+}
+
+.boldform-admin-topbar__link.is-active {
+	color: #fff;
+	background: rgba(96, 165, 250, 0.15);
+	box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.boldform-admin-topbar__link .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	opacity: 0.7;
+	transition: opacity 0.18s ease;
+}
+
+.boldform-admin-topbar__link:hover .dashicons,
+.boldform-admin-topbar__link.is-active .dashicons {
+	opacity: 1;
+}
+
+@media screen and (max-width: 782px) {
+	.boldform-admin-topbar {
+		flex-wrap: wrap;
+		padding: 12px 16px;
+		gap: 10px;
+	}
+
+	.boldform-admin-topbar__brand {
+		border-right: 0;
+		padding-right: 0;
+		margin-right: 0;
+	}
+
+	.boldform-admin-topbar__nav {
+		flex-wrap: wrap;
+		gap: 4px;
+		width: 100%;
+	}
+
+	.boldform-admin-topbar__link {
+		padding: 7px 10px;
+		font-size: 12px;
+	}
+}
+
+/* BoldForm Lite — Settings Page */
+
+.boldform-settings-wrap {
+	max-width: 1100px;
+	margin: 20px 0;
+	display: grid;
+	grid-template-columns: 220px 1fr;
+	gap: 0;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 12px;
+	overflow: hidden;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Sidebar ── */
+.boldform-settings-sidebar {
+	background: #f8f9fa;
+	border-right: 1px solid #e2e4e7;
+	padding: 24px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.boldform-settings-sidebar .boldform-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 11px 20px;
+	color: #50575e;
+	text-decoration: none;
+	font-size: 13.5px;
+	font-weight: 500;
+	border-left: 3px solid transparent;
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.boldform-settings-sidebar .boldform-nav-item:hover {
+	background: #f0f0f1;
+	color: #1d2327;
+}
+
+.boldform-settings-sidebar .boldform-nav-item.is-active {
+	background: #fff;
+	color: #2271b1;
+	border-left-color: #2271b1;
+	font-weight: 600;
+}
+
+.boldform-settings-sidebar .boldform-nav-item .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	opacity: 0.65;
+}
+
+.boldform-settings-sidebar .boldform-nav-item.is-active .dashicons {
+	opacity: 1;
+}
+
+/* ── Content area ── */
+.boldform-settings-content {
+	padding: 32px 36px;
+	min-height: 480px;
+}
+
+.boldform-settings-content h2 {
+	font-size: 18px;
+	font-weight: 600;
+	color: #1d2327;
+	margin: 0 0 4px;
+	padding: 0;
+	line-height: 1.4;
+}
+
+.boldform-settings-content .boldform-tab-description {
+	color: #646970;
+	font-size: 13px;
+	margin: 0 0 24px;
+}
+
+/* ── Cards ── */
+.boldform-card {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 24px;
+	margin-bottom: 20px;
+}
+
+.boldform-card--flush {
+	padding: 0;
+}
+
+.boldform-card h3 {
+	font-size: 14px;
+	font-weight: 600;
+	color: #1d2327;
+	margin: 0 0 16px;
+	padding: 0;
+}
+
+/* ── Field rows ── */
+.boldform-field-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	padding: 14px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.boldform-field-row:first-child {
+	padding-top: 0;
+}
+
+.boldform-field-row:last-child {
+	border-bottom: none;
+	padding-bottom: 0;
+}
+
+.boldform-field-label {
+	flex: 0 0 180px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #1d2327;
+	padding-top: 7px;
+}
+
+.boldform-field-label label {
+	font-weight: 600;
+}
+
+.boldform-field-control {
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-field-control input[type="text"],
+.boldform-field-control input[type="email"],
+.boldform-field-control input[type="password"],
+.boldform-field-control input[type="number"],
+.boldform-field-control input[type="url"],
+.boldform-field-control textarea {
+	width: 100%;
+	max-width: 400px;
+	padding: 8px 12px;
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	font-size: 13px;
+	color: #1d2327;
+	background: #fff;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-sizing: border-box;
+}
+
+.boldform-field-control input[type="number"] {
+	max-width: 120px;
+}
+
+.boldform-field-control input:focus,
+.boldform-field-control textarea:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+.boldform-field-control .description {
+	margin-top: 6px;
+	font-size: 12.5px;
+	color: #646970;
+}
+
+/* ── Radio pills ── */
+.boldform-radio-group {
+	display: inline-flex;
+	gap: 0;
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.boldform-radio-group label {
+	display: flex;
+	align-items: center;
+	gap: 0;
+	padding: 7px 16px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #50575e;
+	cursor: pointer;
+	background: #fff;
+	border-right: 1px solid #d0d5dd;
+	transition: background 0.15s, color 0.15s;
+	user-select: none;
+}
+
+.boldform-radio-group label:last-child {
+	border-right: none;
+}
+
+.boldform-radio-group label:hover {
+	background: #f6f7f7;
+}
+
+.boldform-radio-group input[type="radio"] {
+	display: none;
+}
+
+.boldform-radio-group input[type="radio"]:checked + span {
+	color: #fff;
+}
+
+.boldform-radio-group label:has(input:checked) {
+	background: #2271b1;
+	color: #fff;
+}
+
+/* ── Style cards (General tab) ── */
+.boldform-style-option {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+	margin-bottom: 10px;
+}
+
+.boldform-style-option:last-child {
+	margin-bottom: 0;
+}
+
+.boldform-style-option:hover {
+	border-color: #2271b1;
+}
+
+.boldform-style-option.is-selected {
+	border-color: #2271b1;
+	background: #f0f6fc;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.boldform-style-option input[type="radio"] {
+	margin-top: 2px;
+	flex-shrink: 0;
+}
+
+.boldform-style-option strong {
+	display: block;
+	font-size: 13px;
+	color: #1d2327;
+	margin-bottom: 2px;
+}
+
+.boldform-style-option span {
+	font-size: 12.5px;
+	color: #646970;
+}
+
+/* ── Checkbox switch ── */
+.boldform-toggle {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+}
+
+.boldform-toggle input[type="checkbox"] {
+	width: 36px;
+	height: 20px;
+	appearance: none;
+	-webkit-appearance: none;
+	background: #c3c4c7;
+	border-radius: 10px;
+	position: relative;
+	cursor: pointer;
+	transition: background 0.2s;
+	flex-shrink: 0;
+	border: none;
+	outline: none;
+}
+
+.boldform-toggle input[type="checkbox"]::before {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	background: #fff;
+	border-radius: 50%;
+	transition: transform 0.2s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.boldform-toggle input[type="checkbox"]:checked {
+	background: #2271b1;
+}
+
+.boldform-toggle input[type="checkbox"]:checked::before {
+	transform: translateX(16px);
+}
+
+.boldform-toggle span {
+	font-size: 13px;
+	color: #50575e;
+}
+
+/* ── Captcha cards ── */
+.boldform-captcha-provider-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 12px;
+}
+
+.boldform-captcha-card {
+	position: relative;
+	display: block;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	background: #fff;
+	padding: 16px;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.boldform-captcha-card:hover {
+	border-color: #2271b1;
+}
+
+.boldform-captcha-card input {
+	position: absolute;
+	top: 14px;
+	right: 14px;
+}
+
+.boldform-captcha-card__title {
+	display: block;
+	font-size: 13.5px;
+	font-weight: 600;
+	margin: 0 0 4px;
+	color: #1d2327;
+}
+
+.boldform-captcha-card__description {
+	display: block;
+	font-size: 12.5px;
+	color: #646970;
+}
+
+.boldform-captcha-card.is-selected {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	background: #f0f6fc;
+}
+
+.boldform-captcha-panel {
+	margin-top: 16px;
+}
+
+.boldform-captcha-panel[hidden] {
+	display: none;
+}
+
+/* ── SMTP sub-tabs ── */
+.boldform-smtp-subtabs {
+	display: flex;
+	gap: 0;
+	margin: 0 0 24px;
+	border-bottom: 2px solid #e2e4e7;
+}
+
+.boldform-smtp-subtabs a {
+	display: inline-block;
+	padding: 10px 18px;
+	text-decoration: none;
+	color: #50575e;
+	font-weight: 500;
+	font-size: 13.5px;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.boldform-smtp-subtabs a:hover {
+	color: #1d2327;
+}
+
+.boldform-smtp-subtabs a.active {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+	font-weight: 600;
+}
+
+/* ── Test mail section ── */
+.boldform-test-mail-card {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	padding: 28px;
+}
+
+.boldform-test-mail-card h3 {
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+	margin: 0 0 20px;
+}
+
+.boldform-test-mail-result {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-left: 12px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+/* ── Submit button area ── */
+.boldform-submit-area {
+	padding-top: 8px;
+}
+
+.boldform-submit-area .button-primary {
+	padding: 6px 24px;
+	height: auto;
+	font-size: 13px;
+	border-radius: 6px;
+}
+
+/* ── Tools tab ── */
+.boldform-card--spaced {
+	margin-top: 20px;
+}
+
+.boldform-card--success {
+	background: #ecfdf3;
+	border-color: #a3e4b8;
+	margin-top: 20px;
+}
+
+.boldform-card--success p {
+	margin: 0;
+	color: #166534;
+}
+
+.boldform-radio-list label {
+	display: block;
+	margin-bottom: 6px;
+}
+
+.boldform-radio-list label:last-child {
+	margin-bottom: 0;
+}
+
+/* ── Responsive ── */
+@media screen and (max-width: 860px) {
+	.boldform-settings-wrap {
+		grid-template-columns: 1fr;
+	}
+
+	.boldform-settings-sidebar {
+		flex-direction: row;
+		border-right: none;
+		border-bottom: 1px solid #e2e4e7;
+		padding: 0;
+		overflow-x: auto;
+	}
+
+	.boldform-settings-sidebar .boldform-nav-item {
+		border-left: none;
+		border-bottom: 3px solid transparent;
+		white-space: nowrap;
+		padding: 12px 16px;
+	}
+
+	.boldform-settings-sidebar .boldform-nav-item.is-active {
+		border-bottom-color: #2271b1;
+	}
+
+	.boldform-settings-content {
+		padding: 24px 20px;
+	}
+
+	.boldform-field-row {
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.boldform-field-label {
+		flex: none;
+		padding-top: 0;
+	}
+}
+
+/* ─────────────────────────────────────────
+   Forms List & Entries Pages
+   ───────────────────────────────────────── */
+
+.boldform-page-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+}
+
+.boldform-page-header h1 {
+	font-size: 22px;
+	font-weight: 600;
+	color: #1d2327;
+	margin: 0;
+	padding: 0;
+}
+
+.boldform-page-header .boldform-btn-add {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 16px;
+	background: #2271b1;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 500;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.boldform-page-header .boldform-btn-add:hover,
+.boldform-page-header .boldform-btn-add:focus {
+	background: #135e96;
+	color: #fff;
+}
+
+.boldform-page-header .boldform-btn-add .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 16px;
+}
+
+/* ── View filter tabs ── */
+.boldform-view-tabs {
+	display: flex;
+	gap: 0;
+	margin: 0 0 16px;
+	padding: 0;
+	list-style: none;
+	border-bottom: 2px solid #e2e4e7;
+}
+
+.boldform-view-tabs li {
+	margin: 0;
+}
+
+.boldform-view-tabs a {
+	display: inline-block;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #50575e;
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.boldform-view-tabs a:hover {
+	color: #1d2327;
+}
+
+.boldform-view-tabs a.current {
+	color: #2271b1;
+	border-bottom-color: #2271b1;
+	font-weight: 600;
+}
+
+.boldform-view-tabs .count {
+	color: #646970;
+	font-size: 12px;
+}
+
+/* ── Table card wrapper ── */
+.boldform-table-card {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.boldform-table-card .boldform-bulk-bar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 16px;
+	background: #f8f9fa;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.boldform-table-card .boldform-bulk-bar select {
+	padding: 4px 8px;
+	border: 1px solid #d0d5dd;
+	border-radius: 4px;
+	font-size: 13px;
+	background: #fff;
+}
+
+.boldform-table-card .boldform-bulk-bar .button {
+	padding: 4px 14px;
+	border-radius: 4px;
+	font-size: 12.5px;
+}
+
+/* ── Enhanced table ── */
+.boldform-table-card table.widefat {
+	border: none;
+	border-radius: 0;
+	box-shadow: none;
+	margin: 0;
+}
+
+.boldform-table-card table.widefat thead th,
+.boldform-table-card table.widefat thead td {
+	background: #f8f9fa;
+	border-bottom: 1px solid #e2e4e7;
+	font-size: 12px;
+	font-weight: 600;
+	color: #646970;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 10px 12px;
+}
+
+.boldform-table-card table.widefat tbody td,
+.boldform-table-card table.widefat tbody th {
+	padding: 12px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.boldform-table-card table.widefat tbody tr:last-child td,
+.boldform-table-card table.widefat tbody tr:last-child th {
+	border-bottom: none;
+}
+
+.boldform-table-card table.widefat tbody tr:hover td,
+.boldform-table-card table.widefat tbody tr:hover th {
+	background: #f9fbfd;
+}
+
+.boldform-table-card table.widefat tbody td strong a {
+	color: #1d2327;
+	text-decoration: none;
+	font-size: 13.5px;
+}
+
+.boldform-table-card table.widefat tbody td strong a:hover {
+	color: #2271b1;
+}
+
+.boldform-table-card table.widefat tbody td code {
+	background: #f0f0f1;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.boldform-table-card table.widefat .row-actions {
+	padding-top: 4px;
+}
+
+.boldform-table-card table.widefat .row-actions a {
+	font-size: 12.5px;
+}
+
+/* ── Empty state ── */
+.boldform-table-card .boldform-empty-row td {
+	text-align: center;
+	padding: 40px 20px;
+	color: #646970;
+	font-size: 14px;
+}
+
+/* ── Pagination ── */
+.boldform-pagination {
+	display: flex;
+	justify-content: flex-end;
+	padding: 12px 16px;
+	border-top: 1px solid #e2e4e7;
+	background: #f8f9fa;
+}
+
+.boldform-pagination .page-numbers {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 32px;
+	height: 32px;
+	padding: 0 8px;
+	margin: 0 2px;
+	border: 1px solid #d0d5dd;
+	border-radius: 4px;
+	background: #fff;
+	color: #50575e;
+	font-size: 13px;
+	text-decoration: none;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.boldform-pagination .page-numbers:hover {
+	background: #f0f6fc;
+	border-color: #2271b1;
+	color: #2271b1;
+}
+
+.boldform-pagination .page-numbers.current {
+	background: #2271b1;
+	border-color: #2271b1;
+	color: #fff;
+	font-weight: 600;
+}
+
+.boldform-pagination .page-numbers.dots {
+	border: none;
+	background: none;
+}
+
+/* ── Entry data ── */
+.boldform-table-card table.widefat td .boldform-entry-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	font-size: 13px;
+}
+
+.boldform-table-card table.widefat td .boldform-entry-fields strong {
+	font-weight: 600;
+	color: #1d2327;
+}
+
+/* ── Admin notice styling ── */
+.boldform-notice {
+	margin: 0 0 16px;
+	padding: 12px 16px;
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.boldform-notice--success {
+	background: #ecfdf3;
+	border: 1px solid #a3e4b8;
+	color: #166534;
+}
+
+.boldform-notice--error {
+	background: #fef2f2;
+	border: 1px solid #fca5a5;
+	color: #991b1b;
+}
+
+/* ── Entries filters ── */
+.boldform-entries-filters {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-bottom: 16px;
+}
+
+.boldform-entries-filters__left {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.boldform-entries-filters__right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.boldform-entries-tabs {
+	display: flex;
+	gap: 0;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.boldform-entries-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border-right: 1px solid #d0d5dd;
+	font-size: 13px;
+	font-weight: 500;
+	color: #344054;
+	text-decoration: none;
+	transition: background 0.14s ease, color 0.14s ease;
+}
+
+.boldform-entries-tab:last-child {
+	border-right: 0;
+}
+
+.boldform-entries-tab:hover {
+	background: #f9fafb;
+	color: #1d2327;
+}
+
+.boldform-entries-tab.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+.boldform-entries-tab__count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 20px;
+	height: 20px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.08);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.boldform-entries-tab.is-active .boldform-entries-tab__count {
+	background: rgba(255, 255, 255, 0.25);
+}
+
+/* Custom dropdown */
+.boldform-dropdown {
+	position: relative;
+}
+
+.boldform-dropdown__trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	background: #fff;
+	font-size: 13px;
+	font-weight: 500;
+	color: #344054;
+	cursor: pointer;
+	transition: border-color 0.14s ease, box-shadow 0.14s ease;
+	white-space: nowrap;
+}
+
+.boldform-dropdown__trigger:hover {
+	border-color: #98a2b3;
+}
+
+.boldform-dropdown.is-open .boldform-dropdown__trigger {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.boldform-dropdown__trigger .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #667085;
+}
+
+.boldform-dropdown__arrow {
+	width: 8px;
+	height: 8px;
+	border-right: 1.5px solid #667085;
+	border-bottom: 1.5px solid #667085;
+	transform: rotate(45deg);
+	margin-top: -2px;
+	margin-left: 2px;
+	transition: transform 0.18s ease;
+}
+
+.boldform-dropdown.is-open .boldform-dropdown__arrow {
+	transform: rotate(-135deg);
+	margin-top: 2px;
+}
+
+.boldform-dropdown__panel {
+	display: none;
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	z-index: 100;
+	min-width: 180px;
+	max-height: 280px;
+	overflow-y: auto;
+	padding: 6px;
+	border: 1px solid #e4e7ec;
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.04);
+	animation: boldformDropFadeIn 0.14s ease;
+}
+
+@keyframes boldformDropFadeIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+.boldform-dropdown.is-open .boldform-dropdown__panel {
+	display: block;
+}
+
+.boldform-dropdown__item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	width: 100%;
+	padding: 8px 12px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	font-size: 13px;
+	color: #344054;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.1s ease;
+	box-sizing: border-box;
+}
+
+.boldform-dropdown__item:hover {
+	background: #f2f4f7;
+	color: #1d2327;
+}
+
+.boldform-dropdown__item.is-active {
+	background: #eff6ff;
+	color: #2271b1;
+	font-weight: 600;
+}
+
+.boldform-dropdown__panel::-webkit-scrollbar {
+	width: 5px;
+}
+
+.boldform-dropdown__panel::-webkit-scrollbar-thumb {
+	background: #d0d5dd;
+	border-radius: 999px;
+}
+
+.boldform-custom-dates {
+	margin-bottom: 16px;
+}
+
+.boldform-custom-dates__form {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	background: #fff;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+}
+
+.boldform-custom-dates__form label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #344054;
+}
+
+.boldform-custom-dates__form input[type="date"] {
+	padding: 6px 10px;
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.boldform-custom-dates__form input[type="date"]:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+@media screen and (max-width: 782px) {
+	.boldform-entries-filters {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.boldform-entries-tabs {
+		overflow-x: auto;
+	}
+
+	.boldform-entries-filters__right {
+		flex-wrap: wrap;
+	}
+
+	.boldform-custom-dates__form {
+		flex-wrap: wrap;
+	}
+}
+
+/* ── Entries list ── */
+.boldform-entries-table tbody tr.boldform-entry--unread td {
+	font-weight: 600;
+}
+
+.boldform-entry-star {
+	text-align: center;
+}
+
+.boldform-star-btn {
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 2px;
+	color: #c3c4c7;
+	transition: color 0.15s;
+}
+
+.boldform-star-btn:hover,
+.boldform-star-btn.is-starred {
+	color: #f59e0b;
+}
+
+.boldform-star-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.boldform-entry-link {
+	color: #1d2327;
+	text-decoration: none;
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.boldform-entry-link:hover {
+	color: #2271b1;
+}
+
+.boldform-entry-form-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	background: #f0f0f1;
+	border-radius: 4px;
+	font-size: 12px;
+	color: #50575e;
+}
+
+.boldform-status-badge {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.boldform-status--unread {
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
+.boldform-status--read {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.boldform-status--starred {
+	background: #fef3c7;
+	color: #b45309;
+}
+
+/* ── Entry detail meta sidebar ── */
+/* ── Entry detail page ── */
+.boldform-entry-detail-wrap {
+	max-width: 100%;
+}
+
+.boldform-entry-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 20px;
+	margin: -1px -20px 24px;
+	background: #fff;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.boldform-entry-header__left {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.boldform-entry-header__back {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	background: #fff;
+	color: #344054;
+	text-decoration: none;
+	transition: all 0.14s ease;
+}
+
+.boldform-entry-header__back:hover {
+	border-color: #98a2b3;
+	background: #f9fafb;
+	color: #1d2327;
+}
+
+.boldform-entry-header__back .dashicons {
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	line-height: 20px;
+}
+
+.boldform-entry-header__title h1 {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: #1d2327;
+	line-height: 1.3;
+}
+
+.boldform-entry-header__form {
+	display: inline-block;
+	margin-top: 2px;
+	padding: 2px 10px;
+	border-radius: 999px;
+	background: #f0f0f1;
+	font-size: 12px;
+	font-weight: 500;
+	color: #50575e;
+}
+
+.boldform-entry-header__right {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.boldform-entry-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	background: #fff;
+	color: #667085;
+	cursor: pointer;
+	text-decoration: none;
+	transition: all 0.14s ease;
+}
+
+.boldform-entry-action-btn:hover {
+	border-color: #98a2b3;
+	background: #f9fafb;
+	color: #344054;
+}
+
+.boldform-entry-action-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.boldform-entry-action-btn--danger:hover {
+	border-color: #fecaca;
+	background: #fef2f2;
+	color: #dc2626;
+}
+
+.boldform-entry-action-btn .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+/* Layout */
+.boldform-entry-layout {
+	display: grid;
+	grid-template-columns: 1fr 320px;
+	gap: 24px;
+	align-items: start;
+}
+
+/* Main data */
+.boldform-entry-data {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.boldform-entry-field {
+	display: grid;
+	grid-template-columns: 200px 1fr;
+	gap: 16px;
+	padding: 16px 20px;
+	border-bottom: 1px solid #f0f0f1;
+	align-items: baseline;
+}
+
+.boldform-entry-field:last-child {
+	border-bottom: 0;
+}
+
+.boldform-entry-field:nth-child(even) {
+	background: #fafbfc;
+}
+
+.boldform-entry-field__label {
+	font-size: 13px;
+	font-weight: 600;
+	color: #344054;
+}
+
+.boldform-entry-field__value {
+	font-size: 14px;
+	color: #1d2327;
+	line-height: 1.6;
+	word-break: break-word;
+}
+
+.boldform-entry-field__empty {
+	color: #d0d5dd;
+}
+
+.boldform-entry-file-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	background: #f9fafb;
+	color: #2271b1;
+	font-size: 13px;
+	text-decoration: none;
+	transition: all 0.14s ease;
+}
+
+.boldform-entry-file-link:hover {
+	border-color: #2271b1;
+	background: #eff6ff;
+}
+
+.boldform-entry-file-link .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
+/* Sidebar meta card */
+.boldform-entry-meta-card {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 12px;
+	padding: 20px;
+}
+
+.boldform-entry-meta-card h3 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	font-size: 14px;
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.boldform-entry-meta-card h3 .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+	color: #667085;
+}
+
+.boldform-entry-meta-list {
+	display: grid;
+	gap: 14px;
+}
+
+.boldform-entry-meta-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+}
+
+.boldform-entry-meta-item__icon {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+	color: #98a2b3;
+	margin-top: 1px;
+	flex-shrink: 0;
+}
+
+.boldform-entry-meta-item__label {
+	display: block;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #98a2b3;
+	margin-bottom: 2px;
+}
+
+.boldform-entry-meta-item__value {
+	display: block;
+	font-size: 13px;
+	color: #344054;
+	font-weight: 500;
+}
+
+.boldform-entry-meta-item__link {
+	color: #2271b1;
+	text-decoration: none;
+}
+
+.boldform-entry-meta-item__link:hover {
+	text-decoration: underline;
+}
+
+.boldform-entry-meta-item__ua {
+	font-size: 11px;
+	color: #667085;
+	word-break: break-all;
+	line-height: 1.4;
+}
+
+@media screen and (max-width: 960px) {
+	.boldform-entry-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.boldform-entry-field {
+		grid-template-columns: 1fr;
+		gap: 4px;
+	}
+}
+
+@media screen and (max-width: 600px) {
+	.boldform-entry-header {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.boldform-entry-header__right {
+		width: 100%;
+		justify-content: flex-start;
+	}
+}
+
+/* Legacy meta (keep for backwards compat) */
+.boldform-entry-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.boldform-entry-meta__row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.boldform-entry-meta__label {
+	color: #646970;
+	flex-shrink: 0;
+}
