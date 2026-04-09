@@ -160,6 +160,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'wp_ajax_boldform_lite_save_form', $this->admin, 'ajax_save_form' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_send_test_mail', $this->admin, 'ajax_send_test_mail' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_update_entry_status', $this->admin, 'ajax_update_entry_status' );
+		$this->loader->add_action( 'wp_ajax_boldform_lite_toggle_form_status', $this->admin, 'ajax_toggle_form_status' );
 		$this->loader->add_action( 'phpmailer_init', $this->admin, 'configure_smtp' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $this->shortcode, 'register_assets' );
 		$this->loader->add_action( 'init', $this->shortcode, 'register_shortcode' );

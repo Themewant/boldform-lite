@@ -521,118 +521,139 @@ class BoldForm_Lite_Admin {
 			</div>
 			<?php $this->render_admin_notice( $notice ); ?>
 
-			<ul class="boldform-view-tabs">
-				<li>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>"<?php echo ! $is_trash ? ' class="current"' : ''; ?>>
-						<?php esc_html_e( 'All', 'boldform-lite' ); ?>
-						<span class="count">(<?php echo absint( $all_count ); ?>)</span>
-					</a>
-				</li>
-				<li>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite&form_status=trash' ) ); ?>"<?php echo $is_trash ? ' class="current"' : ''; ?>>
-						<?php esc_html_e( 'Trash', 'boldform-lite' ); ?>
-						<span class="count">(<?php echo absint( $trash_count ); ?>)</span>
-					</a>
-				</li>
-			</ul>
+			<div class="boldform-forms-tabs">
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>" class="boldform-forms-tab<?php echo ! $is_trash ? ' is-active' : ''; ?>">
+					<?php esc_html_e( 'All Forms', 'boldform-lite' ); ?> <span class="boldform-forms-tab__count"><?php echo absint( $all_count ); ?></span>
+				</a>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite&form_status=trash' ) ); ?>" class="boldform-forms-tab<?php echo $is_trash ? ' is-active' : ''; ?>">
+					<?php esc_html_e( 'Trash', 'boldform-lite' ); ?> <span class="boldform-forms-tab__count"><?php echo absint( $trash_count ); ?></span>
+				</a>
+			</div>
 
 			<form method="post" action="<?php echo esc_url( $form_action_url ); ?>">
 				<?php wp_nonce_field( 'boldform_lite_bulk_action', 'boldform_bulk_nonce' ); ?>
 
 				<div class="boldform-table-card">
 					<div class="boldform-bulk-bar">
-						<select name="boldform_bulk_action" id="boldform-bulk-action">
-							<option value=""><?php esc_html_e( 'Bulk actions', 'boldform-lite' ); ?></option>
-							<?php if ( $is_trash ) : ?>
-								<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
-								<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
-							<?php else : ?>
-								<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
-							<?php endif; ?>
-						</select>
-						<input type="submit" class="button action" value="<?php esc_attr_e( 'Apply', 'boldform-lite' ); ?>">
+						<input type="checkbox" id="boldform-select-all" class="boldform-bulk-check">
+						<div class="boldform-bulk-action-wrap">
+							<select name="boldform_bulk_action" id="boldform-bulk-action">
+								<option value=""><?php esc_html_e( 'Bulk Actions', 'boldform-lite' ); ?></option>
+								<?php if ( $is_trash ) : ?>
+									<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
+									<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
+								<?php else : ?>
+									<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+								<?php endif; ?>
+							</select>
+							<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
+						</div>
 					</div>
 
-					<table class="widefat fixed striped">
+					<table class="boldform-forms-table">
 						<thead>
 							<tr>
-								<td class="manage-column column-cb check-column">
-									<input type="checkbox" id="boldform-select-all">
-								</td>
-								<th><?php esc_html_e( 'Form Title', 'boldform-lite' ); ?></th>
-								<th><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></th>
-								<th><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></th>
-								<th><?php esc_html_e( 'Fields', 'boldform-lite' ); ?></th>
-								<th><?php esc_html_e( 'Updated', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-cb"></th>
+								<th class="boldform-col-title"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-shortcode"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-entries"><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-status"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-date"><?php esc_html_e( 'Updated', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-actions"></th>
 							</tr>
 						</thead>
 						<tbody>
 							<?php if ( empty( $forms ) ) : ?>
-								<tr class="boldform-empty-row">
-									<td colspan="6">
-										<?php $is_trash ? esc_html_e( 'No forms in trash.', 'boldform-lite' ) : esc_html_e( 'No forms found yet. Click "Add New" to create your first form.', 'boldform-lite' ); ?>
+								<tr>
+									<td colspan="7" class="boldform-forms-empty">
+										<?php if ( $is_trash ) : ?>
+											<span class="dashicons dashicons-trash"></span>
+											<p><?php esc_html_e( 'Trash is empty.', 'boldform-lite' ); ?></p>
+										<?php else : ?>
+											<span class="dashicons dashicons-feedback"></span>
+											<p><?php esc_html_e( 'No forms yet. Create your first form!', 'boldform-lite' ); ?></p>
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder' ) ); ?>" class="boldform-btn-add"><?php esc_html_e( 'Add New Form', 'boldform-lite' ); ?></a>
+										<?php endif; ?>
 									</td>
 								</tr>
 							<?php else : ?>
 								<?php foreach ( $forms as $form ) : ?>
+									<?php
+									$form_id_int   = absint( $form->id );
+									$form_entries  = absint( $entry_counts[ (int) $form->id ] ?? 0 );
+									$form_fields   = count( $this->extract_fields_from_record( $form ) );
+									$shortcode_str = '[boldform id="' . $form_id_int . '"]';
+									?>
 									<tr>
-										<th class="check-column">
-											<input type="checkbox" name="boldform_form_ids[]" value="<?php echo absint( $form->id ); ?>">
-										</th>
-										<td>
-											<strong>
+										<td class="boldform-col-cb"><input type="checkbox" name="boldform_form_ids[]" value="<?php echo $form_id_int; ?>"></td>
+										<td class="boldform-col-title">
+											<div class="boldform-form-title-wrap">
 												<?php if ( $is_trash ) : ?>
-													<?php echo esc_html( (string) $form->title ); ?>
+													<strong><?php echo esc_html( (string) $form->title ); ?></strong>
+													<div class="boldform-form-row-actions">
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'restore', (int) $form->id ) ); ?>"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></a>
+														<span class="boldform-form-row-sep">|</span>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'delete', (int) $form->id ) ); ?>" class="boldform-action-danger" onclick="return confirm('<?php echo esc_js( __( 'Delete permanently?', 'boldform-lite' ) ); ?>');"><?php esc_html_e( 'Delete', 'boldform-lite' ); ?></a>
+													</div>
 												<?php else : ?>
-													<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . absint( $form->id ) ) ); ?>">
+													<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id_int ) ); ?>" class="boldform-form-title-link">
 														<?php echo esc_html( (string) $form->title ); ?>
 													</a>
-												<?php endif; ?>
-											</strong>
-											<div class="row-actions">
-												<?php if ( $is_trash ) : ?>
-													<span class="untrash">
-														<a href="<?php echo esc_url( $this->get_form_action_url( 'restore', (int) $form->id ) ); ?>">
-															<?php esc_html_e( 'Restore', 'boldform-lite' ); ?>
-														</a>
-													</span>
-													|
-													<span class="delete">
-														<a href="<?php echo esc_url( $this->get_form_action_url( 'delete', (int) $form->id ) ); ?>" onclick="return window.confirm('<?php echo esc_js( __( 'Delete this form permanently?', 'boldform-lite' ) ); ?>');">
-															<?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?>
-														</a>
-													</span>
-												<?php else : ?>
-													<span class="edit">
-														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . absint( $form->id ) ) ); ?>">
-															<?php esc_html_e( 'Edit', 'boldform-lite' ); ?>
-														</a>
-													</span>
-													|
-													<span class="duplicate">
-														<a href="<?php echo esc_url( $this->get_form_action_url( 'duplicate', (int) $form->id ) ); ?>">
-															<?php esc_html_e( 'Duplicate', 'boldform-lite' ); ?>
-														</a>
-													</span>
-													|
-													<span class="preview">
-														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . absint( $form->id ) ) ); ?>">
-															<?php esc_html_e( 'Preview', 'boldform-lite' ); ?>
-														</a>
-													</span>
-													|
-													<span class="trash">
-														<a href="<?php echo esc_url( $this->get_form_action_url( 'trash', (int) $form->id ) ); ?>">
-															<?php esc_html_e( 'Trash', 'boldform-lite' ); ?>
-														</a>
-													</span>
+													<div class="boldform-form-row-actions">
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id_int ) ); ?>"><?php esc_html_e( 'Edit', 'boldform-lite' ); ?></a>
+														<span class="boldform-form-row-sep">|</span>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'duplicate', (int) $form->id ) ); ?>"><?php esc_html_e( 'Duplicate', 'boldform-lite' ); ?></a>
+														<span class="boldform-form-row-sep">|</span>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . $form_id_int ) ); ?>"><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></a>
+														<span class="boldform-form-row-sep">|</span>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . $form_id_int ) ); ?>"><?php esc_html_e( 'Preview', 'boldform-lite' ); ?></a>
+														<span class="boldform-form-row-sep">|</span>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'trash', (int) $form->id ) ); ?>" class="boldform-action-danger"><?php esc_html_e( 'Trash', 'boldform-lite' ); ?></a>
+													</div>
 												<?php endif; ?>
 											</div>
 										</td>
-										<td><code>[boldform id="<?php echo esc_html( (string) absint( $form->id ) ); ?>"]</code></td>
-										<td><?php echo absint( $entry_counts[ (int) $form->id ] ?? 0 ); ?></td>
-										<td><?php echo esc_html( count( $this->extract_fields_from_record( $form ) ) ); ?></td>
-										<td><?php echo esc_html( isset( $form->updated_at ) ? (string) $form->updated_at : '' ); ?></td>
+										<td class="boldform-col-shortcode">
+											<button type="button" class="boldform-copy-shortcode" data-shortcode="<?php echo esc_attr( $shortcode_str ); ?>" title="<?php esc_attr_e( 'Click to copy', 'boldform-lite' ); ?>">
+												<code><?php echo esc_html( $shortcode_str ); ?></code>
+												<span class="dashicons dashicons-admin-page"></span>
+											</button>
+										</td>
+										<td class="boldform-col-entries">
+											<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . $form_id_int ) ); ?>" class="boldform-entries-link">
+												<?php echo $form_entries; ?>
+											</a>
+										</td>
+										<td class="boldform-col-status">
+											<?php $form_is_active = 'publish' === ( $form->status ?? 'publish' ); ?>
+											<label class="boldform-form-status-toggle" data-form-id="<?php echo $form_id_int; ?>">
+												<input type="checkbox"<?php echo $form_is_active ? ' checked' : ''; ?>>
+												<span class="boldform-form-status-toggle__track"><span class="boldform-form-status-toggle__thumb"></span></span>
+												<span class="boldform-form-status-toggle__label"><?php echo $form_is_active ? esc_html__( 'Active', 'boldform-lite' ) : esc_html__( 'Inactive', 'boldform-lite' ); ?></span>
+											</label>
+										</td>
+										<td class="boldform-col-date"><?php echo esc_html( isset( $form->updated_at ) ? wp_date( get_option( 'date_format' ), strtotime( (string) $form->updated_at ) ) : '—' ); ?></td>
+										<td class="boldform-col-actions">
+											<div class="boldform-form-actions-dd">
+												<button type="button" class="boldform-form-actions-btn" title="<?php esc_attr_e( 'Actions', 'boldform-lite' ); ?>">
+													<span class="dashicons dashicons-ellipsis"></span>
+												</button>
+												<div class="boldform-form-actions-menu">
+													<?php if ( $is_trash ) : ?>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'restore', (int) $form->id ) ); ?>"><span class="dashicons dashicons-undo"></span> <?php esc_html_e( 'Restore', 'boldform-lite' ); ?></a>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'delete', (int) $form->id ) ); ?>" class="boldform-action-danger" onclick="return confirm('<?php echo esc_js( __( 'Delete permanently?', 'boldform-lite' ) ); ?>');"><span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Delete', 'boldform-lite' ); ?></a>
+													<?php else : ?>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id_int ) ); ?>"><span class="dashicons dashicons-edit"></span> <?php esc_html_e( 'Edit', 'boldform-lite' ); ?></a>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . $form_id_int ) ); ?>"><span class="dashicons dashicons-email-alt"></span> <?php esc_html_e( 'Entries', 'boldform-lite' ); ?></a>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . $form_id_int ) ); ?>"><span class="dashicons dashicons-visibility"></span> <?php esc_html_e( 'Preview', 'boldform-lite' ); ?></a>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'duplicate', (int) $form->id ) ); ?>"><span class="dashicons dashicons-admin-page"></span> <?php esc_html_e( 'Duplicate', 'boldform-lite' ); ?></a>
+														<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings' ) ); ?>"><span class="dashicons dashicons-admin-generic"></span> <?php esc_html_e( 'Settings', 'boldform-lite' ); ?></a>
+														<hr>
+														<a href="<?php echo esc_url( $this->get_form_action_url( 'trash', (int) $form->id ) ); ?>" class="boldform-action-danger"><span class="dashicons dashicons-trash"></span> <?php esc_html_e( 'Trash', 'boldform-lite' ); ?></a>
+													<?php endif; ?>
+												</div>
+											</div>
+										</td>
 									</tr>
 								<?php endforeach; ?>
 							<?php endif; ?>
@@ -642,16 +663,50 @@ class BoldForm_Lite_Admin {
 			</form>
 
 			<script>
-			(function(){
-				var selectAll = document.getElementById('boldform-select-all');
-				if (!selectAll) return;
-				selectAll.addEventListener('change', function(){
-					var boxes = document.querySelectorAll('input[name="boldform_form_ids[]"]');
-					for (var i = 0; i < boxes.length; i++) {
-						boxes[i].checked = selectAll.checked;
-					}
+			jQuery(function($){
+				// Select all checkbox.
+				$('#boldform-select-all').on('change', function(){
+					$('input[name="boldform_form_ids[]"]').prop('checked', this.checked);
 				});
-			})();
+
+				// Copy shortcode.
+				$('.boldform-copy-shortcode').on('click', function(e){
+					e.preventDefault();
+					var sc = $(this).data('shortcode');
+					if (navigator.clipboard) {
+						navigator.clipboard.writeText(sc);
+					} else {
+						var $t = $('<textarea>').val(sc).appendTo('body').select();
+						document.execCommand('copy');
+						$t.remove();
+					}
+					var $btn = $(this);
+					$btn.addClass('is-copied');
+					setTimeout(function(){ $btn.removeClass('is-copied'); }, 1500);
+				});
+
+				// Actions dropdown.
+				$('.boldform-form-actions-btn').on('click', function(e){
+					e.stopPropagation();
+					var $dd = $(this).closest('.boldform-form-actions-dd');
+					var wasOpen = $dd.hasClass('is-open');
+					$('.boldform-form-actions-dd').removeClass('is-open');
+					if (!wasOpen) $dd.addClass('is-open');
+				});
+				$(document).on('click', function(){ $('.boldform-form-actions-dd').removeClass('is-open'); });
+
+				// Form status toggle.
+				var statusNonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_form_status' ) ); ?>';
+				$('.boldform-form-status-toggle input').on('change', function(){
+					var $toggle = $(this).closest('.boldform-form-status-toggle');
+					var formId = $toggle.data('form-id');
+					var isActive = $(this).is(':checked');
+					var newStatus = isActive ? 'publish' : 'draft';
+					var $label = $toggle.find('.boldform-form-status-toggle__label');
+					$label.text(isActive ? '<?php echo esc_js( __( 'Active', 'boldform-lite' ) ); ?>' : '<?php echo esc_js( __( 'Inactive', 'boldform-lite' ) ); ?>');
+					$.post(ajaxurl, { action: 'boldform_lite_toggle_form_status', _ajax_nonce: statusNonce, form_id: formId, status: newStatus });
+				});
+			});
 			</script>
 		</div>
 		<?php
@@ -2279,6 +2334,27 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @return void
 	 */
+	public function ajax_toggle_form_status() {
+		check_ajax_referer( 'boldform_lite_form_status' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
+		}
+
+		$form_id = isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0;
+		$status  = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
+
+		if ( ! $form_id || ! in_array( $status, array( 'publish', 'draft' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'boldform-lite' ) ) );
+		}
+
+		global $wpdb;
+
+		$wpdb->update( $this->plugin->get_forms_table_name(), array( 'status' => $status ), array( 'id' => $form_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		wp_send_json_success( array( 'status' => $status ) );
+	}
+
 	public function ajax_update_entry_status() {
 		check_ajax_referer( 'boldform_lite_entry_status' );
 

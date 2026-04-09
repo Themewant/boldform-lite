@@ -133,6 +133,11 @@ class BoldForm_Lite_Shortcode {
 			return '';
 		}
 
+		// Inactive forms should not render on the frontend.
+		if ( isset( $form_record->status ) && 'draft' === $form_record->status ) {
+			return '';
+		}
+
 		$structure     = $this->extract_structure_from_record( $form_record );
 		$form_settings = $this->extract_settings_from_record( $form_record );
 		$this->current_form_settings = $form_settings;
