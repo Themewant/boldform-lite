@@ -460,7 +460,7 @@ class BoldForm_Lite_Shortcode {
 			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
 			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
 			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? (string) $decoded['button_icon_svg'] : '',
+			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
 			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
 			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
 			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
@@ -859,15 +859,19 @@ class BoldForm_Lite_Shortcode {
 			}
 			$icon = '<span class="dashicons ' . esc_attr( $settings['button_icon_dashicon'] ) . '"' . $icon_style_attr . '></span>';
 		} elseif ( 'svg' === $icon_type && ! empty( $settings['button_icon_svg'] ) ) {
-			$svg_style = '';
-			if ( $icon_size && 18 !== $icon_size ) {
-				$svg_style .= 'width:' . $icon_size . 'px;height:' . $icon_size . 'px;';
-			}
+			$img_w       = ( $icon_size && 18 !== $icon_size ) ? $icon_size : 18;
+			$svg_url     = $settings['button_icon_svg'];
+			$svg_style   = 'width:' . $img_w . 'px;height:' . $img_w . 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
 			if ( $icon_color ) {
-				$svg_style .= 'color:' . esc_attr( $icon_color ) . ';fill:' . esc_attr( $icon_color ) . ';';
+				$svg_style .= 'fill:' . esc_attr( $icon_color ) . ';color:' . esc_attr( $icon_color ) . ';';
 			}
-			$svg_style_attr = $svg_style ? ' style="' . esc_attr( $svg_style ) . '"' : '';
-			$icon = '<span class="boldform-btn-icon-svg"' . $svg_style_attr . '>' . $settings['button_icon_svg'] . '</span>';
+			// Try to inline the SVG so fill/color CSS applies.
+			$inline_svg = $this->get_inline_svg( $svg_url, $img_w, $icon_color );
+			if ( $inline_svg ) {
+				$icon = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true">' . $inline_svg . '</span>';
+			} else {
+				$icon = '<img src="' . esc_url( $svg_url ) . '" class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" alt="">';
+			}
 		}
 
 		// No valid icon resolved — return text only.
@@ -884,6 +888,119 @@ class BoldForm_Lite_Shortcode {
 		$inner = 'left' === $position ? $icon . $text : $text . $icon;
 
 		return '<span class="boldform-btn-inner" style="display:inline-flex;align-items:center;gap:' . esc_attr( $gap ) . 'px;">' . $inner . '</span>';
+	}
+
+	/**
+	 * Reads an uploaded SVG file by URL and returns sanitized inline SVG markup
+	 * with size and fill applied, so CSS color controls work.
+	 *
+	 * Returns empty string on failure so caller falls back to <img>.
+	 *
+	 * @param string $url        Attachment URL.
+	 * @param int    $size       Width/height in px.
+	 * @param string $fill_color Hex color or empty.
+	 * @return string
+	 */
+	private function get_inline_svg( $url, $size, $fill_color = '' ) {
+		// Only allow files from the uploads directory.
+		$upload_dir = wp_upload_dir();
+		$base_url   = $upload_dir['baseurl'];
+		$base_dir   = $upload_dir['basedir'];
+
+		if ( strpos( $url, $base_url ) !== 0 ) {
+			return '';
+		}
+
+		$relative = substr( $url, strlen( $base_url ) );
+		$path     = $base_dir . $relative;
+
+		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$svg = file_get_contents( $path );
+		if ( empty( $svg ) ) {
+			return '';
+		}
+
+		// Parse with DOMDocument for reliable sanitization.
+		$dom = new \DOMDocument();
+		libxml_use_internal_errors( true );
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$dom->loadXML( $svg );
+		libxml_clear_errors();
+
+		$svg_el = $dom->getElementsByTagName( 'svg' )->item( 0 );
+		if ( ! $svg_el ) {
+			return '';
+		}
+
+		// Set size.
+		$svg_el->setAttribute( 'width', (string) $size );
+		$svg_el->setAttribute( 'height', (string) $size );
+		$svg_el->removeAttribute( 'x' );
+		$svg_el->removeAttribute( 'y' );
+		$svg_el->removeAttribute( 'xml:space' );
+		$svg_el->removeAttribute( 'version' );
+		$svg_el->removeAttribute( 'id' );
+
+		// Apply color — set fill on root SVG so currentColor cascade works.
+		if ( $fill_color ) {
+			$existing_style = $svg_el->getAttribute( 'style' );
+			// Strip enable-background junk from Illustrator exports.
+			$existing_style = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
+			$svg_el->setAttribute( 'style', trim( $existing_style . ';fill:' . esc_attr( $fill_color ) . ';', ';' ) );
+		} else {
+			// Remove Illustrator style bloat even when no color override.
+			$existing_style = $svg_el->getAttribute( 'style' );
+			$clean = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
+			if ( trim( $clean ) !== '' ) {
+				$svg_el->setAttribute( 'style', trim( $clean, ';' ) );
+			} else {
+				$svg_el->removeAttribute( 'style' );
+			}
+		}
+
+		// Remove script/event-handler nodes recursively for safety.
+		$this->remove_unsafe_svg_nodes( $dom );
+
+		// Serialize just the <svg> element.
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$output = $dom->saveXML( $svg_el );
+
+		return $output ? $output : '';
+	}
+
+	/**
+	 * Removes unsafe nodes (script, foreignObject, on* attributes) from SVG DOM.
+	 *
+	 * @param \DOMDocument $dom The SVG document.
+	 * @return void
+	 */
+	private function remove_unsafe_svg_nodes( \DOMDocument $dom ) {
+		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use' );
+		foreach ( $unsafe_tags as $tag ) {
+			foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
+				$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			}
+		}
+		// Strip on* event attributes from all elements.
+		$xpath = new \DOMXPath( $dom );
+		foreach ( iterator_to_array( $xpath->query( '//*[@*]' ) ) as $el ) {
+			if ( ! $el instanceof \DOMElement ) {
+				continue;
+			}
+			$attrs_to_remove = array();
+			foreach ( $el->attributes as $attr ) {
+				if ( stripos( $attr->name, 'on' ) === 0 || stripos( $attr->name, 'xlink:href' ) === 0 ) {
+					$attrs_to_remove[] = $attr->name;
+				}
+			}
+			foreach ( $attrs_to_remove as $name ) {
+				$el->removeAttribute( $name );
+			}
+		}
 	}
 
 	private function render_terms_field( $field_name, $content, $required ) {

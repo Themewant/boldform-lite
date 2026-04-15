@@ -746,15 +746,11 @@
 	vertical-align: middle;
 }
 
-.boldform-canvas-submit__button .boldform-btn-icon-svg {
-	display: inline-flex;
-	align-items: center;
-}
-
-.boldform-canvas-submit__button .boldform-btn-icon-svg svg {
+.boldform-canvas-submit__button img.boldform-btn-icon-svg {
 	width: 18px;
 	height: 18px;
-	fill: currentColor;
+	display: inline-block;
+	vertical-align: middle;
 }
 
 /* Submit button field — rendered as a draggable field */
@@ -1839,6 +1835,89 @@
 .boldform-color-wrap input[type="color"]::-moz-color-swatch {
 	border: 0;
 	border-radius: 999px;
+}
+
+.boldform-svg-preview {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	padding: 10px 12px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+}
+
+.boldform-svg-preview__img {
+	width: 28px;
+	height: 28px;
+	padding: 4px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}
+
+.boldform-svg-preview__name {
+	flex: 1;
+	font-size: 12px;
+	color: #64748b;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.boldform-svg-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	background: none;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: color 0.15s, background 0.15s;
+}
+
+.boldform-svg-remove:hover {
+	color: #ef4444;
+	background: #fef2f2;
+}
+
+.boldform-svg-remove .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.boldform-svg-upload-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	color: #475569;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.boldform-svg-upload-btn:hover {
+	border-color: #94a3b8;
+	color: #1e293b;
+	background: #f8fafc;
+}
+
+.boldform-svg-upload-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	color: #94a3b8;
 }
 
 .boldform-settings-section__head {

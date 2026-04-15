@@ -814,10 +814,13 @@ jQuery(
 			if ( 'dashicon' === type ) {
 				icon = '<span class="dashicons ' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '"' + styleAttr + '></span>';
 			} else if ( 'svg' === type && state.formSettings.button_icon_svg ) {
-				var svgStyle = '';
-				if ( size && size !== '18' ) svgStyle += 'width:' + escapeHtml( size ) + 'px;height:' + escapeHtml( size ) + 'px;';
-				if ( color ) svgStyle += 'color:' + escapeHtml( color ) + ';fill:' + escapeHtml( color ) + ';';
-				icon = '<span class="boldform-btn-icon-svg"' + ( svgStyle ? ' style="' + svgStyle + '"' : '' ) + '>' + state.formSettings.button_icon_svg + '</span>';
+				var imgW = ( size && size !== '18' ) ? escapeHtml( size ) : '18';
+				var imgStyle = 'width:' + imgW + 'px;height:' + imgW + 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
+				if ( color ) {
+					// Approximate color in builder preview via CSS filter.
+					imgStyle += 'filter:var(--bf-svg-filter,none);';
+				}
+				icon = '<img src="' + escapeHtml( state.formSettings.button_icon_svg ) + '" class="boldform-btn-icon-svg" style="' + imgStyle + '" alt="">';
 			}
 			return icon;
 		}
@@ -1290,21 +1293,95 @@ jQuery(
 							'<option value="svg"' + ( 'svg' === state.formSettings.button_icon_type ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.customSvg || 'Custom SVG' ) + '</option>' +
 						'</select>' +
 					'</div>' +
-					( 'dashicon' === state.formSettings.button_icon_type ?
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-button-icon-dashicon">' + escapeHtml( boldformLiteBuilder.labels.dashiconClass || 'Dashicon class' ) + '</label>' +
+					( 'dashicon' === state.formSettings.button_icon_type ? ( function () {
+						var dashicons = [
+							'dashicons-arrow-right-alt',
+							'dashicons-arrow-right-alt2',
+							'dashicons-arrow-right',
+							'dashicons-arrow-left-alt',
+							'dashicons-arrow-left-alt2',
+							'dashicons-arrow-left',
+							'dashicons-arrow-up-alt',
+							'dashicons-arrow-up-alt2',
+							'dashicons-arrow-up',
+							'dashicons-arrow-down-alt',
+							'dashicons-arrow-down-alt2',
+							'dashicons-arrow-down',
+							'dashicons-controls-forward',
+							'dashicons-controls-back',
+							'dashicons-controls-play',
+							'dashicons-redo',
+							'dashicons-undo',
+							'dashicons-update',
+							'dashicons-leftright',
+							'dashicons-sort',
+							'dashicons-randomize',
+							'dashicons-external',
+							'dashicons-migrate',
+							'dashicons-move',
+							'dashicons-download',
+							'dashicons-upload',
+							'dashicons-exit',
+							'dashicons-plus',
+							'dashicons-plus-alt',
+							'dashicons-plus-alt2',
+							'dashicons-minus',
+							'dashicons-yes',
+							'dashicons-yes-alt',
+							'dashicons-no',
+							'dashicons-no-alt',
+							'dashicons-dismiss',
+							'dashicons-saved',
+							'dashicons-email',
+							'dashicons-email-alt',
+							'dashicons-cart',
+							'dashicons-heart',
+							'dashicons-star-filled',
+							'dashicons-lock',
+							'dashicons-unlock',
+							'dashicons-search',
+							'dashicons-share',
+							'dashicons-share-alt',
+							'dashicons-share-alt2',
+							'dashicons-insert',
+							'dashicons-paperclip',
+							'dashicons-edit'
+						];
+						var current = state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt';
+						var opts = '';
+						for ( var i = 0; i < dashicons.length; i++ ) {
+							opts += '<option value="' + dashicons[ i ] + '"' + ( dashicons[ i ] === current ? ' selected' : '' ) + '>' + dashicons[ i ].replace( 'dashicons-', '' ) + '</option>';
+						}
+						return '<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-button-icon-dashicon">' + escapeHtml( boldformLiteBuilder.labels.dashiconClass || 'Dashicon' ) + '</label>' +
 							'<div style="display:flex;align-items:center;gap:8px;">' +
-								'<input type="text" id="boldform-setting-button-icon-dashicon" value="' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '" placeholder="dashicons-arrow-right-alt" style="flex:1;">' +
-								'<span class="dashicons ' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '" style="font-size:20px;width:20px;height:20px;color:#555;"></span>' +
+								'<select id="boldform-setting-button-icon-dashicon" style="flex:1;">' + opts + '</select>' +
+								'<span class="dashicons ' + escapeHtml( current ) + '" style="font-size:20px;width:20px;height:20px;color:#555;"></span>' +
 							'</div>' +
-							'<p><a href="https://developer.wordpress.org/resource/dashicons/" target="_blank" rel="noopener">' + escapeHtml( boldformLiteBuilder.labels.browseDashicons || 'Browse all Dashicons' ) + '</a></p>' +
-						'</div>' : ''
+						'</div>';
+					}() ) : ''
 					) +
-					( 'svg' === state.formSettings.button_icon_type ?
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-button-icon-svg">' + escapeHtml( boldformLiteBuilder.labels.svgCode || 'SVG code' ) + '</label>' +
-							'<textarea id="boldform-setting-button-icon-svg" rows="3" placeholder="<svg>...</svg>">' + escapeHtml( state.formSettings.button_icon_svg || '' ) + '</textarea>' +
-						'</div>' : ''
+					( 'svg' === state.formSettings.button_icon_type ? ( function () {
+						var svgUrl = state.formSettings.button_icon_svg || '';
+						return '<div class="boldform-setting-group">' +
+							'<label>' + escapeHtml( boldformLiteBuilder.labels.svgCode || 'SVG Icon' ) + '</label>' +
+							'<div class="boldform-svg-upload-wrap">' +
+								( svgUrl ?
+									'<div class="boldform-svg-preview">' +
+										'<img src="' + escapeHtml( svgUrl ) + '" class="boldform-svg-preview__img" alt="icon">' +
+										'<span class="boldform-svg-preview__name">' + escapeHtml( svgUrl.split( '/' ).pop() ) + '</span>' +
+										'<button type="button" class="boldform-svg-remove" title="Remove">' +
+											'<span class="dashicons dashicons-no-alt"></span>' +
+										'</button>' +
+									'</div>' : ''
+								) +
+								'<button type="button" class="boldform-svg-upload-btn" id="boldform-svg-upload-btn">' +
+									'<span class="dashicons dashicons-upload"></span> ' +
+									escapeHtml( svgUrl ? ( boldformLiteBuilder.labels.changeSvg || 'Change SVG' ) : ( boldformLiteBuilder.labels.uploadSvg || 'Upload SVG' ) ) +
+								'</button>' +
+							'</div>' +
+						'</div>';
+					}() ) : ''
 					) +
 					( 'none' !== ( state.formSettings.button_icon_type || 'none' ) ?
 						'<div class="boldform-setting-group">' +
@@ -2638,7 +2715,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-svg, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -2646,12 +2723,6 @@ jQuery(
 
 				if ( isSubmitInput ) {
 					state.formSettings.button_text = $( '#boldform-setting-button-text' ).val();
-					if ( $( '#boldform-setting-button-icon-dashicon' ).length ) {
-						state.formSettings.button_icon_dashicon = $( '#boldform-setting-button-icon-dashicon' ).val() || 'dashicons-arrow-right-alt';
-					}
-					if ( $( '#boldform-setting-button-icon-svg' ).length ) {
-						state.formSettings.button_icon_svg = $( '#boldform-setting-button-icon-svg' ).val() || '';
-					}
 					if ( $( '#boldform-setting-button-icon-gap' ).length ) {
 						state.formSettings.button_icon_gap = $( '#boldform-setting-button-icon-gap' ).val() || '8';
 					}
@@ -2737,13 +2808,16 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
 
 				if ( isSubmitSel ) {
 					state.formSettings.button_icon_type = $( '#boldform-setting-button-icon-type' ).val() || 'none';
+					if ( $( '#boldform-setting-button-icon-dashicon' ).length ) {
+						state.formSettings.button_icon_dashicon = $( '#boldform-setting-button-icon-dashicon' ).val() || 'dashicons-arrow-right-alt';
+					}
 					state.formSettings.button_icon_position = $( '#boldform-setting-button-icon-position' ).val() || 'right';
 					renderAll();
 					return;
@@ -2790,6 +2864,30 @@ jQuery(
 				renderAll();
 			}
 		);
+
+		// SVG icon upload via WP media library.
+		$( document ).on( 'click', '#boldform-svg-upload-btn', function ( e ) {
+			e.preventDefault();
+			var frame = wp.media( {
+				title: boldformLiteBuilder.labels.uploadSvg || 'Upload SVG',
+				button: { text: boldformLiteBuilder.labels.useSvg || 'Use this SVG' },
+				multiple: false,
+				library: { type: 'image/svg+xml' }
+			} );
+			frame.on( 'select', function () {
+				var attachment = frame.state().get( 'selection' ).first().toJSON();
+				state.formSettings.button_icon_svg = attachment.url || '';
+				renderAll();
+			} );
+			frame.open();
+		} );
+
+		// SVG icon remove.
+		$( document ).on( 'click', '.boldform-svg-remove', function ( e ) {
+			e.preventDefault();
+			state.formSettings.button_icon_svg = '';
+			renderAll();
+		} );
 
 		$( document ).on(
 			'input change',
@@ -2938,6 +3036,11 @@ jQuery(
 				state.formTitle = $( this ).val();
 			}
 		);
+
+		// Live color preview swatch update for all color pickers.
+		$( document ).on( 'input', '.boldform-color-wrap input[type="color"]', function () {
+			$( this ).siblings( '.boldform-color-preview' ).css( 'background', $( this ).val() );
+		} );
 
 		// Design theme card click.
 		$( document ).on( 'click', '.boldform-theme-card', function () {

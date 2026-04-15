@@ -368,15 +368,11 @@ input[data-boldform-picker] {
 	line-height: 18px;
 }
 
-.boldform-lite-form__submit .boldform-btn-icon-svg {
-	display: inline-flex;
-	align-items: center;
-}
-
-.boldform-lite-form__submit .boldform-btn-icon-svg svg {
+.boldform-lite-form__submit img.boldform-btn-icon-svg {
 	width: 18px;
 	height: 18px;
-	fill: currentColor;
+	display: inline-block;
+	vertical-align: middle;
 }
 
 .boldform-lite-form__submit:focus-visible {

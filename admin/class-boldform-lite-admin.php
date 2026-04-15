@@ -176,6 +176,39 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Allow SVG uploads in the media library.
+	 *
+	 * @param array<string, string> $mimes Allowed mime types.
+	 * @return array<string, string>
+	 */
+	public function allow_svg_upload( $mimes ) {
+		$mimes['svg']  = 'image/svg+xml';
+		$mimes['svgz'] = 'image/svg+xml';
+		return $mimes;
+	}
+
+	/**
+	 * Fix SVG file type detection on upload.
+	 *
+	 * @param array<string, string|false> $data     File data.
+	 * @param string                      $file     Full path to the file.
+	 * @param string                      $filename The name of the file.
+	 * @param string[]|null               $mimes    Allowed mime types.
+	 * @return array<string, string|false>
+	 */
+	public function fix_svg_filetype( $data, $file, $filename, $mimes ) {
+		if ( ! empty( $data['ext'] ) && ! empty( $data['type'] ) ) {
+			return $data;
+		}
+		$ext = pathinfo( $filename, PATHINFO_EXTENSION );
+		if ( 'svg' === $ext || 'svgz' === $ext ) {
+			$data['ext']  = $ext;
+			$data['type'] = 'image/svg+xml';
+		}
+		return $data;
+	}
+
+	/**
 	 * Enqueues admin assets.
 	 *
 	 * @param string $hook_suffix Current admin page hook.
@@ -217,6 +250,8 @@ class BoldForm_Lite_Admin {
 				BOLDFORM_LITE_VERSION,
 				true
 			);
+
+			wp_enqueue_media();
 
 			wp_enqueue_script(
 				'boldform-lite-builder',
@@ -342,9 +377,11 @@ class BoldForm_Lite_Admin {
 						'buttonIconType'  => __( 'Icon', 'boldform-lite' ),
 						'dashicon'        => __( 'Dashicon', 'boldform-lite' ),
 						'customSvg'       => __( 'Custom SVG', 'boldform-lite' ),
-						'dashiconClass'   => __( 'Dashicon class', 'boldform-lite' ),
-						'browseDashicons' => __( 'Browse all Dashicons', 'boldform-lite' ),
-						'svgCode'         => __( 'SVG code', 'boldform-lite' ),
+						'dashiconClass'   => __( 'Dashicon', 'boldform-lite' ),
+						'uploadSvg'       => __( 'Upload SVG', 'boldform-lite' ),
+						'changeSvg'       => __( 'Change SVG', 'boldform-lite' ),
+						'useSvg'          => __( 'Use this SVG', 'boldform-lite' ),
+						'svgCode'         => __( 'SVG Icon', 'boldform-lite' ),
 						'iconPosition'    => __( 'Icon position', 'boldform-lite' ),
 						'iconGap'         => __( 'Icon gap (px)', 'boldform-lite' ),
 						'cssClass'        => __( 'CSS Class', 'boldform-lite' ),
@@ -446,6 +483,14 @@ class BoldForm_Lite_Admin {
 					'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
 				)
 			);
+
+			/**
+			 * Fires after preview page assets are enqueued.
+			 *
+			 * Pro or other plugins should hook here to register and enqueue
+			 * their own assets for the admin form preview page.
+			 */
+			do_action( 'boldform_preview_enqueue_assets' );
 		}
 
 		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook );
