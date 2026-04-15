@@ -245,7 +245,6 @@ input[data-boldform-picker] {
 
 .boldform-lite-form__actions {
 	display: flex;
-	margin-top: 4px;
 }
 
 .boldform-lite-form__actions.is-align-left {
@@ -503,8 +502,10 @@ input[data-boldform-picker] {
 }
 
 .boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
-.boldform-block-wrap .boldform-lite-form__field select {
+.boldform-block-wrap .boldform-lite-form__field select,
+.boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
 	height: var(--bfb-field-height);
+	min-height: var(--bfb-field-height);
 }
 
 .boldform-block-wrap .boldform-lite-form__field textarea {
@@ -513,7 +514,8 @@ input[data-boldform-picker] {
 
 .boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
 .boldform-block-wrap .boldform-lite-form__field textarea,
-.boldform-block-wrap .boldform-lite-form__field select {
+.boldform-block-wrap .boldform-lite-form__field select,
+.boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
 	padding: var(--bfb-field-padding);
 	background-color: var(--bfb-field-bg);
 	color: var(--bfb-field-text);
@@ -524,7 +526,8 @@ input[data-boldform-picker] {
 
 .boldform-block-wrap .boldform-lite-form__field input:focus,
 .boldform-block-wrap .boldform-lite-form__field textarea:focus,
-.boldform-block-wrap .boldform-lite-form__field select:focus {
+.boldform-block-wrap .boldform-lite-form__field select:focus,
+.boldform-block-wrap .boldform-lite-form__field .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bfb-focus-color);
 	box-shadow: 0 0 0 1px var(--bfb-focus-color);
 }
@@ -549,7 +552,8 @@ input[data-boldform-picker] {
 
 .boldform-block-wrap .boldform-lite-form__field.is-invalid input,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid textarea,
-.boldform-block-wrap .boldform-lite-form__field.is-invalid select {
+.boldform-block-wrap .boldform-lite-form__field.is-invalid select,
+.boldform-block-wrap .boldform-lite-form__field.is-invalid .bf-select__trigger {
 	border-color: var(--bfb-error-color);
 }
 
@@ -788,7 +792,7 @@ input[data-boldform-picker] {
 	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 16px);
-	background: var(--bf-field-bg, #fff);
+	background-color: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
 	font-size: var(--bf-field-font-size, 16px);
 	line-height: 1.5;
@@ -1003,4 +1007,14 @@ input[data-boldform-picker] {
 	color: #9ca3af;
 	font-size: 14px;
 	text-align: center;
+}
+
+/* Widget-level display overrides */
+.boldform-hide-ph-yes .boldform-lite-form input::placeholder,
+.boldform-hide-ph-yes .boldform-lite-form textarea::placeholder {
+	color: transparent !important;
+}
+
+.boldform-hide-labels .boldform-lite-form__label {
+	display: none !important;
 }

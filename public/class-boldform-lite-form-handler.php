@@ -168,6 +168,18 @@ class BoldForm_Lite_Form_Handler {
 			);
 		}
 
+		/**
+		 * Fires before BoldForm validates and processes a submission.
+		 *
+		 * Pro can use this to run pre-validation logic (e.g. rate limiting, geo blocking).
+		 *
+		 * @param int                              $form_id     Form ID.
+		 * @param array<string, mixed>             $request     Raw request payload.
+		 * @param array<int, array<string, mixed>> $fields      Flattened field definitions.
+		 * @param array<string, mixed>             $settings    Form settings.
+		 */
+		do_action( 'boldform_before_submission', $form_id, $request, $fields, $settings );
+
 		$captcha_result = $this->structure_contains_field_type( $fields, 'captcha' ) ? $this->validate_captcha( $captcha, $request ) : array(
 			'success' => true,
 			'message' => '',
@@ -181,6 +193,18 @@ class BoldForm_Lite_Form_Handler {
 			);
 		}
 
+		/**
+		 * Filter the raw request payload before field validation.
+		 *
+		 * Pro can use this to inject or remove values (e.g. pre-populate hidden fields,
+		 * strip fields on conditional logic evaluation).
+		 *
+		 * @param array<string, mixed>             $request  Raw request payload.
+		 * @param int                              $form_id  Form ID.
+		 * @param array<int, array<string, mixed>> $fields   Flattened field definitions.
+		 */
+		$request = apply_filters( 'boldform_submission_request', $request, $form_id, $fields );
+
 		// Convert the submitted payload into a normalized, trusted entry array before saving or emailing.
 		$validation = $this->validate_and_sanitize_fields( $fields, $request );
 
@@ -192,6 +216,26 @@ class BoldForm_Lite_Form_Handler {
 			);
 		}
 
+		/**
+		 * Filter the validated entry data before it is saved.
+		 *
+		 * Pro can mutate, enrich, or strip fields (e.g. payment metadata, calculated values).
+		 *
+		 * @param array<string, array<string, mixed>> $entry_data Normalized entry data.
+		 * @param int                                 $form_id    Form ID.
+		 * @param array<string, mixed>                $settings   Form settings.
+		 */
+		$validation['entry_data'] = apply_filters( 'boldform_entry_data', $validation['entry_data'], $form_id, $settings );
+
+		/**
+		 * Fires before an entry is persisted to the database.
+		 *
+		 * @param int                                 $form_id    Form ID.
+		 * @param array<string, array<string, mixed>> $entry_data Normalized entry data.
+		 * @param array<string, mixed>                $settings   Form settings.
+		 */
+		do_action( 'boldform_before_entry_save', $form_id, $validation['entry_data'], $settings );
+
 		$saved = $this->save_entry( $form_id, $validation['entry_data'] );
 
 		if ( ! $saved ) {
@@ -202,14 +246,38 @@ class BoldForm_Lite_Form_Handler {
 			);
 		}
 
+		/**
+		 * Fires immediately after a new entry is saved to the database.
+		 *
+		 * Pro can use this to trigger integrations (CRM, webhooks, Zapier, Slack).
+		 *
+		 * @param int                                 $form_id    Form ID.
+		 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
+		 * @param object                              $form_record Form database row.
+		 * @param array<string, mixed>                $settings   Form settings.
+		 */
+		do_action( 'boldform_entry_saved', $form_id, $validation['entry_data'], $form_record, $settings );
+
 		$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
 
-		return $this->build_result(
+		$result = $this->build_result(
 			true,
 			$settings['thank_you_message'],
 			array(),
-			! empty( $settings['enable_redirect'] ) ? $settings['redirect_url'] : ''
+			! empty( $settings['redirect_url'] ) ? $settings['redirect_url'] : ''
 		);
+
+		/**
+		 * Filter the final submission result before it is returned to the browser.
+		 *
+		 * Pro can override the redirect URL (e.g. after payment) or success message.
+		 *
+		 * @param array<string, mixed>                $result     Result array (success, message, redirect_url, errors).
+		 * @param int                                 $form_id    Form ID.
+		 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
+		 * @param array<string, mixed>                $settings   Form settings.
+		 */
+		return apply_filters( 'boldform_submission_result', $result, $form_id, $validation['entry_data'], $settings );
 	}
 
 	/**
@@ -331,6 +399,8 @@ class BoldForm_Lite_Form_Handler {
 			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? (string) $decoded['button_icon_svg'] : '',
 			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
 			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
 			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
 			'field_style'            => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
 			'field_size'             => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
@@ -556,7 +626,7 @@ class BoldForm_Lite_Form_Handler {
 			$label    = isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '';
 			$required = ! empty( $field['required'] );
 
-			if ( in_array( $type, array( 'captcha', 'section_break', 'submit', 'paragraph', 'html_editor' ), true ) ) {
+			if ( in_array( $type, array( 'captcha', 'section_break', 'submit', 'paragraph', 'html_editor', 'page_break' ), true ) ) {
 				continue;
 			}
 
@@ -610,6 +680,23 @@ class BoldForm_Lite_Form_Handler {
 					__( '%s contains an invalid value.', 'boldform-lite' ),
 					$label ? $label : __( 'This field', 'boldform-lite' )
 				);
+				continue;
+			}
+
+			/**
+			 * Filter the validation error for a single field.
+			 *
+			 * Pro can add custom validation rules (e.g. regex patterns, date ranges,
+			 * conditional required). Return a non-empty string to mark the field invalid.
+			 *
+			 * @param string               $error    Empty string means valid; non-empty means the error message.
+			 * @param mixed                $value    Sanitized field value.
+			 * @param array<string, mixed> $field    Field definition.
+			 * @param array<string, mixed> $request  Full submission payload (for cross-field rules).
+			 */
+			$custom_validation_error = apply_filters( 'boldform_validate_field', '', $value, $field, $request );
+			if ( ! empty( $custom_validation_error ) ) {
+				$errors[ $field_id ] = sanitize_text_field( (string) $custom_validation_error );
 				continue;
 			}
 
@@ -797,8 +884,14 @@ class BoldForm_Lite_Form_Handler {
 		$file = $_FILES[ $key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- handled by wp_handle_upload.
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
-		// Validate file size.
-		$max_mb   = isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : 5;
+		// Validate file size — fixed at 2 MB in Lite; Pro can override via filter.
+		/**
+		 * Filter the maximum file upload size in megabytes.
+		 *
+		 * @param int                  $max_mb Max upload size in MB (default 2).
+		 * @param array<string, mixed> $field  Field definition.
+		 */
+		$max_mb   = apply_filters( 'boldform_max_file_size', 2, $field );
 		$max_bytes = $max_mb * 1024 * 1024;
 
 		if ( (int) $file['size'] > $max_bytes ) {

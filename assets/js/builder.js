@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -59,6 +59,8 @@ jQuery(
 				button_icon_svg: settings && settings.button_icon_svg ? settings.button_icon_svg : '',
 				button_icon_position: settings && settings.button_icon_position ? settings.button_icon_position : 'right',
 				button_icon_gap: settings && settings.button_icon_gap !== '' && typeof settings.button_icon_gap !== 'undefined' ? settings.button_icon_gap : '8',
+				button_icon_size: settings && settings.button_icon_size !== '' && typeof settings.button_icon_size !== 'undefined' ? settings.button_icon_size : '18',
+				button_icon_color: settings && settings.button_icon_color ? settings.button_icon_color : '',
 				button_color: settings && settings.button_color ? settings.button_color : 'teal',
 				field_style: settings && settings.field_style ? settings.field_style : '',
 				field_size: settings && settings.field_size ? settings.field_size : '',
@@ -82,7 +84,18 @@ jQuery(
 				admin_email_type: adminEmailType,
 				enable_admin_email: ! settings || typeof settings.enable_admin_email === 'undefined' ? true : !! settings.enable_admin_email,
 				enable_user_email: ! settings || typeof settings.enable_user_email === 'undefined' ? true : !! settings.enable_user_email,
-				admin_email: adminEmail
+				admin_email: adminEmail,
+				step_progress_style: settings && settings.step_progress_style ? settings.step_progress_style : 'bar',
+				step_progress_color: settings && settings.step_progress_color ? settings.step_progress_color : '',
+				step_btn_color: settings && settings.step_btn_color ? settings.step_btn_color : '',
+				step_btn_text_color: settings && settings.step_btn_text_color ? settings.step_btn_text_color : '',
+				step_btn_size: settings && settings.step_btn_size ? settings.step_btn_size : 'medium',
+				step_btn_radius: settings && settings.step_btn_radius !== '' && typeof settings.step_btn_radius !== 'undefined' ? Number( settings.step_btn_radius ) : '',
+				step_next_text: settings && settings.step_next_text ? settings.step_next_text : 'Next',
+				step_prev_text: settings && settings.step_prev_text ? settings.step_prev_text : 'Previous',
+				design_theme: settings && settings.design_theme ? settings.design_theme : '',
+				hide_labels: false,
+				hide_placeholders: false
 			};
 		}
 
@@ -120,7 +133,16 @@ jQuery(
 				star_color: '#f59e0b',
 				star_size: '28',
 				slider_color: '',
-				slider_height: ''
+				slider_height: '',
+				step_title: '',
+				next_text: 'page_break' === type ? 'Next' : '',
+				prev_text: 'page_break' === type ? 'Previous' : '',
+				btn_color: '',
+				btn_text_color: '',
+				btn_size: 'page_break' === type ? 'medium' : '',
+				btn_radius: '',
+				progress_color: '',
+				progress_style: 'page_break' === type ? 'bar' : ''
 			};
 		}
 
@@ -176,6 +198,15 @@ jQuery(
 			normalized.star_size = field && field.star_size ? field.star_size : '28';
 			normalized.slider_color = field && field.slider_color ? field.slider_color : '';
 			normalized.slider_height = field && field.slider_height ? field.slider_height : '';
+			normalized.step_title = field && typeof field.step_title !== 'undefined' ? field.step_title : '';
+			normalized.next_text = field && typeof field.next_text !== 'undefined' ? field.next_text : 'Next';
+			normalized.prev_text = field && typeof field.prev_text !== 'undefined' ? field.prev_text : 'Previous';
+			normalized.btn_color = field && typeof field.btn_color !== 'undefined' ? field.btn_color : '';
+			normalized.btn_text_color = field && typeof field.btn_text_color !== 'undefined' ? field.btn_text_color : '';
+			normalized.btn_size = field && typeof field.btn_size !== 'undefined' ? field.btn_size : 'medium';
+			normalized.btn_radius = field && typeof field.btn_radius !== 'undefined' ? field.btn_radius : '';
+			normalized.progress_color = field && typeof field.progress_color !== 'undefined' ? field.progress_color : '';
+			normalized.progress_style = field && typeof field.progress_style !== 'undefined' ? field.progress_style : 'bar';
 
 			return normalized;
 		}
@@ -769,19 +800,43 @@ jQuery(
 			var type = state.formSettings.button_icon_type || 'none';
 			if ( 'none' === type ) return '';
 			var icon = '';
+			var size = state.formSettings.button_icon_size || '18';
+			var color = state.formSettings.button_icon_color || '';
+			var style = '';
+			if ( size && size !== '18' ) {
+				style += 'font-size:' + escapeHtml( size ) + 'px;width:' + escapeHtml( size ) + 'px;height:' + escapeHtml( size ) + 'px;';
+			}
+			if ( color ) {
+				style += 'color:' + escapeHtml( color ) + ';';
+			}
+			var styleAttr = style ? ' style="' + style + '"' : '';
+
 			if ( 'dashicon' === type ) {
-				icon = '<span class="dashicons ' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '"></span>';
+				icon = '<span class="dashicons ' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '"' + styleAttr + '></span>';
 			} else if ( 'svg' === type && state.formSettings.button_icon_svg ) {
-				icon = '<span class="boldform-btn-icon-svg">' + state.formSettings.button_icon_svg + '</span>';
+				var svgStyle = '';
+				if ( size && size !== '18' ) svgStyle += 'width:' + escapeHtml( size ) + 'px;height:' + escapeHtml( size ) + 'px;';
+				if ( color ) svgStyle += 'color:' + escapeHtml( color ) + ';fill:' + escapeHtml( color ) + ';';
+				icon = '<span class="boldform-btn-icon-svg"' + ( svgStyle ? ' style="' + svgStyle + '"' : '' ) + '>' + state.formSettings.button_icon_svg + '</span>';
 			}
 			return icon;
 		}
 
 		function buildButtonContent() {
 			var icon = buildButtonIconHtml();
-			var text = escapeHtml( state.formSettings.button_text || 'Submit' );
+			var rawText = state.formSettings.button_text;
+			var text = escapeHtml( rawText || '' );
 			var gap = state.formSettings.button_icon_gap || '8';
-			if ( ! icon ) return text;
+
+			// No icon — show text (or default).
+			if ( ! icon ) return text || 'Submit';
+
+			// Icon-only (no text).
+			if ( ! text ) {
+				return '<span style="display:inline-flex;align-items:center;">' + icon + '</span>';
+			}
+
+			// Icon + text.
 			var style = 'display:inline-flex;align-items:center;gap:' + escapeHtml( gap ) + 'px;';
 			if ( 'left' === state.formSettings.button_icon_position ) {
 				return '<span style="' + style + '">' + icon + text + '</span>';
@@ -802,7 +857,7 @@ jQuery(
 		}
 
 		function renderInputPreview( field ) {
-			var label = '<label>' + escapeHtml( field.label || getLibraryItem( field.type ).label ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
+			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement ) ? '' : '<label>' + escapeHtml( field.label || getLibraryItem( field.type ).label ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
 			var html = '';
 
 			if ( field.type === 'name' ) {
@@ -819,6 +874,8 @@ jQuery(
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
 				return '<div class="boldform-canvas-submit is-inline"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
+			} else if ( field.type === 'page_break' ) {
+				html = '<div class="boldform-canvas-page-break"><span class="dashicons dashicons-layout"></span> ' + escapeHtml( field.label || 'Page Break' ) + ( field.step_title ? ' — <em>' + escapeHtml( field.step_title ) + '</em>' : '' ) + '</div>';
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
@@ -829,31 +886,36 @@ jQuery(
 				html = '<textarea rows="3" placeholder="' + escapeHtml( field.placeholder ) + '">' + escapeHtml( field.default_value ) + '</textarea>';
 			} else if ( field.type === 'select' ) {
 				var selectedValue = $.trim( field.default_value || '' );
+				var selectedLabel = '';
+				field.options.forEach( function ( option ) {
+					if ( $.trim( option || '' ) === selectedValue ) selectedLabel = option;
+				} );
 
-				html = '<select>';
-
-				if ( field.placeholder ) {
-					html += '<option value=""' + ( ! selectedValue ? ' selected' : '' ) + ' disabled hidden>' + escapeHtml( field.placeholder ) + '</option>';
+				html = '<div class="bf-select">';
+				html += '<div class="bf-select__trigger">';
+				if ( selectedLabel ) {
+					html += '<span class="bf-select__value">' + escapeHtml( selectedLabel ) + '</span>';
+				} else {
+					html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select\u2026' ) + '</span>';
 				}
-
-				field.options.forEach(
-					function ( option ) {
-						var optionValue = $.trim( option || '' );
-
-						html += '<option value="' + escapeHtml( optionValue ) + '"' + ( selectedValue === optionValue ? ' selected' : '' ) + '>' + escapeHtml( optionValue ) + '</option>';
-					}
-				);
-				html += '</select>';
+				html += '<span class="bf-select__arrow"></span>';
+				html += '</div></div>';
 			} else if ( field.type === 'multiselect' ) {
 				var msDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
-				html = '<div class="boldform-canvas-multiselect">';
-				field.options.forEach(
-					function ( option ) {
-						var isChecked = msDefaults.indexOf( $.trim( option ) ) !== -1;
-						html += '<span class="boldform-canvas-multiselect__tag' + ( isChecked ? ' is-default' : '' ) + '">' + escapeHtml( option ) + '</span>';
-					}
-				);
-				html += '</div>';
+
+				html = '<div class="bf-select bf-select--multi">';
+				html += '<div class="bf-select__trigger">';
+				if ( msDefaults.length ) {
+					html += '<span class="bf-select__tags">';
+					msDefaults.forEach( function ( v ) {
+						html += '<span class="bf-select__tag">' + escapeHtml( v ) + '</span>';
+					} );
+					html += '</span>';
+				} else {
+					html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select options\u2026' ) + '</span>';
+				}
+				html += '<span class="bf-select__arrow"></span>';
+				html += '</div></div>';
 			} else if ( field.type === 'checkbox' || field.type === 'radio' ) {
 				var choiceDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
 				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + '">';
@@ -913,7 +975,11 @@ jQuery(
 				}
 				html += '</div>';
 			} else if ( field.type === 'country' ) {
-				html = '<select disabled><option>' + escapeHtml( field.placeholder || 'Select a country' ) + '</option></select>';
+				html = '<div class="bf-select">';
+				html += '<div class="bf-select__trigger">';
+				html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select a country' ) + '</span>';
+				html += '<span class="bf-select__arrow"></span>';
+				html += '</div></div>';
 			} else if ( field.type === 'star_rating' ) {
 				var maxStars = field.max_stars || 5;
 				var defRating = Number( field.default_value ) || 0;
@@ -1159,11 +1225,32 @@ jQuery(
 						'</div>';
 					} );
 
+					// Build layout preset buttons for changing columns.
+					var layoutPresets = [
+						{ label: '1', widths: '100%' },
+						{ label: '2', widths: '50%,50%' },
+						{ label: '3', widths: '33.33%,33.33%,33.33%' },
+						{ label: '2:1', widths: '66.66%,33.33%' },
+						{ label: '1:2', widths: '33.33%,66.66%' },
+						{ label: '4', widths: '25%,25%,25%,25%' }
+					];
+					var layoutHtml = '<div class="boldform-setting-group"><label>' + escapeHtml( boldformLiteBuilder.labels.columnLayout || 'Column Layout' ) + '</label><div class="boldform-row-layout-presets">';
+					layoutPresets.forEach( function ( preset ) {
+						var isActive = preset.widths === rowObj.columns.map( function( c ) { return c.width; } ).join( ',' );
+						layoutHtml += '<button type="button" class="boldform-row-layout-btn' + ( isActive ? ' is-active' : '' ) + '" data-widths="' + escapeHtml( preset.widths ) + '" title="' + escapeHtml( preset.label ) + '">';
+						preset.widths.split( ',' ).forEach( function ( w ) {
+							layoutHtml += '<span style="width:' + escapeHtml( w ) + '"></span>';
+						} );
+						layoutHtml += '</button>';
+					} );
+					layoutHtml += '</div></div>';
+
 					$panel.removeAttr( 'hidden' ).html(
 						'<div class="boldform-setting-group">' +
 							'<label>' + escapeHtml( boldformLiteBuilder.labels.selectedField || 'Selected' ) + '</label>' +
 							'<div class="boldform-setting-field-name">' + escapeHtml( ( boldformLiteBuilder.labels.row || 'Row' ) + ' ' + ( state.selectedRowIndex + 1 ) ) + '</div>' +
 						'</div>' +
+						layoutHtml +
 						colWidths +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-row-css-class">' + escapeHtml( boldformLiteBuilder.labels.cssClass || 'CSS Class' ) + '</label>' +
@@ -1230,7 +1317,16 @@ jQuery(
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-button-icon-gap">' + escapeHtml( boldformLiteBuilder.labels.iconGap || 'Icon gap (px)' ) + '</label>' +
 							'<input type="number" id="boldform-setting-button-icon-gap" value="' + escapeHtml( state.formSettings.button_icon_gap || '8' ) + '" min="0" max="30" placeholder="8">' +
-						'</div>' : ''
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-button-icon-size">' + escapeHtml( boldformLiteBuilder.labels.iconSize || 'Icon size (px)' ) + '</label>' +
+							'<input type="number" id="boldform-setting-button-icon-size" value="' + escapeHtml( state.formSettings.button_icon_size || '18' ) + '" min="10" max="60" placeholder="18">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-button-icon-color">' + escapeHtml( boldformLiteBuilder.labels.iconColor || 'Icon color' ) + '</label>' +
+							'<div class="boldform-color-wrap"><input type="color" id="boldform-setting-button-icon-color" value="' + escapeHtml( state.formSettings.button_icon_color || '#ffffff' ) + '"><span class="boldform-color-preview" style="background:' + escapeHtml( state.formSettings.button_icon_color || '#ffffff' ) + '"></span></div>' +
+						'</div>' +
+						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0">Clear the button text above for an icon-only button.</p>' : ''
 					)
 				);
 				return;
@@ -1484,6 +1580,7 @@ jQuery(
 							'<button type="button" class="boldform-btn-group__btn' + ( 'left' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="left">' + escapeHtml( boldformLiteBuilder.labels.left || 'Left' ) + '</button>' +
 							'<button type="button" class="boldform-btn-group__btn' + ( 'right' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="right">' + escapeHtml( boldformLiteBuilder.labels.right || 'Right' ) + '</button>' +
 							'<button type="button" class="boldform-btn-group__btn' + ( 'bottom' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="bottom">' + escapeHtml( boldformLiteBuilder.labels.below || 'Below' ) + '</button>' +
+							'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
 						'</div>' +
 					'</div>' +
 					( specialFieldTypes.indexOf( selected.field.type ) !== -1 ? '' :
@@ -1503,6 +1600,21 @@ jQuery(
 							'<textarea id="boldform-setting-description" rows="4">' + escapeHtml( selected.field.description || '' ) + '</textarea>' +
 						'</div>' : ''
 					) +
+					( 'page_break' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-step-title">Step Title</label>' +
+							'<input type="text" id="boldform-setting-step-title" value="' + escapeHtml( selected.field.step_title || '' ) + '" placeholder="e.g. Billing Information">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-step-progress-style-field">Progress Style</label>' +
+							'<select id="boldform-step-progress-style-field">' +
+								'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
+								'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Dots</option>' +
+								'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Headings</option>' +
+							'</select>' +
+						'</div>' +
+						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">More multi-step options in <strong>Style</strong> tab → <strong>Multi-Step</strong>.</p>' : ''
+					) +
 					( 'terms_conditions' === selected.field.type ?
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-content">' + escapeHtml( boldformLiteBuilder.labels.termsContent || 'Terms text' ) + '</label>' +
@@ -1517,10 +1629,13 @@ jQuery(
 							'<label for="boldform-setting-allowed-types">' + escapeHtml( boldformLiteBuilder.labels.allowedTypes || 'Allowed file types' ) + '</label>' +
 							'<input type="text" id="boldform-setting-allowed-types" value="' + escapeHtml( selected.field.allowed_types || '' ) + '" placeholder=".jpg,.png,.pdf,.doc">' +
 						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-max-file-size">' + escapeHtml( boldformLiteBuilder.labels.maxFileSize || 'Max file size (MB)' ) + '</label>' +
-							'<input type="number" id="boldform-setting-max-file-size" value="' + escapeHtml( selected.field.max_file_size || '' ) + '" min="1" max="100" placeholder="5">' +
-						'</div>' : ''
+						( boldformLiteBuilder.proFileSize
+							? '<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-max-file-size">' + escapeHtml( boldformLiteBuilder.labels.maxFileSize || 'Max file size (MB)' ) + '</label>' +
+								'<input type="number" id="boldform-setting-max-file-size" value="' + escapeHtml( selected.field.max_file_size || '' ) + '" min="1" max="100" placeholder="2">' +
+							'</div>'
+							: '<p class="description" style="color:#9ca3af;font-size:12px;margin:0">' + escapeHtml( boldformLiteBuilder.labels.maxFileSizeNote || 'Max upload size: 2 MB' ) + '</p>'
+						) : ''
 					) +
 				'</div></div>' +
 
@@ -1588,59 +1703,51 @@ jQuery(
 		}
 
 		function renderFormSettings() {
-			var isAjaxSubmit = 'ajax' === state.formSettings.submission_type;
+			var submitMode = 'ajax';
+			if ( 'redirect' === state.formSettings.submission_type ) {
+				submitMode = 'custom' === state.formSettings.redirect_type ? 'custom_url' : 'page';
+			}
 			var useCustomAdminEmail = 'custom' === state.formSettings.admin_email_type;
+			var pages = boldformLiteBuilder.pages || [];
 
 			$( '#boldform-form-settings-panel' ).html(
 				'<div class="boldform-settings-section">' +
 					'<div class="boldform-settings-section__head">' +
 						'<h3>' + escapeHtml( boldformLiteBuilder.labels.submitBehavior ) + '</h3>' +
 					'</div>' +
-					'<div class="boldform-choice-grid">' +
-						'<label class="boldform-choice-card' + ( isAjaxSubmit ? ' is-selected' : '' ) + '">' +
-							'<input type="radio" name="boldform-submission-type" id="boldform-submission-type-ajax" value="ajax"' + ( isAjaxSubmit ? ' checked' : '' ) + '>' +
+					'<div class="boldform-choice-grid boldform-choice-grid--3">' +
+						'<label class="boldform-choice-card' + ( 'ajax' === submitMode ? ' is-selected' : '' ) + '">' +
+							'<input type="radio" name="boldform-submit-mode" value="ajax"' + ( 'ajax' === submitMode ? ' checked' : '' ) + '>' +
 							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmit ) + '</span>' +
-							'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmitHelp ) + '</span>' +
 						'</label>' +
-						'<label class="boldform-choice-card' + ( ! isAjaxSubmit ? ' is-selected' : '' ) + '">' +
-							'<input type="radio" name="boldform-submission-type" id="boldform-submission-type-redirect" value="redirect"' + ( ! isAjaxSubmit ? ' checked' : '' ) + '>' +
-							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customPageRedirect ) + '</span>' +
-							'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.customPageRedirectHelp ) + '</span>' +
+						'<label class="boldform-choice-card' + ( 'page' === submitMode ? ' is-selected' : '' ) + '">' +
+							'<input type="radio" name="boldform-submit-mode" value="page"' + ( 'page' === submitMode ? ' checked' : '' ) + '>' +
+							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'To a Page' ) + '</span>' +
+						'</label>' +
+						'<label class="boldform-choice-card' + ( 'custom_url' === submitMode ? ' is-selected' : '' ) + '">' +
+							'<input type="radio" name="boldform-submit-mode" value="custom_url"' + ( 'custom_url' === submitMode ? ' checked' : '' ) + '>' +
+							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</span>' +
 						'</label>' +
 					'</div>' +
-					( isAjaxSubmit
+					( 'ajax' === submitMode
 						? '<div class="boldform-setting-group"><label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label><textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea></div>'
-						: (function () {
-							var pages = boldformLiteBuilder.pages || [];
-							var isCustomUrl = state.formSettings.redirect_type === 'custom' || ( state.formSettings.redirect_url && ! pages.some( function ( p ) { return p.url === state.formSettings.redirect_url; } ) );
-							var redirectType = isCustomUrl ? 'custom' : 'page';
-
-							var html = '<div class="boldform-choice-grid">' +
-								'<label class="boldform-choice-card' + ( 'page' === redirectType ? ' is-selected' : '' ) + '">' +
-									'<input type="radio" name="boldform-redirect-type" value="page"' + ( 'page' === redirectType ? ' checked' : '' ) + '>' +
-									'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.selectPage || 'Select Page' ) + '</span>' +
-								'</label>' +
-								'<label class="boldform-choice-card' + ( 'custom' === redirectType ? ' is-selected' : '' ) + '">' +
-									'<input type="radio" name="boldform-redirect-type" value="custom"' + ( 'custom' === redirectType ? ' checked' : '' ) + '>' +
-									'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</span>' +
-								'</label>' +
-							'</div>';
-
-							if ( 'page' === redirectType ) {
-								html += '<div class="boldform-setting-group">';
-								html += '<select id="boldform-redirect-url">';
-								html += '<option value="">' + escapeHtml( '— Select a page —' ) + '</option>';
+						: ''
+					) +
+					( 'page' === submitMode
+						? '<div class="boldform-setting-group"><select id="boldform-redirect-url"><option value="">' + escapeHtml( '— Select a page —' ) + '</option>' +
+							(function () {
+								var opts = '';
 								pages.forEach( function ( p ) {
-									html += '<option value="' + escapeHtml( p.url ) + '"' + ( state.formSettings.redirect_url === p.url ? ' selected' : '' ) + '>' + escapeHtml( p.title ) + '</option>';
+									opts += '<option value="' + escapeHtml( p.url ) + '"' + ( state.formSettings.redirect_url === p.url ? ' selected' : '' ) + '>' + escapeHtml( p.title ) + '</option>';
 								} );
-								html += '</select></div>';
-							} else {
-								html += '<div class="boldform-setting-group">';
-								html += '<input type="url" id="boldform-redirect-custom-url" value="' + escapeHtml( state.formSettings.redirect_url || '' ) + '" placeholder="https://example.com/thank-you">';
-								html += '</div>';
-							}
-							return html;
-						}())
+								return opts;
+							}()) +
+							'</select></div>'
+						: ''
+					) +
+					( 'custom_url' === submitMode
+						? '<div class="boldform-setting-group"><input type="url" id="boldform-redirect-custom-url" value="' + escapeHtml( state.formSettings.redirect_url || '' ) + '" placeholder="https://example.com/thank-you"></div>'
+						: ''
 					) +
 				'</div>' +
 				'<div class="boldform-settings-section">' +
@@ -1677,13 +1784,65 @@ jQuery(
 			);
 		}
 
+		var designThemes = {
+			'default-blue':   { label: 'Default Blue',   primary: '#2f80ed', focus: '#2f80ed', btnBg: '#2f80ed', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 16 },
+			'ocean-teal':     { label: 'Ocean Teal',     primary: '#0f766e', focus: '#0f766e', btnBg: '#0f766e', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 16 },
+			'forest-green':   { label: 'Forest Green',   primary: '#16a34a', focus: '#16a34a', btnBg: '#16a34a', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 12 },
+			'sunset-orange':  { label: 'Sunset Orange',  primary: '#ea580c', focus: '#ea580c', btnBg: '#ea580c', btnText: '#fff', fieldBorder: '#e5e7eb', fieldBg: '#fff', fieldRadius: 8 },
+			'royal-purple':   { label: 'Royal Purple',   primary: '#7c3aed', focus: '#7c3aed', btnBg: '#7c3aed', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 12 },
+			'midnight-dark':  { label: 'Midnight Dark',  primary: '#1e293b', focus: '#334155', btnBg: '#1e293b', btnText: '#fff', fieldBorder: '#475569', fieldBg: '#f8fafc', fieldRadius: 8 },
+			'minimal-gray':   { label: 'Minimal Gray',   primary: '#6b7280', focus: '#6b7280', btnBg: '#374151', btnText: '#fff', fieldBorder: '#e5e7eb', fieldBg: '#f9fafb', fieldRadius: 4 },
+			'rose-pink':      { label: 'Rose Pink',      primary: '#e11d48', focus: '#e11d48', btnBg: '#e11d48', btnText: '#fff', fieldBorder: '#fecdd3', fieldBg: '#fff1f2', fieldRadius: 16 }
+		};
+
+		function applyDesignTheme( themeKey ) {
+			var theme = designThemes[ themeKey ];
+			if ( ! theme ) return;
+			state.formSettings.design_theme = themeKey;
+			state.formSettings.button_background_color = theme.btnBg;
+			state.formSettings.button_border_color = theme.btnBg;
+			state.formSettings.button_text_color = theme.btnText;
+			state.formSettings.field_background_color = theme.fieldBg;
+			state.formSettings.field_border_color = theme.fieldBorder;
+			state.formSettings.field_border_radius = theme.fieldRadius;
+			// Map focus color to nearest named value for build_form_style_variables
+			var focusMap = { '#2f80ed': 'blue', '#2563eb': 'blue', '#0f766e': '', '#16a34a': 'green', '#334155': 'dark' };
+			state.formSettings.field_focus_color = focusMap[ theme.focus ] || '';
+			// Also store direct hex for step progress
+			state.formSettings.step_progress_color = theme.primary;
+			state.formSettings.step_btn_color = theme.btnBg;
+			state.formSettings.step_btn_text_color = theme.btnText;
+			renderAll();
+		}
+
 		function renderStylingSettings() {
 			function colorField( id, label, value, fallback ) {
-				return '<div class="boldform-setting-group"><label for="' + id + '">' + escapeHtml( label ) + '</label><div class="boldform-color-wrap"><input type="color" id="' + id + '" value="' + escapeHtml( getStyleControlValue( value, fallback ) ) + '"><span class="boldform-color-preview" style="background:' + escapeHtml( getStyleControlValue( value, fallback ) ) + '"></span></div></div>';
+				var displayVal = value || '';
+				var colorVal = displayVal || fallback;
+				return '<div class="boldform-setting-group"><label for="' + id + '">' + escapeHtml( label ) + '</label><div class="boldform-color-wrap"><input type="color" id="' + id + '" value="' + escapeHtml( colorVal ) + '"><span class="boldform-color-preview" style="background:' + escapeHtml( colorVal ) + '"></span></div></div>';
 			}
+
+			// Build theme cards.
+			var themeCardsHtml = '<div class="boldform-theme-grid">';
+			Object.keys( designThemes ).forEach( function ( key ) {
+				var t = designThemes[ key ];
+				var isActive = state.formSettings.design_theme === key;
+				themeCardsHtml += '<button type="button" class="boldform-theme-card' + ( isActive ? ' is-active' : '' ) + '" data-theme="' + escapeHtml( key ) + '">' +
+					'<span class="boldform-theme-card__preview">' +
+						'<span class="boldform-theme-card__input" style="border-color:' + escapeHtml( t.fieldBorder ) + ';background:' + escapeHtml( t.fieldBg ) + ';border-radius:' + t.fieldRadius + 'px"></span>' +
+						'<span class="boldform-theme-card__btn" style="background:' + escapeHtml( t.btnBg ) + ';color:' + escapeHtml( t.btnText ) + ';border-radius:' + Math.min( t.fieldRadius, 8 ) + 'px"></span>' +
+					'</span>' +
+					'<span class="boldform-theme-card__name">' + escapeHtml( t.label ) + '</span>' +
+				'</button>';
+			} );
+			themeCardsHtml += '</div>';
 
 			$( '#boldform-form-styling-panel' ).html(
 				'<div class="boldform-style-section is-open">' +
+					'<div class="boldform-style-section__head"><h3>Design Theme</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+					'<div class="boldform-style-section__body">' + themeCardsHtml + '</div>' +
+				'</div>' +
+				'<div class="boldform-style-section">' +
 					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.fieldStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
 					'<div class="boldform-style-section__body">' +
 						'<div class="boldform-style-grid">' +
@@ -1702,9 +1861,6 @@ jQuery(
 				'<div class="boldform-style-section">' +
 					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.labelStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
 					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-style-grid is-single">' +
-							'<div class="boldform-setting-group"><label for="boldform-label-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-label-size-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="small"' + ( 'small' === state.formSettings.label_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.label_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.label_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
-						'</div>' +
 						'<div class="boldform-style-color-grid">' +
 							colorField( 'boldform-label-color-style', boldformLiteBuilder.labels.label, state.formSettings.label_color, '#4b5563' ) +
 							colorField( 'boldform-label-subtext-color-style', boldformLiteBuilder.labels.subLabel, state.formSettings.label_subtext_color, '#6b7280' ) +
@@ -1725,6 +1881,37 @@ jQuery(
 							colorField( 'boldform-button-background-color', boldformLiteBuilder.labels.background, state.formSettings.button_background_color, '#2f80ed' ) +
 							colorField( 'boldform-button-border-color', boldformLiteBuilder.labels.border, state.formSettings.button_border_color, '#2f80ed' ) +
 							colorField( 'boldform-button-text-color', boldformLiteBuilder.labels.text, state.formSettings.button_text_color, '#ffffff' ) +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+				'<div class="boldform-style-section">' +
+					'<div class="boldform-style-section__head"><h3>Multi-Step</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+					'<div class="boldform-style-section__body">' +
+						'<div class="boldform-style-grid">' +
+							'<div class="boldform-setting-group"><label for="boldform-step-progress-style">Progress Style</label>' +
+								'<select id="boldform-step-progress-style">' +
+									'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
+									'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Dots</option>' +
+									'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Headings</option>' +
+								'</select>' +
+							'</div>' +
+							'<div class="boldform-setting-group"><label for="boldform-step-btn-size">Button Size</label>' +
+								'<select id="boldform-step-btn-size">' +
+									'<option value="small"' + ( 'small' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Small</option>' +
+									'<option value="medium"' + ( 'medium' === ( state.formSettings.step_btn_size || 'medium' ) ? ' selected' : '' ) + '>Medium</option>' +
+									'<option value="large"' + ( 'large' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Large</option>' +
+								'</select>' +
+							'</div>' +
+							'<div class="boldform-setting-group"><label for="boldform-step-btn-radius">Button Radius</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-step-btn-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.step_btn_radius ) + '"><span>px</span></div></div>' +
+						'</div>' +
+						'<div class="boldform-style-grid">' +
+							'<div class="boldform-setting-group"><label for="boldform-step-next-text">Next Text</label><input type="text" id="boldform-step-next-text" value="' + escapeHtml( state.formSettings.step_next_text || 'Next' ) + '"></div>' +
+							'<div class="boldform-setting-group"><label for="boldform-step-prev-text">Previous Text</label><input type="text" id="boldform-step-prev-text" value="' + escapeHtml( state.formSettings.step_prev_text || 'Previous' ) + '"></div>' +
+						'</div>' +
+						'<div class="boldform-style-color-grid">' +
+							colorField( 'boldform-step-progress-color', 'Progress Color', state.formSettings.step_progress_color, '#2f80ed' ) +
+							colorField( 'boldform-step-btn-color', 'Button Background', state.formSettings.step_btn_color, '#2f80ed' ) +
+							colorField( 'boldform-step-btn-text-color', 'Button Text', state.formSettings.step_btn_text_color, '#ffffff' ) +
 						'</div>' +
 					'</div>' +
 				'</div>'
@@ -1950,9 +2137,8 @@ jQuery(
 			$( '#boldform-builder-status' ).text( shortcode );
 		}
 
-		function saveForm( redirectAfterSave ) {
+		function saveForm() {
 			var $save = $( '#boldform-save-form' );
-			var $saveContinue = $( '#boldform-save-continue' );
 			var title = $.trim( $( '#boldform-form-title' ).val() ) || boldformLiteBuilder.defaultFormTitle;
 			var payload;
 
@@ -1971,7 +2157,6 @@ jQuery(
 			};
 
 			$save.prop( 'disabled', true ).text( boldformLiteBuilder.savingText );
-			$saveContinue.prop( 'disabled', true ).text( boldformLiteBuilder.savingText );
 			$( '#boldform-builder-status' ).text( '' );
 
 			$.post( boldformLiteBuilder.ajaxUrl, payload )
@@ -1981,11 +2166,6 @@ jQuery(
 							state.formId = response.data.formId;
 							updateShortcodeDisplay();
 							$( '#boldform-builder-status' ).text( response.data.message );
-
-							if ( redirectAfterSave ) {
-								window.location.href = 'admin.php?page=boldform-lite-builder&form_id=' + state.formId;
-							}
-
 							return;
 						}
 
@@ -2014,7 +2194,6 @@ jQuery(
 				.always(
 					function () {
 						$save.prop( 'disabled', false ).text( boldformLiteBuilder.saveText );
-						$saveContinue.prop( 'disabled', false ).text( boldformLiteBuilder.saveContinueText );
 					}
 				);
 		}
@@ -2459,14 +2638,14 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-svg, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-svg, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field',
 			function () {
 				var selected = getSelectedFieldLocation();
 
 				var isSubmitInput = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
 
 				if ( isSubmitInput ) {
-					state.formSettings.button_text = $( '#boldform-setting-button-text' ).val() || 'Submit';
+					state.formSettings.button_text = $( '#boldform-setting-button-text' ).val();
 					if ( $( '#boldform-setting-button-icon-dashicon' ).length ) {
 						state.formSettings.button_icon_dashicon = $( '#boldform-setting-button-icon-dashicon' ).val() || 'dashicons-arrow-right-alt';
 					}
@@ -2475,6 +2654,12 @@ jQuery(
 					}
 					if ( $( '#boldform-setting-button-icon-gap' ).length ) {
 						state.formSettings.button_icon_gap = $( '#boldform-setting-button-icon-gap' ).val() || '8';
+					}
+					if ( $( '#boldform-setting-button-icon-size' ).length ) {
+						state.formSettings.button_icon_size = $( '#boldform-setting-button-icon-size' ).val() || '18';
+					}
+					if ( $( '#boldform-setting-button-icon-color' ).length ) {
+						state.formSettings.button_icon_color = $( '#boldform-setting-button-icon-color' ).val() || '';
 					}
 					renderCanvas();
 					return;
@@ -2510,6 +2695,36 @@ jQuery(
 				}
 				if ( $( '#boldform-setting-slider-height' ).length ) {
 					selected.field.slider_height = $( '#boldform-setting-slider-height' ).val();
+				}
+				if ( $( '#boldform-setting-step-title' ).length ) {
+					selected.field.step_title = $( '#boldform-setting-step-title' ).val();
+				}
+				if ( $( '#boldform-step-progress-style-field' ).length ) {
+					state.formSettings.step_progress_style = $( '#boldform-step-progress-style-field' ).val();
+				}
+				if ( $( '#boldform-setting-next-text' ).length ) {
+					selected.field.next_text = $( '#boldform-setting-next-text' ).val();
+				}
+				if ( $( '#boldform-setting-prev-text' ).length ) {
+					selected.field.prev_text = $( '#boldform-setting-prev-text' ).val();
+				}
+				if ( $( '#boldform-setting-btn-color' ).length ) {
+					selected.field.btn_color = $( '#boldform-setting-btn-color' ).val();
+				}
+				if ( $( '#boldform-setting-btn-text-color' ).length ) {
+					selected.field.btn_text_color = $( '#boldform-setting-btn-text-color' ).val();
+				}
+				if ( $( '#boldform-setting-btn-size' ).length ) {
+					selected.field.btn_size = $( '#boldform-setting-btn-size' ).val();
+				}
+				if ( $( '#boldform-setting-btn-radius' ).length ) {
+					selected.field.btn_radius = $( '#boldform-setting-btn-radius' ).val();
+				}
+				if ( $( '#boldform-setting-progress-color' ).length ) {
+					selected.field.progress_color = $( '#boldform-setting-progress-color' ).val();
+				}
+				if ( $( '#boldform-setting-progress-style' ).length ) {
+					selected.field.progress_style = $( '#boldform-setting-progress-style' ).val();
 				}
 
 				if ( optionFieldTypes.indexOf( selected.field.type ) !== -1 ) {
@@ -2578,15 +2793,24 @@ jQuery(
 
 		$( document ).on(
 			'input change',
-			'input[name="boldform-submission-type"], input[name="boldform-redirect-type"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color',
+			'input[name="boldform-submit-mode"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color, #boldform-step-progress-style, #boldform-step-progress-color, #boldform-step-btn-color, #boldform-step-btn-text-color, #boldform-step-btn-size, #boldform-step-btn-radius, #boldform-step-next-text, #boldform-step-prev-text, #boldform-hide-labels, #boldform-hide-placeholders',
 			function ( event ) {
 				var needsRerender = false;
 
-				state.formSettings.submission_type = $( 'input[name="boldform-submission-type"]:checked' ).val() || 'ajax';
-				state.formSettings.enable_ajax = 'ajax' === state.formSettings.submission_type;
-				state.formSettings.enable_redirect = 'redirect' === state.formSettings.submission_type;
-				if ( $( 'input[name="boldform-redirect-type"]' ).length ) {
-					state.formSettings.redirect_type = $( 'input[name="boldform-redirect-type"]:checked' ).val() || 'page';
+				if ( $( 'input[name="boldform-submit-mode"]' ).length ) {
+					var mode = $( 'input[name="boldform-submit-mode"]:checked' ).val() || 'ajax';
+					if ( 'ajax' === mode ) {
+						state.formSettings.submission_type = 'ajax';
+						state.formSettings.redirect_type = 'page';
+					} else if ( 'page' === mode ) {
+						state.formSettings.submission_type = 'redirect';
+						state.formSettings.redirect_type = 'page';
+					} else if ( 'custom_url' === mode ) {
+						state.formSettings.submission_type = 'redirect';
+						state.formSettings.redirect_type = 'custom';
+					}
+					state.formSettings.enable_ajax = 'ajax' === state.formSettings.submission_type;
+					state.formSettings.enable_redirect = 'redirect' === state.formSettings.submission_type;
 				}
 				if ( $( '#boldform-redirect-url' ).length ) {
 					state.formSettings.redirect_url = $( '#boldform-redirect-url' ).val() || '';
@@ -2596,9 +2820,15 @@ jQuery(
 				if ( $( '#boldform-thank-you-message' ).length ) {
 					state.formSettings.thank_you_message = $( '#boldform-thank-you-message' ).val() || '';
 				}
-				state.formSettings.enable_admin_email = $( '#boldform-enable-admin-email' ).is( ':checked' );
-				state.formSettings.enable_user_email = $( '#boldform-enable-user-email' ).is( ':checked' );
-				state.formSettings.admin_email_type = $( 'input[name="boldform-admin-email-type"]:checked' ).val() || 'site_admin';
+				if ( $( '#boldform-enable-admin-email' ).length ) {
+					state.formSettings.enable_admin_email = $( '#boldform-enable-admin-email' ).is( ':checked' );
+				}
+				if ( $( '#boldform-enable-user-email' ).length ) {
+					state.formSettings.enable_user_email = $( '#boldform-enable-user-email' ).is( ':checked' );
+				}
+				if ( $( 'input[name="boldform-admin-email-type"]' ).length ) {
+					state.formSettings.admin_email_type = $( 'input[name="boldform-admin-email-type"]:checked' ).val() || 'site_admin';
+				}
 				if ( $( '#boldform-admin-email' ).length ) {
 					state.formSettings.admin_email = $( '#boldform-admin-email' ).val() || '';
 				}
@@ -2660,9 +2890,34 @@ jQuery(
 					state.formSettings.button_text_color = normalizeStyleColorValue( $( '#boldform-button-text-color' ).val() || '#ffffff', '#ffffff' );
 				}
 
+				// Multi-step settings.
+				if ( $( '#boldform-step-progress-style' ).length ) {
+					state.formSettings.step_progress_style = $( '#boldform-step-progress-style' ).val();
+				}
+				if ( $( '#boldform-step-progress-color' ).length ) {
+					state.formSettings.step_progress_color = normalizeStyleColorValue( $( '#boldform-step-progress-color' ).val() || '#2f80ed', '#2f80ed' );
+				}
+				if ( $( '#boldform-step-btn-color' ).length ) {
+					state.formSettings.step_btn_color = normalizeStyleColorValue( $( '#boldform-step-btn-color' ).val() || '#2f80ed', '#2f80ed' );
+				}
+				if ( $( '#boldform-step-btn-text-color' ).length ) {
+					state.formSettings.step_btn_text_color = normalizeStyleColorValue( $( '#boldform-step-btn-text-color' ).val() || '#ffffff', '#ffffff' );
+				}
+				if ( $( '#boldform-step-btn-size' ).length ) {
+					state.formSettings.step_btn_size = $( '#boldform-step-btn-size' ).val();
+				}
+				if ( $( '#boldform-step-btn-radius' ).length ) {
+					state.formSettings.step_btn_radius = $( '#boldform-step-btn-radius' ).val();
+				}
+				if ( $( '#boldform-step-next-text' ).length ) {
+					state.formSettings.step_next_text = $( '#boldform-step-next-text' ).val();
+				}
+				if ( $( '#boldform-step-prev-text' ).length ) {
+					state.formSettings.step_prev_text = $( '#boldform-step-prev-text' ).val();
+				}
+	
 				if (
-					$( event.target ).is( 'input[name="boldform-submission-type"]' ) ||
-					$( event.target ).is( 'input[name="boldform-redirect-type"]' ) ||
+					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
 					$( event.target ).is( 'input[name="boldform-admin-email-type"]' )
 				) {
@@ -2684,10 +2939,101 @@ jQuery(
 			}
 		);
 
+		// Design theme card click.
+		$( document ).on( 'click', '.boldform-theme-card', function () {
+			applyDesignTheme( $( this ).data( 'theme' ) );
+		} );
+
+		// Choice card click — ensure radio toggles reliably on all browsers.
+		$( document ).on( 'click', '.boldform-choice-card', function ( e ) {
+			var $card = $( this );
+			var $radio = $card.find( 'input[type="radio"]' );
+			if ( ! $radio.length ) return;
+
+			// Prevent double-fire: the label click already checks the radio natively,
+			// so just ensure the change event propagates for the delegated handler.
+			if ( ! $radio.prop( 'checked' ) ) {
+				$radio.prop( 'checked', true );
+			}
+			$radio.trigger( 'change' );
+		} );
+
+		// Field library search.
+		$( document ).on( 'input', '#boldform-field-search', function () {
+			var q = $.trim( $( this ).val() ).toLowerCase();
+			var $library = $( '#boldform-field-library' );
+			var totalVisible = 0;
+
+			if ( ! q ) {
+				// Empty search — show everything, remove no-results.
+				$library.find( '.boldform-library-item' ).css( 'display', '' );
+				$library.find( '.boldform-library-group' ).css( 'display', '' );
+				$( '#boldform-field-search-empty' ).hide();
+				return;
+			}
+
+			// Filter items.
+			$library.find( '.boldform-library-item' ).each( function () {
+				var match = $( this ).text().toLowerCase().indexOf( q ) !== -1;
+				$( this ).css( 'display', match ? '' : 'none' );
+				if ( match ) totalVisible++;
+			} );
+
+			// Hide groups with zero visible items.
+			$library.find( '.boldform-library-group' ).each( function () {
+				var groupHasVisible = false;
+				$( this ).find( '.boldform-library-item' ).each( function () {
+					if ( $( this ).css( 'display' ) !== 'none' ) groupHasVisible = true;
+				} );
+				$( this ).css( 'display', groupHasVisible ? '' : 'none' );
+			} );
+
+			// No results message.
+			if ( ! $( '#boldform-field-search-empty' ).length ) {
+				$library.after( '<p id="boldform-field-search-empty" style="display:none;text-align:center;color:#9ca3af;font-size:13px;padding:16px 0;">No fields found.</p>' );
+			}
+			$( '#boldform-field-search-empty' ).css( 'display', totalVisible === 0 ? '' : 'none' );
+		} );
+
+		// Column layout change for existing rows.
+		$( document ).on( 'click', '.boldform-row-layout-btn', function () {
+			var rowIndex = state.selectedRowIndex;
+			if ( rowIndex === null ) return;
+			var row = getAllRows()[ rowIndex ];
+			if ( ! row ) return;
+
+			var newWidths = $( this ).data( 'widths' ).toString().split( ',' );
+			var oldColumns = row.columns;
+			var newColumns = [];
+
+			// Build new columns — preserve existing fields by distributing them.
+			newWidths.forEach( function ( width, i ) {
+				if ( oldColumns[ i ] ) {
+					newColumns.push( createColumn( width, oldColumns[ i ].fields ) );
+				} else {
+					newColumns.push( createColumn( width, [] ) );
+				}
+			} );
+
+			// If new layout has fewer columns, move orphaned fields to the last column.
+			if ( oldColumns.length > newWidths.length ) {
+				var lastCol = newColumns[ newColumns.length - 1 ];
+				for ( var i = newWidths.length; i < oldColumns.length; i++ ) {
+					oldColumns[ i ].fields.forEach( function ( f ) {
+						lastCol.fields.push( f );
+					} );
+				}
+			}
+
+			row.columns = newColumns;
+			setActiveColumn( rowIndex, 0 );
+			renderAll();
+		} );
+
 		$( '#boldform-save-form' ).on(
 			'click',
 			function () {
-				saveForm( false );
+				saveForm();
 			}
 		);
 
@@ -2695,13 +3041,6 @@ jQuery(
 			'click',
 			function () {
 				copyShortcode();
-			}
-		);
-
-		$( '#boldform-save-continue' ).on(
-			'click',
-			function () {
-				saveForm( true );
 			}
 		);
 

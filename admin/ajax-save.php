@@ -52,6 +52,15 @@ class BoldForm_Lite_Ajax_Save {
 		$structure_raw     = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; individual values are sanitized after json_decode below.
 		$settings_raw      = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; individual values are sanitized via normalize_form_settings().
 		$allowed_types     = array( 'text', 'name', 'email', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'radio', 'date', 'time', 'tel', 'url', 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'input_mask', 'html_editor', 'paragraph', 'numeric', 'address', 'country', 'star_rating', 'slider_range' );
+
+		/**
+		 * Filter the list of allowed field types that can be saved.
+		 *
+		 * Pro can add new field types (payment, signature, repeater, etc.).
+		 *
+		 * @param array<int, string> $allowed_types Allowed field type keys.
+		 */
+		$allowed_types = apply_filters( 'boldform_allowed_field_types', $allowed_types );
 		$allowed_widths    = array( '100%', '50%', '33.33%', '25%' );
 		$payload           = json_decode( $structure_raw, true );
 		$settings_payload  = json_decode( $settings_raw, true );
@@ -135,7 +144,7 @@ class BoldForm_Lite_Ajax_Save {
 								'zip'     => ! isset( $field['address_fields']['zip'] ) || ! empty( $field['address_fields']['zip'] ),
 								'country' => ! isset( $field['address_fields']['country'] ) || ! empty( $field['address_fields']['country'] ),
 							) : array( 'street' => true, 'city' => true, 'state' => true, 'zip' => true, 'country' => true ),
-							'label_placement'   => isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom' ), true ) ? $field['label_placement'] : 'top',
+							'label_placement'   => isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top',
 							'conditional'       => isset( $field['conditional'] ) && is_array( $field['conditional'] ) ? array(
 								'enabled'  => ! empty( $field['conditional']['enabled'] ),
 								'action'   => isset( $field['conditional']['action'] ) && in_array( $field['conditional']['action'], array( 'show', 'hide' ), true ) ? $field['conditional']['action'] : 'show',
@@ -154,6 +163,15 @@ class BoldForm_Lite_Ajax_Save {
 							'star_size'       => isset( $field['star_size'] ) ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : 28,
 							'slider_color'    => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
 							'slider_height'   => isset( $field['slider_height'] ) ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
+							'step_title'      => isset( $field['step_title'] ) ? sanitize_text_field( (string) $field['step_title'] ) : '',
+							'next_text'       => isset( $field['next_text'] ) ? sanitize_text_field( (string) $field['next_text'] ) : 'Next',
+							'prev_text'       => isset( $field['prev_text'] ) ? sanitize_text_field( (string) $field['prev_text'] ) : 'Previous',
+							'btn_color'       => isset( $field['btn_color'] ) && sanitize_hex_color( $field['btn_color'] ) ? sanitize_hex_color( $field['btn_color'] ) : '',
+							'btn_text_color'  => isset( $field['btn_text_color'] ) && sanitize_hex_color( $field['btn_text_color'] ) ? sanitize_hex_color( $field['btn_text_color'] ) : '',
+							'btn_size'        => isset( $field['btn_size'] ) && in_array( $field['btn_size'], array( 'small', 'medium', 'large' ), true ) ? $field['btn_size'] : 'medium',
+							'btn_radius'      => isset( $field['btn_radius'] ) && '' !== $field['btn_radius'] ? max( 0, min( 50, absint( $field['btn_radius'] ) ) ) : '',
+							'progress_color'  => isset( $field['progress_color'] ) && sanitize_hex_color( $field['progress_color'] ) ? sanitize_hex_color( $field['progress_color'] ) : '',
+							'progress_style'  => isset( $field['progress_style'] ) && in_array( $field['progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $field['progress_style'] : 'bar',
 						);
 					}
 				}
@@ -262,6 +280,17 @@ class BoldForm_Lite_Ajax_Save {
 			$form_id = (int) $wpdb->insert_id;
 		}
 
+		/**
+		 * Fires after a form is successfully saved via the builder.
+		 *
+		 * Pro can use this to sync to external CRM, invalidate caches, etc.
+		 *
+		 * @param int    $form_id Form ID (newly inserted or updated).
+		 * @param array<string, mixed> $data    Saved data array (title, fields_json, settings_json).
+		 * @param bool   $is_new  True when a new form was created, false on update.
+		 */
+		do_action( 'boldform_form_saved', $form_id, $data, ! isset( $_POST['form_id'] ) || 0 === absint( $_POST['form_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already checked above.
+
 		wp_send_json_success(
 			array(
 				'formId'  => $form_id,
@@ -350,7 +379,7 @@ class BoldForm_Lite_Ajax_Save {
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
-			'redirect_url'      => 'redirect' === $submission_type && isset( $settings_payload['redirect_url'] ) ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
+			'redirect_url'      => isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
 			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? sanitize_textarea_field( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $settings_payload['button_alignment'] ) && in_array( $settings_payload['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['button_alignment'] : $defaults['button_alignment'],
@@ -360,6 +389,8 @@ class BoldForm_Lite_Ajax_Save {
 			'button_icon_svg'      => isset( $settings_payload['button_icon_svg'] ) ? wp_kses( (string) $settings_payload['button_icon_svg'], array( 'svg' => array( 'xmlns' => true, 'viewbox' => true, 'width' => true, 'height' => true, 'fill' => true, 'class' => true, 'style' => true ), 'path' => array( 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ), 'circle' => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true ), 'rect' => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'fill' => true, 'rx' => true ), 'line' => array( 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true ), 'polyline' => array( 'points' => true, 'fill' => true, 'stroke' => true ), 'polygon' => array( 'points' => true, 'fill' => true ), 'g' => array( 'fill' => true, 'transform' => true ) ) ) : '',
 			'button_icon_position' => isset( $settings_payload['button_icon_position'] ) && in_array( $settings_payload['button_icon_position'], array( 'left', 'right' ), true ) ? $settings_payload['button_icon_position'] : 'right',
 			'button_icon_gap'      => isset( $settings_payload['button_icon_gap'] ) ? max( 0, min( 30, absint( $settings_payload['button_icon_gap'] ) ) ) : 8,
+			'button_icon_size'     => isset( $settings_payload['button_icon_size'] ) ? max( 10, min( 60, absint( $settings_payload['button_icon_size'] ) ) ) : 18,
+			'button_icon_color'    => isset( $settings_payload['button_icon_color'] ) && sanitize_hex_color( $settings_payload['button_icon_color'] ) ? sanitize_hex_color( $settings_payload['button_icon_color'] ) : '',
 			'button_color'      => isset( $settings_payload['button_color'] ) && in_array( $settings_payload['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $settings_payload['button_color'] : $defaults['button_color'],
 			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none' ), true ) ? $settings_payload['field_style'] : '',
 			'field_size'        => isset( $settings_payload['field_size'] ) && in_array( $settings_payload['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $settings_payload['field_size'] : '',
@@ -384,6 +415,17 @@ class BoldForm_Lite_Ajax_Save {
 			'enable_admin_email'=> isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'       => 'custom' === $admin_email_type ? $admin_email : '',
+			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
+			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
+			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
+			'step_btn_text_color' => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
+			'step_btn_size'       => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
+			'step_btn_radius'     => isset( $settings_payload['step_btn_radius'] ) && '' !== $settings_payload['step_btn_radius'] ? max( 0, min( 50, absint( $settings_payload['step_btn_radius'] ) ) ) : '',
+			'step_next_text'      => isset( $settings_payload['step_next_text'] ) ? sanitize_text_field( (string) $settings_payload['step_next_text'] ) : 'Next',
+			'step_prev_text'      => isset( $settings_payload['step_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['step_prev_text'] ) : 'Previous',
+			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
+			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
+			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
 		);
 	}
 }

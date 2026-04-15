@@ -174,6 +174,15 @@ final class BoldForm_Lite {
 		$this->export_import->init();
 
 		$this->loader->run();
+
+		/**
+		 * Fires after BoldForm Lite has fully booted and all hooks are registered.
+		 *
+		 * Pro or third-party plugins should hook here to extend BoldForm.
+		 *
+		 * @param BoldForm_Lite $plugin The main plugin instance.
+		 */
+		do_action( 'boldform_loaded', $this );
 	}
 
 	/**

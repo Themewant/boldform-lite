@@ -1962,3 +1962,563 @@
 	color: #646970;
 	flex-shrink: 0;
 }
+
+/* ============================================================
+   REPORTS PAGE
+   ============================================================ */
+
+.boldform-reports-wrap {
+	max-width: 1320px;
+}
+
+.boldform-page-header__badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: rgba(59, 130, 246, 0.08);
+	border: 1px solid rgba(59, 130, 246, 0.15);
+	font-size: 11px;
+	font-weight: 600;
+	color: #3b82f6;
+	letter-spacing: 0.03em;
+	margin-left: 12px;
+	vertical-align: middle;
+}
+
+/* --- Stat Cards --- */
+.boldform-reports-stats {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 14px;
+	margin-bottom: 24px;
+}
+
+.boldform-stat-card {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 18px 20px;
+	transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.boldform-stat-card:hover {
+	border-color: #cbd5e1;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+	transform: translateY(-1px);
+}
+
+.boldform-stat-card__icon {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.boldform-stat-card__icon .dashicons {
+	width: 22px;
+	height: 22px;
+	font-size: 22px;
+	line-height: 22px;
+	color: #fff;
+}
+
+.boldform-stat-card__icon--forms {
+	background: linear-gradient(135deg, #3b82f6, #2563eb);
+	box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.boldform-stat-card__icon--entries {
+	background: linear-gradient(135deg, #10b981, #059669);
+	box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+}
+
+.boldform-stat-card__icon--unread {
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+}
+
+.boldform-stat-card__icon--starred {
+	background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+	box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+}
+
+.boldform-stat-card__icon--today {
+	background: linear-gradient(135deg, #06b6d4, #0891b2);
+	box-shadow: 0 4px 10px rgba(6, 182, 212, 0.3);
+}
+
+.boldform-stat-card__icon--week {
+	background: linear-gradient(135deg, #ec4899, #db2777);
+	box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3);
+}
+
+.boldform-stat-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+	min-width: 0;
+}
+
+.boldform-stat-card__value {
+	font-size: 24px;
+	font-weight: 700;
+	color: #0f172a;
+	line-height: 1.2;
+}
+
+.boldform-stat-card__label {
+	font-size: 12px;
+	color: #64748b;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- Card Headers --- */
+.boldform-reports-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+	gap: 12px;
+}
+
+.boldform-reports-card-header h2 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #0f172a;
+	margin: 0;
+	padding: 0;
+}
+
+.boldform-reports-card-header h2 .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+	color: #94a3b8;
+}
+
+.boldform-reports-card-header__sub {
+	font-size: 12px;
+	color: #94a3b8;
+	font-weight: 500;
+	padding: 3px 10px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}
+
+.boldform-reports-card-header__link {
+	font-size: 12px;
+	color: #3b82f6;
+	text-decoration: none;
+	font-weight: 500;
+	transition: color 0.15s ease;
+}
+
+.boldform-reports-card-header__link:hover {
+	color: #2563eb;
+}
+
+/* --- Chart & Table Cards --- */
+.boldform-reports-row {
+	margin-bottom: 24px;
+}
+
+.boldform-reports-row--two-col {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 24px;
+}
+
+.boldform-reports-chart-card,
+.boldform-reports-table-card {
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 24px;
+}
+
+.boldform-reports-chart-card canvas {
+	width: 100%;
+	display: block;
+}
+
+/* Chart tooltip */
+.boldform-chart-tooltip {
+	display: none;
+	position: absolute;
+	background: #0f172a;
+	color: #fff;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	line-height: 1.5;
+	pointer-events: none;
+	transform: translateX(-50%);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+	white-space: nowrap;
+	z-index: 10;
+}
+
+.boldform-chart-tooltip strong {
+	display: block;
+	color: #94a3b8;
+	font-size: 11px;
+	font-weight: 500;
+}
+
+/* --- Reports Table --- */
+.boldform-reports-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 13px;
+}
+
+.boldform-reports-table thead th {
+	text-align: left;
+	padding: 10px 12px;
+	font-weight: 600;
+	color: #475569;
+	border-bottom: 2px solid #e2e8f0;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.boldform-reports-table .boldform-col-center {
+	text-align: center;
+}
+
+.boldform-reports-table tbody td {
+	padding: 10px 12px;
+	border-bottom: 1px solid #f1f5f9;
+	color: #334155;
+	vertical-align: middle;
+}
+
+.boldform-reports-table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+.boldform-reports-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.boldform-reports-table a {
+	color: #3b82f6;
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.boldform-reports-table a:hover {
+	color: #2563eb;
+	text-decoration: underline;
+}
+
+/* Count badge in table */
+.boldform-reports-count-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 28px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	background: #f0f4ff;
+	color: #3b82f6;
+	font-weight: 700;
+	font-size: 13px;
+}
+
+/* --- Stacked Bar Chart in Table --- */
+.boldform-reports-bar-wrap {
+	width: 100%;
+	min-width: 120px;
+}
+
+.boldform-reports-bar {
+	display: flex;
+	height: 10px;
+	border-radius: 5px;
+	overflow: hidden;
+	background: #f1f5f9;
+}
+
+.boldform-reports-bar__segment {
+	display: block;
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.boldform-reports-bar__segment--unread {
+	background: #f59e0b;
+}
+
+.boldform-reports-bar__segment--read {
+	background: #3b82f6;
+}
+
+.boldform-reports-bar__segment--starred {
+	background: #8b5cf6;
+}
+
+/* Bar legend */
+.boldform-reports-bar-legend {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	margin-top: 14px;
+	padding-top: 12px;
+	border-top: 1px solid #f1f5f9;
+}
+
+.boldform-reports-bar-legend__item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	color: #64748b;
+	font-weight: 500;
+}
+
+.boldform-reports-bar-legend__dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 3px;
+}
+
+.boldform-reports-bar-legend__dot--unread {
+	background: #f59e0b;
+}
+
+.boldform-reports-bar-legend__dot--read {
+	background: #3b82f6;
+}
+
+.boldform-reports-bar-legend__dot--starred {
+	background: #8b5cf6;
+}
+
+/* --- Activity Feed (Recent Entries) --- */
+.boldform-reports-activity {
+	display: flex;
+	flex-direction: column;
+}
+
+.boldform-reports-activity__item {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 8px;
+	border-bottom: 1px solid #f1f5f9;
+	text-decoration: none;
+	transition: background 0.15s ease;
+	border-radius: 6px;
+	margin: 0 -8px;
+}
+
+.boldform-reports-activity__item:last-child {
+	border-bottom: none;
+}
+
+.boldform-reports-activity__item:hover {
+	background: #f8fafc;
+}
+
+.boldform-reports-activity__dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-top: 6px;
+	flex-shrink: 0;
+}
+
+.boldform-reports-activity__dot--unread {
+	background: #f59e0b;
+	box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.boldform-reports-activity__dot--read {
+	background: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.boldform-reports-activity__dot--starred {
+	background: #8b5cf6;
+	box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+.boldform-reports-activity__body {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.boldform-reports-activity__text {
+	font-size: 13px;
+	color: #334155;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.boldform-reports-activity__form {
+	font-weight: 400;
+	color: #94a3b8;
+	margin-left: 6px;
+	font-size: 12px;
+}
+
+.boldform-reports-activity__meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.boldform-reports-activity__date {
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+/* --- Empty State --- */
+.boldform-reports-empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 20px;
+	text-align: center;
+}
+
+.boldform-reports-empty-state .dashicons {
+	width: 40px;
+	height: 40px;
+	font-size: 40px;
+	line-height: 40px;
+	color: #cbd5e1;
+	margin-bottom: 12px;
+}
+
+.boldform-reports-empty-state p {
+	color: #94a3b8;
+	font-size: 13px;
+	margin: 0;
+	max-width: 260px;
+}
+
+/* --- Compact Cards --- */
+.boldform-reports-table-card--compact {
+	display: flex;
+	flex-direction: column;
+}
+
+.boldform-reports-paginated {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
+}
+
+/* --- Card Footer with Legend + Pager --- */
+.boldform-reports-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid #f1f5f9;
+	gap: 12px;
+}
+
+.boldform-reports-pager-info {
+	font-size: 12px;
+	color: #94a3b8;
+	font-weight: 500;
+}
+
+/* --- Pagination --- */
+.boldform-reports-pager {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.boldform-pager-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 30px;
+	height: 30px;
+	padding: 0 6px;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	background: #fff;
+	color: #475569;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	line-height: 1;
+}
+
+.boldform-pager-btn:hover:not(:disabled):not(.is-active) {
+	background: #f8fafc;
+	border-color: #cbd5e1;
+	color: #0f172a;
+}
+
+.boldform-pager-btn.is-active {
+	background: #3b82f6;
+	border-color: #3b82f6;
+	color: #fff;
+}
+
+.boldform-pager-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1200px) {
+	.boldform-reports-stats {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media (max-width: 1024px) {
+	.boldform-reports-stats {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.boldform-reports-row--two-col {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 600px) {
+	.boldform-reports-stats {
+		grid-template-columns: 1fr;
+	}
+
+	.boldform-reports-card-footer {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}

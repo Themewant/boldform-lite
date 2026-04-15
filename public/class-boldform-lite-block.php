@@ -54,43 +54,56 @@ class BoldForm_Lite_Block {
 
 		// Register the block explicitly to avoid metadata path resolution passing
 		// unexpected null values into WordPress core on some environments.
+		$block_attributes = array(
+			'formId'              => array( 'type' => 'number', 'default' => 0 ),
+			'hideLabels'          => array( 'type' => 'boolean', 'default' => false ),
+			'hidePlaceholders'    => array( 'type' => 'boolean', 'default' => false ),
+			'formMaxWidth'        => array( 'type' => 'string', 'default' => '' ),
+			'formPadding'         => array( 'type' => 'string', 'default' => '' ),
+			'formBgColor'         => array( 'type' => 'string', 'default' => '' ),
+			'formBorderRadius'    => array( 'type' => 'string', 'default' => '' ),
+			'formBorderWidth'     => array( 'type' => 'string', 'default' => '' ),
+			'formBorderColor'     => array( 'type' => 'string', 'default' => '' ),
+			'rowGap'              => array( 'type' => 'string', 'default' => '' ),
+			'columnGap'           => array( 'type' => 'string', 'default' => '' ),
+			'fieldGap'            => array( 'type' => 'string', 'default' => '' ),
+			'labelColor'          => array( 'type' => 'string', 'default' => '' ),
+			'labelFontSize'       => array( 'type' => 'string', 'default' => '' ),
+			'fieldHeight'         => array( 'type' => 'string', 'default' => '' ),
+			'textareaHeight'      => array( 'type' => 'string', 'default' => '' ),
+			'fieldPadding'        => array( 'type' => 'string', 'default' => '' ),
+			'fieldBgColor'        => array( 'type' => 'string', 'default' => '' ),
+			'fieldTextColor'      => array( 'type' => 'string', 'default' => '' ),
+			'fieldBorderWidth'    => array( 'type' => 'string', 'default' => '' ),
+			'fieldBorderColor'    => array( 'type' => 'string', 'default' => '' ),
+			'fieldBorderRadius'   => array( 'type' => 'string', 'default' => '' ),
+			'fieldFocusColor'     => array( 'type' => 'string', 'default' => '' ),
+			'buttonPadding'       => array( 'type' => 'string', 'default' => '' ),
+			'buttonBgColor'       => array( 'type' => 'string', 'default' => '' ),
+			'buttonTextColor'     => array( 'type' => 'string', 'default' => '' ),
+			'buttonHoverBgColor'  => array( 'type' => 'string', 'default' => '' ),
+			'buttonBorderRadius'  => array( 'type' => 'string', 'default' => '' ),
+			'buttonFontSize'      => array( 'type' => 'string', 'default' => '' ),
+			'buttonFullWidth'     => array( 'type' => 'boolean', 'default' => false ),
+			'errorColor'          => array( 'type' => 'string', 'default' => '' ),
+		);
+
+		/**
+		 * Filter the Gutenberg block attributes for the BoldForm block.
+		 *
+		 * Pro can add attributes for multi-step styling, payment fields, etc.
+		 *
+		 * @param array<string, array<string, mixed>> $block_attributes Block attribute definitions.
+		 */
+		$block_attributes = apply_filters( 'boldform_block_attributes', $block_attributes );
+
 		register_block_type(
 			'boldform/form',
 			array(
 				'api_version'     => 2,
 				'editor_script'   => 'boldform-lite-block-editor',
 				'render_callback' => array( $this, 'render_block' ),
-				'attributes'      => array(
-					'formId'              => array( 'type' => 'number', 'default' => 0 ),
-					'formMaxWidth'        => array( 'type' => 'string', 'default' => '' ),
-					'formPadding'         => array( 'type' => 'string', 'default' => '' ),
-					'formBgColor'         => array( 'type' => 'string', 'default' => '' ),
-					'formBorderRadius'    => array( 'type' => 'string', 'default' => '' ),
-					'formBorderWidth'     => array( 'type' => 'string', 'default' => '' ),
-					'formBorderColor'     => array( 'type' => 'string', 'default' => '' ),
-					'rowGap'              => array( 'type' => 'string', 'default' => '' ),
-					'columnGap'           => array( 'type' => 'string', 'default' => '' ),
-					'fieldGap'            => array( 'type' => 'string', 'default' => '' ),
-					'labelColor'          => array( 'type' => 'string', 'default' => '' ),
-					'labelFontSize'       => array( 'type' => 'string', 'default' => '' ),
-					'fieldHeight'         => array( 'type' => 'string', 'default' => '' ),
-					'textareaHeight'      => array( 'type' => 'string', 'default' => '' ),
-					'fieldPadding'        => array( 'type' => 'string', 'default' => '' ),
-					'fieldBgColor'        => array( 'type' => 'string', 'default' => '' ),
-					'fieldTextColor'      => array( 'type' => 'string', 'default' => '' ),
-					'fieldBorderWidth'    => array( 'type' => 'string', 'default' => '' ),
-					'fieldBorderColor'    => array( 'type' => 'string', 'default' => '' ),
-					'fieldBorderRadius'   => array( 'type' => 'string', 'default' => '' ),
-					'fieldFocusColor'     => array( 'type' => 'string', 'default' => '' ),
-					'buttonPadding'       => array( 'type' => 'string', 'default' => '' ),
-					'buttonBgColor'       => array( 'type' => 'string', 'default' => '' ),
-					'buttonTextColor'     => array( 'type' => 'string', 'default' => '' ),
-					'buttonHoverBgColor'  => array( 'type' => 'string', 'default' => '' ),
-					'buttonBorderRadius'  => array( 'type' => 'string', 'default' => '' ),
-					'buttonFontSize'      => array( 'type' => 'string', 'default' => '' ),
-					'buttonFullWidth'     => array( 'type' => 'boolean', 'default' => false ),
-					'errorColor'          => array( 'type' => 'string', 'default' => '' ),
-				),
+				'attributes'      => $block_attributes,
 				'supports'        => array(
 					'html' => false,
 				),
@@ -111,16 +124,31 @@ class BoldForm_Lite_Block {
 			BOLDFORM_LITE_VERSION
 		);
 
-		wp_localize_script(
-			'boldform-lite-block-editor',
-			'boldformLiteBlock',
-			array(
-				'forms'        => $this->get_form_options(),
-				'placeholder'  => __( 'Select a form', 'boldform-lite' ),
-				'emptyMessage' => __( 'No published forms found.', 'boldform-lite' ),
-				'previewText'  => __( 'Selected form will render on the frontend.', 'boldform-lite' ),
-			)
+		$block_data = array(
+			'forms'        => $this->get_form_options(),
+			'placeholder'  => __( 'Select a form', 'boldform-lite' ),
+			'emptyMessage' => __( 'No published forms found.', 'boldform-lite' ),
+			'previewText'  => __( 'Selected form will render on the frontend.', 'boldform-lite' ),
+			'builderUrl'   => admin_url( 'admin.php?page=boldform-lite-builder&form_id=' ),
 		);
+
+		/**
+		 * Filter the data passed to the Gutenberg block editor JS.
+		 *
+		 * Pro can add panel configs, multi-step options, etc.
+		 *
+		 * @param array<string, mixed> $block_data Editor data for boldformLiteBlock.
+		 */
+		$block_data = apply_filters( 'boldform_block_editor_data', $block_data );
+
+		wp_localize_script( 'boldform-lite-block-editor', 'boldformLiteBlock', $block_data );
+
+		/**
+		 * Fires after BoldForm block editor assets are enqueued.
+		 *
+		 * Pro can enqueue additional editor scripts for multi-step controls.
+		 */
+		do_action( 'boldform_block_editor_enqueue' );
 	}
 
 	/**
@@ -139,8 +167,19 @@ class BoldForm_Lite_Block {
 		$html  = do_shortcode( sprintf( '[boldform id="%d"]', $form_id ) );
 		$style = $this->build_block_inline_style( $attributes );
 
-		if ( $style ) {
-			return '<div class="boldform-block-wrap" style="' . esc_attr( $style ) . '">' . $html . '</div>';
+		// Build CSS classes for display overrides.
+		$classes = array( 'boldform-block-wrap' );
+		if ( ! empty( $attributes['hideLabels'] ) ) {
+			$classes[] = 'boldform-hide-labels';
+		}
+		if ( ! empty( $attributes['hidePlaceholders'] ) ) {
+			$classes[] = 'boldform-hide-ph-yes';
+		}
+
+		$needs_wrap = $style || count( $classes ) > 1;
+
+		if ( $needs_wrap ) {
+			return '<div class="' . esc_attr( implode( ' ', $classes ) ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . $html . '</div>';
 		}
 
 		return $html;

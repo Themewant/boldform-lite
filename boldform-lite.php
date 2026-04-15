@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BOLDFORM_LITE_VERSION', '1.1.0' );
+define( 'BOLDFORM_LITE_VERSION', '1.0.0' );
 define( 'BOLDFORM_LITE_DB_VERSION', '1.0.0' );
 define( 'BOLDFORM_LITE_FILE', __FILE__ );
 define( 'BOLDFORM_LITE_PATH', plugin_dir_path( __FILE__ ) );
@@ -40,4 +40,4 @@ function boldform_lite() {
 	return BoldForm_Lite::get_instance();
 }
 
-boldform_lite();
+add_action( 'plugins_loaded', 'boldform_lite' );

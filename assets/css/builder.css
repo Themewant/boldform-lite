@@ -370,6 +370,9 @@
 .boldform-sidebar-panel {
 	overflow: hidden;
 	background: rgba(255, 255, 255, 0.86);
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 100px);
 }
 
 .boldform-sidebar-tabs {
@@ -399,7 +402,18 @@
 }
 
 .boldform-sidebar-panel__content {
-	min-height: 700px;
+	min-height: 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.boldform-sidebar-panel__content::-webkit-scrollbar {
+	width: 5px;
+}
+
+.boldform-sidebar-panel__content::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 999px;
 }
 
 .boldform-sidebar-view {
@@ -759,20 +773,19 @@
 	gap: 8px;
 	width: 100%;
 	padding: 14px;
-	border: 2px dashed #e2e8f0;
-	border-radius: 14px;
-	background: transparent;
-	color: #64748b;
+	border: 1px solid #949494;
+	border-radius: 8px;
+	background: #fff;
+	color: #1e1e1e;
 	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
-	transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .boldform-canvas-add-row:hover {
-	border-color: #2271b1;
-	color: #2271b1;
-	background: rgba(34, 113, 177, 0.04);
+	background: #f6f6f6;
+	border-color: #757575;
 }
 
 .boldform-canvas-add-row .dashicons {
@@ -1015,9 +1028,11 @@
 .boldform-canvas .boldform-canvas-field-body input,
 .boldform-canvas .boldform-canvas-field-body textarea,
 .boldform-canvas .boldform-canvas-field-body select,
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger,
 .boldform-template-preview__canvas input,
 .boldform-template-preview__canvas textarea,
-.boldform-template-preview__canvas select {
+.boldform-template-preview__canvas select,
+.boldform-template-preview__canvas .bf-select__trigger {
 	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 16px);
@@ -1074,6 +1089,74 @@
 	background-size: 12px;
 	padding-right: 36px;
 	cursor: pointer;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select,
+.boldform-template-preview__canvas .bf-select {
+	width: 100%;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger,
+.boldform-template-preview__canvas .bf-select__trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: default;
+	box-sizing: border-box;
+	min-height: 0;
+	line-height: 1.5;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__arrow,
+.boldform-template-preview__canvas .bf-select__arrow {
+	margin-left: auto;
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-right: 2px solid #6b7280;
+	border-bottom: 2px solid #6b7280;
+	transform: rotate(45deg);
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__placeholder,
+.boldform-template-preview__canvas .bf-select__placeholder {
+	color: #9ca3af;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__value,
+.boldform-template-preview__canvas .bf-select__value {
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__tags,
+.boldform-template-preview__canvas .bf-select__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__tag,
+.boldform-template-preview__canvas .bf-select__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 10px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	font-size: 13px;
+	color: #334155;
+	white-space: nowrap;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__panel,
+.boldform-template-preview__canvas .bf-select__panel {
+	display: none;
 }
 
 .boldform-canvas .boldform-canvas-field-body {
@@ -1759,10 +1842,6 @@
 }
 
 .boldform-settings-section__head {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	gap: 12px;
 	margin-bottom: 16px;
 }
 
@@ -2009,6 +2088,12 @@
 	margin-bottom: 16px;
 }
 
+.boldform-choice-grid--3 .boldform-choice-card {
+	justify-content: center;
+	text-align: center;
+	padding: 10px 8px;
+}
+
 .boldform-choice-card {
 	position: relative;
 	display: flex;
@@ -2069,6 +2154,7 @@
 	align-items: center;
 	gap: 10px;
 	cursor: pointer;
+	margin-top: 10px;
 }
 
 .boldform-switch input {
@@ -2109,7 +2195,6 @@
 
 .boldform-switch__label {
 	font-size: 13px;
-	font-weight: 600;
 	color: #334155;
 }
 
@@ -2414,14 +2499,39 @@
 
 .boldform-preview-toolbar__devices {
 	display: inline-flex;
-	gap: 8px;
+	gap: 4px;
 	flex-wrap: wrap;
 }
 
-.boldform-preview-toolbar__devices .button.is-active {
-	border-color: #0f766e;
-	background: #ecfeff;
-	color: #155e75;
+.boldform-device-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.boldform-device-btn .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.boldform-device-btn:hover {
+	color: #475569;
+	background: #f1f5f9;
+}
+
+.boldform-device-btn.is-active {
+	color: #0f766e;
+	background: #f0fdfa;
 }
 
 .boldform-preview-toolbar__meta {
@@ -2680,5 +2790,163 @@
 
 	.boldform-preview-viewport {
 		padding: 16px;
+	}
+}
+
+/* Page break field canvas preview */
+.boldform-canvas-page-break {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+	background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
+	border: 2px dashed #14b8a6;
+	border-radius: 6px;
+	color: #0d9488;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.boldform-canvas-page-break .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+/* Field search */
+.boldform-field-search {
+	padding: 0 16px 12px;
+}
+
+.boldform-field-search input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 13px;
+	background: #f9fafb;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.boldform-field-search input:focus {
+	outline: none;
+	border-color: #2f80ed;
+	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+	background: #fff;
+}
+
+/* Row column layout presets */
+.boldform-row-layout-presets {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 6px;
+}
+
+.boldform-row-layout-btn {
+	display: flex;
+	gap: 3px;
+	padding: 6px 8px;
+	border: 2px solid #e5e7eb;
+	border-radius: 4px;
+	background: #f9fafb;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+	min-width: 40px;
+	height: 32px;
+	align-items: stretch;
+}
+
+.boldform-row-layout-btn span {
+	display: block;
+	background: #d1d5db;
+	border-radius: 2px;
+	min-width: 6px;
+	transition: background 0.15s;
+}
+
+.boldform-row-layout-btn:hover {
+	border-color: #2f80ed;
+}
+
+.boldform-row-layout-btn:hover span {
+	background: #93c5fd;
+}
+
+.boldform-row-layout-btn.is-active {
+	border-color: #2f80ed;
+	background: #eff6ff;
+}
+
+.boldform-row-layout-btn.is-active span {
+	background: #2f80ed;
+}
+
+/* Design Theme Cards */
+.boldform-theme-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+}
+
+.boldform-theme-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 6px 8px;
+	border: 2px solid #e5e7eb;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.boldform-theme-card:hover {
+	border-color: #93c5fd;
+}
+
+.boldform-theme-card.is-active {
+	border-color: #2f80ed;
+	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+}
+
+.boldform-theme-card__preview {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	padding: 0 4px;
+}
+
+.boldform-theme-card__input {
+	display: block;
+	height: 14px;
+	border: 2px solid;
+}
+
+.boldform-theme-card__btn {
+	display: block;
+	height: 10px;
+	font-size: 0;
+}
+
+.boldform-theme-card__name {
+	font-size: 10px;
+	color: #6b7280;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
+.boldform-theme-card.is-active .boldform-theme-card__name {
+	color: #2f80ed;
+}
+
+@media (max-width: 1200px) {
+	.boldform-theme-grid {
+		grid-template-columns: repeat(3, 1fr);
 	}
 }

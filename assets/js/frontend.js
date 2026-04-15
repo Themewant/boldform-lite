@@ -30,29 +30,40 @@ jQuery(
 		function validateClientSide( $form ) {
 			var valid = true;
 
-			$form.find( '.boldform-lite-form__field[data-error]' ).each(
+			// Validate all fields.
+			$form.find( '.boldform-lite-form__field' ).each(
 				function () {
 					var $wrapper = $( this );
-					var $input = $wrapper.find( 'input[required], textarea[required], select[required]' ).first();
+					var $required = $wrapper.find( 'input[required], textarea[required], select[required]' ).first();
+					var $email = $wrapper.find( 'input[type="email"]' ).first();
 
-					if ( ! $input.length ) {
-						return;
+					// Required check.
+					if ( $required.length && $wrapper.data( 'error' ) ) {
+						var val = $required.val();
+						var type = $required.attr( 'type' ) || '';
+						var isEmpty = false;
+
+						if ( 'checkbox' === type || 'radio' === type ) {
+							var name = $required.attr( 'name' );
+							isEmpty = ! $form.find( 'input[name="' + name + '"]:checked' ).length;
+						} else {
+							isEmpty = ! val || ! $.trim( val );
+						}
+
+						if ( isEmpty ) {
+							showFieldError( $wrapper, $wrapper.data( 'error' ) );
+							valid = false;
+							return;
+						}
 					}
 
-					var val = $input.val();
-					var type = $input.attr( 'type' ) || '';
-					var isEmpty = false;
-
-					if ( 'checkbox' === type || 'radio' === type ) {
-						var name = $input.attr( 'name' );
-						isEmpty = ! $form.find( 'input[name="' + name + '"]:checked' ).length;
-					} else {
-						isEmpty = ! val || ! $.trim( val );
-					}
-
-					if ( isEmpty ) {
-						showFieldError( $wrapper, $wrapper.data( 'error' ) );
-						valid = false;
+					// Email format check.
+					if ( $email.length ) {
+						var emailVal = $.trim( $email.val() || '' );
+						if ( emailVal && ! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( emailVal ) ) {
+							showFieldError( $wrapper, 'Please enter a valid email address.' );
+							valid = false;
+						}
 					}
 				}
 			);
@@ -137,6 +148,11 @@ jQuery(
 						function ( response ) {
 							var message = response && response.data && response.data.message ? response.data.message : boldformLiteFrontend.successText;
 							var redirectUrl = response && response.data && response.data.redirectUrl ? response.data.redirectUrl : '';
+
+							// Fallback: read redirect URL from form data attribute.
+							if ( ! redirectUrl ) {
+								redirectUrl = $form.data( 'redirect-url' ) || '';
+							}
 
 							if ( redirectUrl ) {
 								window.location.href = redirectUrl;
@@ -272,12 +288,27 @@ jQuery(
 		} );
 
 		// Custom select & multiselect dropdown.
-		$( 'select[data-boldform-select]' ).each( function () {
-			var $select = $( this );
-			var isMultiple = $select.data( 'multiple' ) === 1 || $select.data( 'multiple' ) === '1';
-			var isSearchable = $select.data( 'searchable' ) === 1 || $select.data( 'searchable' ) === '1';
-			var selected = [];
+		// The .bf-select HTML is rendered by PHP. JS only attaches behaviour.
+		function initBoldformSelects( $scope ) {
+			var $container = $scope || $( document );
+			$container.find( '.bf-select[data-boldform-custom-select]' ).each( function () {
+				if ( $( this ).data( 'bf-select-init' ) ) return;
+				$( this ).data( 'bf-select-init', true );
+				bindSelectBehaviour( $( this ) );
+			} );
+		}
+
+		function bindSelectBehaviour( $wrap ) {
+			var $select     = $wrap.prev( 'select[data-boldform-select]' );
+			var $trigger    = $wrap.find( '.bf-select__trigger' );
+			var $panel      = $wrap.find( '.bf-select__panel' );
+			var $list       = $wrap.find( '.bf-select__list' );
+			var $search     = $wrap.find( '.bf-select__panel-search' );
+			var isMultiple  = $wrap.data( 'multiple' ) === 1 || $wrap.data( 'multiple' ) === '1';
+			var isSearchable = $search.length > 0;
+
 			var options = [];
+			var selected = [];
 			var placeholderText = '';
 
 			$select.find( 'option' ).each( function () {
@@ -285,9 +316,8 @@ jQuery(
 				if ( val === '' ) {
 					placeholderText = $( this ).text();
 				} else {
-					var isSelected = $( this ).prop( 'selected' );
 					options.push( { value: val, text: $( this ).text() } );
-					if ( isSelected ) selected.push( val );
+					if ( $( this ).prop( 'selected' ) ) selected.push( val );
 				}
 			} );
 
@@ -297,27 +327,6 @@ jQuery(
 
 			var esc = function ( str ) { return $( '<span>' ).text( str ).html(); };
 			var checkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-			var searchSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-
-			var wrapClass = 'bf-select';
-			if ( isMultiple ) wrapClass += ' bf-select--multi';
-
-			var $wrap = $( '<div class="' + wrapClass + '"></div>' );
-			var $trigger = $( '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"></div>' );
-			var $panel = $( '<div class="bf-select__panel"></div>' );
-			var $list = $( '<div class="bf-select__list" role="listbox"></div>' );
-			var $search = null;
-
-			// Search goes inside the dropdown panel, above options.
-			if ( isSearchable ) {
-				var $searchWrap = $( '<div class="bf-select__search-wrap">' + searchSvg + '<input type="text" class="bf-select__panel-search" placeholder="Search\u2026" autocomplete="off"></div>' );
-				$search = $searchWrap.find( 'input' );
-				$panel.append( $searchWrap );
-			}
-
-			$panel.append( $list );
-			$wrap.append( $trigger ).append( $panel );
-			$select.after( $wrap );
 
 			function findOpt( val ) {
 				for ( var i = 0; i < options.length; i++ ) {
@@ -387,7 +396,7 @@ jQuery(
 				if ( $wrap.hasClass( 'is-open' ) ) return;
 				$wrap.addClass( 'is-open' );
 				$trigger.attr( 'aria-expanded', 'true' );
-				if ( $search ) {
+				if ( isSearchable ) {
 					$search.val( '' ).focus();
 				}
 				renderList();
@@ -413,7 +422,7 @@ jQuery(
 					renderTrigger();
 				}
 				syncToSelect();
-				renderList( $search ? $search.val() : '' );
+				renderList( isSearchable ? $search.val() : '' );
 			}
 
 			// Events.
@@ -427,7 +436,7 @@ jQuery(
 				if ( e.key === 'Escape' ) close();
 			} );
 
-			if ( $search ) {
+			if ( isSearchable ) {
 				$search.on( 'input', function () {
 					renderList( $( this ).val() );
 				} );
@@ -449,8 +458,41 @@ jQuery(
 			$( document ).on( 'click', function ( e ) {
 				if ( ! $( e.target ).closest( $wrap ).length ) close();
 			} );
+		}
 
-			renderTrigger();
-		} );
+		// Initialize on page load.
+		initBoldformSelects();
+
+		// Expose globally for external callers.
+		window.boldformInitSelects = initBoldformSelects;
+
+		// Re-initialize when Elementor editor re-renders a widget.
+		function bindElementor() {
+			if ( window.elementorFrontend && elementorFrontend.hooks ) {
+				elementorFrontend.hooks.addAction( 'frontend/element_ready/boldform.default', function ( $scope ) {
+					initBoldformSelects( $scope );
+				} );
+			}
+		}
+
+		if ( window.elementorFrontend ) {
+			bindElementor();
+		} else {
+			$( window ).on( 'elementor/frontend/init', bindElementor );
+		}
+
+		// Fallback: observe DOM for .bf-select added dynamically (Elementor/Gutenberg AJAX render).
+		// Skip on builder page (no forms to init) and debounce to avoid performance issues.
+		if ( typeof MutationObserver !== 'undefined' && ! document.getElementById( 'boldform-builder-root' ) ) {
+			var bfObserverTimer = null;
+			var bfObserver = new MutationObserver( function () {
+				if ( bfObserverTimer ) return;
+				bfObserverTimer = setTimeout( function () {
+					bfObserverTimer = null;
+					initBoldformSelects();
+				}, 200 );
+			} );
+			bfObserver.observe( document.body, { childList: true, subtree: true } );
+		}
 	}
 );
