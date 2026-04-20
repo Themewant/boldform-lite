@@ -182,9 +182,29 @@ class BoldForm_Lite_Shortcode {
 			$form_class .= ' boldform-hide-ph-yes';
 		}
 
+		// Inject per-form custom CSS/JS if set.
+		$custom_css = isset( $form_settings['custom_css'] ) ? trim( $form_settings['custom_css'] ) : '';
+		$custom_js  = isset( $form_settings['custom_js'] )  ? trim( $form_settings['custom_js'] )  : '';
+		$form_uid   = 'boldform-' . $form_id;
+
+		if ( '' !== $custom_css ) {
+			// Scope every rule under the unique form wrapper so it can't bleed out.
+			$scoped_css = preg_replace(
+				'/(?:^|\})(\s*)([^{@][^{]*)(\s*\{)/m',
+				'$1 #' . $form_uid . ' $2$3',
+				$custom_css
+			);
+			wp_add_inline_style( 'boldform-lite-frontend', $scoped_css );
+		}
+
+		if ( '' !== $custom_js ) {
+			wp_add_inline_script( 'boldform-lite-frontend', '(function(){var __f=document.getElementById(' . wp_json_encode( $form_uid ) . ');if(__f){(function(){' . $custom_js . '}).call(__f);}})();' );
+		}
+
 		// Output buffering keeps the template readable while still returning a shortcode string.
 		ob_start();
 		?>
+		<div id="<?php echo esc_attr( $form_uid ); ?>" class="boldform-wrap">
 		<form
 			class="<?php echo esc_attr( $form_class ); ?>"
 			style="<?php echo esc_attr( $this->build_form_style_variables( $form_settings ) ); ?>"
@@ -283,6 +303,7 @@ class BoldForm_Lite_Shortcode {
 			</div>
 			<?php endif; ?>
 		</form>
+		</div><?php // .boldform-wrap ?>
 		<?php
 
 		$form_html = (string) ob_get_clean();
@@ -297,7 +318,17 @@ class BoldForm_Lite_Shortcode {
 		 * @param object  $form_record Form database row.
 		 * @param array<string, mixed> $form_settings Resolved form settings.
 		 */
-		return (string) apply_filters( 'boldform_form_output', apply_filters( 'boldform_lite_form_output', $form_html, $form_id, $form_record ), $form_id, $form_record, $form_settings );
+		$form_html = (string) apply_filters( 'boldform_form_output', apply_filters( 'boldform_lite_form_output', $form_html, $form_id, $form_record ), $form_id, $form_record, $form_settings );
+
+		/**
+		 * Fires after a form is rendered on the frontend.
+		 * Used by Pro modules (e.g. analytics) to track form views.
+		 *
+		 * @param int $form_id Form ID.
+		 */
+		do_action( 'boldform_form_rendered', $form_id );
+
+		return $form_html;
 	}
 
 	/**
@@ -480,6 +511,13 @@ class BoldForm_Lite_Shortcode {
 			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
 			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
 			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			// ── Pro: Scheduling ──────────────────────────────────────────────────
+			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )      : '',
+			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] )     : '',
+			'schedule_tz'             => isset( $decoded['schedule_tz'] )             ? sanitize_text_field( (string) $decoded['schedule_tz'] )             : '',
+			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )            : '',
+			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )            : '',
+			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
 		);
 	}
 
@@ -639,6 +677,55 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
+	 * Resolves an auto-populate value for a given key.
+	 *
+	 * Priority:
+	 *  1. URL parameter (?key=value) — sanitized text.
+	 *  2. Logged-in user built-in data (user_email, user_login, display_name,
+	 *     first_name, last_name, user_url, user_registered).
+	 *  3. Pro extension via `boldform_auto_populate_{key}` filter.
+	 *
+	 * @param string $key The auto-populate key set on the field.
+	 * @return string Resolved value, or empty string if nothing matched.
+	 */
+	private function resolve_auto_populate( string $key ): string {
+		// 1. URL parameter.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET[ $key ] ) ) {
+			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) );
+		}
+
+		// 2. Logged-in user built-in properties.
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+
+			$user_map = array(
+				'user_email'      => $user->user_email,
+				'email'           => $user->user_email,
+				'user_login'      => $user->user_login,
+				'display_name'    => $user->display_name,
+				'first_name'      => $user->first_name,
+				'last_name'       => $user->last_name,
+				'user_url'        => $user->user_url,
+				'user_registered' => $user->user_registered,
+			);
+
+			if ( isset( $user_map[ $key ] ) ) {
+				return (string) $user_map[ $key ];
+			}
+		}
+
+		/**
+		 * Filter to allow Pro or third-party plugins to provide a value
+		 * for auto-populate keys not handled by Lite (e.g. user meta, post meta).
+		 *
+		 * @param string $value Empty string by default.
+		 * @param string $key   The auto-populate key.
+		 */
+		return (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+	}
+
+	/**
 	 * Renders one field wrapper.
 	 *
 	 * @param array<string, mixed> $field Field configuration.
@@ -650,6 +737,15 @@ class BoldForm_Lite_Shortcode {
 		$label          = isset( $field['label'] ) ? (string) $field['label'] : '';
 		$placeholder    = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
 		$default        = isset( $field['default_value'] ) ? (string) $field['default_value'] : '';
+
+		// Auto-population: resolve a value from URL param or logged-in user data.
+		$auto_key = isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '';
+		if ( '' !== $auto_key ) {
+			$auto_value = $this->resolve_auto_populate( $auto_key );
+			if ( '' !== $auto_value ) {
+				$default = $auto_value;
+			}
+		}
 		$required       = ! empty( $field['required'] );
 		$custom_error   = isset( $field['custom_error'] ) ? (string) $field['custom_error'] : '';
 		$options        = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
@@ -669,6 +765,11 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'page_break' === $type ) {
 			return '';
+		}
+
+		// Pro payment field types — render a placeholder that Pro replaces with proper UI.
+		if ( in_array( $type, array( 'product', 'quantity', 'custom_amount', 'order_summary', 'payment', 'order_total' ), true ) ) {
+			return '<div class="boldform-pro-field-placeholder" data-field-id="' . esc_attr( $field_id ) . '" data-field-type="' . esc_attr( $type ) . '"></div>';
 		}
 
 		if ( 'submit' === $type ) {
@@ -756,11 +857,31 @@ class BoldForm_Lite_Shortcode {
 		<?php $label_pos = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top'; ?>
 		<?php
 		$cond_attrs = '';
-		if ( ! empty( $field['conditional']['enabled'] ) && ! empty( $field['conditional']['field_id'] ) ) {
-			$cond_attrs .= ' data-cond-action="' . esc_attr( $field['conditional']['action'] ?? 'show' ) . '"';
-			$cond_attrs .= ' data-cond-field="boldform_' . esc_attr( $field['conditional']['field_id'] ) . '"';
-			$cond_attrs .= ' data-cond-operator="' . esc_attr( $field['conditional']['operator'] ?? 'is' ) . '"';
-			$cond_attrs .= ' data-cond-value="' . esc_attr( $field['conditional']['value'] ?? '' ) . '"';
+		if ( ! empty( $field['conditional']['enabled'] ) ) {
+			$cond_data = $field['conditional'];
+			if ( isset( $cond_data['conditions'] ) && is_array( $cond_data['conditions'] ) ) {
+				// Multi-condition structure — prefix field_ids with boldform_ for the JS engine.
+				$conditions_out = array();
+				foreach ( $cond_data['conditions'] as $c ) {
+					$conditions_out[] = array(
+						'field_id' => 'boldform_' . ( isset( $c['field_id'] ) ? $c['field_id'] : '' ),
+						'operator' => isset( $c['operator'] ) ? $c['operator'] : 'is',
+						'value'    => isset( $c['value'] ) ? $c['value'] : '',
+					);
+				}
+				$cond_payload = array(
+					'action'     => isset( $cond_data['action'] ) && 'hide' === $cond_data['action'] ? 'hide' : 'show',
+					'logic'      => isset( $cond_data['logic'] ) && 'OR' === $cond_data['logic'] ? 'OR' : 'AND',
+					'conditions' => $conditions_out,
+				);
+				$cond_attrs .= ' data-bf-conditions="' . esc_attr( wp_json_encode( $cond_payload ) ) . '"';
+			} elseif ( ! empty( $cond_data['field_id'] ) ) {
+				// Legacy single-rule fallback.
+				$cond_attrs .= ' data-cond-action="' . esc_attr( $cond_data['action'] ?? 'show' ) . '"';
+				$cond_attrs .= ' data-cond-field="boldform_' . esc_attr( $cond_data['field_id'] ) . '"';
+				$cond_attrs .= ' data-cond-operator="' . esc_attr( $cond_data['operator'] ?? 'is' ) . '"';
+				$cond_attrs .= ' data-cond-value="' . esc_attr( $cond_data['value'] ?? '' ) . '"';
+			}
 		}
 
 		/**
@@ -773,7 +894,7 @@ class BoldForm_Lite_Shortcode {
 		 */
 		$cond_attrs = apply_filters( 'boldform_field_conditional_attrs', $cond_attrs, $field );
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -784,7 +905,21 @@ class BoldForm_Lite_Shortcode {
 			<?php endif; ?>
 
 			<div class="boldform-lite-form__control">
-				<?php echo $this->render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php
+				$field_control_html = $this->render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout, $field );
+				/**
+				 * Filter the rendered HTML for a field control.
+				 *
+				 * Pro modules (e.g. calculation) can intercept this to render their own control HTML
+				 * for custom field types before the output is printed.
+				 *
+				 * @param string               $html       Rendered control HTML.
+				 * @param string               $type       Field type.
+				 * @param string               $field_name Input name attribute.
+				 * @param array<string, mixed> $field      Full field definition.
+				 */
+				echo apply_filters( 'boldform_field_control_html', $field_control_html, $type, $field_name, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				?>
 			</div>
 		</div>
 		<?php
@@ -1010,7 +1145,8 @@ class BoldForm_Lite_Shortcode {
 		<div class="boldform-lite-form__field boldform-lite-form__field--terms_conditions">
 			<label class="boldform-lite-form__choice boldform-lite-form__terms">
 				<input type="checkbox" name="<?php echo esc_attr( $field_name ); ?>" value="1"<?php echo esc_attr( $required_attr ); ?>>
-				<span>
+				<span class="boldform-lite-form__choice-control" aria-hidden="true"></span>
+				<span class="boldform-lite-form__choice-label">
 					<?php if ( '' !== $content ) : ?>
 						<span class="boldform-lite-form__terms-copy"><?php echo wp_kses_post( $content ); ?></span>
 					<?php endif; ?>
@@ -1105,7 +1241,7 @@ class BoldForm_Lite_Shortcode {
 			$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
 
 			// Trigger.
-			$arrow = '<span class="bf-select__arrow"></span>';
+			$arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 			$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
 
 			if ( $is_multiple ) {
@@ -1172,7 +1308,7 @@ class BoldForm_Lite_Shortcode {
 				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
 
 				$html .= sprintf(
-					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span>%7$s</span></label>',
+					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s</span></label>',
 					esc_attr( $choice_id ),
 					esc_attr( $type ),
 					esc_attr( $name_attr ),

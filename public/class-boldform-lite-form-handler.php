@@ -180,6 +180,27 @@ class BoldForm_Lite_Form_Handler {
 		 */
 		do_action( 'boldform_before_submission', $form_id, $request, $fields, $settings );
 
+		/**
+		 * Filter to allow Pro modules to gate a submission before validation.
+		 *
+		 * Return an array with `success => false` and a `message` string to reject
+		 * the submission immediately (e.g. scheduling window, entry limit, geo-block).
+		 * Return null (default) to proceed normally.
+		 *
+		 * @param array<string, mixed>|null            $block    Null to proceed; array( 'success'=>false, 'message'=>'…' ) to reject.
+		 * @param int                                  $form_id  Form ID.
+		 * @param array<string, mixed>                 $settings Form settings.
+		 * @param array<string, mixed>                 $request  Raw request payload.
+		 */
+		$submission_gate = apply_filters( 'boldform_gate_submission', null, $form_id, $settings, $request );
+		if ( is_array( $submission_gate ) && isset( $submission_gate['success'] ) && false === $submission_gate['success'] ) {
+			return $this->build_result(
+				false,
+				isset( $submission_gate['message'] ) ? (string) $submission_gate['message'] : __( 'This form is not currently available.', 'boldform-lite' ),
+				array()
+			);
+		}
+
 		$captcha_result = $this->structure_contains_field_type( $fields, 'captcha' ) ? $this->validate_captcha( $captcha, $request ) : array(
 			'success' => true,
 			'message' => '',
@@ -192,6 +213,9 @@ class BoldForm_Lite_Form_Handler {
 				array()
 			);
 		}
+
+		// Strip values for fields hidden by conditional logic so they are not validated or saved.
+		$request = $this->strip_conditionally_hidden_fields( $fields, $request );
 
 		/**
 		 * Filter the raw request payload before field validation.
@@ -227,6 +251,24 @@ class BoldForm_Lite_Form_Handler {
 		 */
 		$validation['entry_data'] = apply_filters( 'boldform_entry_data', $validation['entry_data'], $form_id, $settings );
 
+		// Duplicate entry check — runs after validation so entry_data is fully resolved.
+		if ( $this->check_duplicate_entry( $form_id, $settings, $validation['entry_data'], $fields ) ) {
+			$dup_message = ! empty( $settings['dup_message'] )
+				? $settings['dup_message']
+				: __( 'You have already submitted this form.', 'boldform-lite' );
+
+			/**
+			 * Filter the duplicate-submission error message.
+			 *
+			 * @param string               $message  Default or configured message.
+			 * @param int                  $form_id  Form ID.
+			 * @param array<string, mixed> $settings Form settings.
+			 */
+			$dup_message = (string) apply_filters( 'boldform_duplicate_entry_message', $dup_message, $form_id, $settings );
+
+			return $this->build_result( false, $dup_message, array() );
+		}
+
 		/**
 		 * Fires before an entry is persisted to the database.
 		 *
@@ -236,29 +278,62 @@ class BoldForm_Lite_Form_Handler {
 		 */
 		do_action( 'boldform_before_entry_save', $form_id, $validation['entry_data'], $settings );
 
-		$saved = $this->save_entry( $form_id, $validation['entry_data'] );
+		/**
+		 * Filter whether the entry should be saved immediately.
+		 *
+		 * Return false to defer or skip the entry save (e.g. Pro payment module
+		 * defers saving until payment is confirmed for WooCommerce redirect flow).
+		 * When returning false, the module is responsible for saving the entry itself.
+		 *
+		 * @param bool                                $should_save Whether to save the entry now.
+		 * @param int                                 $form_id     Form ID.
+		 * @param array<string, array<string, mixed>> $entry_data  Validated entry data.
+		 * @param array<string, mixed>                $settings    Form settings.
+		 * @param array<string, mixed>                $request     Raw request payload.
+		 */
+		$should_save = apply_filters( 'boldform_should_save_entry', true, $form_id, $validation['entry_data'], $settings, $request );
 
-		if ( ! $saved ) {
-			return $this->build_result(
-				false,
-				__( 'Unable to save your submission right now.', 'boldform-lite' ),
-				array()
-			);
+		$entry_id = 0;
+
+		if ( $should_save ) {
+			$entry_id = $this->create_entry( $form_id, $validation['entry_data'] );
+
+			if ( ! $entry_id ) {
+				return $this->build_result(
+					false,
+					__( 'Unable to save your submission right now.', 'boldform-lite' ),
+					array()
+				);
+			}
+
+			/**
+			 * Fires immediately after a new entry is saved to the database.
+			 *
+			 * Pro can use this to trigger integrations (CRM, webhooks, Zapier, Slack).
+			 *
+			 * @param int                                 $form_id    Form ID.
+			 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
+			 * @param object                              $form_record Form database row.
+			 * @param array<string, mixed>                $settings   Form settings.
+			 */
+			do_action( 'boldform_entry_saved', $form_id, $validation['entry_data'], $form_record, $settings );
+
+			/**
+			 * Fires after entry is saved, passing the new entry ID.
+			 *
+			 * Pro payment module uses this to link the transaction record to the entry.
+			 *
+			 * @param int                                 $entry_id   Newly inserted entry ID.
+			 * @param int                                 $form_id    Form ID.
+			 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
+			 * @param array<string, mixed>                $settings   Form settings.
+			 */
+			do_action( 'boldform_entry_created', $entry_id, $form_id, $validation['entry_data'], $settings );
 		}
 
-		/**
-		 * Fires immediately after a new entry is saved to the database.
-		 *
-		 * Pro can use this to trigger integrations (CRM, webhooks, Zapier, Slack).
-		 *
-		 * @param int                                 $form_id    Form ID.
-		 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
-		 * @param object                              $form_record Form database row.
-		 * @param array<string, mixed>                $settings   Form settings.
-		 */
-		do_action( 'boldform_entry_saved', $form_id, $validation['entry_data'], $form_record, $settings );
-
-		$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
+		if ( $should_save ) {
+			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
+		}
 
 		$result = $this->build_result(
 			true,
@@ -276,8 +351,10 @@ class BoldForm_Lite_Form_Handler {
 		 * @param int                                 $form_id    Form ID.
 		 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
 		 * @param array<string, mixed>                $settings   Form settings.
+		 * @param int                                 $entry_id   Saved entry ID (0 if deferred).
+		 * @param array<string, mixed>                $request    Raw request payload.
 		 */
-		return apply_filters( 'boldform_submission_result', $result, $form_id, $validation['entry_data'], $settings );
+		return apply_filters( 'boldform_submission_result', $result, $form_id, $validation['entry_data'], $settings, $entry_id, $request );
 	}
 
 	/**
@@ -323,6 +400,233 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Checks whether a duplicate entry already exists for this form submission.
+	 *
+	 * Method: email  — match on the value of the first email-type field in the form.
+	 * Method: ip     — match on the submitter's IP address.
+	 * Method: field  — match on the value of a specific field chosen by the admin.
+	 *
+	 * The query targets `entry_data_json` only for email/field methods, using a
+	 * JSON_EXTRACT path so the search is anchored and avoids false positives from
+	 * partial-string matches.  A covering index on (form_id, status) keeps the
+	 * scan small; for `ip` we read a stored column directly.
+	 *
+	 * @param int                                 $form_id    Form ID.
+	 * @param array<string, mixed>                $settings   Normalized form settings.
+	 * @param array<string, array<string, mixed>> $entry_data Validated entry data (keyed by field_id).
+	 * @param array<int, array<string, mixed>>    $fields     All field definitions.
+	 * @return bool  True if a duplicate exists.
+	 */
+	private function check_duplicate_entry( $form_id, $settings, $entry_data, $fields ) {
+		if ( empty( $settings['dup_enabled'] ) ) {
+			return false;
+		}
+
+		global $wpdb;
+
+		$method     = isset( $settings['dup_method'] ) ? (string) $settings['dup_method'] : 'email';
+		$table      = esc_sql( $this->plugin->get_entries_table_name() );
+
+		switch ( $method ) {
+
+			// ── IP-based ────────────────────────────────────────────────────────
+			case 'ip':
+				$raw_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+				$ip     = $this->sanitize_ip_address( $raw_ip );
+				if ( '' === $ip ) {
+					return false;
+				}
+
+				// Single indexed column lookup — very fast.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$count = (int) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT COUNT(*) FROM `{$table}` WHERE form_id = %d AND user_ip = %s AND status != %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$form_id,
+						$ip,
+						'spam'
+					)
+				);
+				return $count > 0;
+
+			// ── Email-based ─────────────────────────────────────────────────────
+			case 'email':
+				// Find the first email-type field that has a value in entry_data.
+				$email_value = '';
+				foreach ( $fields as $field ) {
+					if ( 'email' !== ( $field['type'] ?? '' ) ) {
+						continue;
+					}
+					$fid = $field['id'] ?? '';
+					if ( isset( $entry_data[ $fid ]['value'] ) && '' !== $entry_data[ $fid ]['value'] ) {
+						$email_value = (string) $entry_data[ $fid ]['value'];
+						break;
+					}
+				}
+				if ( '' === $email_value ) {
+					return false; // No email field — skip.
+				}
+				return $this->duplicate_json_field_match( $table, $form_id, $email_value );
+
+			// ── Custom field-based ──────────────────────────────────────────────
+			case 'field':
+				$dup_field_id = isset( $settings['dup_field_id'] ) ? (string) $settings['dup_field_id'] : '';
+				if ( '' === $dup_field_id ) {
+					return false;
+				}
+				$field_value = isset( $entry_data[ $dup_field_id ]['value'] ) ? (string) $entry_data[ $dup_field_id ]['value'] : '';
+				if ( '' === $field_value ) {
+					return false;
+				}
+				return $this->duplicate_json_field_match( $table, $form_id, $field_value, $dup_field_id );
+
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Queries entry_data_json for an exact field-value match.
+	 *
+	 * Uses JSON_EXTRACT so the search is anchor-exact and avoids substring hits.
+	 * Falls back to a LIKE scan on older MySQL (<5.7) that lack JSON_EXTRACT, but
+	 * this is effectively MySQL 5.7+ / MariaDB 10.2+ (WordPress minimum).
+	 *
+	 * DB query example:
+	 *   SELECT COUNT(*) FROM wp_boldform_entries
+	 *   WHERE form_id = 12
+	 *     AND status != 'spam'
+	 *     AND JSON_EXTRACT(entry_data_json, '$."email_field_id".value') = 'user@example.com'
+	 *   LIMIT 1;
+	 *
+	 * @param string $table    Sanitized table name.
+	 * @param int    $form_id  Form ID.
+	 * @param string $value    Value to match.
+	 * @param string $field_id Field ID key inside entry_data_json. Empty = search all fields.
+	 * @return bool
+	 */
+	private function duplicate_json_field_match( $table, $form_id, $value, $field_id = '' ) {
+		global $wpdb;
+
+		if ( '' !== $field_id ) {
+			// Targeted path: JSON_EXTRACT('$."<field_id>".value').
+			// Wrap field_id in quotes inside the JSON path — sanitize_key already stripped special chars.
+			$json_path = '$."' . esc_sql( $field_id ) . '".value';
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM `{$table}` WHERE form_id = %d AND status != %s AND JSON_UNQUOTE(JSON_EXTRACT(entry_data_json, %s)) = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$form_id,
+					'spam',
+					$json_path,
+					$value
+				)
+			);
+		} else {
+			// Email method without known field_id: scan all ".value" leaves.
+			// JSON_SEARCH returns the path of the first match — NULL means no match.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM `{$table}` WHERE form_id = %d AND status != %s AND JSON_SEARCH(entry_data_json, 'one', %s) IS NOT NULL LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$form_id,
+					'spam',
+					$value
+				)
+			);
+		}
+
+		return $count > 0;
+	}
+
+	/**
+	 * Tests a single condition against the submitted request data.
+	 *
+	 * @param array<string, mixed> $cond    Condition: {field_id, operator, value}.
+	 * @param array<string, mixed> $request Raw request payload (field names use boldform_ prefix).
+	 * @return bool
+	 */
+	private function evaluate_condition( $cond, $request ) {
+		$field_id  = isset( $cond['field_id'] ) ? (string) $cond['field_id'] : '';
+		$operator  = isset( $cond['operator'] ) ? (string) $cond['operator'] : 'is';
+		$cond_val  = isset( $cond['value'] ) ? (string) $cond['value'] : '';
+		$field_key = 'boldform_' . $field_id;
+
+		$raw = '';
+		if ( isset( $request[ $field_key ] ) ) {
+			if ( is_array( $request[ $field_key ] ) ) {
+				$raw = implode( ', ', array_map( 'strval', $request[ $field_key ] ) );
+			} else {
+				$raw = (string) $request[ $field_key ];
+			}
+		}
+
+		switch ( $operator ) {
+			case 'is':           return $raw === $cond_val;
+			case 'is_not':       return $raw !== $cond_val;
+			case 'contains':     return false !== stripos( $raw, $cond_val );
+			case 'not_contains': return false === stripos( $raw, $cond_val );
+			case 'starts_with':  return 0 === stripos( $raw, $cond_val );
+			case 'ends_with':    return '' !== $cond_val && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
+			case 'greater_than': return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw > (float) $cond_val;
+			case 'less_than':    return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw < (float) $cond_val;
+			case 'not_empty':    return '' !== $raw;
+			case 'empty':        return '' === $raw;
+			default:             return false;
+		}
+	}
+
+	/**
+	 * Evaluates conditional logic for all fields and nulls out values for fields
+	 * that a hide/disable action targets when its conditions are met.
+	 *
+	 * This prevents hidden fields from being validated as required or saved.
+	 *
+	 * @param array<int, array<string, mixed>> $fields  All form field definitions.
+	 * @param array<string, mixed>             $request Submitted request payload.
+	 * @return array<string, mixed>  Modified request.
+	 */
+	private function strip_conditionally_hidden_fields( $fields, $request ) {
+		foreach ( $fields as $field ) {
+			$cond = isset( $field['conditional'] ) && is_array( $field['conditional'] ) ? $field['conditional'] : array();
+			if ( empty( $cond['enabled'] ) ) {
+				continue;
+			}
+
+			// Multi-condition structure — action always applies to this field itself.
+			if ( isset( $cond['conditions'] ) && is_array( $cond['conditions'] ) ) {
+				$logic      = isset( $cond['logic'] ) && 'OR' === $cond['logic'] ? 'OR' : 'AND';
+				$action     = isset( $cond['action'] ) && 'hide' === $cond['action'] ? 'hide' : 'show';
+				$conditions = $cond['conditions'];
+				$field_key  = 'boldform_' . sanitize_key( (string) ( $field['id'] ?? '' ) );
+
+				$results = array_map( function ( $c ) use ( $request ) {
+					return $this->evaluate_condition( $c, $request );
+				}, $conditions );
+
+				$condition_met = 'OR' === $logic
+					? in_array( true, $results, true )
+					: ! in_array( false, $results, true );
+
+				// Strip if field should be hidden (not visible to the user).
+				if ( ( 'show' === $action && ! $condition_met ) || ( 'hide' === $action && $condition_met ) ) {
+					unset( $request[ $field_key ] );
+				}
+			} elseif ( ! empty( $cond['field_id'] ) ) {
+				// Legacy single-rule fallback.
+				$match  = $this->evaluate_condition( $cond, $request );
+				$action = isset( $cond['action'] ) ? (string) $cond['action'] : 'show';
+				$field_key = 'boldform_' . sanitize_key( (string) ( $field['id'] ?? '' ) );
+				if ( ( 'show' === $action && ! $match ) || ( 'hide' === $action && $match ) ) {
+					unset( $request[ $field_key ] );
+				}
+			}
+		}
+		return $request;
 	}
 
 	/**
@@ -425,6 +729,16 @@ class BoldForm_Lite_Form_Handler {
 			'enable_admin_email' => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'        => $admin_email,
+			// Integrations — assigned connections + field mapping (saved by boldform_form_settings_extra filter).
+			'assigned_connections' => isset( $decoded['assigned_connections'] ) && is_array( $decoded['assigned_connections'] ) ? $decoded['assigned_connections'] : array(),
+			'connection_field_map' => isset( $decoded['connection_field_map'] ) && is_array( $decoded['connection_field_map'] ) ? $decoded['connection_field_map'] : array(),
+			// Pro: Scheduling.
+			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )  : '',
+			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
+			'schedule_tz'             => isset( $decoded['schedule_tz'] )             ? sanitize_text_field( (string) $decoded['schedule_tz'] )         : '',
+			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )        : '',
+			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )        : '',
+			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
 		);
 	}
 
@@ -965,19 +1279,20 @@ class BoldForm_Lite_Form_Handler {
 	}
 
 	/**
-	 * Persists a submission to the entries table.
+	 * Persists a submission to the entries table and returns the new entry ID.
 	 *
-	 * @param int                        $form_id    Form ID.
+	 * Public so Pro modules (e.g. payment) can save deferred entries.
+	 *
+	 * @param int                                 $form_id    Form ID.
 	 * @param array<string, array<string, mixed>> $entry_data Sanitized entry payload.
-	 * @return bool
+	 * @return int Inserted entry ID, or 0 on failure.
 	 */
-	private function save_entry( $form_id, $entry_data ) {
+	public function create_entry( $form_id, $entry_data ) {
 		global $wpdb;
 
 		$table_name = $this->plugin->get_entries_table_name();
 		$user_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_textarea_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-		// Store request metadata with the submission so admins can review context without trusting raw headers.
 		$data       = array(
 			'form_id'          => $form_id,
 			'entry_data_json'  => wp_json_encode( $entry_data ),
@@ -988,11 +1303,13 @@ class BoldForm_Lite_Form_Handler {
 			'status'           => 'unread',
 		);
 
-		return false !== $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 			$table_name,
 			$data,
 			array( '%d', '%s', '%s', '%d', '%s', '%s', '%s' )
 		);
+
+		return false !== $inserted ? (int) $wpdb->insert_id : 0;
 	}
 
 	/**

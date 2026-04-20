@@ -119,7 +119,7 @@ class BoldForm_Lite_Ajax_Save {
 						$options_layout = isset( $field['options_layout'] ) && 'inline' === $field['options_layout'] ? 'inline' : 'block';
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
-						$fields[] = array(
+						$core_field = array(
 							'id'             => isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : wp_unique_id( 'field_' ),
 							'type'           => $field_type,
 							'label'          => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
@@ -145,13 +145,35 @@ class BoldForm_Lite_Ajax_Save {
 								'country' => ! isset( $field['address_fields']['country'] ) || ! empty( $field['address_fields']['country'] ),
 							) : array( 'street' => true, 'city' => true, 'state' => true, 'zip' => true, 'country' => true ),
 							'label_placement'   => isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top',
-							'conditional'       => isset( $field['conditional'] ) && is_array( $field['conditional'] ) ? array(
-								'enabled'  => ! empty( $field['conditional']['enabled'] ),
-								'action'   => isset( $field['conditional']['action'] ) && in_array( $field['conditional']['action'], array( 'show', 'hide' ), true ) ? $field['conditional']['action'] : 'show',
-								'field_id' => isset( $field['conditional']['field_id'] ) ? sanitize_key( (string) $field['conditional']['field_id'] ) : '',
-								'operator' => isset( $field['conditional']['operator'] ) && in_array( $field['conditional']['operator'], array( 'is', 'is_not', 'contains', 'not_empty', 'empty' ), true ) ? $field['conditional']['operator'] : 'is',
-								'value'    => isset( $field['conditional']['value'] ) ? sanitize_text_field( (string) $field['conditional']['value'] ) : '',
-							) : array( 'enabled' => false, 'action' => 'show', 'field_id' => '', 'operator' => 'is', 'value' => '' ),
+							'conditional'       => ( function () use ( $field ) {
+								$raw     = isset( $field['conditional'] ) && is_array( $field['conditional'] ) ? $field['conditional'] : array();
+								$enabled = ! empty( $raw['enabled'] );
+								$action  = isset( $raw['action'] ) && 'hide' === $raw['action'] ? 'hide' : 'show';
+								$logic   = isset( $raw['logic'] ) && 'OR' === strtoupper( (string) $raw['logic'] ) ? 'OR' : 'AND';
+
+								$allowed_ops = array( 'is', 'is_not', 'contains', 'not_contains', 'not_empty', 'empty', 'starts_with', 'ends_with', 'greater_than', 'less_than' );
+								$conditions  = array();
+								if ( isset( $raw['conditions'] ) && is_array( $raw['conditions'] ) ) {
+									foreach ( $raw['conditions'] as $cond ) {
+										if ( ! is_array( $cond ) ) continue;
+										$conditions[] = array(
+											'field_id' => isset( $cond['field_id'] ) ? sanitize_key( (string) $cond['field_id'] ) : '',
+											'operator' => isset( $cond['operator'] ) && in_array( $cond['operator'], $allowed_ops, true ) ? $cond['operator'] : 'is',
+											'value'    => isset( $cond['value'] ) ? sanitize_text_field( (string) $cond['value'] ) : '',
+										);
+									}
+								}
+								if ( empty( $conditions ) ) {
+									$conditions[] = array( 'field_id' => '', 'operator' => 'is', 'value' => '' );
+								}
+
+								return array(
+									'enabled'    => $enabled,
+									'action'     => $action,
+									'logic'      => $logic,
+									'conditions' => $conditions,
+								);
+							} )(),
 							'select_searchable' => ! empty( $field['select_searchable'] ),
 							'select_multiple'   => ! empty( $field['select_multiple'] ),
 							'mask_pattern'    => isset( $field['mask_pattern'] ) ? sanitize_text_field( (string) $field['mask_pattern'] ) : '',
@@ -172,7 +194,22 @@ class BoldForm_Lite_Ajax_Save {
 							'btn_radius'      => isset( $field['btn_radius'] ) && '' !== $field['btn_radius'] ? max( 0, min( 50, absint( $field['btn_radius'] ) ) ) : '',
 							'progress_color'  => isset( $field['progress_color'] ) && sanitize_hex_color( $field['progress_color'] ) ? sanitize_hex_color( $field['progress_color'] ) : '',
 							'progress_style'  => isset( $field['progress_style'] ) && in_array( $field['progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $field['progress_style'] : 'bar',
+							'auto_populate_key' => isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '',
 						);
+
+						/**
+						 * Filter extra field keys to persist for non-core field types.
+						 *
+						 * Pro can hook this to save additional field attributes (e.g. payment
+						 * amount, currency) that are not part of the core field schema.
+						 *
+						 * @param array<string, mixed> $extra      Extra key => sanitized-value pairs (start empty).
+						 * @param array<string, mixed> $field      Raw field from the request.
+						 * @param string               $field_type Field type slug.
+						 */
+						$extra_keys = apply_filters( 'boldform_field_extra_keys', array(), $field, $field_type );
+
+						$fields[] = array_merge( $core_field, $extra_keys );
 					}
 				}
 
@@ -375,7 +412,7 @@ class BoldForm_Lite_Ajax_Save {
 			: ( ! empty( $settings_payload['admin_email'] ) ? 'custom' : 'site_admin' );
 		$admin_email = isset( $settings_payload['admin_email'] ) ? sanitize_email( (string) $settings_payload['admin_email'] ) : '';
 
-		return array(
+		$normalized = array(
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
@@ -426,6 +463,26 @@ class BoldForm_Lite_Ajax_Save {
 			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
+			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
+			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
+			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
+			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
+			'custom_css'          => isset( $settings_payload['custom_css'] ) ? wp_strip_all_tags( (string) $settings_payload['custom_css'] ) : '',
+			'custom_js'           => isset( $settings_payload['custom_js'] )  ? (string) $settings_payload['custom_js']                      : '',
 		);
+
+		/**
+		 * Filter extra form-level settings to persist alongside core settings.
+		 *
+		 * Pro modules can hook here to save their own form-level config keys
+		 * (e.g. webhooks, integrations). Each returned key/value is merged into
+		 * the final settings array that gets stored as JSON in the DB.
+		 *
+		 * @param array<string, mixed> $extra           Extra settings to merge (start empty).
+		 * @param array<string, mixed> $settings_payload Raw settings payload from the request.
+		 */
+		$extra = (array) apply_filters( 'boldform_form_settings_extra', array(), $settings_payload );
+
+		return array_merge( $normalized, $extra );
 	}
 }

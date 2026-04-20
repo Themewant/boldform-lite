@@ -384,7 +384,9 @@ class BoldForm_Lite_Admin {
 						'svgCode'         => __( 'SVG Icon', 'boldform-lite' ),
 						'iconPosition'    => __( 'Icon position', 'boldform-lite' ),
 						'iconGap'         => __( 'Icon gap (px)', 'boldform-lite' ),
-						'cssClass'        => __( 'CSS Class', 'boldform-lite' ),
+						'cssClass'          => __( 'CSS Class', 'boldform-lite' ),
+						'autoPopulateKey'   => __( 'Auto Populate Key', 'boldform-lite' ),
+						'autoPopulateDesc'  => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
 						'rowSettings'     => __( 'Row settings', 'boldform-lite' ),
 						'moveUp'          => __( 'Move up', 'boldform-lite' ),
 						'moveDown'        => __( 'Move down', 'boldform-lite' ),
@@ -429,6 +431,10 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
+					// Pro feature flags — overridden to true by boldform_builder_localize_data filter when Pro is active.
+					'hasPro'             => false,
+					'proTemplates'       => array(),
+					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
 			/**
@@ -445,6 +451,31 @@ class BoldForm_Lite_Admin {
 				'boldformLiteBuilder',
 				$builder_data
 			);
+
+			// Integrations assign panel (builder tab).
+			wp_enqueue_style(
+				'boldform-lite-integrations',
+				BOLDFORM_LITE_URL . 'assets/css/integrations.css',
+				array(),
+				BOLDFORM_LITE_VERSION
+			);
+
+			wp_enqueue_script(
+				'boldform-lite-integrations',
+				BOLDFORM_LITE_URL . 'assets/js/integrations.js',
+				array( 'jquery', 'boldform-lite-builder' ),
+				BOLDFORM_LITE_VERSION,
+				true
+			);
+
+			/**
+			 * Fires after all core builder scripts and localisation are enqueued.
+			 * Pro modules should use this action to enqueue their own builder JS.
+			 *
+			 * At this point `boldform-lite-builder` is already registered,
+			 * so Pro scripts can safely depend on it.
+			 */
+			do_action( 'boldform_builder_enqueue_assets' );
 
 			return;
 		}
@@ -547,6 +578,12 @@ class BoldForm_Lite_Admin {
 				'url'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
 			),
 			array(
+				'slug'  => 'boldform-lite-integrations',
+				'label' => __( 'Integrations', 'boldform-lite' ),
+				'icon'  => 'dashicons-randomize',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-integrations' ),
+			),
+			array(
 				'slug'  => 'boldform-lite-settings',
 				'label' => __( 'Settings', 'boldform-lite' ),
 				'icon'  => 'dashicons-admin-generic',
@@ -594,6 +631,85 @@ class BoldForm_Lite_Admin {
 			</nav>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Registers BoldForm nodes in the WordPress admin bar.
+	 *
+	 * Adds a top-level "BoldForm" node with dropdown children for each nav item.
+	 * Pro can append extra items via the `boldform_admin_bar_items` filter.
+	 *
+	 * @param WP_Admin_Bar $wp_admin_bar The admin bar instance.
+	 * @return void
+	 */
+	public function register_admin_bar( $wp_admin_bar ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$nav_items = array(
+			array(
+				'id'     => 'boldform-bar-forms',
+				'title'  => __( 'All Forms', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite' ),
+			),
+			array(
+				'id'     => 'boldform-bar-entries',
+				'title'  => __( 'Entries', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-entries' ),
+			),
+			array(
+				'id'     => 'boldform-bar-reports',
+				'title'  => __( 'Reports', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
+			),
+			array(
+				'id'     => 'boldform-bar-settings',
+				'title'  => __( 'Settings', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings' ),
+			),
+			array(
+				'id'     => 'boldform-bar-smtp',
+				'title'  => __( 'SMTP', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ),
+			),
+			array(
+				'id'     => 'boldform-bar-tools',
+				'title'  => __( 'Tools', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
+			),
+		);
+
+		/**
+		 * Filter the BoldForm admin bar dropdown items.
+		 *
+		 * Pro can append items (e.g. Payments, Integrations).
+		 * Each item must have: id (string), title (string), href (string).
+		 *
+		 * @param array<int, array<string, string>> $nav_items Admin bar child nodes.
+		 */
+		$nav_items = apply_filters( 'boldform_admin_bar_items', $nav_items );
+
+		// Top-level parent node.
+		$wp_admin_bar->add_node(
+			array(
+				'id'    => 'boldform-bar',
+				'title' => __( 'BoldForm', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite' ),
+			)
+		);
+
+		// Child nodes.
+		foreach ( $nav_items as $item ) {
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'boldform-bar',
+					'id'     => sanitize_key( $item['id'] ),
+					'title'  => esc_html( $item['title'] ),
+					'href'   => esc_url( $item['href'] ),
+				)
+			);
+		}
 	}
 
 	public function render_forms_page() {
@@ -3255,6 +3371,33 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 
+			<?php
+			/**
+			 * Fires after the stat cards row on the Reports page.
+			 * Pro modules can inject additional stat cards here.
+			 *
+			 * @param array<string, mixed> $stats {
+			 *     @type int $total_forms   Total active forms.
+			 *     @type int $total_entries Total submissions.
+			 *     @type int $unread_count  Unread entries.
+			 *     @type int $starred_count Starred entries.
+			 *     @type int $today_count   Entries today.
+			 *     @type int $week_count    Entries this week.
+			 * }
+			 */
+			do_action(
+				'boldform_reports_after_stats',
+				array(
+					'total_forms'   => $total_forms,
+					'total_entries' => $total_entries,
+					'unread_count'  => $unread_count,
+					'starred_count' => $starred_count,
+					'today_count'   => $today_count,
+					'week_count'    => $week_count,
+				)
+			);
+			?>
+
 			<!-- Submissions Chart (FREE) -->
 			<div class="boldform-reports-row">
 				<div class="boldform-reports-chart-card">
@@ -3265,6 +3408,25 @@ class BoldForm_Lite_Admin {
 					<canvas id="boldform-submissions-chart" height="300"></canvas>
 				</div>
 			</div>
+
+			<?php
+			/**
+			 * Fires after the submissions chart row on the Reports page.
+			 * Pro modules can inject additional chart rows here (e.g. views vs submissions).
+			 *
+			 * @param array<string, mixed> $chart_data {
+			 *     @type string[] $chart_labels 30-day date labels (e.g. "Apr 1").
+			 *     @type int[]    $chart_values 30-day submission counts.
+			 * }
+			 */
+			do_action(
+				'boldform_reports_after_chart',
+				array(
+					'chart_labels' => $chart_labels,
+					'chart_values' => $chart_values,
+				)
+			);
+			?>
 
 			<!-- Two-column: Entries by Form + Recent Entries -->
 			<div class="boldform-reports-row boldform-reports-row--two-col">

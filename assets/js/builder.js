@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -63,7 +63,7 @@ jQuery(
 				button_icon_color: settings && settings.button_icon_color ? settings.button_icon_color : '',
 				button_color: settings && settings.button_color ? settings.button_color : 'teal',
 				field_style: settings && settings.field_style ? settings.field_style : '',
-				field_size: settings && settings.field_size ? settings.field_size : '',
+				field_size: settings && settings.field_size ? settings.field_size : 'small',
 				field_focus_color: settings && settings.field_focus_color ? settings.field_focus_color : '',
 				field_border_width: settings && settings.field_border_width !== '' && typeof settings.field_border_width !== 'undefined' ? Number( settings.field_border_width ) : '',
 				field_border_radius: settings && settings.field_border_radius !== '' && typeof settings.field_border_radius !== 'undefined' ? Number( settings.field_border_radius ) : '',
@@ -74,7 +74,7 @@ jQuery(
 				label_color: settings && settings.label_color ? settings.label_color : '',
 				label_subtext_color: settings && settings.label_subtext_color ? settings.label_subtext_color : '',
 				error_color: settings && settings.error_color ? settings.error_color : '',
-				button_size: settings && settings.button_size ? settings.button_size : '',
+				button_size: settings && settings.button_size ? settings.button_size : 'small',
 				button_border_style: settings && settings.button_border_style ? settings.button_border_style : '',
 				button_border_width: settings && settings.button_border_width !== '' && typeof settings.button_border_width !== 'undefined' ? Number( settings.button_border_width ) : '',
 				button_border_radius: settings && settings.button_border_radius !== '' && typeof settings.button_border_radius !== 'undefined' ? Number( settings.button_border_radius ) : '',
@@ -95,7 +95,13 @@ jQuery(
 				step_prev_text: settings && settings.step_prev_text ? settings.step_prev_text : 'Previous',
 				design_theme: settings && settings.design_theme ? settings.design_theme : '',
 				hide_labels: false,
-				hide_placeholders: false
+				hide_placeholders: false,
+				dup_enabled:  settings && settings.dup_enabled  ? true : false,
+				dup_method:   settings && settings.dup_method   ? settings.dup_method   : 'email',
+				dup_field_id: settings && settings.dup_field_id ? settings.dup_field_id : '',
+				dup_message:  settings && settings.dup_message  ? settings.dup_message  : '',
+				custom_css:   settings && typeof settings.custom_css !== 'undefined' ? settings.custom_css : '',
+				custom_js:    settings && typeof settings.custom_js  !== 'undefined' ? settings.custom_js  : '',
 			};
 		}
 
@@ -142,7 +148,21 @@ jQuery(
 				btn_size: 'page_break' === type ? 'medium' : '',
 				btn_radius: '',
 				progress_color: '',
-				progress_style: 'page_break' === type ? 'bar' : ''
+				progress_style: 'page_break' === type ? 'bar' : '',
+				product_options: 'product' === type ? [ { label: 'Option 1', price: '10.00' } ] : [],
+				product_style: 'product' === type ? 'radio' : '',
+				linked_product: 'quantity' === type ? '' : '',
+				qty_min: 'quantity' === type ? '1' : '',
+				qty_max: 'quantity' === type ? '' : '',
+				qty_default: 'quantity' === type ? '1' : '',
+				amount_min: 'custom_amount' === type ? '0.00' : '',
+				amount_max: 'custom_amount' === type ? '' : '',
+				amount_default: 'custom_amount' === type ? '0.00' : '',
+				auto_populate_key: '',
+				calc_formula:  'calculation' === type ? '' : '',
+				calc_decimals: 'calculation' === type ? 2 : 2,
+				calc_prefix:   '',
+				calc_suffix:   ''
 			};
 		}
 
@@ -207,6 +227,51 @@ jQuery(
 			normalized.btn_radius = field && typeof field.btn_radius !== 'undefined' ? field.btn_radius : '';
 			normalized.progress_color = field && typeof field.progress_color !== 'undefined' ? field.progress_color : '';
 			normalized.progress_style = field && typeof field.progress_style !== 'undefined' ? field.progress_style : 'bar';
+			normalized.product_options = field && Array.isArray( field.product_options ) ? field.product_options : [];
+			normalized.product_style = field && field.product_style ? field.product_style : 'radio';
+			normalized.linked_product = field && typeof field.linked_product !== 'undefined' ? field.linked_product : '';
+			normalized.qty_min = field && typeof field.qty_min !== 'undefined' ? field.qty_min : '1';
+			normalized.qty_max = field && typeof field.qty_max !== 'undefined' ? field.qty_max : '';
+			normalized.qty_default = field && typeof field.qty_default !== 'undefined' ? field.qty_default : '1';
+			normalized.amount_min = field && typeof field.amount_min !== 'undefined' ? field.amount_min : '';
+			normalized.amount_max = field && typeof field.amount_max !== 'undefined' ? field.amount_max : '';
+			normalized.amount_default = field && typeof field.amount_default !== 'undefined' ? field.amount_default : '';
+			normalized.auto_populate_key = field && typeof field.auto_populate_key !== 'undefined' ? field.auto_populate_key : '';
+			normalized.calc_formula   = field && typeof field.calc_formula  !== 'undefined' ? field.calc_formula  : '';
+			normalized.calc_decimals  = field && typeof field.calc_decimals !== 'undefined' ? Number( field.calc_decimals ) : 2;
+			normalized.calc_prefix    = field && typeof field.calc_prefix   !== 'undefined' ? field.calc_prefix   : '';
+			normalized.calc_suffix    = field && typeof field.calc_suffix   !== 'undefined' ? field.calc_suffix   : '';
+
+			// Signature field defaults.
+			normalized.sig_pen_color  = field && field.sig_pen_color  ? field.sig_pen_color  : '#000000';
+			normalized.sig_pen_width  = field && field.sig_pen_width  ? Number( field.sig_pen_width )  : 2;
+			normalized.sig_bg_color   = field && field.sig_bg_color   ? field.sig_bg_color   : '#ffffff';
+			normalized.sig_height     = field && field.sig_height     ? Number( field.sig_height )     : 160;
+
+			// Hidden field defaults.
+			normalized.hidden_source  = field && field.hidden_source  ? field.hidden_source  : 'static';
+			normalized.hidden_value   = field && typeof field.hidden_value !== 'undefined' ? field.hidden_value : '';
+
+			// Image choice field defaults.
+			// image_choice_options may arrive as a JSON string (from DB) or as an array (live state).
+			normalized.image_choice_options    = ( function () {
+				if ( ! field ) { return []; }
+				if ( Array.isArray( field.image_choice_options ) ) { return field.image_choice_options; }
+				if ( typeof field.image_choice_options === 'string' && field.image_choice_options ) {
+					try { var p = JSON.parse( field.image_choice_options ); return Array.isArray( p ) ? p : []; } catch (e) { return []; }
+				}
+				return [];
+			}() );
+			normalized.image_choice_type       = field && field.image_choice_type === 'checkbox' ? 'checkbox' : 'radio';
+			normalized.image_choice_columns    = field && field.image_choice_columns ? Number( field.image_choice_columns ) : 3;
+			normalized.image_choice_img_height = field && field.image_choice_img_height ? Number( field.image_choice_img_height ) : 160;
+
+			// Repeater field defaults.
+			normalized.repeater_fields       = field && Array.isArray( field.repeater_fields )  ? field.repeater_fields  : [];
+			normalized.repeater_min_rows     = field && field.repeater_min_rows ? Number( field.repeater_min_rows ) : 1;
+			normalized.repeater_max_rows     = field && field.repeater_max_rows ? Number( field.repeater_max_rows ) : 5;
+			normalized.repeater_add_label    = field && typeof field.repeater_add_label    !== 'undefined' ? field.repeater_add_label    : '';
+			normalized.repeater_remove_label = field && typeof field.repeater_remove_label !== 'undefined' ? field.repeater_remove_label : '';
 
 			return normalized;
 		}
@@ -879,6 +944,57 @@ jQuery(
 				return '<div class="boldform-canvas-submit is-inline"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
 			} else if ( field.type === 'page_break' ) {
 				html = '<div class="boldform-canvas-page-break"><span class="dashicons dashicons-layout"></span> ' + escapeHtml( field.label || 'Page Break' ) + ( field.step_title ? ' — <em>' + escapeHtml( field.step_title ) + '</em>' : '' ) + '</div>';
+			} else if ( field.type === 'product' ) {
+				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
+				if ( 'select' === field.product_style ) {
+					html += '<select style="pointer-events:none"><option>' + ( prodOpts.length ? escapeHtml( prodOpts[0].label || 'Select…' ) + ' — $' + escapeHtml( parseFloat( prodOpts[0].price || 0 ).toFixed( 2 ) ) : 'Select…' ) + '</option></select>';
+				} else {
+					html += '<div class="boldform-lite-form__choices">';
+					prodOpts.slice( 0, 4 ).forEach( function ( opt, idx ) {
+						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span>' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-focus-color,#0d9488);font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
+					} );
+					if ( prodOpts.length > 4 ) { html += '<label class="boldform-lite-form__choice" style="color:#9ca3af">…and ' + ( prodOpts.length - 4 ) + ' more</label>'; }
+					html += '</div>';
+				}
+				return html;
+			} else if ( field.type === 'quantity' ) {
+				html += '<input type="number" value="' + escapeHtml( field.qty_default || '1' ) + '" min="' + escapeHtml( field.qty_min || '1' ) + '"' + ( field.qty_max ? ' max="' + escapeHtml( field.qty_max ) + '"' : '' ) + ' disabled style="width:120px;">';
+				return html;
+			} else if ( field.type === 'custom_amount' ) {
+				var caMin = field.amount_min ? parseFloat( field.amount_min ) : 0;
+				var caMax = field.amount_max ? parseFloat( field.amount_max ) : '';
+				var caDefault = field.amount_default ? parseFloat( field.amount_default ) : 0;
+				html += '<div style="display:flex;align-items:center;gap:4px;border:1px solid #d1d5db;border-radius:6px;padding:8px 12px;width:fit-content;">';
+				html += '<span style="font-weight:600;color:#374151;">$</span>';
+				html += '<input type="number" value="' + escapeHtml( caDefault.toFixed(2) ) + '" step="0.01"' + ( caMin > 0 ? ' min="' + caMin + '"' : '' ) + ( caMax !== '' ? ' max="' + caMax + '"' : '' ) + ' disabled style="border:none;outline:none;width:100px;">';
+				html += '</div>';
+				return html;
+			} else if ( field.type === 'order_summary' ) {
+				var osTotal = 0;
+				html  = '<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-size:13px;">';
+				html += '<table style="width:100%;border-collapse:collapse;">';
+				html += '<thead style="background:#f3f4f6;"><tr><th style="padding:8px 12px;text-align:left;">Item</th><th style="padding:8px 12px;text-align:right;">Price</th><th style="padding:8px 12px;text-align:right;">Qty</th><th style="padding:8px 12px;text-align:right;">Total</th></tr></thead>';
+				html += '<tbody>';
+				getAllFields().forEach( function ( pf ) {
+					if ( pf.type === 'product' ) {
+						var opts  = Array.isArray( pf.product_options ) ? pf.product_options : [];
+						var first = opts[0] || {};
+						var price = parseFloat( first.price || 0 );
+						var lbl   = ( pf.label || 'Product' ) + ( first.label ? ' — ' + first.label : '' );
+						osTotal += price;
+						html += '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 12px;">' + escapeHtml( lbl ) + '</td><td style="padding:8px 12px;text-align:right;">$' + price.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">1</td><td style="padding:8px 12px;text-align:right;">$' + price.toFixed(2) + '</td></tr>';
+					} else if ( pf.type === 'custom_amount' ) {
+						var ca = parseFloat( pf.amount_default || 0 );
+						osTotal += ca;
+						html += '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 12px;">' + escapeHtml( pf.label || 'Custom Amount' ) + '</td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">1</td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td></tr>';
+					}
+				} );
+				html += '</tbody>';
+				html += '<tfoot style="background:#f9fafb;border-top:2px solid #e5e7eb;"><tr><td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600;">Order Total</td><td style="padding:10px 12px;text-align:right;font-weight:700;font-size:15px;">$' + osTotal.toFixed(2) + '</td></tr></tfoot>';
+				html += '</table>';
+				html += '<div style="padding:10px 12px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;"><span class="dashicons dashicons-lock" style="font-size:14px;"></span> Gateway configured in <strong>Pro → Payment Settings</strong></div>';
+				html += '</div>';
+				return html;
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
@@ -901,7 +1017,7 @@ jQuery(
 				} else {
 					html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select\u2026' ) + '</span>';
 				}
-				html += '<span class="bf-select__arrow"></span>';
+				html += '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 				html += '</div></div>';
 			} else if ( field.type === 'multiselect' ) {
 				var msDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
@@ -917,7 +1033,7 @@ jQuery(
 				} else {
 					html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select options\u2026' ) + '</span>';
 				}
-				html += '<span class="bf-select__arrow"></span>';
+				html += '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 				html += '</div></div>';
 			} else if ( field.type === 'checkbox' || field.type === 'radio' ) {
 				var choiceDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
@@ -981,7 +1097,7 @@ jQuery(
 				html = '<div class="bf-select">';
 				html += '<div class="bf-select__trigger">';
 				html += '<span class="bf-select__placeholder">' + escapeHtml( field.placeholder || 'Select a country' ) + '</span>';
-				html += '<span class="bf-select__arrow"></span>';
+				html += '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 				html += '</div></div>';
 			} else if ( field.type === 'star_rating' ) {
 				var maxStars = field.max_stars || 5;
@@ -1006,6 +1122,110 @@ jQuery(
 				html += '<input type="range" min="' + escapeHtml( slMin ) + '" max="' + escapeHtml( slMax ) + '" value="' + escapeHtml( slVal ) + '" disabled>';
 				html += '<div class="boldform-canvas-slider__labels"><span>' + escapeHtml( slMin ) + '</span><span>' + escapeHtml( slVal ) + '</span><span>' + escapeHtml( slMax ) + '</span></div>';
 				html += '</div>';
+			} else if ( field.type === 'calculation' ) {
+				var calcDecimals = (typeof field.calc_decimals === 'number') ? field.calc_decimals : 2;
+				var calcPrefix   = field.calc_prefix || '';
+				var calcSuffix   = field.calc_suffix || '';
+				var calcSample   = calcPrefix + parseFloat(0).toFixed(calcDecimals) + calcSuffix;
+				var calcFormula  = field.calc_formula || '';
+				html = '<div class="boldform-canvas-calculation">';
+				html += '<input type="text" value="' + escapeHtml(calcSample) + '" readonly class="boldform-canvas-calc-input">';
+				if ( calcFormula ) {
+					html += '<div class="boldform-canvas-calc-badge">= ' + escapeHtml(calcFormula) + '</div>';
+				}
+				html += '</div>';
+
+			} else if ( field.type === 'signature' ) {
+				html  = '<div class="boldform-canvas-signature">';
+				html += '<span class="dashicons dashicons-edit"></span>';
+				html += '<span>' + escapeHtml( boldformLiteBuilder.labels.signatureHint || 'Sign here…' ) + '</span>';
+				html += '</div>';
+
+			} else if ( field.type === 'hidden_field' ) {
+				var hfSource = field.hidden_source || 'static';
+				var hfValue  = field.hidden_value  || '';
+				var hfSourceLabel = {
+					static: 'Static value',
+					url_param: 'URL parameter',
+					user_id: 'User ID',
+					user_email: 'User email',
+					user_login: 'User login',
+					post_id: 'Post ID',
+					referrer: 'Referrer URL'
+				}[ hfSource ] || hfSource;
+				html  = '<div class="boldform-canvas-hidden-field">';
+				html += '<span class="dashicons dashicons-hidden"></span>';
+				html += '<span class="boldform-canvas-hidden-field__label">Hidden: ' + escapeHtml( hfSourceLabel );
+				if ( 'static' === hfSource && hfValue ) {
+					html += ' = <em>' + escapeHtml( hfValue ) + '</em>';
+				} else if ( 'url_param' === hfSource && hfValue ) {
+					html += ' <code>?' + escapeHtml( hfValue ) + '</code>';
+				}
+				html += '</span></div>';
+
+			} else if ( field.type === 'image_choice' ) {
+				var icOpts = [];
+				if ( field.image_choice_options ) {
+					try {
+						icOpts = typeof field.image_choice_options === 'string'
+							? JSON.parse( field.image_choice_options )
+							: field.image_choice_options;
+					} catch (e) { icOpts = []; }
+				}
+				var icCols = field.image_choice_columns || 3;
+				var icImgH = Math.max( 40, Math.min( 600, Number( field.image_choice_img_height ) || 160 ) );
+				// Scale down proportionally for the builder canvas (canvas ~280px wide).
+				var icCanvasH = Math.round( icImgH * 0.35 );
+				icCanvasH = Math.max( 40, Math.min( 180, icCanvasH ) );
+				var icItems = icOpts.length ? icOpts : [
+					{ label: 'Option 1', value: '1', image_url: '' },
+					{ label: 'Option 2', value: '2', image_url: '' },
+					{ label: 'Option 3', value: '3', image_url: '' }
+				];
+				html = '<div class="boldform-canvas-ic boldform-canvas-ic--' + escapeHtml( String( icCols ) ) + 'col">';
+				icItems.slice( 0, 6 ).forEach( function ( opt, i ) {
+					var isFirst = ( i === 0 );
+					html += '<div class="boldform-canvas-ic__item' + ( isFirst ? ' is-checked' : '' ) + '">';
+					html += '<div class="boldform-canvas-ic__img" style="height:' + icCanvasH + 'px">';
+					if ( opt.image_url ) {
+						html += '<img src="' + escapeHtml( opt.image_url ) + '" alt="' + escapeHtml( opt.label || '' ) + '">';
+					} else {
+						html += '<span class="dashicons dashicons-format-image"></span>';
+					}
+					if ( isFirst ) {
+						html += '<span class="boldform-canvas-ic__check">&#10003;</span>';
+					}
+					html += '</div>';
+					html += '<span class="boldform-canvas-ic__lbl">' + escapeHtml( opt.label || ( 'Option ' + ( i + 1 ) ) ) + '</span>';
+					html += '</div>';
+				} );
+				html += '</div>';
+
+			} else if ( field.type === 'repeater' ) {
+				var repFields = [];
+				if ( field.repeater_fields ) {
+					try {
+						repFields = typeof field.repeater_fields === 'string'
+							? JSON.parse( field.repeater_fields )
+							: field.repeater_fields;
+					} catch (e) { repFields = []; }
+				}
+				html  = '<div class="boldform-canvas-repeater">';
+				html += '<div class="boldform-canvas-repeater__row">';
+				if ( repFields.length ) {
+					repFields.slice( 0, 4 ).forEach( function ( sf ) {
+						html += '<div class="boldform-canvas-repeater__cell" title="' + escapeHtml( sf.label || sf.type || '' ) + '"></div>';
+					} );
+				} else {
+					html += '<div class="boldform-canvas-repeater__cell"></div>';
+					html += '<div class="boldform-canvas-repeater__cell"></div>';
+					html += '<div class="boldform-canvas-repeater__cell"></div>';
+				}
+				html += '<div class="boldform-canvas-repeater__remove-placeholder"></div>';
+				html += '</div>';
+				html += '<div class="boldform-canvas-repeater__add"><span class="dashicons dashicons-plus-alt2"></span> ' + escapeHtml( field.repeater_add_label || 'Add Row' ) + '</div>';
+				html += '</div>';
+
 			} else {
 				html = '<input type="' + escapeHtml( field.type ) + '" placeholder="' + escapeHtml( field.placeholder ) + '" value="' + escapeHtml( field.default_value ) + '">';
 			}
@@ -1020,21 +1240,18 @@ jQuery(
 				green: '#16a34a',
 				dark: '#334155'
 			};
-			var fieldSize = state.formSettings.field_size || '';
-			var labelSize = state.formSettings.label_size || '';
-			var buttonSize = state.formSettings.button_size || '';
+			var fieldSize = state.formSettings.field_size || 'small';
+			var labelSize = state.formSettings.label_size || 'small';
+			var buttonSize = state.formSettings.button_size || 'small';
 			var fieldStyle = state.formSettings.field_style || '';
 			var sizeMap = {
-				small: { fieldY: '10px', fieldX: '12px', fieldFont: '14px', labelFont: '14px', buttonY: '10px', buttonX: '16px', buttonFont: '14px' },
-				medium: { fieldY: '12px', fieldX: '14px', fieldFont: '15px', labelFont: '16px', buttonY: '12px', buttonX: '18px', buttonFont: '15px' },
-				large: { fieldY: '15px', fieldX: '16px', fieldFont: '16px', labelFont: '18px', buttonY: '14px', buttonX: '20px', buttonFont: '16px' },
-				compact: { fieldY: '10px', fieldX: '12px', fieldFont: '14px', labelFont: '14px', buttonY: '10px', buttonX: '16px', buttonFont: '14px' },
-				comfortable: { fieldY: '12px', fieldX: '14px', fieldFont: '15px', labelFont: '16px', buttonY: '12px', buttonX: '18px', buttonFont: '15px' },
-				spacious: { fieldY: '15px', fieldX: '16px', fieldFont: '16px', labelFont: '18px', buttonY: '14px', buttonX: '20px', buttonFont: '16px' }
+				small: { fieldY: '10px', fieldX: '12px', fieldFont: '14px', labelFont: '14px', buttonY: '10px', buttonX: '16px', buttonFont: '14px', radius: '6px' },
+				medium: { fieldY: '12px', fieldX: '14px', fieldFont: '15px', labelFont: '16px', buttonY: '12px', buttonX: '18px', buttonFont: '15px', radius: '8px' },
+				large: { fieldY: '15px', fieldX: '16px', fieldFont: '16px', labelFont: '18px', buttonY: '14px', buttonX: '20px', buttonFont: '16px', radius: '10px' }
 			};
-			var fieldScale = fieldSize ? sizeMap[ fieldSize ] : null;
-			var labelScale = labelSize ? sizeMap[ labelSize ] : null;
-			var buttonScale = buttonSize ? sizeMap[ buttonSize ] : null;
+			var fieldScale = fieldSize ? sizeMap[ fieldSize ] : sizeMap['small'];
+			var labelScale = labelSize ? sizeMap[ labelSize ] : sizeMap['small'];
+			var buttonScale = buttonSize ? sizeMap[ buttonSize ] : sizeMap['small'];
 			var variables = [];
 
 			if ( 'outline' === fieldStyle || 'soft' === fieldStyle || 'minimal' === fieldStyle ) {
@@ -1078,6 +1295,7 @@ jQuery(
 				variables.push( '--bf-field-padding-y:' + fieldScale.fieldY );
 				variables.push( '--bf-field-padding-x:' + fieldScale.fieldX );
 				variables.push( '--bf-field-font-size:' + fieldScale.fieldFont );
+				variables.push( '--bf-field-radius:' + fieldScale.radius );
 			}
 			if ( state.formSettings.button_border_style ) {
 				variables.push( '--bf-button-border-style:' + state.formSettings.button_border_style );
@@ -1101,6 +1319,7 @@ jQuery(
 				variables.push( '--bf-button-padding-y:' + buttonScale.buttonY );
 				variables.push( '--bf-button-padding-x:' + buttonScale.buttonX );
 				variables.push( '--bf-button-font-size:' + buttonScale.buttonFont );
+				variables.push( '--bf-button-radius:' + buttonScale.radius );
 			}
 
 			return variables.join( ';' ) + ( variables.length ? ';' : '' );
@@ -1625,12 +1844,52 @@ jQuery(
 					'</div>';
 			}
 
-			// Build conditional logic field options.
+			// Build conditional logic setup.
 			var condFields = getAllFields().filter( function ( f ) { return f.id !== selected.field.id && specialFieldTypes.indexOf( f.type ) === -1; } );
 			var cond = selected.field.conditional || {};
-			var condFieldOptions = '<option value="">' + escapeHtml( boldformLiteBuilder.labels.selectField || 'Select field' ) + '</option>';
-			condFields.forEach( function ( f ) {
-				condFieldOptions += '<option value="' + escapeHtml( f.id ) + '"' + ( cond.field_id === f.id ? ' selected' : '' ) + '>' + escapeHtml( f.label || getLibraryItem( f.type ).label ) + '</option>';
+			// Ensure multi-condition structure (no separate actions — always show/hide this field).
+			if ( ! cond.conditions ) {
+				cond = {
+					enabled:    !! cond.enabled,
+					action:     cond.action || 'show',
+					logic:      'AND',
+					conditions: [ { field_id: cond.field_id || '', operator: cond.operator || 'is', value: cond.value || '' } ],
+				};
+				selected.field.conditional = cond;
+			}
+
+			function buildCondFieldOptions( selectedId ) {
+				var opts = '<option value="">' + escapeHtml( boldformLiteBuilder.labels.selectField || '— select field —' ) + '</option>';
+				condFields.forEach( function ( f ) {
+					opts += '<option value="' + escapeHtml( f.id ) + '"' + ( selectedId === f.id ? ' selected' : '' ) + '>' + escapeHtml( f.label || getLibraryItem( f.type ).label ) + '</option>';
+				} );
+				return opts;
+			}
+
+			var allowsValue = function ( op ) { return op !== 'not_empty' && op !== 'empty'; };
+
+			var condLogicLabel = ( cond.logic || 'AND' ) === 'OR' ? 'OR' : 'AND';
+			var conditionsHtml = '';
+			( cond.conditions || [] ).forEach( function ( c, ci ) {
+				conditionsHtml +=
+					'<div class="bfcl-condition-row" data-ci="' + ci + '">' +
+						'<span class="bfcl-cond-connector">' + ( ci === 0 ? 'IF' : condLogicLabel ) + '</span>' +
+						'<select class="bfcl-cond-field" data-ci="' + ci + '">' + buildCondFieldOptions( c.field_id ) + '</select>' +
+						'<select class="bfcl-cond-op" data-ci="' + ci + '">' +
+							'<option value="is"' + ( c.operator === 'is' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.is || 'is' ) + '</option>' +
+							'<option value="is_not"' + ( c.operator === 'is_not' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.isNot || 'is not' ) + '</option>' +
+							'<option value="contains"' + ( c.operator === 'contains' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.contains || 'contains' ) + '</option>' +
+							'<option value="not_contains"' + ( c.operator === 'not_contains' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.notContains || 'not contains' ) + '</option>' +
+							'<option value="starts_with"' + ( c.operator === 'starts_with' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.startsWith || 'starts with' ) + '</option>' +
+							'<option value="ends_with"' + ( c.operator === 'ends_with' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.endsWith || 'ends with' ) + '</option>' +
+							'<option value="greater_than"' + ( c.operator === 'greater_than' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.greaterThan || '>' ) + '</option>' +
+							'<option value="less_than"' + ( c.operator === 'less_than' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.lessThan || '<' ) + '</option>' +
+							'<option value="not_empty"' + ( c.operator === 'not_empty' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.notEmpty || 'is not empty' ) + '</option>' +
+							'<option value="empty"' + ( c.operator === 'empty' ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.isEmpty || 'is empty' ) + '</option>' +
+						'</select>' +
+						( allowsValue( c.operator ) ? '<input type="text" class="bfcl-cond-value" data-ci="' + ci + '" value="' + escapeHtml( c.value ) + '" placeholder="' + escapeHtml( boldformLiteBuilder.labels.value || 'Value' ) + '">' : '<span class="bfcl-no-value"></span>' ) +
+						( ci > 0 ? '<button type="button" class="bfcl-remove-cond" data-ci="' + ci + '" title="Remove">&#215;</button>' : '<span class="bfcl-remove-placeholder"></span>' ) +
+					'</div>';
 			} );
 
 			$empty.hide();
@@ -1701,6 +1960,288 @@ jQuery(
 					( 'captcha' === selected.field.type ?
 						'<p class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</p>' : ''
 					) +
+					( 'product' === selected.field.type ? ( function () {
+						var prodOpts = Array.isArray( selected.field.product_options ) ? selected.field.product_options : [];
+						var rowsHtml = '';
+						prodOpts.forEach( function ( opt, idx ) {
+							rowsHtml +=
+								'<div class="boldform-product-option-row" data-product-index="' + idx + '">' +
+									'<span class="boldform-product-option__drag"><span class="dashicons dashicons-menu"></span></span>' +
+									'<input type="text" class="boldform-product-option__label" data-product-index="' + idx + '" value="' + escapeHtml( opt.label || '' ) + '" placeholder="Option label">' +
+									'<input type="number" class="boldform-product-option__price" data-product-index="' + idx + '" value="' + escapeHtml( opt.price || '0.00' ) + '" min="0" step="0.01" placeholder="0.00" style="width:80px;">' +
+									'<button type="button" class="boldform-product-option__remove" data-product-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+								'</div>';
+						} );
+						return '<div class="boldform-setting-group">' +
+							'<label>Product Options</label>' +
+							'<div class="boldform-product-options-repeater" id="boldform-product-options-repeater">' +
+								rowsHtml +
+							'</div>' +
+							'<button type="button" class="boldform-options-repeater__add" id="boldform-product-option-add"><span class="dashicons dashicons-plus-alt2"></span> Add Option</button>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-product-style">Display Style</label>' +
+							'<select id="boldform-setting-product-style">' +
+								'<option value="radio"' + ( 'radio' === ( selected.field.product_style || 'radio' ) ? ' selected' : '' ) + '>Radio buttons</option>' +
+								'<option value="select"' + ( 'select' === selected.field.product_style ? ' selected' : '' ) + '>Dropdown</option>' +
+							'</select>' +
+						'</div>';
+					}() ) : '' ) +
+					( 'quantity' === selected.field.type ? ( function () {
+						var allFields = getAllFields();
+						var productFields = allFields.filter( function ( f ) { return f.type === 'product'; } );
+						var productOpts = '<option value="">— none —</option>';
+						productFields.forEach( function ( f ) {
+							productOpts += '<option value="' + escapeHtml( f.id ) + '"' + ( selected.field.linked_product === f.id ? ' selected' : '' ) + '>' + escapeHtml( f.label || 'Product' ) + '</option>';
+						} );
+						return '<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-qty-linked-product">Linked Product Field</label>' +
+							'<select id="boldform-setting-qty-linked-product">' + productOpts + '</select>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-qty-min">Min Qty</label>' +
+								'<input type="number" id="boldform-setting-qty-min" value="' + escapeHtml( selected.field.qty_min || '1' ) + '" min="0" placeholder="1">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-qty-max">Max Qty</label>' +
+								'<input type="number" id="boldform-setting-qty-max" value="' + escapeHtml( selected.field.qty_max || '' ) + '" min="1" placeholder="unlimited">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-qty-default">Default Qty</label>' +
+							'<input type="number" id="boldform-setting-qty-default" value="' + escapeHtml( selected.field.qty_default || '1' ) + '" min="1" placeholder="1">' +
+						'</div>';
+					}() ) : '' ) +
+					( 'custom_amount' === selected.field.type ?
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-amount-min">Min Amount</label>' +
+								'<input type="number" id="boldform-setting-amount-min" value="' + escapeHtml( selected.field.amount_min || '' ) + '" min="0" step="0.01" placeholder="0.00">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-amount-max">Max Amount</label>' +
+								'<input type="number" id="boldform-setting-amount-max" value="' + escapeHtml( selected.field.amount_max || '' ) + '" min="0" step="0.01" placeholder="unlimited">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-amount-default">Default Amount</label>' +
+							'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '0.00' ) + '" min="0" step="0.01" placeholder="0.00">' +
+						'</div>' +
+						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">User enters their own amount. Gateway configured in <strong>Pro → Payment Settings</strong>.</p>'
+					: '' ) +
+					( 'order_summary' === selected.field.type ?
+						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">Displays a live order breakdown of all payment fields above, plus the gateway checkout UI. Gateway configured in <strong>Pro → Payment Settings</strong>.</p>'
+					: '' ) +
+					( 'calculation' === selected.field.type ? ( function () {
+						var calcField   = selected.field;
+						var allFields   = getAllFields();
+						var refOpts     = '';
+						allFields.forEach( function ( f ) {
+							if ( f.type === 'calculation' || !f.id ) return;
+							refOpts += '<option value="' + escapeHtml( f.id ) + '">' + escapeHtml( f.label || f.id ) + ' — {' + escapeHtml( f.id ) + '}</option>';
+						} );
+						var formula   = calcField.calc_formula  || '';
+						var decimals  = typeof calcField.calc_decimals === 'number' ? calcField.calc_decimals : 2;
+						var prefix    = calcField.calc_prefix   || '';
+						var suffix    = calcField.calc_suffix   || '';
+						var valClass  = formula ? ( /[^0-9\s\+\-\*\/\(\)\.\{\}a-z0-9_]/i.test(formula) ? 'bfcp-invalid' : 'bfcp-valid' ) : '';
+						return '<div class="bfcp-panel">' +
+							'<div class="bfcp-row">' +
+								'<label class="bfcp-label">Formula</label>' +
+								'<div class="bfcp-formula-wrap">' +
+									'<div class="bfcp-formula-toolbar">' +
+										'<select class="bfcp-field-insert">' +
+											'<option value="">Insert Field&hellip;</option>' +
+											refOpts +
+										'</select>' +
+									'</div>' +
+									'<textarea class="bfcp-formula-input ' + valClass + '" id="boldform-calc-formula" rows="3" placeholder="{field_id} * 2">' + escapeHtml( formula ) + '</textarea>' +
+									'<div class="bfcp-formula-help">Use {field_id} to reference a field value. Supports +, -, *, /, ( ).</div>' +
+								'</div>' +
+							'</div>' +
+							'<div class="bfcp-row bfcp-row--inline">' +
+								'<div class="bfcp-col">' +
+									'<label class="bfcp-label">Decimals</label>' +
+									'<input type="number" class="bfcp-decimals" id="boldform-calc-decimals" min="0" max="10" value="' + escapeHtml( String(decimals) ) + '">' +
+								'</div>' +
+								'<div class="bfcp-col">' +
+									'<label class="bfcp-label">Prefix</label>' +
+									'<input type="text" class="bfcp-prefix" id="boldform-calc-prefix" value="' + escapeHtml( prefix ) + '" placeholder="$">' +
+								'</div>' +
+								'<div class="bfcp-col">' +
+									'<label class="bfcp-label">Suffix</label>' +
+									'<input type="text" class="bfcp-suffix" id="boldform-calc-suffix" value="' + escapeHtml( suffix ) + '" placeholder=" USD">' +
+								'</div>' +
+							'</div>' +
+						'</div>';
+					}() ) : '' ) +
+
+					// --- Signature field settings ---
+					( 'signature' === selected.field.type ?
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-sig-pen-color">Pen Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( selected.field.sig_pen_color || '#1e293b' ) + '">' +
+										'<input type="color" id="boldform-setting-sig-pen-color" value="' + escapeHtml( selected.field.sig_pen_color || '#1e293b' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( selected.field.sig_pen_color || '#1e293b' ) + '" data-color-for="boldform-setting-sig-pen-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-sig-pen-width">Pen Width (px)</label>' +
+								'<input type="number" id="boldform-setting-sig-pen-width" min="1" max="8" value="' + escapeHtml( String( selected.field.sig_pen_width || 2 ) ) + '">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-sig-bg-color">Background Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( selected.field.sig_bg_color || '#ffffff' ) + '">' +
+										'<input type="color" id="boldform-setting-sig-bg-color" value="' + escapeHtml( selected.field.sig_bg_color || '#ffffff' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( selected.field.sig_bg_color || '#ffffff' ) + '" data-color-for="boldform-setting-sig-bg-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-sig-height">Height (px)</label>' +
+								'<input type="number" id="boldform-setting-sig-height" min="80" max="400" value="' + escapeHtml( String( selected.field.sig_height || 160 ) ) + '">' +
+							'</div>' +
+						'</div>'
+					: '' ) +
+
+					// --- Hidden field settings ---
+					( 'hidden_field' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-hidden-source">Value Source</label>' +
+							'<select id="boldform-setting-hidden-source">' +
+								'<option value="static"'     + ( 'static'     === ( selected.field.hidden_source || 'static' ) ? ' selected' : '' ) + '>Static value</option>' +
+								'<option value="url_param"'  + ( 'url_param'  === selected.field.hidden_source ? ' selected' : '' ) + '>URL parameter</option>' +
+								'<option value="user_id"'    + ( 'user_id'    === selected.field.hidden_source ? ' selected' : '' ) + '>User ID</option>' +
+								'<option value="user_email"' + ( 'user_email' === selected.field.hidden_source ? ' selected' : '' ) + '>User email</option>' +
+								'<option value="user_login"' + ( 'user_login' === selected.field.hidden_source ? ' selected' : '' ) + '>User login</option>' +
+								'<option value="post_id"'    + ( 'post_id'    === selected.field.hidden_source ? ' selected' : '' ) + '>Post ID</option>' +
+								'<option value="referrer"'   + ( 'referrer'   === selected.field.hidden_source ? ' selected' : '' ) + '>Referrer URL</option>' +
+							'</select>' +
+						'</div>' +
+						( ( selected.field.hidden_source || 'static' ) === 'static' || ( selected.field.hidden_source || 'static' ) === 'url_param' ?
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-hidden-value">' + ( 'url_param' === selected.field.hidden_source ? 'URL Parameter Name' : 'Value' ) + '</label>' +
+								'<input type="text" id="boldform-setting-hidden-value" value="' + escapeHtml( selected.field.hidden_value || '' ) + '" placeholder="' + ( 'url_param' === selected.field.hidden_source ? 'e.g. utm_source' : 'Enter value' ) + '">' +
+							'</div>'
+						: '<p class="description" style="color:#6b7280;font-size:12px;margin:4px 0 0">Value resolved automatically at render time.</p>' ) +
+						'<p class="description" style="color:#9ca3af;font-size:12px;margin:8px 0 0"><span class="dashicons dashicons-hidden" style="font-size:13px;"></span> This field is invisible to visitors.</p>'
+					: '' ) +
+
+					// --- Image Choice settings ---
+					( 'image_choice' === selected.field.type ? ( function () {
+						var icOpts = [];
+						if ( selected.field.image_choice_options ) {
+							try {
+								icOpts = typeof selected.field.image_choice_options === 'string'
+									? JSON.parse( selected.field.image_choice_options )
+									: ( Array.isArray( selected.field.image_choice_options ) ? selected.field.image_choice_options : [] );
+							} catch (e) { icOpts = []; }
+						}
+						var icRowsHtml = '';
+						icOpts.forEach( function ( opt, idx ) {
+							var thumb = opt.image_url
+								? '<img src="' + escapeHtml( opt.image_url ) + '" alt="">'
+								: '<span class="dashicons dashicons-format-image"></span>';
+							icRowsHtml +=
+								'<div class="boldform-ic-option-row" data-ic-index="' + idx + '">' +
+									'<button type="button" class="boldform-ic-option__img-btn" data-ic-index="' + idx + '" title="Choose image">' +
+										thumb +
+									'</button>' +
+									'<div class="boldform-ic-option__fields">' +
+										'<input type="text" class="boldform-ic-option__label" data-ic-index="' + idx + '" value="' + escapeHtml( opt.label || '' ) + '" placeholder="Label">' +
+										'<input type="text" class="boldform-ic-option__value" data-ic-index="' + idx + '" value="' + escapeHtml( opt.value || '' ) + '" placeholder="Value (submitted)">' +
+									'</div>' +
+									'<button type="button" class="boldform-ic-option__remove" data-ic-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+								'</div>';
+						} );
+						return '<div class="boldform-setting-group">' +
+							'<label>Choices</label>' +
+							'<div class="boldform-ic-options-repeater" id="boldform-ic-options-repeater">' + icRowsHtml + '</div>' +
+							'<button type="button" class="boldform-options-repeater__add" id="boldform-ic-option-add"><span class="dashicons dashicons-plus-alt2"></span> Add Choice</button>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-ic-type">Selection</label>' +
+								'<select id="boldform-setting-ic-type">' +
+									'<option value="radio"'    + ( 'checkbox' !== ( selected.field.image_choice_type || 'radio' ) ? ' selected' : '' ) + '>Single (radio)</option>' +
+									'<option value="checkbox"' + ( 'checkbox' === selected.field.image_choice_type ? ' selected' : '' ) + '>Multiple (checkbox)</option>' +
+								'</select>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-ic-columns">Columns</label>' +
+								'<select id="boldform-setting-ic-columns">' +
+									[ 2, 3, 4, 5, 6 ].map( function (n) {
+										return '<option value="' + n + '"' + ( n === ( selected.field.image_choice_columns || 3 ) ? ' selected' : '' ) + '>' + n + '</option>';
+									} ).join('') +
+								'</select>' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-ic-img-height">Image Height (px)</label>' +
+							'<input type="number" id="boldform-setting-ic-img-height" min="60" max="600" step="10" value="' + escapeHtml( String( selected.field.image_choice_img_height || 160 ) ) + '">' +
+						'</div>';
+					}() ) : '' ) +
+
+					// --- Repeater field settings ---
+					( 'repeater' === selected.field.type ? ( function () {
+						var repFields = [];
+						if ( selected.field.repeater_fields ) {
+							try {
+								repFields = typeof selected.field.repeater_fields === 'string'
+									? JSON.parse( selected.field.repeater_fields )
+									: ( Array.isArray( selected.field.repeater_fields ) ? selected.field.repeater_fields : [] );
+							} catch (e) { repFields = []; }
+						}
+						var repRowsHtml = '';
+						repFields.forEach( function ( sf, idx ) {
+							repRowsHtml +=
+								'<div class="boldform-rep-field-row" data-rep-index="' + idx + '">' +
+									'<select class="boldform-rep-field__type" data-rep-index="' + idx + '">' +
+										[ 'text','email','number','tel','textarea','select','date' ].map( function (t) {
+											return '<option value="' + t + '"' + ( t === ( sf.type || 'text' ) ? ' selected' : '' ) + '>' + t + '</option>';
+										} ).join('') +
+									'</select>' +
+									'<input type="text" class="boldform-rep-field__label" data-rep-index="' + idx + '" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
+									'<button type="button" class="boldform-rep-field__remove" data-rep-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+								'</div>';
+						} );
+						return '<div class="boldform-setting-group">' +
+							'<label>Sub-fields</label>' +
+							'<div class="boldform-rep-fields-header">' +
+								'<span>Type</span><span>Label</span><span></span>' +
+							'</div>' +
+							'<div class="boldform-rep-fields-list" id="boldform-rep-fields-list">' + repRowsHtml + '</div>' +
+							'<button type="button" class="boldform-options-repeater__add" id="boldform-rep-field-add"><span class="dashicons dashicons-plus-alt2"></span> Add Sub-field</button>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-rep-min">Min rows</label>' +
+								'<input type="number" id="boldform-setting-rep-min" min="1" max="10" value="' + escapeHtml( String( selected.field.repeater_min_rows || 1 ) ) + '">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-rep-max">Max rows</label>' +
+								'<input type="number" id="boldform-setting-rep-max" min="1" max="20" value="' + escapeHtml( String( selected.field.repeater_max_rows || 5 ) ) + '">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-rep-add-label">Add button text</label>' +
+								'<input type="text" id="boldform-setting-rep-add-label" value="' + escapeHtml( selected.field.repeater_add_label || 'Add Row' ) + '">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-rep-remove-label">Remove button text</label>' +
+								'<input type="text" id="boldform-setting-rep-remove-label" value="' + escapeHtml( selected.field.repeater_remove_label || 'Remove' ) + '">' +
+							'</div>' +
+						'</div>';
+					}() ) : '' ) +
+
 					( 'file' === selected.field.type ?
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-allowed-types">' + escapeHtml( boldformLiteBuilder.labels.allowedTypes || 'Allowed file types' ) + '</label>' +
@@ -1734,6 +2275,11 @@ jQuery(
 						'</div>' : ''
 					) +
 					'<div class="boldform-setting-group">' +
+						'<label for="boldform-setting-auto-populate-key">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateKey || 'Auto Populate Key' ) + '</label>' +
+						'<input type="text" id="boldform-setting-auto-populate-key" value="' + escapeHtml( selected.field.auto_populate_key || '' ) + '" placeholder="e.g. name, email, user_email">' +
+						'<p class="boldform-setting-desc">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateDesc || 'Pre-fill from URL parameter (?key=value) or logged-in user data.' ) + '</p>' +
+					'</div>' +
+					'<div class="boldform-setting-group">' +
 						'<label for="boldform-setting-css-class">' + escapeHtml( boldformLiteBuilder.labels.cssClass || 'CSS Class' ) + '</label>' +
 						'<input type="text" id="boldform-setting-css-class" value="' + escapeHtml( selected.field.css_class || '' ) + '" placeholder="my-custom-class">' +
 					'</div>' +
@@ -1747,29 +2293,25 @@ jQuery(
 						'</label>' +
 					'</div>' +
 					( cond.enabled ?
-						'<div class="boldform-cond-rules">' +
-							'<div class="boldform-cond-row">' +
-								'<select id="boldform-setting-cond-action">' +
-									'<option value="show"' + ( 'show' === cond.action ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.show || 'Show' ) + '</option>' +
+						'<div class="bfcl-builder">' +
+							'<div class="bfcl-action-bar">' +
+								'<select class="bfcl-action-select">' +
+									'<option value="show"' + ( 'show' === ( cond.action || 'show' ) ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.show || 'Show' ) + '</option>' +
 									'<option value="hide"' + ( 'hide' === cond.action ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.hide || 'Hide' ) + '</option>' +
 								'</select>' +
-								'<span>' + escapeHtml( boldformLiteBuilder.labels.thisFieldIf || 'this field if' ) + '</span>' +
+								'<span class="bfcl-action-label">this field if</span>' +
+								'<div class="bfcl-logic-toggle">' +
+									'<label class="bfcl-logic-opt' + ( 'AND' === ( cond.logic || 'AND' ) ? ' is-active' : '' ) + '">' +
+										'<input type="radio" name="bfcl-logic" value="AND"' + ( 'AND' === ( cond.logic || 'AND' ) ? ' checked' : '' ) + '> All' +
+									'</label>' +
+									'<label class="bfcl-logic-opt' + ( 'OR' === cond.logic ? ' is-active' : '' ) + '">' +
+										'<input type="radio" name="bfcl-logic" value="OR"' + ( 'OR' === cond.logic ? ' checked' : '' ) + '> Any' +
+									'</label>' +
+								'</div>' +
+								'<span class="bfcl-action-label">of the following match:</span>' +
 							'</div>' +
-							'<div class="boldform-cond-row">' +
-								'<select id="boldform-setting-cond-field">' + condFieldOptions + '</select>' +
-							'</div>' +
-							'<div class="boldform-cond-row">' +
-								'<select id="boldform-setting-cond-operator">' +
-									'<option value="is"' + ( 'is' === cond.operator ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.is || 'is' ) + '</option>' +
-									'<option value="is_not"' + ( 'is_not' === cond.operator ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.isNot || 'is not' ) + '</option>' +
-									'<option value="contains"' + ( 'contains' === cond.operator ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.contains || 'contains' ) + '</option>' +
-									'<option value="not_empty"' + ( 'not_empty' === cond.operator ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.notEmpty || 'is not empty' ) + '</option>' +
-									'<option value="empty"' + ( 'empty' === cond.operator ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.isEmpty || 'is empty' ) + '</option>' +
-								'</select>' +
-								( cond.operator !== 'not_empty' && cond.operator !== 'empty' ?
-									'<input type="text" id="boldform-setting-cond-value" value="' + escapeHtml( cond.value ) + '" placeholder="' + escapeHtml( boldformLiteBuilder.labels.value || 'Value' ) + '">' : ''
-								) +
-							'</div>' +
+							'<div class="bfcl-conditions-list">' + conditionsHtml + '</div>' +
+							'<button type="button" class="bfcl-add-condition">+ Add Condition</button>' +
 						'</div>' : ''
 					) +
 				'</div></div>'
@@ -1779,6 +2321,9 @@ jQuery(
 			setupAddressSortable();
 		}
 
+		// Remembers which settings tab is active across re-renders.
+		var activeSettingsTab = 'confirmation';
+
 		function renderFormSettings() {
 			var submitMode = 'ajax';
 			if ( 'redirect' === state.formSettings.submission_type ) {
@@ -1787,78 +2332,245 @@ jQuery(
 			var useCustomAdminEmail = 'custom' === state.formSettings.admin_email_type;
 			var pages = boldformLiteBuilder.pages || [];
 
-			$( '#boldform-form-settings-panel' ).html(
-				'<div class="boldform-settings-section">' +
-					'<div class="boldform-settings-section__head">' +
-						'<h3>' + escapeHtml( boldformLiteBuilder.labels.submitBehavior ) + '</h3>' +
-					'</div>' +
-					'<div class="boldform-choice-grid boldform-choice-grid--3">' +
-						'<label class="boldform-choice-card' + ( 'ajax' === submitMode ? ' is-selected' : '' ) + '">' +
-							'<input type="radio" name="boldform-submit-mode" value="ajax"' + ( 'ajax' === submitMode ? ' checked' : '' ) + '>' +
-							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmit ) + '</span>' +
-						'</label>' +
-						'<label class="boldform-choice-card' + ( 'page' === submitMode ? ' is-selected' : '' ) + '">' +
-							'<input type="radio" name="boldform-submit-mode" value="page"' + ( 'page' === submitMode ? ' checked' : '' ) + '>' +
-							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'To a Page' ) + '</span>' +
-						'</label>' +
-						'<label class="boldform-choice-card' + ( 'custom_url' === submitMode ? ' is-selected' : '' ) + '">' +
-							'<input type="radio" name="boldform-submit-mode" value="custom_url"' + ( 'custom_url' === submitMode ? ' checked' : '' ) + '>' +
-							'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</span>' +
-						'</label>' +
-					'</div>' +
-					( 'ajax' === submitMode
-						? '<div class="boldform-setting-group"><label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label><textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea></div>'
-						: ''
-					) +
-					( 'page' === submitMode
-						? '<div class="boldform-setting-group"><select id="boldform-redirect-url"><option value="">' + escapeHtml( '— Select a page —' ) + '</option>' +
-							(function () {
-								var opts = '';
-								pages.forEach( function ( p ) {
-									opts += '<option value="' + escapeHtml( p.url ) + '"' + ( state.formSettings.redirect_url === p.url ? ' selected' : '' ) + '>' + escapeHtml( p.title ) + '</option>';
-								} );
-								return opts;
-							}()) +
-							'</select></div>'
-						: ''
-					) +
-					( 'custom_url' === submitMode
-						? '<div class="boldform-setting-group"><input type="url" id="boldform-redirect-custom-url" value="' + escapeHtml( state.formSettings.redirect_url || '' ) + '" placeholder="https://example.com/thank-you"></div>'
-						: ''
-					) +
+			// ── Confirmation pane ────────────────────────────────────────────────
+			var confirmationPane =
+				'<div class="bfsп-stab-pane-head">' +
+					'<h3>' + escapeHtml( boldformLiteBuilder.labels.submitBehavior ) + '</h3>' +
+					'<p>' + escapeHtml( boldformLiteBuilder.labels.submitBehaviorDesc || 'Choose what happens after a visitor submits this form.' ) + '</p>' +
 				'</div>' +
-				'<div class="boldform-settings-section">' +
-					'<div class="boldform-settings-section__head">' +
-						'<h3>' + escapeHtml( boldformLiteBuilder.labels.adminNotifications ) + '</h3>' +
-						'<label class="boldform-switch"><input type="checkbox" id="boldform-enable-admin-email"' + ( state.formSettings.enable_admin_email ? ' checked' : '' ) + '><span class="boldform-switch__slider"></span><span class="boldform-switch__label">' + escapeHtml( boldformLiteBuilder.labels.enableAdminEmail ) + '</span></label>' +
+				'<div class="boldform-choice-grid boldform-choice-grid--3">' +
+					'<label class="boldform-choice-card' + ( 'ajax' === submitMode ? ' is-selected' : '' ) + '">' +
+						'<input type="radio" name="boldform-submit-mode" value="ajax"' + ( 'ajax' === submitMode ? ' checked' : '' ) + '>' +
+						'<span class="boldform-choice-card__icon">&#10003;</span>' +
+						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmit ) + '</span>' +
+						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmitDesc || 'Show a success message without reloading.' ) + '</span>' +
+					'</label>' +
+					'<label class="boldform-choice-card' + ( 'page' === submitMode ? ' is-selected' : '' ) + '">' +
+						'<input type="radio" name="boldform-submit-mode" value="page"' + ( 'page' === submitMode ? ' checked' : '' ) + '>' +
+						'<span class="boldform-choice-card__icon">&#8594;</span>' +
+						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'To a Page' ) + '</span>' +
+						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.toAPageDesc || 'Redirect to an existing page.' ) + '</span>' +
+					'</label>' +
+					'<label class="boldform-choice-card' + ( 'custom_url' === submitMode ? ' is-selected' : '' ) + '">' +
+						'<input type="radio" name="boldform-submit-mode" value="custom_url"' + ( 'custom_url' === submitMode ? ' checked' : '' ) + '>' +
+						'<span class="boldform-choice-card__icon">&#128279;</span>' +
+						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</span>' +
+						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.customUrlDesc || 'Redirect to any URL you specify.' ) + '</span>' +
+					'</label>' +
+				'</div>' +
+				( 'ajax' === submitMode
+					? '<div class="boldform-setting-group bfsп-stab-field">' +
+						'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
+						'<textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
+					'</div>'
+					: ''
+				) +
+				( 'page' === submitMode
+					? '<div class="boldform-setting-group bfsп-stab-field">' +
+						'<label>' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'Redirect to Page' ) + '</label>' +
+						'<select id="boldform-redirect-url"><option value="">' + escapeHtml( '— Select a page —' ) + '</option>' +
+						(function () {
+							var opts = '';
+							pages.forEach( function ( p ) {
+								opts += '<option value="' + escapeHtml( p.url ) + '"' + ( state.formSettings.redirect_url === p.url ? ' selected' : '' ) + '>' + escapeHtml( p.title ) + '</option>';
+							} );
+							return opts;
+						}()) +
+						'</select>' +
+					'</div>'
+					: ''
+				) +
+				( 'custom_url' === submitMode
+					? '<div class="boldform-setting-group bfsп-stab-field">' +
+						'<label>' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</label>' +
+						'<input type="url" id="boldform-redirect-custom-url" value="' + escapeHtml( state.formSettings.redirect_url || '' ) + '" placeholder="https://example.com/thank-you">' +
+					'</div>'
+					: ''
+				);
+
+			// ── Email Notification pane ──────────────────────────────────────────
+			var emailPane =
+				'<div class="bfsп-stab-pane-head">' +
+					'<h3>' + escapeHtml( boldformLiteBuilder.labels.adminNotifications ) + '</h3>' +
+					'<p>' + escapeHtml( boldformLiteBuilder.labels.adminNotificationsDesc || 'Send an email to yourself or a custom address every time this form is submitted.' ) + '</p>' +
+				'</div>' +
+				'<div class="bfsп-email-block">' +
+					'<div class="bfsп-email-block__head">' +
+						'<span class="bfsп-email-block__title">' + escapeHtml( boldformLiteBuilder.labels.adminNotifications ) + '</span>' +
+						'<label class="boldform-switch">' +
+							'<input type="checkbox" id="boldform-enable-admin-email"' + ( state.formSettings.enable_admin_email ? ' checked' : '' ) + '>' +
+							'<span class="boldform-switch__slider"></span>' +
+						'</label>' +
 					'</div>' +
 					( state.formSettings.enable_admin_email
-						? '<div class="boldform-choice-grid">' +
-							'<label class="boldform-choice-card' + ( ! useCustomAdminEmail ? ' is-selected' : '' ) + '">' +
-								'<input type="radio" name="boldform-admin-email-type" id="boldform-admin-email-type-site-admin" value="site_admin"' + ( ! useCustomAdminEmail ? ' checked' : '' ) + '>' +
-								'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.siteAdminEmail ) + '</span>' +
-								'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.siteAdminEmailHelp ) + '</span>' +
-							'</label>' +
-							'<label class="boldform-choice-card' + ( useCustomAdminEmail ? ' is-selected' : '' ) + '">' +
-								'<input type="radio" name="boldform-admin-email-type" id="boldform-admin-email-type-custom" value="custom"' + ( useCustomAdminEmail ? ' checked' : '' ) + '>' +
-								'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customEmail ) + '</span>' +
-								'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.customEmailHelp ) + '</span>' +
-							'</label>' +
-						'</div>' +
-						( useCustomAdminEmail
-							? '<div class="boldform-setting-group"><label for="boldform-admin-email">' + escapeHtml( boldformLiteBuilder.labels.adminEmailAddress ) + '</label><input type="email" id="boldform-admin-email" value="' + escapeHtml( state.formSettings.admin_email ) + '"></div>'
-							: ''
-						)
+						? '<div class="bfsп-email-block__body">' +
+							'<div class="boldform-choice-grid">' +
+								'<label class="boldform-choice-card' + ( ! useCustomAdminEmail ? ' is-selected' : '' ) + '">' +
+									'<input type="radio" name="boldform-admin-email-type" id="boldform-admin-email-type-site-admin" value="site_admin"' + ( ! useCustomAdminEmail ? ' checked' : '' ) + '>' +
+									'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.siteAdminEmail ) + '</span>' +
+									'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.siteAdminEmailHelp ) + '</span>' +
+								'</label>' +
+								'<label class="boldform-choice-card' + ( useCustomAdminEmail ? ' is-selected' : '' ) + '">' +
+									'<input type="radio" name="boldform-admin-email-type" id="boldform-admin-email-type-custom" value="custom"' + ( useCustomAdminEmail ? ' checked' : '' ) + '>' +
+									'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customEmail ) + '</span>' +
+									'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.customEmailHelp ) + '</span>' +
+								'</label>' +
+							'</div>' +
+							( useCustomAdminEmail
+								? '<div class="boldform-setting-group" style="margin-top:12px;margin-bottom:0">' +
+									'<label for="boldform-admin-email">' + escapeHtml( boldformLiteBuilder.labels.adminEmailAddress ) + '</label>' +
+									'<input type="email" id="boldform-admin-email" value="' + escapeHtml( state.formSettings.admin_email ) + '">' +
+								'</div>'
+								: ''
+							) +
+						'</div>'
 						: ''
 					) +
 				'</div>' +
-				'<div class="boldform-settings-section">' +
-					'<div class="boldform-settings-section__head">' +
-						'<h3>' + escapeHtml( boldformLiteBuilder.labels.userNotifications ) + '</h3>' +
-						'<label class="boldform-switch"><input type="checkbox" id="boldform-enable-user-email"' + ( state.formSettings.enable_user_email ? ' checked' : '' ) + '><span class="boldform-switch__slider"></span><span class="boldform-switch__label">' + escapeHtml( boldformLiteBuilder.labels.enableUserEmail ) + '</span></label>' +
+				'<div class="bfsп-email-block">' +
+					'<div class="bfsп-email-block__head">' +
+						'<span class="bfsп-email-block__title">' + escapeHtml( boldformLiteBuilder.labels.userNotifications ) + '</span>' +
+						'<label class="boldform-switch">' +
+							'<input type="checkbox" id="boldform-enable-user-email"' + ( state.formSettings.enable_user_email ? ' checked' : '' ) + '>' +
+							'<span class="boldform-switch__slider"></span>' +
+						'</label>' +
 					'</div>' +
-				'</div>'
-			);
+				'</div>';
+
+			// ── Security pane — duplicate prevention ────────────────────────────
+			var dupEnabled  = !! state.formSettings.dup_enabled;
+			var dupMethod   = state.formSettings.dup_method   || 'email';
+			var dupFieldId  = state.formSettings.dup_field_id || '';
+			var dupMessage  = state.formSettings.dup_message  || '';
+
+			// Build field options for the "custom field" method.
+			var dupFields = getAllFields().filter( function ( f ) {
+				return [ 'text', 'email', 'tel', 'number', 'select', 'radio', 'hidden' ].indexOf( f.type ) !== -1;
+			} );
+			var dupFieldOpts = '<option value="">' + escapeHtml( boldformLiteBuilder.labels.selectField || '— select field —' ) + '</option>';
+			dupFields.forEach( function ( f ) {
+				dupFieldOpts += '<option value="' + escapeHtml( f.id ) + '"' + ( dupFieldId === f.id ? ' selected' : '' ) + '>' + escapeHtml( f.label || f.type ) + '</option>';
+			} );
+
+			var securityPane =
+				'<div class="bfsп-stab-pane-head">' +
+					'<h3>Duplicate Prevention</h3>' +
+					'<p>Block the same person from submitting this form more than once.</p>' +
+				'</div>' +
+				'<div class="bfsп-email-block">' +
+					'<div class="bfsп-email-block__head">' +
+						'<span class="bfsп-email-block__title">Prevent Duplicate Entries</span>' +
+						'<label class="boldform-switch">' +
+							'<input type="checkbox" id="boldform-dup-enabled"' + ( dupEnabled ? ' checked' : '' ) + '>' +
+							'<span class="boldform-switch__slider"></span>' +
+						'</label>' +
+					'</div>' +
+					( dupEnabled ?
+						'<div class="bfsп-email-block__body">' +
+							'<div class="boldform-setting-group">' +
+								'<label>Detection Method</label>' +
+								'<div class="boldform-choice-grid boldform-choice-grid--3">' +
+									'<label class="boldform-choice-card' + ( 'email' === dupMethod ? ' is-selected' : '' ) + '">' +
+										'<input type="radio" name="boldform-dup-method" value="email"' + ( 'email' === dupMethod ? ' checked' : '' ) + '>' +
+										'<span class="boldform-choice-card__icon">&#9993;</span>' +
+										'<span class="boldform-choice-card__title">Email</span>' +
+										'<span class="boldform-choice-card__description">Match on email field value</span>' +
+									'</label>' +
+									'<label class="boldform-choice-card' + ( 'ip' === dupMethod ? ' is-selected' : '' ) + '">' +
+										'<input type="radio" name="boldform-dup-method" value="ip"' + ( 'ip' === dupMethod ? ' checked' : '' ) + '>' +
+										'<span class="boldform-choice-card__icon">&#127760;</span>' +
+										'<span class="boldform-choice-card__title">IP Address</span>' +
+										'<span class="boldform-choice-card__description">Match on submitter IP</span>' +
+									'</label>' +
+									'<label class="boldform-choice-card' + ( 'field' === dupMethod ? ' is-selected' : '' ) + '">' +
+										'<input type="radio" name="boldform-dup-method" value="field"' + ( 'field' === dupMethod ? ' checked' : '' ) + '>' +
+										'<span class="boldform-choice-card__icon">&#35;</span>' +
+										'<span class="boldform-choice-card__title">Custom Field</span>' +
+										'<span class="boldform-choice-card__description">Match on any field value</span>' +
+									'</label>' +
+								'</div>' +
+							'</div>' +
+							( 'field' === dupMethod ?
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-dup-field-id">Field to match on</label>' +
+									'<select id="boldform-dup-field-id">' + dupFieldOpts + '</select>' +
+								'</div>' : ''
+							) +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-dup-message">Error message <span style="font-weight:400;color:#94a3b8">(optional)</span></label>' +
+								'<input type="text" id="boldform-dup-message" value="' + escapeHtml( dupMessage ) + '" placeholder="You have already submitted this form.">' +
+							'</div>' +
+						'</div>' : ''
+					) +
+				'</div>';
+
+			// ── Build tabbed layout ──────────────────────────────────────────────
+			var tabs = [
+				{ id: 'confirmation',  icon: '&#10003;', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
+				{ id: 'email',         icon: '&#9993;',  label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
+				{ id: 'security',      icon: '&#128274;', label: 'Security',       desc: 'Duplicate prevention' }
+			];
+
+			var navHtml = '';
+			tabs.forEach( function ( t ) {
+				navHtml +=
+					'<button type="button" class="bfsп-stab-nav-item" data-stab="' + t.id + '">' +
+						'<span class="bfsп-stab-nav-icon">' + t.icon + '</span>' +
+						'<span class="bfsп-stab-nav-text">' +
+							'<span class="bfsп-stab-nav-label">' + t.label + '</span>' +
+							'<span class="bfsп-stab-nav-desc">' + t.desc + '</span>' +
+						'</span>' +
+						'<span class="bfsп-stab-nav-arrow">&#8250;</span>' +
+					'</button>';
+			} );
+
+			// Placeholder for Pro tabs (injected via boldform:form_settings_rendered).
+			navHtml += '<div class="bfsп-stab-nav-pro-slots"></div>';
+
+			var html =
+				'<div class="bfsп-stab-layout">' +
+					'<nav class="bfsп-stab-nav">' + navHtml + '</nav>' +
+					'<div class="bfsп-stab-content">' +
+						'<div class="bfsп-stab-pane" data-pane="confirmation">' + confirmationPane + '</div>' +
+						'<div class="bfsп-stab-pane" data-pane="email">' + emailPane + '</div>' +
+						'<div class="bfsп-stab-pane" data-pane="security">' + securityPane + '</div>' +
+					'</div>' +
+				'</div>';
+
+			$( '#boldform-form-settings-panel' ).html( html );
+
+			// ── Tab switching ────────────────────────────────────────────────────
+			var $panel = $( '#boldform-form-settings-panel' );
+
+			$panel.off( 'click.bfstab', '.bfsп-stab-nav-item' )
+				.on( 'click.bfstab', '.bfsп-stab-nav-item', function () {
+					var tab = $( this ).data( 'stab' );
+					activeSettingsTab = tab;
+					$panel.find( '.bfsп-stab-nav-item' ).removeClass( 'is-active' );
+					$( this ).addClass( 'is-active' );
+					$panel.find( '.bfsп-stab-pane' ).removeClass( 'is-active' );
+					$panel.find( '.bfsп-stab-pane[data-pane="' + tab + '"]' ).addClass( 'is-active' );
+				} );
+
+			/**
+			 * Fired after the core form settings panel is rendered.
+			 * Pro modules append nav items to .bfsп-stab-nav-pro-slots and
+			 * panes to .bfsп-stab-content.
+			 *
+			 * @event boldform:form_settings_rendered
+			 * @param {object} formSettings Current state.formSettings snapshot.
+			 */
+			$( document ).trigger( 'boldform:form_settings_rendered', [ state.formSettings ] );
+
+			// Restore the previously active tab (Pro panes are now injected above).
+			var $restore = $panel.find( '.bfsп-stab-nav-item[data-stab="' + activeSettingsTab + '"]' );
+			if ( ! $restore.length ) {
+				// Fallback to first tab if the stored tab no longer exists.
+				$restore = $panel.find( '.bfsп-stab-nav-item' ).first();
+				activeSettingsTab = $restore.data( 'stab' ) || 'confirmation';
+			}
+			$restore.addClass( 'is-active' );
+			$panel.find( '.bfsп-stab-pane[data-pane="' + activeSettingsTab + '"]' ).addClass( 'is-active' );
 		}
 
 		var designThemes = {
@@ -1896,7 +2608,15 @@ jQuery(
 			function colorField( id, label, value, fallback ) {
 				var displayVal = value || '';
 				var colorVal = displayVal || fallback;
-				return '<div class="boldform-setting-group"><label for="' + id + '">' + escapeHtml( label ) + '</label><div class="boldform-color-wrap"><input type="color" id="' + id + '" value="' + escapeHtml( colorVal ) + '"><span class="boldform-color-preview" style="background:' + escapeHtml( colorVal ) + '"></span></div></div>';
+				return '<div class="boldform-setting-group">' +
+					'<label for="' + id + '">' + escapeHtml( label ) + '</label>' +
+					'<div class="boldform-color-field">' +
+						'<div class="boldform-color-swatch" style="background:' + escapeHtml( colorVal ) + '">' +
+							'<input type="color" id="' + id + '" value="' + escapeHtml( colorVal ) + '">' +
+						'</div>' +
+						'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( colorVal ) + '" data-color-for="' + escapeHtml( id ) + '" spellcheck="false">' +
+					'</div>' +
+				'</div>';
 			}
 
 			// Build theme cards.
@@ -1923,7 +2643,7 @@ jQuery(
 					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.fieldStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
 					'<div class="boldform-style-section__body">' +
 						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-field-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-field-size-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="small"' + ( 'small' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
+							'<div class="boldform-setting-group"><label for="boldform-field-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-field-size-style"><option value="small"' + ( 'small' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-field-border-style">' + escapeHtml( boldformLiteBuilder.labels.border ) + '</label><select id="boldform-field-border-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="solid"' + ( 'solid' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.solid ) + '</option><option value="dashed"' + ( 'dashed' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.dashed ) + '</option><option value="none"' + ( 'none' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.none ) + '</option></select></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-field-border-width">' + escapeHtml( boldformLiteBuilder.labels.borderSize ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-field-border-width" min="0" max="10" value="' + escapeHtml( state.formSettings.field_border_width ) + '"><span>px</span></div></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-field-border-radius">' + escapeHtml( boldformLiteBuilder.labels.borderRadius ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-field-border-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.field_border_radius ) + '"><span>px</span></div></div>' +
@@ -1949,7 +2669,7 @@ jQuery(
 					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.buttonStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
 					'<div class="boldform-style-section__body">' +
 						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-button-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-button-size-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="small"' + ( 'small' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
+							'<div class="boldform-setting-group"><label for="boldform-button-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-button-size-style"><option value="small"' + ( 'small' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-button-border-style">' + escapeHtml( boldformLiteBuilder.labels.border ) + '</label><select id="boldform-button-border-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="none"' + ( 'none' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.none ) + '</option><option value="solid"' + ( 'solid' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.solid ) + '</option><option value="dashed"' + ( 'dashed' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.dashed ) + '</option></select></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-button-border-width">' + escapeHtml( boldformLiteBuilder.labels.borderSize ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-button-border-width" min="0" max="10" value="' + escapeHtml( state.formSettings.button_border_width ) + '"><span>px</span></div></div>' +
 							'<div class="boldform-setting-group"><label for="boldform-button-border-radius">' + escapeHtml( boldformLiteBuilder.labels.borderRadius ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-button-border-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.button_border_radius ) + '"><span>px</span></div></div>' +
@@ -1989,6 +2709,22 @@ jQuery(
 							colorField( 'boldform-step-progress-color', 'Progress Color', state.formSettings.step_progress_color, '#2f80ed' ) +
 							colorField( 'boldform-step-btn-color', 'Button Background', state.formSettings.step_btn_color, '#2f80ed' ) +
 							colorField( 'boldform-step-btn-text-color', 'Button Text', state.formSettings.step_btn_text_color, '#ffffff' ) +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+
+				'<div class="boldform-style-section">' +
+					'<div class="boldform-style-section__head"><h3>Custom Code</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+					'<div class="boldform-style-section__body">' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-custom-css">Custom CSS</label>' +
+							'<p class="boldform-custom-code-hint">Applies only to this form. Use <code>.boldform-wrap</code> as the root selector.</p>' +
+							'<textarea id="boldform-custom-css" class="boldform-custom-code-editor" rows="6" spellcheck="false" placeholder=".boldform-wrap .boldform-lite-form__field {\n  /* your styles */\n}">' + escapeHtml( state.formSettings.custom_css || '' ) + '</textarea>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-custom-js">Custom JS</label>' +
+							'<p class="boldform-custom-code-hint">Runs after the form renders. <code>this</code> is the form element.</p>' +
+							'<textarea id="boldform-custom-js" class="boldform-custom-code-editor" rows="6" spellcheck="false" placeholder="// document.querySelector(\'.boldform-wrap\')...">' + escapeHtml( state.formSettings.custom_js || '' ) + '</textarea>' +
 						'</div>' +
 					'</div>' +
 				'</div>'
@@ -2074,8 +2810,18 @@ jQuery(
 			switchEditorView( state.activeEditorView );
 		}
 
+		function getAllTemplateDefinitions() {
+			var lite = getTemplateDefinitions();
+			// Pro templates are pre-built JS structures passed via boldformLiteBuilder.proTemplates.
+			// They have pro:true so the modal can gate them without any trialware logic.
+			var pro = ( boldformLiteBuilder.proTemplates && typeof boldformLiteBuilder.proTemplates === 'object' )
+				? boldformLiteBuilder.proTemplates
+				: {};
+			return $.extend( {}, lite, pro );
+		}
+
 		function applyTemplate( templateName ) {
-			var templates = getTemplateDefinitions();
+			var templates = getAllTemplateDefinitions();
 			var template = templates[ templateName ];
 
 			if ( ! template ) {
@@ -2083,9 +2829,15 @@ jQuery(
 				return;
 			}
 
-			state.structure = {
-				rows: template.rows
-			};
+			// Pro template — not available without Pro active.
+			if ( template.pro && ! boldformLiteBuilder.hasPro ) {
+				return;
+			}
+
+			// normalizeStructure runs each field through normalizeField() which assigns
+			// IDs and fills in all defaults — required for Pro templates that arrive as
+			// plain PHP-serialized objects without pre-generated IDs.
+			state.structure = normalizeStructure( { rows: template.rows } );
 			state.selectedFieldId = null;
 			state.formTitle = template.title || state.formTitle || boldformLiteBuilder.defaultFormTitle;
 			setActiveColumn( 0, 0 );
@@ -2107,18 +2859,28 @@ jQuery(
 			general:   'General',
 			business:  'Business',
 			events:    'Events & Booking',
-			hr_survey: 'HR & Surveys'
+			hr_survey: 'HR & Surveys',
+			payment:   'Payment & Calculation',
+			multi_step: 'Multi-Step'
 		};
 		var tplCategoryMap = {
 			contact: 'general', newsletter: 'general', feedback: 'general', registration: 'general',
 			lead: 'business', support: 'business', order_form: 'business',
 			event_rsvp: 'events', booking: 'events',
-			job_application: 'hr_survey', customer_survey: 'hr_survey'
+			job_application: 'hr_survey', customer_survey: 'hr_survey',
+			// Pro templates — added via boldformLiteBuilder.proTemplates
+			payment_order: 'payment', donation_form: 'payment', service_calculator: 'payment',
+			multi_step_registration: 'multi_step', multi_step_survey: 'multi_step', multi_step_booking: 'multi_step'
 		};
 
 		function renderTemplateModal() {
-			var templates = getTemplateDefinitions();
-			var selectedKey = templates[ state.selectedTemplate ] ? state.selectedTemplate : 'contact';
+			var templates = getAllTemplateDefinitions();
+			var hasPro = !! boldformLiteBuilder.hasPro;
+
+			// Default selected key — skip pro-locked templates when Pro is absent.
+			var selectedKey = ( templates[ state.selectedTemplate ] && ( ! templates[ state.selectedTemplate ].pro || hasPro ) )
+				? state.selectedTemplate
+				: 'contact';
 			var selectedTemplate = templates[ selectedKey ];
 			var listMarkup = '';
 			var previewMarkup = '';
@@ -2137,44 +2899,70 @@ jQuery(
 				listMarkup += '<div class="boldform-template-group">';
 				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] ) + '</div>';
 				grouped[ cat ].forEach( function ( key ) {
-					var template = templates[ key ];
-					listMarkup += '<button type="button" class="boldform-template-option' + ( key === selectedKey ? ' is-active' : '' ) + '" data-template-option="' + escapeHtml( key ) + '">';
-					listMarkup += '<strong>' + escapeHtml( template.title ) + '</strong>';
+					var tpl = templates[ key ];
+					var isProLocked = tpl.pro && ! hasPro;
+					var isActive = key === selectedKey;
+					listMarkup += '<button type="button" class="boldform-template-option' +
+						( isActive ? ' is-active' : '' ) +
+						( isProLocked ? ' is-pro-locked' : '' ) +
+						'" data-template-option="' + escapeHtml( key ) + '">';
+					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
+					if ( isProLocked ) {
+						listMarkup += '<span class="boldform-tpl-pro-badge">Pro</span>';
+					}
 					listMarkup += '</button>';
 				} );
 				listMarkup += '</div>';
 			} );
 
-			selectedTemplate.rows.forEach(
-				function ( row ) {
-					previewMarkup += '<div class="boldform-template-preview-row">';
-					row.columns.forEach(
-						function ( column ) {
-							previewMarkup += '<div class="boldform-template-preview-column" style="width:' + escapeHtml( column.width ) + ';">';
-							column.fields.forEach(
-								function ( field ) {
-									previewMarkup += '<div class="boldform-template-preview-field">';
-									previewMarkup += renderInputPreview( field );
-									previewMarkup += '</div>';
-								}
-							);
-							previewMarkup += '</div>';
-						}
-					);
-					previewMarkup += '</div>';
-				}
-			);
+			// Preview pane — show lock screen for pro-locked templates.
+			var isSelectedProLocked = selectedTemplate.pro && ! hasPro;
 
-			previewMarkup += '<div class="boldform-template-preview-submit"><button type="button" class="boldform-canvas-submit__button">' + escapeHtml( state.formSettings.button_text || 'Submit' ) + '</button></div>';
+			if ( isSelectedProLocked ) {
+				previewMarkup = '<div class="boldform-tpl-pro-gate">' +
+					'<div class="boldform-tpl-pro-gate__icon">&#128274;</div>' +
+					'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
+					'<p>' + escapeHtml( selectedTemplate.description ) + '</p>' +
+					'<div class="boldform-tpl-pro-gate__msg">This template requires <strong>BoldForm Pro</strong>.</div>' +
+				'</div>';
+			} else {
+				selectedTemplate.rows.forEach( function ( row ) {
+					previewMarkup += '<div class="boldform-template-preview-row">';
+					row.columns.forEach( function ( column ) {
+						previewMarkup += '<div class="boldform-template-preview-column" style="width:' + escapeHtml( column.width ) + ';">';
+						column.fields.forEach( function ( field ) {
+							previewMarkup += '<div class="boldform-template-preview-field">';
+							previewMarkup += renderInputPreview( field );
+							previewMarkup += '</div>';
+						} );
+						previewMarkup += '</div>';
+					} );
+					previewMarkup += '</div>';
+				} );
+				previewMarkup += '<div class="boldform-template-preview-submit"><button type="button" class="boldform-canvas-submit__button">' + escapeHtml( state.formSettings.button_text || 'Submit' ) + '</button></div>';
+			}
 
 			$( '#boldform-template-list' ).html( listMarkup );
 			$( '#boldform-template-preview-canvas' ).html( previewMarkup );
-			$( '#boldform-template-preview-canvas' ).attr( 'style', getFormStyleVariables() );
+			$( '#boldform-template-preview-canvas' ).attr( 'style', isSelectedProLocked ? '' : getFormStyleVariables() );
 			$( '#boldform-template-preview__head' ).html(
 				'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
 				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>'
 			);
-			$( '#boldform-import-template' ).text( boldformLiteBuilder.labels.importTemplate || 'Import Template' );
+
+			// Import button — show upgrade CTA for locked templates.
+			var $importBtn = $( '#boldform-import-template' );
+			if ( isSelectedProLocked ) {
+				$importBtn
+					.text( 'Upgrade to Pro' )
+					.addClass( 'boldform-tpl-upgrade-btn' )
+					.attr( 'data-pro-locked', '1' );
+			} else {
+				$importBtn
+					.text( boldformLiteBuilder.labels.importTemplate || 'Import Template' )
+					.removeClass( 'boldform-tpl-upgrade-btn' )
+					.removeAttr( 'data-pro-locked' );
+			}
 		}
 
 		function updateShortcodeDisplay() {
@@ -2223,6 +3011,15 @@ jQuery(
 				$( '#boldform-builder-status' ).text( boldformLiteBuilder.messages.emptyFields );
 				return;
 			}
+
+			/**
+			 * Allow Pro modules to mutate state.formSettings before it is serialised.
+			 * Attach handlers to `boldform:before_save` to inject extra keys.
+			 *
+			 * @event boldform:before_save
+			 * @param {object} formSettings Live reference to state.formSettings.
+			 */
+			$( document ).trigger( 'boldform:before_save', [ state.formSettings ] );
 
 			payload = {
 				action: 'boldform_lite_save_form',
@@ -2435,19 +3232,39 @@ jQuery(
 			state.activeSettingsAccordion = ! isOpen ? ( $accordion.data( 'accordion' ) || 'settings' ) : 'settings';
 		} );
 
-		// Conditional logic changes.
-		$( document ).on( 'change', '#boldform-setting-cond-enabled, #boldform-setting-cond-action, #boldform-setting-cond-field, #boldform-setting-cond-operator', function () {
+		// Conditional logic — enable/disable toggle.
+		$( document ).on( 'change', '#boldform-setting-cond-enabled', function () {
 			var selected = getSelectedFieldLocation();
 			if ( ! selected ) return;
-			selected.field.conditional.enabled = $( '#boldform-setting-cond-enabled' ).is( ':checked' );
-			if ( $( '#boldform-setting-cond-action' ).length ) {
-				selected.field.conditional.action = $( '#boldform-setting-cond-action' ).val() || 'show';
-			}
-			if ( $( '#boldform-setting-cond-field' ).length ) {
-				selected.field.conditional.field_id = $( '#boldform-setting-cond-field' ).val() || '';
-			}
-			if ( $( '#boldform-setting-cond-operator' ).length ) {
-				selected.field.conditional.operator = $( '#boldform-setting-cond-operator' ).val() || 'is';
+			selected.field.conditional.enabled = $( this ).is( ':checked' );
+			state.activeSettingsAccordion = 'advanced';
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+		} );
+
+		// Conditional logic — AND/OR logic toggle.
+		$( document ).on( 'change', 'input[name="bfcl-logic"]', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			selected.field.conditional.logic = $( this ).val();
+			state.activeSettingsAccordion = 'advanced';
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+		} );
+
+		// Conditional logic — condition field/operator changes.
+		$( document ).on( 'change', '.bfcl-cond-field, .bfcl-cond-op', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			var ci = parseInt( $( this ).data( 'ci' ), 10 );
+			var cond = selected.field.conditional;
+			if ( ! cond || ! cond.conditions || ! cond.conditions[ ci ] ) return;
+			if ( $( this ).hasClass( 'bfcl-cond-field' ) ) {
+				cond.conditions[ ci ].field_id = $( this ).val();
+			} else {
+				cond.conditions[ ci ].operator = $( this ).val();
 			}
 			state.activeSettingsAccordion = 'advanced';
 			renderSettingsPanel();
@@ -2455,10 +3272,48 @@ jQuery(
 			setupAddressSortable();
 		} );
 
-		$( document ).on( 'input', '#boldform-setting-cond-value', function () {
+		// Conditional logic — condition value input.
+		$( document ).on( 'input', '.bfcl-cond-value', function () {
 			var selected = getSelectedFieldLocation();
 			if ( ! selected ) return;
-			selected.field.conditional.value = $( this ).val();
+			var ci = parseInt( $( this ).data( 'ci' ), 10 );
+			var cond = selected.field.conditional;
+			if ( cond && cond.conditions && cond.conditions[ ci ] ) {
+				cond.conditions[ ci ].value = $( this ).val();
+			}
+		} );
+
+		// Conditional logic — add condition.
+		$( document ).on( 'click', '.bfcl-add-condition', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			selected.field.conditional.conditions.push( { field_id: '', operator: 'is', value: '' } );
+			state.activeSettingsAccordion = 'advanced';
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+		} );
+
+		// Conditional logic — remove condition.
+		$( document ).on( 'click', '.bfcl-remove-cond', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			var ci = parseInt( $( this ).data( 'ci' ), 10 );
+			selected.field.conditional.conditions.splice( ci, 1 );
+			if ( ! selected.field.conditional.conditions.length ) {
+				selected.field.conditional.conditions.push( { field_id: '', operator: 'is', value: '' } );
+			}
+			state.activeSettingsAccordion = 'advanced';
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+		} );
+
+		// Conditional logic — show/hide action selector.
+		$( document ).on( 'change', '.bfcl-action-select', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			selected.field.conditional.action = $( this ).val();
 		} );
 
 		// Address field toggle.
@@ -2545,6 +3400,141 @@ jQuery(
 			renderSettingsPanel();
 			setupOptionsSortable();
 			setupAddressSortable();
+			renderCanvas();
+		} );
+
+		// Product options repeater: add row.
+		$( document ).on( 'click', '#boldform-product-option-add', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			if ( ! Array.isArray( selected.field.product_options ) ) {
+				selected.field.product_options = [];
+			}
+			selected.field.product_options.push( { label: '', price: '0.00' } );
+			renderSettingsPanel();
+			$( '#boldform-product-options-repeater .boldform-product-option-row:last-child .boldform-product-option__label' ).focus();
+		} );
+
+		// Product options repeater: remove row.
+		$( document ).on( 'click', '.boldform-product-option__remove', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			var idx = Number( $( this ).data( 'product-index' ) );
+			if ( ! Array.isArray( selected.field.product_options ) || selected.field.product_options.length <= 1 ) return;
+			selected.field.product_options.splice( idx, 1 );
+			renderSettingsPanel();
+			renderCanvas();
+		} );
+
+		// Product options repeater: update label/price inline.
+		$( document ).on( 'input change', '.boldform-product-option__label, .boldform-product-option__price', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.product_options ) ) return;
+			var $row = $( this ).closest( '.boldform-product-option-row' );
+			var idx = Number( $row.data( 'product-index' ) );
+			if ( ! selected.field.product_options[ idx ] ) return;
+			if ( $( this ).hasClass( 'boldform-product-option__label' ) ) {
+				selected.field.product_options[ idx ].label = $( this ).val();
+			} else {
+				selected.field.product_options[ idx ].price = $( this ).val();
+			}
+			renderCanvas();
+		} );
+
+		// ---- Image Choice option management ----
+
+		// Add image-choice option row.
+		$( document ).on( 'click', '#boldform-ic-option-add', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			if ( ! Array.isArray( selected.field.image_choice_options ) ) {
+				selected.field.image_choice_options = [];
+			}
+			selected.field.image_choice_options.push( { label: '', value: '', image_url: '' } );
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+			$( '#boldform-ic-options-repeater .boldform-ic-option-row:last-child .boldform-ic-option__label' ).focus();
+		} );
+
+		// Remove image-choice option row.
+		$( document ).on( 'click', '.boldform-ic-option__remove', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.image_choice_options ) ) return;
+			var idx = Number( $( this ).data( 'ic-index' ) );
+			selected.field.image_choice_options.splice( idx, 1 );
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+			renderCanvas();
+		} );
+
+		// Edit image-choice option label/value inline.
+		$( document ).on( 'input', '.boldform-ic-option__label, .boldform-ic-option__value', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.image_choice_options ) ) return;
+			var $row = $( this ).closest( '.boldform-ic-option-row' );
+			var idx = Number( $row.data( 'ic-index' ) );
+			if ( ! selected.field.image_choice_options[ idx ] ) return;
+			if ( $( this ).hasClass( 'boldform-ic-option__label' ) ) {
+				selected.field.image_choice_options[ idx ].label = $( this ).val();
+			} else {
+				selected.field.image_choice_options[ idx ].value = $( this ).val();
+			}
+			renderCanvas();
+		} );
+
+		// ---- Repeater sub-field management ----
+
+		// Add repeater sub-field row.
+		$( document ).on( 'click', '#boldform-rep-field-add', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			if ( ! Array.isArray( selected.field.repeater_fields ) ) {
+				selected.field.repeater_fields = [];
+			}
+			if ( selected.field.repeater_fields.length >= 8 ) return; // MAX_SUB_FIELDS
+			var newId = 'sf_' + Math.random().toString( 36 ).slice( 2, 8 );
+			selected.field.repeater_fields.push( { id: newId, type: 'text', label: '', placeholder: '', required: false } );
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+			$( '#boldform-rep-fields-list .boldform-rep-field-row:last-child .boldform-rep-field__label' ).focus();
+		} );
+
+		// Remove repeater sub-field row.
+		$( document ).on( 'click', '.boldform-rep-field__remove', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
+			var idx = Number( $( this ).data( 'rep-index' ) );
+			selected.field.repeater_fields.splice( idx, 1 );
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
+			renderCanvas();
+		} );
+
+		// Edit repeater sub-field label inline.
+		$( document ).on( 'input', '.boldform-rep-field__label', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
+			var $row = $( this ).closest( '.boldform-rep-field-row' );
+			var idx = Number( $row.data( 'rep-index' ) );
+			if ( selected.field.repeater_fields[ idx ] ) {
+				selected.field.repeater_fields[ idx ].label = $( this ).val();
+			}
+			renderCanvas();
+		} );
+
+		// Edit repeater sub-field type via change.
+		$( document ).on( 'change', '.boldform-rep-field__type', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
+			var $row = $( this ).closest( '.boldform-rep-field-row' );
+			var idx = Number( $row.data( 'rep-index' ) );
+			if ( selected.field.repeater_fields[ idx ] ) {
+				selected.field.repeater_fields[ idx ].type = $( this ).val();
+			}
 			renderCanvas();
 		} );
 
@@ -2715,7 +3705,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -2749,6 +3739,7 @@ jQuery(
 				selected.field.allowed_types = $( '#boldform-setting-allowed-types' ).length ? $( '#boldform-setting-allowed-types' ).val() : ( selected.field.allowed_types || '' );
 				selected.field.max_file_size = $( '#boldform-setting-max-file-size' ).length ? $( '#boldform-setting-max-file-size' ).val() : ( selected.field.max_file_size || '' );
 				selected.field.css_class = $( '#boldform-setting-css-class' ).length ? $( '#boldform-setting-css-class' ).val() : ( selected.field.css_class || '' );
+			selected.field.auto_populate_key = $( '#boldform-setting-auto-populate-key' ).length ? $( '#boldform-setting-auto-populate-key' ).val() : ( selected.field.auto_populate_key || '' );
 				selected.field.min_value = $( '#boldform-setting-min-value' ).length ? $( '#boldform-setting-min-value' ).val() : selected.field.min_value;
 				selected.field.max_value = $( '#boldform-setting-max-value' ).length ? $( '#boldform-setting-max-value' ).val() : selected.field.max_value;
 				selected.field.step_value = $( '#boldform-setting-step-value' ).length ? $( '#boldform-setting-step-value' ).val() : selected.field.step_value;
@@ -2797,6 +3788,80 @@ jQuery(
 				if ( $( '#boldform-setting-progress-style' ).length ) {
 					selected.field.progress_style = $( '#boldform-setting-progress-style' ).val();
 				}
+				if ( $( '#boldform-setting-product-style' ).length ) {
+					selected.field.product_style = $( '#boldform-setting-product-style' ).val();
+				}
+				if ( $( '#boldform-setting-qty-linked-product' ).length ) {
+					selected.field.linked_product = $( '#boldform-setting-qty-linked-product' ).val();
+				}
+				if ( $( '#boldform-setting-qty-min' ).length ) {
+					selected.field.qty_min = $( '#boldform-setting-qty-min' ).val();
+				}
+				if ( $( '#boldform-setting-qty-max' ).length ) {
+					selected.field.qty_max = $( '#boldform-setting-qty-max' ).val();
+				}
+				if ( $( '#boldform-setting-qty-default' ).length ) {
+					selected.field.qty_default = $( '#boldform-setting-qty-default' ).val();
+				}
+				if ( $( '#boldform-setting-amount-min' ).length ) {
+					selected.field.amount_min = $( '#boldform-setting-amount-min' ).val();
+				}
+				if ( $( '#boldform-setting-amount-max' ).length ) {
+					selected.field.amount_max = $( '#boldform-setting-amount-max' ).val();
+				}
+				if ( $( '#boldform-setting-amount-default' ).length ) {
+					selected.field.amount_default = $( '#boldform-setting-amount-default' ).val();
+				}
+				if ( $( '#boldform-calc-formula' ).length ) {
+					selected.field.calc_formula = $( '#boldform-calc-formula' ).val();
+				}
+				if ( $( '#boldform-calc-decimals' ).length ) {
+					selected.field.calc_decimals = Math.max( 0, Math.min( 10, parseInt( $( '#boldform-calc-decimals' ).val(), 10 ) || 0 ) );
+				}
+				if ( $( '#boldform-calc-prefix' ).length ) {
+					selected.field.calc_prefix = $( '#boldform-calc-prefix' ).val();
+				}
+				if ( $( '#boldform-calc-suffix' ).length ) {
+					selected.field.calc_suffix = $( '#boldform-calc-suffix' ).val();
+				}
+
+				// Signature field.
+				if ( $( '#boldform-setting-sig-pen-color' ).length ) {
+					selected.field.sig_pen_color = $( '#boldform-setting-sig-pen-color' ).val();
+				}
+				if ( $( '#boldform-setting-sig-pen-width' ).length ) {
+					selected.field.sig_pen_width = Math.max( 1, Math.min( 8, parseInt( $( '#boldform-setting-sig-pen-width' ).val(), 10 ) || 2 ) );
+				}
+				if ( $( '#boldform-setting-sig-bg-color' ).length ) {
+					selected.field.sig_bg_color = $( '#boldform-setting-sig-bg-color' ).val();
+				}
+				if ( $( '#boldform-setting-sig-height' ).length ) {
+					selected.field.sig_height = Math.max( 80, Math.min( 400, parseInt( $( '#boldform-setting-sig-height' ).val(), 10 ) || 160 ) );
+				}
+
+				// Hidden field.
+				if ( $( '#boldform-setting-hidden-value' ).length ) {
+					selected.field.hidden_value = $( '#boldform-setting-hidden-value' ).val();
+				}
+
+				// Repeater field.
+				if ( $( '#boldform-setting-rep-min' ).length ) {
+					selected.field.repeater_min_rows = Math.max( 1, Math.min( 10, parseInt( $( '#boldform-setting-rep-min' ).val(), 10 ) || 1 ) );
+				}
+				if ( $( '#boldform-setting-rep-max' ).length ) {
+					selected.field.repeater_max_rows = Math.max( 1, Math.min( 20, parseInt( $( '#boldform-setting-rep-max' ).val(), 10 ) || 5 ) );
+				}
+				if ( $( '#boldform-setting-rep-add-label' ).length ) {
+					selected.field.repeater_add_label = $( '#boldform-setting-rep-add-label' ).val();
+				}
+				if ( $( '#boldform-setting-rep-remove-label' ).length ) {
+					selected.field.repeater_remove_label = $( '#boldform-setting-rep-remove-label' ).val();
+				}
+
+				// Image choice image height.
+				if ( $( '#boldform-setting-ic-img-height' ).length ) {
+					selected.field.image_choice_img_height = Math.max( 60, Math.min( 600, parseInt( $( '#boldform-setting-ic-img-height' ).val(), 10 ) || 160 ) );
+				}
 
 				if ( optionFieldTypes.indexOf( selected.field.type ) !== -1 ) {
 					selected.field.options = collectRepeaterOptions();
@@ -2808,7 +3873,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -2861,6 +3926,23 @@ jQuery(
 					selected.field.max_stars = Number( $( '#boldform-setting-max-stars' ).val() ) || 5;
 				}
 
+				// Hidden field source.
+				if ( $( '#boldform-setting-hidden-source' ).length ) {
+					selected.field.hidden_source = $( '#boldform-setting-hidden-source' ).val();
+					// Re-render panel so the value/param input shows or hides.
+					renderSettingsPanel();
+					setupOptionsSortable();
+					setupAddressSortable();
+					return;
+				}
+
+				// Image choice settings.
+				if ( $( '#boldform-setting-ic-type' ).length ) {
+					selected.field.image_choice_type = $( '#boldform-setting-ic-type' ).val();
+				}
+				if ( $( '#boldform-setting-ic-columns' ).length ) {
+					selected.field.image_choice_columns = Number( $( '#boldform-setting-ic-columns' ).val() ) || 3;
+				}
 				renderAll();
 			}
 		);
@@ -2889,9 +3971,58 @@ jQuery(
 			renderAll();
 		} );
 
+		// Image Choice — open WP media library to pick image for an option.
+		$( document ).on( 'click', '.boldform-ic-option__img-btn', function ( e ) {
+			e.preventDefault();
+			if ( typeof wp === 'undefined' || ! wp.media ) return;
+
+			var $btn = $( this );
+			var idx  = Number( $btn.data( 'ic-index' ) );
+
+			var frame = wp.media( {
+				title: 'Choose Image',
+				button: { text: 'Use this image' },
+				multiple: false,
+				library: { type: 'image' }
+			} );
+
+			frame.on( 'select', function () {
+				var attachment = frame.state().get( 'selection' ).first().toJSON();
+				var url = attachment.url || '';
+				var selected = getSelectedFieldLocation();
+				if ( ! selected || ! Array.isArray( selected.field.image_choice_options ) ) return;
+				if ( ! selected.field.image_choice_options[ idx ] ) return;
+
+				selected.field.image_choice_options[ idx ].image_url = url;
+
+				// Update the thumbnail in the button immediately.
+				$btn.html( '<img src="' + escapeHtml( url ) + '" alt="">' );
+
+				renderCanvas();
+			} );
+
+			frame.open();
+		} );
+
+		// Calculation — insert field reference into formula textarea.
+		$( document ).on( 'change', '.bfcp-field-insert', function () {
+			var val = $( this ).val();
+			if ( !val ) return;
+			var $textarea = $( '#boldform-calc-formula' );
+			if ( !$textarea.length ) return;
+			var pos = $textarea[0].selectionStart;
+			var current = $textarea.val();
+			var insertion = '{' + val + '}';
+			$textarea.val( current.slice( 0, pos ) + insertion + current.slice( pos ) );
+			var newPos = pos + insertion.length;
+			$textarea[0].setSelectionRange( newPos, newPos );
+			$textarea.trigger( 'input' ).focus();
+			$( this ).val( '' ); // Reset dropdown.
+		} );
+
 		$( document ).on(
 			'input change',
-			'input[name="boldform-submit-mode"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color, #boldform-step-progress-style, #boldform-step-progress-color, #boldform-step-btn-color, #boldform-step-btn-text-color, #boldform-step-btn-size, #boldform-step-btn-radius, #boldform-step-next-text, #boldform-step-prev-text, #boldform-hide-labels, #boldform-hide-placeholders',
+			'input[name="boldform-submit-mode"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color, #boldform-step-progress-style, #boldform-step-progress-color, #boldform-step-btn-color, #boldform-step-btn-text-color, #boldform-step-btn-size, #boldform-step-btn-radius, #boldform-step-next-text, #boldform-step-prev-text, #boldform-hide-labels, #boldform-hide-placeholders, #boldform-dup-enabled, input[name="boldform-dup-method"], #boldform-dup-field-id, #boldform-dup-message, #boldform-custom-css, #boldform-custom-js, .boldform-color-hex',
 			function ( event ) {
 				var needsRerender = false;
 
@@ -3014,10 +4145,32 @@ jQuery(
 					state.formSettings.step_prev_text = $( '#boldform-step-prev-text' ).val();
 				}
 	
+				// Duplicate prevention settings.
+				if ( $( '#boldform-dup-enabled' ).length ) {
+					state.formSettings.dup_enabled = $( '#boldform-dup-enabled' ).is( ':checked' );
+				}
+				if ( $( 'input[name="boldform-dup-method"]' ).length ) {
+					state.formSettings.dup_method = $( 'input[name="boldform-dup-method"]:checked' ).val() || 'email';
+				}
+				if ( $( '#boldform-dup-field-id' ).length ) {
+					state.formSettings.dup_field_id = $( '#boldform-dup-field-id' ).val() || '';
+				}
+				if ( $( '#boldform-dup-message' ).length ) {
+					state.formSettings.dup_message = $( '#boldform-dup-message' ).val() || '';
+				}
+				if ( $( '#boldform-custom-css' ).length ) {
+					state.formSettings.custom_css = $( '#boldform-custom-css' ).val();
+				}
+				if ( $( '#boldform-custom-js' ).length ) {
+					state.formSettings.custom_js = $( '#boldform-custom-js' ).val();
+				}
+
 				if (
 					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
-					$( event.target ).is( 'input[name="boldform-admin-email-type"]' )
+					$( event.target ).is( 'input[name="boldform-admin-email-type"]' ) ||
+					$( event.target ).is( '#boldform-dup-enabled' ) ||
+					$( event.target ).is( 'input[name="boldform-dup-method"]' )
 				) {
 					needsRerender = true;
 				}
@@ -3037,9 +4190,26 @@ jQuery(
 			}
 		);
 
-		// Live color preview swatch update for all color pickers.
-		$( document ).on( 'input', '.boldform-color-wrap input[type="color"]', function () {
-			$( this ).siblings( '.boldform-color-preview' ).css( 'background', $( this ).val() );
+		// Color picker → update swatch background + hex text input.
+		$( document ).on( 'input', '.boldform-color-swatch input[type="color"]', function () {
+			var val = $( this ).val();
+			$( this ).closest( '.boldform-color-swatch' ).css( 'background', val );
+			$( '[data-color-for="' + $( this ).attr( 'id' ) + '"]' ).val( val );
+		} );
+
+		// Hex text input → update color picker + swatch background.
+		$( document ).on( 'input', '.boldform-color-hex', function () {
+			var val = $( this ).val().trim();
+			if ( /^#[0-9a-fA-F]{6}$/.test( val ) ) {
+				var pickerId = $( this ).data( 'color-for' );
+				var $picker = $( '#' + pickerId );
+				$picker.val( val );
+				$( this ).closest( '.boldform-color-field' ).find( '.boldform-color-swatch' ).css( 'background', val );
+				// Fire input event so field-settings handlers (signature colors, etc.) also update.
+				if ( $picker.closest( '#boldform-settings-panel' ).length ) {
+					$picker.trigger( 'input' );
+				}
+			}
 		} );
 
 		// Design theme card click.
@@ -3232,6 +4402,10 @@ jQuery(
 
 		// Import template — also closes setup screen if open.
 		$( '#boldform-import-template' ).on( 'click', function () {
+			// Pro-locked: button acts as upgrade CTA, do not import.
+			if ( $( this ).attr( 'data-pro-locked' ) ) {
+				return;
+			}
 			closeTemplateModal();
 			if ( ! $( '#boldform-setup-screen' ).is( '[hidden]' ) ) {
 				closeSetupScreen();
@@ -3241,5 +4415,8 @@ jQuery(
 
 		updateShortcodeDisplay();
 		renderAll();
+
+		// Expose builder state globally so companion scripts (integrations.js, Pro modules) can read it.
+		window.boldformBuilderState = state;
 	}
 );

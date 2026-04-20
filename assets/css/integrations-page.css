@@ -1,0 +1,497 @@
+/* ==========================================================================
+   BoldForm — Integrations Admin Page
+   ========================================================================== */
+
+.boldform-int-page {
+	max-width: 100%;
+	margin: 0;
+	padding: 0 20px 32px;
+}
+
+.boldform-int-page .wp-header-end {
+	margin: 0; padding: 0; border: 0; height: 0; visibility: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.boldform-int-header {
+	padding: 20px 0 14px;
+	margin-bottom: 14px;
+}
+
+.boldform-int-header h1 {
+	font-size: 20px;
+	font-weight: 700;
+	color: #1d2327;
+	margin: 0 0 2px;
+}
+
+.boldform-int-header p {
+	color: #667085;
+	font-size: 13px;
+	margin: 0;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.boldform-int-tabs {
+	display: inline-flex;
+	flex-wrap: wrap;
+	margin-bottom: 14px;
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.boldform-int-tab {
+	display: inline-flex;
+	align-items: center;
+	padding: 7px 14px;
+	border-right: 1px solid #d0d5dd;
+	font-size: 12px;
+	font-weight: 500;
+	color: #50575e;
+	text-decoration: none;
+	background: #fff;
+	transition: background 0.14s, color 0.14s;
+}
+
+.boldform-int-tab:last-child {
+	border-right: 0;
+}
+
+.boldform-int-tab:hover {
+	background: #f9fafb;
+	color: #1d2327;
+}
+
+.boldform-int-tab.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.bf-int-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+	gap: 12px;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.bf-int-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 22px 14px 16px;
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 8px;
+	transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.bf-int-card:hover {
+	border-color: #d0d5dd;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.bf-int-card.is-on {
+	border-color: #16a34a;
+	background: #f8fdf9;
+}
+
+.bf-int-card.is-locked {
+	opacity: 0.65;
+}
+
+.bf-int-card.is-locked:hover {
+	box-shadow: none;
+	border-color: #e2e4e7;
+}
+
+/* Icon */
+.bf-int-card__icon {
+	width: 42px;
+	height: 42px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	margin-bottom: 10px;
+}
+
+.bf-int-card__icon .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+/* Name */
+.bf-int-card__name {
+	display: block;
+	font-size: 13px;
+	font-weight: 700;
+	color: #1d2327;
+	margin-bottom: 3px;
+	line-height: 1.3;
+}
+
+/* Description */
+.bf-int-card__desc {
+	display: block;
+	font-size: 11px;
+	color: #98a2b3;
+	line-height: 1.4;
+	margin-bottom: 12px;
+	min-height: 30px;
+}
+
+/* Actions row */
+.bf-int-card__actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: auto;
+	width: 100%;
+	justify-content: center;
+}
+
+/* Settings button — hidden until enabled */
+.bf-int-card__settings {
+	display: none;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	background: #fff;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.14s;
+	padding: 0;
+}
+
+.bf-int-card.is-on .bf-int-card__settings {
+	display: flex;
+}
+
+.bf-int-card__settings .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	color: #667085;
+	transition: color 0.14s;
+}
+
+.bf-int-card__settings:hover {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.bf-int-card__settings:hover .dashicons {
+	color: #2271b1;
+}
+
+/* Upgrade button */
+.bf-int-card__upgrade {
+	display: inline-flex;
+	align-items: center;
+	padding: 6px 12px;
+	background: #2271b1;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 700;
+	border-radius: 6px;
+	text-decoration: none;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	transition: background 0.14s;
+}
+
+.bf-int-card__upgrade:hover {
+	background: #135e96;
+	color: #fff;
+}
+
+/* ── Toggle switch ───────────────────────────────────────────────────────── */
+.bf-int-toggle {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.bf-int-toggle input[type="checkbox"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.bf-int-toggle__track {
+	display: block;
+	width: 36px;
+	height: 20px;
+	background: #d0d5dd;
+	border-radius: 10px;
+	transition: background 0.15s;
+	position: relative;
+}
+
+.bf-int-toggle__track::after {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+	transition: transform 0.15s;
+}
+
+.bf-int-toggle input:checked + .bf-int-toggle__track {
+	background: #16a34a;
+}
+
+.bf-int-toggle input:checked + .bf-int-toggle__track::after {
+	transform: translateX(16px);
+}
+
+.bf-int-toggle input:disabled + .bf-int-toggle__track {
+	opacity: 0.5;
+	cursor: wait;
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+.bf-conn-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.bf-conn-modal[hidden] {
+	display: none;
+}
+
+.bf-conn-modal__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+}
+
+.bf-conn-modal__dialog {
+	position: relative;
+	z-index: 1;
+	background: #fff;
+	border-radius: 8px;
+	width: 520px;
+	max-width: calc(100vw - 40px);
+	max-height: calc(100vh - 80px);
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+	overflow: hidden;
+}
+
+.bf-conn-modal__head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 16px 20px;
+	border-bottom: 1px solid #e2e4e7;
+	background: #f8f9fa;
+}
+
+.bf-conn-modal__title {
+	flex: 1;
+	font-size: 15px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.bf-conn-modal__close {
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: none;
+	border: 1px solid #d0d5dd;
+	border-radius: 4px;
+	font-size: 16px;
+	line-height: 1;
+	color: #667085;
+	cursor: pointer;
+	padding: 0;
+	transition: all 0.12s;
+}
+
+.bf-conn-modal__close:hover {
+	color: #1d2327;
+	border-color: #98a2b3;
+}
+
+.bf-conn-modal__body {
+	padding: 20px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.bf-conn-modal__foot {
+	padding: 14px 20px;
+	border-top: 1px solid #e2e4e7;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	background: #f8f9fa;
+}
+
+.bf-conn-modal__status {
+	flex: 1;
+	font-size: 12px;
+	color: #667085;
+}
+
+.bf-conn-modal__status.is-ok {
+	color: #166534;
+	font-weight: 600;
+}
+
+.bf-conn-modal__status.is-error {
+	color: #d63638;
+}
+
+.bf-conn-modal__actions {
+	display: flex;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+/* ── Modal form rows ──────────────────────────────────────────────────────── */
+.bf-modal-row {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.bf-modal-row--inline {
+	flex-direction: row;
+	align-items: center;
+	gap: 10px;
+}
+
+.bf-modal-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #344054;
+}
+
+.bf-modal-req {
+	color: #d63638;
+}
+
+.bf-modal-hint {
+	font-weight: 400;
+	color: #98a2b3;
+}
+
+.bf-modal-check-label {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	font-size: 13px;
+	color: #344054;
+	cursor: pointer;
+}
+
+.bf-modal-section-title {
+	font-size: 11px;
+	font-weight: 700;
+	color: #98a2b3;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	padding-top: 10px;
+	border-top: 1px solid #f0f0f1;
+	margin-top: 4px;
+}
+
+.bf-modal-hint-text {
+	font-size: 12px;
+	color: #98a2b3;
+	margin: 0;
+	line-height: 1.5;
+}
+
+.bf-modal-hint-text.is-error {
+	color: #d63638;
+}
+
+/* Modal inputs */
+.bf-conn-modal__body .regular-text,
+.bf-conn-modal__body .large-text,
+.bf-conn-modal__body select {
+	border: 1px solid #d0d5dd;
+	border-radius: 6px;
+	padding: 7px 10px;
+	font-size: 13px;
+	color: #1d2327;
+	transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.bf-conn-modal__body .regular-text:focus,
+.bf-conn-modal__body .large-text:focus,
+.bf-conn-modal__body select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: none;
+}
+
+/* Loading */
+.bf-loading-msg {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: #2271b1;
+}
+
+.bf-spinner {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border: 2px solid currentColor;
+	border-top-color: transparent;
+	border-radius: 50%;
+	animation: bf-spin 0.7s linear infinite;
+	flex-shrink: 0;
+}
+
+@keyframes bf-spin {
+	to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 782px) {
+	.bf-int-grid {
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 8px;
+	}
+
+	.bf-int-card {
+		padding: 16px 10px 12px;
+	}
+
+	.bf-conn-modal__dialog {
+		width: calc(100vw - 24px);
+	}
+}

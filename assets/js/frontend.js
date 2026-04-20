@@ -187,16 +187,16 @@ jQuery(
 			}
 		);
 
-		// Conditional Logic.
-		$( '.boldform-lite-form__field[data-cond-field]' ).each( function () {
-			var $target = $( this );
-			var action = $target.data( 'cond-action' ) || 'show';
-			var fieldName = $target.data( 'cond-field' );
-			var operator = $target.data( 'cond-operator' ) || 'is';
-			var condValue = String( $target.data( 'cond-value' ) || '' );
-			var $form = $target.closest( 'form' );
-
-			function getFieldValue() {
+		// Conditional Logic — rule engine.
+		( function () {
+			/**
+			 * Read the current value of a form field by name.
+			 *
+			 * @param {jQuery} $form
+			 * @param {string} fieldName   e.g. "boldform_field_abc"
+			 * @return {string}
+			 */
+			function getFieldVal( $form, fieldName ) {
 				var $el = $form.find( '[name="' + fieldName + '"], [name="' + fieldName + '[]"]' );
 				if ( ! $el.length ) return '';
 				if ( $el.is( ':checkbox' ) ) {
@@ -210,23 +210,85 @@ jQuery(
 				return $el.val() || '';
 			}
 
-			function evaluate() {
-				var val = String( getFieldValue() );
-				var match = false;
-				if ( operator === 'is' ) match = val === condValue;
-				else if ( operator === 'is_not' ) match = val !== condValue;
-				else if ( operator === 'contains' ) match = val.toLowerCase().indexOf( condValue.toLowerCase() ) !== -1;
-				else if ( operator === 'not_empty' ) match = val.length > 0;
-				else if ( operator === 'empty' ) match = val.length === 0;
-
-				var visible = action === 'show' ? match : ! match;
-				$target.toggle( visible );
-				$target.find( '[required]' ).prop( 'disabled', ! visible );
+			/**
+			 * Test one condition against the current form state.
+			 *
+			 * @param {jQuery} $form
+			 * @param {{field_id:string, operator:string, value:string}} cond
+			 * @return {boolean}
+			 */
+			function testCondition( $form, cond ) {
+				var raw = String( getFieldVal( $form, cond.field_id ) );
+				var cv  = String( cond.value || '' );
+				switch ( cond.operator ) {
+					case 'is':           return raw === cv;
+					case 'is_not':       return raw !== cv;
+					case 'contains':     return raw.toLowerCase().indexOf( cv.toLowerCase() ) !== -1;
+					case 'not_contains': return raw.toLowerCase().indexOf( cv.toLowerCase() ) === -1;
+					case 'starts_with':  return raw.toLowerCase().indexOf( cv.toLowerCase() ) === 0;
+					case 'ends_with':    return raw.toLowerCase().slice( -cv.length ) === cv.toLowerCase();
+					case 'greater_than': return parseFloat( raw ) > parseFloat( cv );
+					case 'less_than':    return parseFloat( raw ) < parseFloat( cv );
+					case 'not_empty':    return raw.length > 0;
+					case 'empty':        return raw.length === 0;
+					default:             return false;
+				}
 			}
 
-			$form.on( 'input change', '[name="' + fieldName + '"], [name="' + fieldName + '[]"]', evaluate );
-			evaluate();
-		} );
+			// ── Multi-condition engine ─────────────────────────────────────────
+			$( '.boldform-lite-form__field[data-bf-conditions]' ).each( function () {
+				var $self  = $( this );
+				var $form  = $self.closest( 'form' );
+				var ruleset;
+				try { ruleset = JSON.parse( $self.attr( 'data-bf-conditions' ) ); } catch ( e ) { return; }
+				if ( ! ruleset || ! ruleset.conditions ) return;
+
+				var conditions = ruleset.conditions;
+				var action     = ruleset.action === 'hide' ? 'hide' : 'show';
+				var logic      = ruleset.logic === 'OR' ? 'OR' : 'AND';
+
+				// Collect watched field names.
+				var watched = {};
+				conditions.forEach( function ( c ) { if ( c.field_id ) watched[ c.field_id ] = true; } );
+
+				function evaluate() {
+					var results = conditions.map( function ( c ) { return testCondition( $form, c ); } );
+					var conditionMet = logic === 'OR'
+						? results.some( Boolean )
+						: results.every( Boolean );
+
+					var visible = action === 'show' ? conditionMet : ! conditionMet;
+					$self.toggle( visible );
+					$self.find( '[required]' ).prop( 'disabled', ! visible );
+				}
+
+				Object.keys( watched ).forEach( function ( fieldName ) {
+					$form.on( 'input change', '[name="' + fieldName + '"], [name="' + fieldName + '[]"]', evaluate );
+				} );
+				evaluate();
+			} );
+
+			// ── Legacy single-rule fallback (data-cond-field) ──────────────────
+			$( '.boldform-lite-form__field[data-cond-field]' ).each( function () {
+				var $target   = $( this );
+				var action    = $target.data( 'cond-action' ) || 'show';
+				var fieldName = String( $target.data( 'cond-field' ) || '' );
+				var operator  = $target.data( 'cond-operator' ) || 'is';
+				var condValue = String( $target.data( 'cond-value' ) || '' );
+				var $form     = $target.closest( 'form' );
+
+				function legacyEval() {
+					var cond = { field_id: fieldName, operator: operator, value: condValue };
+					var match = testCondition( $form, cond );
+					var visible = action === 'show' ? match : ! match;
+					$target.toggle( visible );
+					$target.find( '[required]' ).prop( 'disabled', ! visible );
+				}
+
+				$form.on( 'input change', '[name="' + fieldName + '"], [name="' + fieldName + '[]"]', legacyEval );
+				legacyEval();
+			} );
+		}() );
 
 		// Star Rating.
 		$( '.boldform-lite-star-rating' ).each( function () {
@@ -345,7 +407,7 @@ jQuery(
 			}
 
 			function renderTrigger() {
-				var arrow = '<span class="bf-select__arrow"></span>';
+				var arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 
 				if ( isMultiple ) {
 					if ( ! selected.length ) {

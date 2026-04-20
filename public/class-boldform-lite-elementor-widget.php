@@ -119,7 +119,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			'edit_form_link',
 			array(
 				'type'            => \Elementor\Controls_Manager::RAW_HTML,
-				'raw'             => '<a href="#" class="boldform-edit-form-link" target="_blank" style="display:inline-flex;align-items:center;gap:4px;color:#2f80ed;font-weight:500;font-size:13px;text-decoration:none;"><span class="dashicons dashicons-edit" style="font-size:14px;width:14px;height:14px;"></span>' . esc_html__( 'Edit this form in builder', 'boldform-lite' ) . '</a><script>jQuery(function($){function u(){var v=$("select[data-setting=form_id]").val()||$("[id*=form_id] select").val()||"0";$(".boldform-edit-form-link").attr("href",v&&v!=="0"?"' . esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' ) ) . '"+v:"#").toggle(!!v&&v!=="0")}u();$(document).on("change","select[data-setting=form_id], [id*=form_id] select",u)});</script>',
+				'raw'             => '<a href="#" class="boldform-edit-form-link" target="_blank" style="display:inline-flex;align-items:center;gap:4px;color:#2f80ed;font-weight:500;font-size:13px;text-decoration:none;"><span class="dashicons dashicons-edit" style="font-size:14px;width:14px;height:14px;"></span>' . esc_html__( 'Edit this form in builder', 'boldform-lite' ) . '</a>',
 				'content_classes' => 'boldform-elementor-edit-link',
 				'condition'       => array( 'form_id!' => '0' ),
 			)
@@ -262,18 +262,6 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_responsive_control(
-			'button_margin',
-			array(
-				'label'      => __( 'Button Margin', 'boldform-lite' ),
-				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
-				'size_units' => array( 'px', 'em' ),
-				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__submit' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
-				),
-			)
-		);
-
 		$this->end_controls_section();
 
 		// ── Style: Labels ──
@@ -335,7 +323,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 30, 'max' => 80 ) ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger' => 'height: {{SIZE}}{{UNIT}}; min-height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select' => 'height: {{SIZE}}{{UNIT}}; min-height: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -347,8 +335,9 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 60, 'max' => 400 ) ),
+				'default'    => array( 'size' => 120, 'unit' => 'px' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field textarea' => 'height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__field textarea' => 'height: {{SIZE}}{{UNIT}}; min-height: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -360,7 +349,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', 'em' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -371,7 +360,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Background Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -382,7 +371,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Text Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger, {{WRAPPER}} .boldform-lite-form__field .bf-select__value' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -402,7 +391,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'field_typography',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
 			)
 		);
 
@@ -410,7 +399,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Border::get_type(),
 			array(
 				'name'     => 'field_border',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
 			)
 		);
 
@@ -421,7 +410,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -441,7 +430,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Focus Border Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus, {{WRAPPER}} .boldform-lite-form__field select:focus, {{WRAPPER}} .boldform-lite-form__field .bf-select.is-open .bf-select__trigger' => 'border-color: {{VALUE}}; box-shadow: 0 0 0 1px {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus' => 'border-color: {{VALUE}}; box-shadow: 0 0 0 1px {{VALUE}};',
 				),
 			)
 		);
@@ -450,7 +439,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
 				'name'     => 'field_box_shadow',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
 			)
 		);
 
@@ -462,40 +451,8 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'size_units' => array( 'px', 'em' ),
 				'separator'  => 'before',
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea, {{WRAPPER}} .boldform-lite-form__field select, {{WRAPPER}} .boldform-lite-form__field .bf-select__trigger' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
-			)
-		);
-
-		$this->end_controls_section();
-
-		// ── Style: Error Messages ──
-		$this->start_controls_section(
-			'section_style_errors',
-			array(
-				'label' => __( 'Error Messages', 'boldform-lite' ),
-				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
-			)
-		);
-
-		$this->add_control(
-			'error_color',
-			array(
-				'label'     => __( 'Error Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field-error' => 'color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__required' => 'color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__field.is-invalid input, {{WRAPPER}} .boldform-lite-form__field.is-invalid textarea, {{WRAPPER}} .boldform-lite-form__field.is-invalid select, {{WRAPPER}} .boldform-lite-form__field.is-invalid .bf-select__trigger' => 'border-color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->add_group_control(
-			\Elementor\Group_Control_Typography::get_type(),
-			array(
-				'name'     => 'error_typography',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__field-error',
 			)
 		);
 
@@ -609,13 +566,16 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		// ── Trigger (closed state) ────────────────────────────────────────────
+
 		$this->add_control(
 			'select_bg_color',
 			array(
 				'label'     => __( 'Background', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form select, {{WRAPPER}} .boldform-custom-select__trigger' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__trigger' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form select' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -626,8 +586,40 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Text Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form select, {{WRAPPER}} .boldform-custom-select__trigger' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__trigger' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__value' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form select' => 'color: {{VALUE}};',
 				),
+			)
+		);
+
+		$this->add_control(
+			'select_placeholder_color',
+			array(
+				'label'     => __( 'Placeholder Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__placeholder' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_arrow_color',
+			array(
+				'label'     => __( 'Arrow Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__arrow' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'select_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select',
 			)
 		);
 
@@ -635,7 +627,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Border::get_type(),
 			array(
 				'name'     => 'select_border',
-				'selector' => '{{WRAPPER}} .boldform-lite-form select, {{WRAPPER}} .boldform-custom-select__trigger',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select',
 			)
 		);
 
@@ -646,29 +638,256 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form select, {{WRAPPER}} .boldform-custom-select__trigger' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'select_padding',
+			array(
+				'label'      => __( 'Padding', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'select_box_shadow',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select',
+			)
+		);
+
+		// ── Open / Focus state ────────────────────────────────────────────────
+
+		$this->add_control(
+			'select_open_heading',
+			array(
+				'label'     => __( 'Open / Focus State', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
+			'select_focus_border_color',
+			array(
+				'label'     => __( 'Focus Border Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select.is-open .bf-select__trigger' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_focus_shadow_color',
+			array(
+				'label'     => __( 'Focus Ring Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select.is-open .bf-select__trigger' => 'box-shadow: 0 0 0 3px {{VALUE}};',
+				),
+			)
+		);
+
+		// ── Dropdown panel ────────────────────────────────────────────────────
+
+		$this->add_control(
+			'select_panel_heading',
+			array(
+				'label'     => __( 'Dropdown Panel', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
 			)
 		);
 
 		$this->add_control(
 			'select_dropdown_bg',
 			array(
-				'label'     => __( 'Dropdown Background', 'boldform-lite' ),
+				'label'     => __( 'Panel Background', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-custom-select__dropdown' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel' => 'background-color: {{VALUE}};',
 				),
+			)
+		);
+
+		$this->add_control(
+			'select_panel_border_color',
+			array(
+				'label'     => __( 'Panel Border Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel' => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__search-wrap' => 'border-bottom-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'select_panel_border_radius',
+			array(
+				'label'      => __( 'Panel Border Radius', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'select_panel_shadow',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__panel',
+			)
+		);
+
+		// ── Search box inside panel ───────────────────────────────────────────
+
+		$this->add_control(
+			'select_search_heading',
+			array(
+				'label'     => __( 'Search Box', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
+			'select_search_bg',
+			array(
+				'label'     => __( 'Search Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__search-wrap' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel-search' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_search_color',
+			array(
+				'label'     => __( 'Search Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel-search' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_search_placeholder_color',
+			array(
+				'label'     => __( 'Search Placeholder Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__panel-search::placeholder' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		// ── Options ───────────────────────────────────────────────────────────
+
+		$this->add_control(
+			'select_options_heading',
+			array(
+				'label'     => __( 'Options', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
+			'select_option_bg',
+			array(
+				'label'     => __( 'Option Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_option_color',
+			array(
+				'label'     => __( 'Option Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option-text' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'select_option_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__option',
 			)
 		);
 
 		$this->add_control(
 			'select_option_hover',
 			array(
-				'label'     => __( 'Option Hover Color', 'boldform-lite' ),
+				'label'     => __( 'Option Hover Background', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-custom-select__option:hover, {{WRAPPER}} .boldform-custom-select__option.is-focused' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option:hover' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_option_hover_color',
+			array(
+				'label'     => __( 'Option Hover Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option:hover' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_option_active_bg',
+			array(
+				'label'     => __( 'Selected Option Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option.is-active' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_option_active_color',
+			array(
+				'label'     => __( 'Selected Option Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option.is-active' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_check_color',
+			array(
+				'label'     => __( 'Checkmark Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select__option.is-active .bf-select__check' => 'background-color: {{VALUE}}; border-color: {{VALUE}};',
 				),
 			)
 		);
@@ -876,8 +1095,8 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
 				'return_value' => 'yes',
 				'selectors'    => array(
+					'{{WRAPPER}} .boldform-lite-form__actions' => 'display: block;',
 					'{{WRAPPER}} .boldform-lite-form__submit' => 'width: 100%;',
-					'{{WRAPPER}} .boldform-lite-form__submit .boldform-lite-form__submit-btn' => 'width: 100%;',
 				),
 			)
 		);
@@ -889,7 +1108,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', 'em' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__submit' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -898,7 +1117,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Typography::get_type(),
 			array(
 				'name'     => 'button_typography',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__submit-btn',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__submit',
 			)
 		);
 
@@ -915,7 +1134,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Text Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -926,7 +1145,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Background Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -944,7 +1163,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Text Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn:hover' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -955,7 +1174,49 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Background Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn:hover' => 'background-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'button_hover_border_color',
+			array(
+				'label'     => __( 'Border Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'button_hover_border_width',
+			array(
+				'label'      => __( 'Border Width', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'border-width: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'button_hover_border_style',
+			array(
+				'label'     => __( 'Border Style', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::SELECT,
+				'options'   => array(
+					''       => __( 'Default', 'boldform-lite' ),
+					'solid'  => __( 'Solid', 'boldform-lite' ),
+					'dashed' => __( 'Dashed', 'boldform-lite' ),
+					'dotted' => __( 'Dotted', 'boldform-lite' ),
+					'double' => __( 'Double', 'boldform-lite' ),
+					'none'   => __( 'None', 'boldform-lite' ),
+				),
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'border-style: {{VALUE}};',
 				),
 			)
 		);
@@ -971,8 +1232,8 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'separator' => 'before',
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn .dashicons' => 'color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__submit-btn .boldform-btn-icon-svg svg' => 'fill: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit .dashicons' => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg' => 'fill: {{VALUE}};',
 				),
 			)
 		);
@@ -981,7 +1242,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Border::get_type(),
 			array(
 				'name'      => 'button_border',
-				'selector'  => '{{WRAPPER}} .boldform-lite-form__submit-btn',
+				'selector'  => '{{WRAPPER}} .boldform-lite-form__submit',
 				'separator' => 'before',
 			)
 		);
@@ -993,7 +1254,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', '%' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__submit-btn' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__submit' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -1002,7 +1263,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
 				'name'     => 'button_box_shadow',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__submit-btn',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__submit',
 			)
 		);
 
@@ -1014,8 +1275,176 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'size_units' => array( 'px', 'em' ),
 				'separator'  => 'before',
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__submit' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__actions' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		// ── Style: Error Messages ──
+		$this->start_controls_section(
+			'section_style_errors',
+			array(
+				'label' => __( 'Error Messages', 'boldform-lite' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_control(
+			'error_color',
+			array(
+				'label'     => __( 'Error Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__field-error'   => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__required'      => 'color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field.is-invalid input, {{WRAPPER}} .boldform-lite-form__field.is-invalid textarea, {{WRAPPER}} .boldform-lite-form__field.is-invalid select, {{WRAPPER}} .boldform-lite-form__field.is-invalid .bf-select__trigger' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'error_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field-error',
+			)
+		);
+
+		$this->add_responsive_control(
+			'error_message_padding',
+			array(
+				'label'      => __( 'Padding', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', 'em' ),
+				'separator'  => 'before',
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-error' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'error_message_bg',
+			array(
+				'label'     => __( 'Notice Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-error' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'error_message_text_color',
+			array(
+				'label'     => __( 'Notice Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-error' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			array(
+				'name'     => 'error_message_border',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-error',
+			)
+		);
+
+		$this->add_responsive_control(
+			'error_message_border_radius',
+			array(
+				'label'      => __( 'Border Radius', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-error' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->end_controls_section();
+
+		// ── Style: Success Message ──
+		$this->start_controls_section(
+			'section_style_success',
+			array(
+				'label' => __( 'Success Message', 'boldform-lite' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'success_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-success',
+			)
+		);
+
+		$this->add_responsive_control(
+			'success_message_padding',
+			array(
+				'label'      => __( 'Padding', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-success' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'success_message_bg',
+			array(
+				'label'     => __( 'Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-success' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'success_message_color',
+			array(
+				'label'     => __( 'Text Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-success' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Border::get_type(),
+			array(
+				'name'     => 'success_message_border',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-success',
+			)
+		);
+
+		$this->add_responsive_control(
+			'success_message_border_radius',
+			array(
+				'label'      => __( 'Border Radius', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__message.is-success' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'success_message_shadow',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-success',
 			)
 		);
 
