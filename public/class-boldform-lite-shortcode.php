@@ -692,9 +692,11 @@ class BoldForm_Lite_Shortcode {
 	 */
 	private function resolve_auto_populate( string $key ): string {
 		// 1. URL parameter.
-		if ( isset( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only pre-fill, no data mutation.
-			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) );
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only pre-fill, no data mutation.
+		if ( isset( $_GET[ $key ] ) ) {
+			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		// 2. Logged-in user built-in properties.
 		if ( is_user_logged_in() ) {
