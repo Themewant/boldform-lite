@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -272,6 +272,26 @@ jQuery(
 			normalized.repeater_max_rows     = field && field.repeater_max_rows ? Number( field.repeater_max_rows ) : 5;
 			normalized.repeater_add_label    = field && typeof field.repeater_add_label    !== 'undefined' ? field.repeater_add_label    : '';
 			normalized.repeater_remove_label = field && typeof field.repeater_remove_label !== 'undefined' ? field.repeater_remove_label : '';
+
+			// Advanced Pro field defaults.
+			normalized.confirm_password     = !! ( field && field.confirm_password );
+			normalized.rte_height           = field && field.rte_height           ? Number( field.rte_height )           : 200;
+			normalized.date_range_format    = field && field.date_range_format    ? field.date_range_format              : 'Y-m-d';
+			normalized.date_range_separator = field && typeof field.date_range_separator !== 'undefined' ? field.date_range_separator : ' to ';
+			normalized.date_range_min_days  = field && typeof field.date_range_min_days  !== 'undefined' ? field.date_range_min_days  : '';
+			normalized.date_range_max_days  = field && typeof field.date_range_max_days  !== 'undefined' ? field.date_range_max_days  : '';
+			normalized.nps_low_label        = field && typeof field.nps_low_label  !== 'undefined' ? field.nps_low_label  : 'Not likely';
+			normalized.nps_high_label       = field && typeof field.nps_high_label !== 'undefined' ? field.nps_high_label : 'Extremely likely';
+			normalized.matrix_rows          = field && typeof field.matrix_rows    !== 'undefined' ? field.matrix_rows    : '["Row 1","Row 2","Row 3"]';
+			normalized.matrix_columns       = field && typeof field.matrix_columns !== 'undefined' ? field.matrix_columns : '["Agree","Neutral","Disagree"]';
+			normalized.matrix_type          = field && field.matrix_type === 'checkbox' ? 'checkbox' : 'radio';
+			normalized.lookup_items         = field && typeof field.lookup_items       !== 'undefined' ? field.lookup_items       : '[]';
+			normalized.lookup_min_chars     = field && field.lookup_min_chars     ? Number( field.lookup_min_chars )     : 2;
+			normalized.lookup_max_results   = field && field.lookup_max_results   ? Number( field.lookup_max_results )   : 8;
+			normalized.lookup_allow_custom  = !! ( field && field.lookup_allow_custom );
+			normalized.geo_show_map         = !! ( field && field.geo_show_map );
+			normalized.geo_map_height       = field && field.geo_map_height ? Number( field.geo_map_height ) : 250;
+			normalized.geo_store_format     = field && field.geo_store_format && [ 'both', 'latlng', 'address' ].indexOf( field.geo_store_format ) !== -1 ? field.geo_store_format : 'both';
 
 			return normalized;
 		}
@@ -1225,6 +1245,83 @@ jQuery(
 				html += '</div>';
 				html += '<div class="boldform-canvas-repeater__add"><span class="dashicons dashicons-plus-alt2"></span> ' + escapeHtml( field.repeater_add_label || 'Add Row' ) + '</div>';
 				html += '</div>';
+
+			} else if ( field.type === 'password_field' ) {
+				html  = '<div style="display:flex;align-items:center;gap:6px;position:relative">';
+				html += '<input type="password" placeholder="' + escapeHtml( field.placeholder || 'Password' ) + '" disabled style="flex:1;padding-right:36px">';
+				html += '<span style="position:absolute;right:10px;color:#9ca3af"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>';
+				html += '</div>';
+				if ( field.confirm_password ) {
+					html += '<div style="display:flex;align-items:center;gap:6px;position:relative;margin-top:6px">';
+					html += '<input type="password" placeholder="Confirm password" disabled style="flex:1;padding-right:36px">';
+					html += '<span style="position:absolute;right:10px;color:#9ca3af"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>';
+					html += '</div>';
+				}
+
+			} else if ( field.type === 'rich_text' ) {
+				var rteH = Math.max( 60, Math.round( ( field.rte_height || 200 ) * 0.4 ) );
+				html  = '<div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden">';
+				html += '<div style="display:flex;gap:4px;padding:5px 8px;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-size:12px">';
+				html += '<span style="font-weight:700">B</span><span style="font-style:italic">I</span><span style="text-decoration:underline">U</span>';
+				html += '<span style="margin:0 4px;border-left:1px solid #d1d5db"></span><span>&#8226; List</span>';
+				html += '</div>';
+				html += '<div style="min-height:' + rteH + 'px;padding:8px;color:#9ca3af;font-size:13px;font-style:italic">Rich text content…</div>';
+				html += '</div>';
+
+			} else if ( field.type === 'date_range' ) {
+				html  = '<div style="position:relative;display:flex;align-items:center">';
+				html += '<input type="text" placeholder="' + escapeHtml( field.placeholder || 'Select date range' ) + '" disabled style="width:100%;padding-right:32px">';
+				html += '<span style="position:absolute;right:10px;color:#9ca3af"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>';
+				html += '</div>';
+
+			} else if ( field.type === 'nps' ) {
+				html = '<div style="display:flex;gap:3px;flex-wrap:wrap">';
+				for ( var npsI = 0; npsI <= 10; npsI++ ) {
+					var npsColor = npsI <= 6 ? '#fee2e2' : ( npsI <= 8 ? '#fef9c3' : '#dcfce7' );
+					var npsBorder = npsI <= 6 ? '#fca5a5' : ( npsI <= 8 ? '#fde047' : '#86efac' );
+					html += '<div style="flex:1;min-width:20px;height:32px;border:1px solid ' + npsBorder + ';border-radius:4px;background:' + npsColor + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">' + npsI + '</div>';
+				}
+				html += '</div>';
+				html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-top:4px">';
+				html += '<span>' + escapeHtml( field.nps_low_label || 'Not likely' ) + '</span>';
+				html += '<span>' + escapeHtml( field.nps_high_label || 'Extremely likely' ) + '</span>';
+				html += '</div>';
+
+			} else if ( field.type === 'matrix' ) {
+				var matRows = [];
+				var matCols = [];
+				try { matRows = JSON.parse( field.matrix_rows || '[]' ); } catch(e) { matRows = [ 'Row 1', 'Row 2' ]; }
+				try { matCols = JSON.parse( field.matrix_columns || '[]' ); } catch(e) { matCols = [ 'Col 1', 'Col 2' ]; }
+				if ( ! matRows.length ) matRows = [ 'Row 1', 'Row 2' ];
+				if ( ! matCols.length ) matCols = [ 'Col 1', 'Col 2' ];
+				var matType = field.matrix_type || 'radio';
+				html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+				html += '<thead><tr><th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb"></th>';
+				matCols.forEach( function(c) { html += '<th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb;text-align:center">' + escapeHtml( c ) + '</th>'; } );
+				html += '</tr></thead><tbody>';
+				matRows.forEach( function(r) {
+					html += '<tr><td style="border:1px solid #e5e7eb;padding:4px 8px;font-weight:500">' + escapeHtml( r ) + '</td>';
+					matCols.forEach( function() { html += '<td style="border:1px solid #e5e7eb;text-align:center;padding:4px"><input type="' + matType + '" disabled></td>'; } );
+					html += '</tr>';
+				} );
+				html += '</tbody></table></div>';
+
+			} else if ( field.type === 'lookup' ) {
+				html  = '<div style="position:relative;display:flex;align-items:center">';
+				html += '<input type="text" placeholder="' + escapeHtml( field.placeholder || 'Type to search…' ) + '" disabled style="width:100%;padding-right:32px">';
+				html += '<span style="position:absolute;right:10px;color:#9ca3af"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>';
+				html += '</div>';
+
+			} else if ( field.type === 'geolocation' ) {
+				html  = '<div style="display:flex;gap:8px;align-items:center">';
+				html += '<input type="text" placeholder="Detecting location…" disabled style="flex:1">';
+				html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:0 10px;height:36px;background:#6366f1;color:#fff;border-radius:5px;font-size:12px;font-weight:500;white-space:nowrap">';
+				html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg> Detect</span>';
+				html += '</div>';
+				if ( field.geo_show_map ) {
+					var geoMapH = Math.max( 40, Math.round( ( field.geo_map_height || 250 ) * 0.3 ) );
+					html += '<div style="margin-top:6px;height:' + geoMapH + 'px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px">Map preview</div>';
+				}
 
 			} else {
 				html = '<input type="' + escapeHtml( field.type ) + '" placeholder="' + escapeHtml( field.placeholder ) + '" value="' + escapeHtml( field.default_value ) + '">';
@@ -2241,6 +2338,149 @@ jQuery(
 							'</div>' +
 						'</div>';
 					}() ) : '' ) +
+
+					// --- Password field settings ---
+					( 'password_field' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-pw-placeholder">Placeholder</label>' +
+							'<input type="text" id="boldform-setting-pw-placeholder" value="' + escapeHtml( selected.field.placeholder || '' ) + '">' +
+						'</div>' +
+						'<div class="boldform-switch-item">' +
+							'<label class="boldform-switch__row">' +
+								'<span class="boldform-switch__text">Add confirm password field</span>' +
+								'<input type="checkbox" id="boldform-setting-pw-confirm"' + ( selected.field.confirm_password ? ' checked' : '' ) + '>' +
+								'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+							'</label>' +
+						'</div>'
+					: '' ) +
+
+					// --- Rich Text settings ---
+					( 'rich_text' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-rte-height">Editor Height (px)</label>' +
+							'<input type="number" id="boldform-setting-rte-height" min="100" max="800" value="' + escapeHtml( String( selected.field.rte_height || 200 ) ) + '">' +
+						'</div>'
+					: '' ) +
+
+					// --- Date Range settings ---
+					( 'date_range' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-dr-placeholder">Placeholder</label>' +
+							'<input type="text" id="boldform-setting-dr-placeholder" value="' + escapeHtml( selected.field.placeholder || '' ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-dr-format">Date Format</label>' +
+							'<select id="boldform-setting-dr-format">' +
+								'<option value="Y-m-d"' + ( ( selected.field.date_range_format || 'Y-m-d' ) === 'Y-m-d' ? ' selected' : '' ) + '>YYYY-MM-DD</option>' +
+								'<option value="d/m/Y"' + ( selected.field.date_range_format === 'd/m/Y' ? ' selected' : '' ) + '>DD/MM/YYYY</option>' +
+								'<option value="m/d/Y"' + ( selected.field.date_range_format === 'm/d/Y' ? ' selected' : '' ) + '>MM/DD/YYYY</option>' +
+								'<option value="d M Y"' + ( selected.field.date_range_format === 'd M Y' ? ' selected' : '' ) + '>DD Mon YYYY</option>' +
+							'</select>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-dr-separator">Separator</label>' +
+							'<input type="text" id="boldform-setting-dr-separator" value="' + escapeHtml( typeof selected.field.date_range_separator !== 'undefined' ? selected.field.date_range_separator : ' to ' ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-dr-min-days">Min Days</label>' +
+								'<input type="number" id="boldform-setting-dr-min-days" min="0" placeholder="—" value="' + escapeHtml( String( selected.field.date_range_min_days || '' ) ) + '">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-dr-max-days">Max Days</label>' +
+								'<input type="number" id="boldform-setting-dr-max-days" min="1" placeholder="—" value="' + escapeHtml( String( selected.field.date_range_max_days || '' ) ) + '">' +
+							'</div>' +
+						'</div>'
+					: '' ) +
+
+					// --- NPS settings ---
+					( 'nps' === selected.field.type ?
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-nps-low">Low end label</label>' +
+							'<input type="text" id="boldform-setting-nps-low" value="' + escapeHtml( selected.field.nps_low_label || 'Not likely' ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-nps-high">High end label</label>' +
+							'<input type="text" id="boldform-setting-nps-high" value="' + escapeHtml( selected.field.nps_high_label || 'Extremely likely' ) + '">' +
+						'</div>'
+					: '' ) +
+
+					// --- Matrix settings ---
+					( 'matrix' === selected.field.type ? ( function () {
+						var mRows = [];
+						var mCols = [];
+						try { mRows = JSON.parse( selected.field.matrix_rows || '["Row 1","Row 2","Row 3"]' ); } catch(e) { mRows = [ 'Row 1', 'Row 2', 'Row 3' ]; }
+						try { mCols = JSON.parse( selected.field.matrix_columns || '["Agree","Neutral","Disagree"]' ); } catch(e) { mCols = [ 'Agree', 'Neutral', 'Disagree' ]; }
+						return '<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-matrix-type">Input Type</label>' +
+							'<select id="boldform-setting-matrix-type">' +
+								'<option value="radio"' + ( ( selected.field.matrix_type || 'radio' ) === 'radio' ? ' selected' : '' ) + '>Radio (one per row)</option>' +
+								'<option value="checkbox"' + ( selected.field.matrix_type === 'checkbox' ? ' selected' : '' ) + '>Checkbox (multiple per row)</option>' +
+							'</select>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-matrix-rows">Rows <small style="color:#9ca3af">(one per line)</small></label>' +
+							'<textarea id="boldform-setting-matrix-rows" rows="4">' + escapeHtml( mRows.join( '\n' ) ) + '</textarea>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-matrix-cols">Columns <small style="color:#9ca3af">(one per line)</small></label>' +
+							'<textarea id="boldform-setting-matrix-cols" rows="3">' + escapeHtml( mCols.join( '\n' ) ) + '</textarea>' +
+						'</div>';
+					}() ) : '' ) +
+
+					// --- Lookup settings ---
+					( 'lookup' === selected.field.type ? ( function () {
+						var lItems = [];
+						try { lItems = JSON.parse( selected.field.lookup_items || '[]' ); } catch(e) { lItems = []; }
+						return '<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-lookup-placeholder">Placeholder</label>' +
+							'<input type="text" id="boldform-setting-lookup-placeholder" value="' + escapeHtml( selected.field.placeholder || '' ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-lookup-items">Options <small style="color:#9ca3af">(one per line)</small></label>' +
+							'<textarea id="boldform-setting-lookup-items" rows="5" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( lItems.join( '\n' ) ) + '</textarea>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-lookup-min-chars">Min chars to search</label>' +
+								'<input type="number" id="boldform-setting-lookup-min-chars" min="1" max="5" value="' + escapeHtml( String( selected.field.lookup_min_chars || 2 ) ) + '">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-lookup-max-results">Max results</label>' +
+								'<input type="number" id="boldform-setting-lookup-max-results" min="3" max="20" value="' + escapeHtml( String( selected.field.lookup_max_results || 8 ) ) + '">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-switch-item">' +
+							'<label class="boldform-switch__row">' +
+								'<span class="boldform-switch__text">Allow custom typed values</span>' +
+								'<input type="checkbox" id="boldform-setting-lookup-allow-custom"' + ( selected.field.lookup_allow_custom ? ' checked' : '' ) + '>' +
+								'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+							'</label>' +
+						'</div>';
+					}() ) : '' ) +
+
+					// --- Geolocation settings ---
+					( 'geolocation' === selected.field.type ?
+						'<div class="boldform-switch-item">' +
+							'<label class="boldform-switch__row">' +
+								'<span class="boldform-switch__text">Show map preview</span>' +
+								'<input type="checkbox" id="boldform-setting-geo-show-map"' + ( selected.field.geo_show_map ? ' checked' : '' ) + '>' +
+								'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+							'</label>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-geo-map-height">Map Height (px)</label>' +
+							'<input type="number" id="boldform-setting-geo-map-height" min="150" max="600" value="' + escapeHtml( String( selected.field.geo_map_height || 250 ) ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-geo-store-format">Store format</label>' +
+							'<select id="boldform-setting-geo-store-format">' +
+								'<option value="both"' + ( ( selected.field.geo_store_format || 'both' ) === 'both' ? ' selected' : '' ) + '>Lat/Lng + Address</option>' +
+								'<option value="latlng"' + ( selected.field.geo_store_format === 'latlng' ? ' selected' : '' ) + '>Lat/Lng only</option>' +
+								'<option value="address"' + ( selected.field.geo_store_format === 'address' ? ' selected' : '' ) + '>Address only</option>' +
+							'</select>' +
+						'</div>'
+					: '' ) +
 
 					( 'file' === selected.field.type ?
 						'<div class="boldform-setting-group">' +
@@ -3863,6 +4103,80 @@ jQuery(
 					selected.field.image_choice_img_height = Math.max( 60, Math.min( 600, parseInt( $( '#boldform-setting-ic-img-height' ).val(), 10 ) || 160 ) );
 				}
 
+				// Password field.
+				if ( $( '#boldform-setting-pw-placeholder' ).length ) {
+					selected.field.placeholder = $( '#boldform-setting-pw-placeholder' ).val();
+				}
+
+				// Rich Text.
+				if ( $( '#boldform-setting-rte-height' ).length ) {
+					selected.field.rte_height = Math.max( 100, Math.min( 800, parseInt( $( '#boldform-setting-rte-height' ).val(), 10 ) || 200 ) );
+				}
+
+				// Date Range.
+				if ( $( '#boldform-setting-dr-placeholder' ).length ) {
+					selected.field.placeholder = $( '#boldform-setting-dr-placeholder' ).val();
+				}
+				if ( $( '#boldform-setting-dr-format' ).length ) {
+					selected.field.date_range_format = $( '#boldform-setting-dr-format' ).val();
+				}
+				if ( $( '#boldform-setting-dr-separator' ).length ) {
+					selected.field.date_range_separator = $( '#boldform-setting-dr-separator' ).val();
+				}
+				if ( $( '#boldform-setting-dr-min-days' ).length ) {
+					selected.field.date_range_min_days = $( '#boldform-setting-dr-min-days' ).val();
+				}
+				if ( $( '#boldform-setting-dr-max-days' ).length ) {
+					selected.field.date_range_max_days = $( '#boldform-setting-dr-max-days' ).val();
+				}
+
+				// NPS.
+				if ( $( '#boldform-setting-nps-low' ).length ) {
+					selected.field.nps_low_label = $( '#boldform-setting-nps-low' ).val();
+				}
+				if ( $( '#boldform-setting-nps-high' ).length ) {
+					selected.field.nps_high_label = $( '#boldform-setting-nps-high' ).val();
+				}
+
+				// Matrix — convert textareas to JSON arrays.
+				if ( $( '#boldform-setting-matrix-rows' ).length ) {
+					var mRowsText = $( '#boldform-setting-matrix-rows' ).val().trim();
+					selected.field.matrix_rows = JSON.stringify(
+						mRowsText ? mRowsText.split( /\r?\n/ ).map( function(s) { return s.trim(); } ).filter( Boolean ) : []
+					);
+				}
+				if ( $( '#boldform-setting-matrix-cols' ).length ) {
+					var mColsText = $( '#boldform-setting-matrix-cols' ).val().trim();
+					selected.field.matrix_columns = JSON.stringify(
+						mColsText ? mColsText.split( /\r?\n/ ).map( function(s) { return s.trim(); } ).filter( Boolean ) : []
+					);
+				}
+
+				// Lookup — convert textarea to JSON array.
+				if ( $( '#boldform-setting-lookup-placeholder' ).length ) {
+					selected.field.placeholder = $( '#boldform-setting-lookup-placeholder' ).val();
+				}
+				if ( $( '#boldform-setting-lookup-items' ).length ) {
+					var lItemsText = $( '#boldform-setting-lookup-items' ).val().trim();
+					selected.field.lookup_items = JSON.stringify(
+						lItemsText ? lItemsText.split( /\r?\n/ ).map( function(s) { return s.trim(); } ).filter( Boolean ) : []
+					);
+				}
+				if ( $( '#boldform-setting-lookup-min-chars' ).length ) {
+					selected.field.lookup_min_chars = Math.max( 1, Math.min( 5, parseInt( $( '#boldform-setting-lookup-min-chars' ).val(), 10 ) || 2 ) );
+				}
+				if ( $( '#boldform-setting-lookup-max-results' ).length ) {
+					selected.field.lookup_max_results = Math.max( 3, Math.min( 20, parseInt( $( '#boldform-setting-lookup-max-results' ).val(), 10 ) || 8 ) );
+				}
+
+				// Geolocation.
+				if ( $( '#boldform-setting-geo-map-height' ).length ) {
+					selected.field.geo_map_height = Math.max( 150, Math.min( 600, parseInt( $( '#boldform-setting-geo-map-height' ).val(), 10 ) || 250 ) );
+				}
+				if ( $( '#boldform-setting-geo-store-format' ).length ) {
+					selected.field.geo_store_format = $( '#boldform-setting-geo-store-format' ).val();
+				}
+
 				if ( optionFieldTypes.indexOf( selected.field.type ) !== -1 ) {
 					selected.field.options = collectRepeaterOptions();
 				}
@@ -3873,7 +4187,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -3943,6 +4257,37 @@ jQuery(
 				if ( $( '#boldform-setting-ic-columns' ).length ) {
 					selected.field.image_choice_columns = Number( $( '#boldform-setting-ic-columns' ).val() ) || 3;
 				}
+
+				// Password confirm toggle.
+				if ( $( '#boldform-setting-pw-confirm' ).length ) {
+					selected.field.confirm_password = $( '#boldform-setting-pw-confirm' ).is( ':checked' );
+				}
+
+				// Lookup allow custom.
+				if ( $( '#boldform-setting-lookup-allow-custom' ).length ) {
+					selected.field.lookup_allow_custom = $( '#boldform-setting-lookup-allow-custom' ).is( ':checked' );
+				}
+
+				// Geolocation show map.
+				if ( $( '#boldform-setting-geo-show-map' ).length ) {
+					selected.field.geo_show_map = $( '#boldform-setting-geo-show-map' ).is( ':checked' );
+				}
+
+				// Matrix type.
+				if ( $( '#boldform-setting-matrix-type' ).length ) {
+					selected.field.matrix_type = $( '#boldform-setting-matrix-type' ).val();
+				}
+
+				// Date range format.
+				if ( $( '#boldform-setting-dr-format' ).length ) {
+					selected.field.date_range_format = $( '#boldform-setting-dr-format' ).val();
+				}
+
+				// Geo store format.
+				if ( $( '#boldform-setting-geo-store-format' ).length ) {
+					selected.field.geo_store_format = $( '#boldform-setting-geo-store-format' ).val();
+				}
+
 				renderAll();
 			}
 		);

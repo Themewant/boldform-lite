@@ -522,6 +522,18 @@ class BoldForm_Lite_Admin {
 			 * their own assets for the admin form preview page.
 			 */
 			do_action( 'boldform_preview_enqueue_assets' );
+
+			wp_add_inline_script(
+				'boldform-lite-frontend',
+				'(function($){
+					$(document).on("click","[data-preview-device]",function(){
+						var device=String($(this).data("preview-device")||"desktop");
+						$("[data-preview-device]").removeClass("is-active");
+						$(this).addClass("is-active");
+						$("#boldform-preview-stage").removeClass("is-desktop is-tablet is-mobile").addClass("is-"+device);
+					});
+				}(jQuery));'
+			);
 		}
 
 		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook );
@@ -533,6 +545,222 @@ class BoldForm_Lite_Admin {
 				array(),
 				BOLDFORM_LITE_VERSION
 			);
+
+			// Shared admin JS handle — inline scripts for each page are attached below.
+			wp_register_script(
+				'boldform-lite-admin',
+				false,
+				array( 'jquery' ),
+				BOLDFORM_LITE_VERSION,
+				true
+			);
+			wp_enqueue_script( 'boldform-lite-admin' );
+
+			// ── Forms list page ──────────────────────────────────────────────────
+			if ( $this->list_page_hook === $hook_suffix ) {
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminForms',
+					array(
+						'statusNonce'   => wp_create_nonce( 'boldform_lite_form_status' ),
+						'labelActive'   => __( 'Active', 'boldform-lite' ),
+						'labelInactive' => __( 'Inactive', 'boldform-lite' ),
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						$("#boldform-select-all").on("change",function(){
+							$("input[name=\'boldform_form_ids[]\']").prop("checked",this.checked);
+						});
+						$(".boldform-copy-shortcode").on("click",function(e){
+							e.preventDefault();
+							var sc=$(this).data("shortcode");
+							if(navigator.clipboard){navigator.clipboard.writeText(sc);}
+							else{var $t=$("<textarea>").val(sc).appendTo("body").select();document.execCommand("copy");$t.remove();}
+							var $btn=$(this);
+							$btn.addClass("is-copied");
+							setTimeout(function(){$btn.removeClass("is-copied");},1500);
+						});
+						$(".boldform-form-actions-btn").on("click",function(e){
+							e.stopPropagation();
+							var $dd=$(this).closest(".boldform-form-actions-dd");
+							var wasOpen=$dd.hasClass("is-open");
+							$(".boldform-form-actions-dd").removeClass("is-open");
+							if(!wasOpen)$dd.addClass("is-open");
+						});
+						$(document).on("click",function(){$(".boldform-form-actions-dd").removeClass("is-open");});
+						$(".boldform-form-status-toggle input").on("change",function(){
+							var $toggle=$(this).closest(".boldform-form-status-toggle");
+							var formId=$toggle.data("form-id");
+							var isActive=$(this).is(":checked");
+							var newStatus=isActive?"publish":"draft";
+							var $label=$toggle.find(".boldform-form-status-toggle__label");
+							$label.text(isActive?boldformAdminForms.labelActive:boldformAdminForms.labelInactive);
+							$.post(ajaxurl,{action:"boldform_lite_toggle_form_status",_ajax_nonce:boldformAdminForms.statusNonce,form_id:formId,status:newStatus});
+						});
+					});'
+				);
+			}
+
+			// ── Entries list page ────────────────────────────────────────────────
+			if ( $this->entries_page_hook === $hook_suffix && ! isset( $_GET['entry_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminEntries',
+					array(
+						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						var nonce=boldformAdminEntries.entryStatusNonce;
+						$(".boldform-star-btn").on("click",function(){
+							var $btn=$(this),id=$btn.data("entry-id");
+							var isStarred=$btn.hasClass("is-starred");
+							var newStatus=isStarred?"read":"starred";
+							$.post(ajaxurl,{action:"boldform_lite_update_entry_status",_ajax_nonce:nonce,entry_id:id,status:newStatus},function(r){
+								if(r.success){
+									$btn.toggleClass("is-starred");
+									$btn.find(".dashicons").toggleClass("dashicons-star-filled dashicons-star-empty");
+									var $badge=$btn.closest("tr").find(".boldform-status-badge");
+									$badge.attr("class","boldform-status-badge boldform-status--"+newStatus).text(newStatus.charAt(0).toUpperCase()+newStatus.slice(1));
+									$btn.closest("tr").removeClass("boldform-entry--unread");
+								}
+							});
+						});
+						$(".boldform-dropdown__trigger").on("click",function(e){
+							e.stopPropagation();
+							var $dd=$(this).closest(".boldform-dropdown");
+							var wasOpen=$dd.hasClass("is-open");
+							$(".boldform-dropdown").removeClass("is-open");
+							if(!wasOpen)$dd.addClass("is-open");
+						});
+						$(document).on("click",function(){$(".boldform-dropdown").removeClass("is-open");});
+						$(".boldform-dropdown__panel").on("click",function(e){e.stopPropagation();});
+						$("[data-action=\'custom-date\']").on("click",function(){
+							$(".boldform-dropdown").removeClass("is-open");
+							$("#boldform-custom-dates").removeAttr("hidden");
+							$("#boldform-custom-dates input[type=\'date\']:first").focus();
+						});
+					});'
+				);
+			}
+
+			// ── Entry detail page ────────────────────────────────────────────────
+			if ( $this->entries_page_hook === $hook_suffix && isset( $_GET['entry_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$entry_id = absint( wp_unslash( $_GET['entry_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminEntry',
+					array(
+						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+						'entryId'          => $entry_id,
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						var nonce=boldformAdminEntry.entryStatusNonce;
+						var entryId=boldformAdminEntry.entryId;
+						function updateStatus(status){
+							$.post(ajaxurl,{action:"boldform_lite_update_entry_status",_ajax_nonce:nonce,entry_id:entryId,status:status},function(r){
+								if(r.success){
+									$("#boldform-detail-status").attr("class","boldform-status-badge boldform-status--"+status).text(status.charAt(0).toUpperCase()+status.slice(1));
+									$("#boldform-mark-unread").prop("disabled",status==="unread");
+									$("#boldform-mark-starred").find(".dashicons").attr("class","dashicons "+(status==="starred"?"dashicons-star-filled":"dashicons-star-empty"));
+								}
+							});
+						}
+						$("#boldform-mark-unread").on("click",function(){updateStatus("unread");});
+						$("#boldform-mark-starred").on("click",function(){
+							var current=$("#boldform-detail-status").text().toLowerCase();
+							updateStatus(current==="starred"?"read":"starred");
+						});
+					});'
+				);
+			}
+
+			// ── Settings page ─────────────────────────────────────────────────────
+			if ( $this->settings_page_hook === $hook_suffix ) {
+				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'(function(){
+						var options=document.querySelectorAll(".boldform-style-option");
+						for(var i=0;i<options.length;i++){
+							options[i].querySelector("input").addEventListener("change",function(){
+								for(var j=0;j<options.length;j++)options[j].classList.remove("is-selected");
+								this.closest(".boldform-style-option").classList.add("is-selected");
+							});
+						}
+						var providerInputs=document.querySelectorAll("input[name=\'boldform_captcha_provider\']");
+						var panels=document.querySelectorAll("[data-captcha-panel]");
+						var cards=document.querySelectorAll(".boldform-captcha-card");
+						function updateCaptchaPanels(){
+							var selected="simple_math";
+							for(var i=0;i<providerInputs.length;i++){if(providerInputs[i].checked)selected=providerInputs[i].value;}
+							for(var j=0;j<panels.length;j++){panels[j].hidden=panels[j].getAttribute("data-captcha-panel")!==selected;}
+							for(var k=0;k<cards.length;k++){cards[k].classList.toggle("is-selected",cards[k].querySelector("input").checked);}
+						}
+						for(var i=0;i<providerInputs.length;i++){providerInputs[i].addEventListener("change",updateCaptchaPanels);}
+						updateCaptchaPanels();
+						var enableYes=document.getElementById("boldform-smtp-enable-yes");
+						var enableNo=document.getElementById("boldform-smtp-enable-no");
+						var smtpFields=document.getElementById("boldform-smtp-fields");
+						var authYes=document.getElementById("boldform-smtp-auth-yes");
+						var authNo=document.getElementById("boldform-smtp-auth-no");
+						var authFields=document.getElementById("boldform-smtp-auth-fields");
+						if(enableYes){
+							function toggleSmtp(){smtpFields.style.display=enableYes.checked?"":"none";}
+							function toggleAuth(){authFields.style.display=authYes.checked?"":"none";}
+							enableYes.addEventListener("change",toggleSmtp);
+							enableNo.addEventListener("change",toggleSmtp);
+							authYes.addEventListener("change",toggleAuth);
+							authNo.addEventListener("change",toggleAuth);
+						}
+					})();'
+				);
+				if ( 'smtp' === $active_tab ) {
+					wp_localize_script(
+						'boldform-lite-admin',
+						'boldformAdminSmtp',
+						array(
+							'testMailNonce'   => wp_create_nonce( 'boldform_lite_test_mail' ),
+							'sendingText'     => __( 'Sending...', 'boldform-lite' ),
+							'sentText'        => __( 'Email sent successfully!', 'boldform-lite' ),
+							'failedText'      => __( 'Failed to send email.', 'boldform-lite' ),
+						)
+					);
+					wp_add_inline_script(
+						'boldform-lite-admin',
+						'(function(){
+							var btn=document.getElementById("boldform-send-test-mail");
+							var result=document.getElementById("boldform-test-mail-result");
+							if(!btn)return;
+							btn.addEventListener("click",function(){
+								btn.disabled=true;
+								result.textContent=boldformAdminSmtp.sendingText;
+								result.style.color="#646970";
+								var data=new FormData();
+								data.append("action","boldform_lite_send_test_mail");
+								data.append("_ajax_nonce",boldformAdminSmtp.testMailNonce);
+								data.append("to",document.getElementById("boldform-test-to").value);
+								data.append("subject",document.getElementById("boldform-test-subject").value);
+								data.append("message",document.getElementById("boldform-test-message").value);
+								fetch(ajaxurl,{method:"POST",body:data,credentials:"same-origin"})
+									.then(function(r){return r.json();})
+									.then(function(r){
+										result.textContent=r.data&&r.data.message?r.data.message:(r.success?boldformAdminSmtp.sentText:boldformAdminSmtp.failedText);
+										result.style.color=r.success?"#00a32a":"#d63638";
+										btn.disabled=false;
+									});
+							});
+						})();'
+					);
+				}
+			}
 		}
 
 	}
@@ -799,7 +1027,7 @@ class BoldForm_Lite_Admin {
 									$shortcode_str = '[boldform id="' . $form_id_int . '"]';
 									?>
 									<tr>
-										<td class="boldform-col-cb"><input type="checkbox" name="boldform_form_ids[]" value="<?php echo $form_id_int; ?>"></td>
+										<td class="boldform-col-cb"><input type="checkbox" name="boldform_form_ids[]" value="<?php echo absint( $form_id_int ); ?>"></td>
 										<td class="boldform-col-title">
 											<div class="boldform-form-title-wrap">
 												<?php if ( $is_trash ) : ?>
@@ -835,12 +1063,12 @@ class BoldForm_Lite_Admin {
 										</td>
 										<td class="boldform-col-entries">
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . $form_id_int ) ); ?>" class="boldform-entries-link">
-												<?php echo $form_entries; ?>
+												<?php echo absint( $form_entries ); ?>
 											</a>
 										</td>
 										<td class="boldform-col-status">
 											<?php $form_is_active = 'publish' === ( $form->status ?? 'publish' ); ?>
-											<label class="boldform-form-status-toggle" data-form-id="<?php echo $form_id_int; ?>">
+											<label class="boldform-form-status-toggle" data-form-id="<?php echo absint( $form_id_int ); ?>">
 												<input type="checkbox"<?php echo $form_is_active ? ' checked' : ''; ?>>
 												<span class="boldform-form-status-toggle__track"><span class="boldform-form-status-toggle__thumb"></span></span>
 												<span class="boldform-form-status-toggle__label"><?php echo $form_is_active ? esc_html__( 'Active', 'boldform-lite' ) : esc_html__( 'Inactive', 'boldform-lite' ); ?></span>
@@ -876,52 +1104,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</form>
 
-			<script>
-			jQuery(function($){
-				// Select all checkbox.
-				$('#boldform-select-all').on('change', function(){
-					$('input[name="boldform_form_ids[]"]').prop('checked', this.checked);
-				});
-
-				// Copy shortcode.
-				$('.boldform-copy-shortcode').on('click', function(e){
-					e.preventDefault();
-					var sc = $(this).data('shortcode');
-					if (navigator.clipboard) {
-						navigator.clipboard.writeText(sc);
-					} else {
-						var $t = $('<textarea>').val(sc).appendTo('body').select();
-						document.execCommand('copy');
-						$t.remove();
-					}
-					var $btn = $(this);
-					$btn.addClass('is-copied');
-					setTimeout(function(){ $btn.removeClass('is-copied'); }, 1500);
-				});
-
-				// Actions dropdown.
-				$('.boldform-form-actions-btn').on('click', function(e){
-					e.stopPropagation();
-					var $dd = $(this).closest('.boldform-form-actions-dd');
-					var wasOpen = $dd.hasClass('is-open');
-					$('.boldform-form-actions-dd').removeClass('is-open');
-					if (!wasOpen) $dd.addClass('is-open');
-				});
-				$(document).on('click', function(){ $('.boldform-form-actions-dd').removeClass('is-open'); });
-
-				// Form status toggle.
-				var statusNonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_form_status' ) ); ?>';
-				$('.boldform-form-status-toggle input').on('change', function(){
-					var $toggle = $(this).closest('.boldform-form-status-toggle');
-					var formId = $toggle.data('form-id');
-					var isActive = $(this).is(':checked');
-					var newStatus = isActive ? 'publish' : 'draft';
-					var $label = $toggle.find('.boldform-form-status-toggle__label');
-					$label.text(isActive ? '<?php echo esc_js( __( 'Active', 'boldform-lite' ) ); ?>' : '<?php echo esc_js( __( 'Inactive', 'boldform-lite' ) ); ?>');
-					$.post(ajaxurl, { action: 'boldform_lite_toggle_form_status', _ajax_nonce: statusNonce, form_id: formId, status: newStatus });
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -982,26 +1164,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 		</div>
-		<script>
-			jQuery(
-				function ( $ ) {
-					$( document ).on(
-						'click',
-						'[data-preview-device]',
-						function () {
-							var device = String( $( this ).data( 'preview-device' ) || 'desktop' );
-
-							$( '[data-preview-device]' ).removeClass( 'is-active' );
-							$( this ).addClass( 'is-active' );
-
-							$( '#boldform-preview-stage' )
-								.removeClass( 'is-desktop is-tablet is-mobile' )
-								.addClass( 'is-' + device );
-						}
-					);
-				}
-			);
-		</script>
 		<?php
 	}
 
@@ -1281,50 +1443,6 @@ class BoldForm_Lite_Admin {
 					</div>
 				<?php endif; ?>
 			</div>
-
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_entry_status' ) ); ?>';
-				$('.boldform-star-btn').on('click', function(){
-					var $btn = $(this), id = $btn.data('entry-id');
-					var isStarred = $btn.hasClass('is-starred');
-					var newStatus = isStarred ? 'read' : 'starred';
-					$.post(ajaxurl, { action: 'boldform_lite_update_entry_status', _ajax_nonce: nonce, entry_id: id, status: newStatus }, function(r){
-						if (r.success) {
-							$btn.toggleClass('is-starred');
-							$btn.find('.dashicons').toggleClass('dashicons-star-filled dashicons-star-empty');
-							var $badge = $btn.closest('tr').find('.boldform-status-badge');
-							$badge.attr('class', 'boldform-status-badge boldform-status--' + newStatus).text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-							$btn.closest('tr').removeClass('boldform-entry--unread');
-						}
-					});
-				});
-
-				// Custom dropdowns.
-				$('.boldform-dropdown__trigger').on('click', function(e) {
-					e.stopPropagation();
-					var $dd = $(this).closest('.boldform-dropdown');
-					var wasOpen = $dd.hasClass('is-open');
-					$('.boldform-dropdown').removeClass('is-open');
-					if (!wasOpen) $dd.addClass('is-open');
-				});
-
-				$(document).on('click', function() {
-					$('.boldform-dropdown').removeClass('is-open');
-				});
-
-				$('.boldform-dropdown__panel').on('click', function(e) {
-					e.stopPropagation();
-				});
-
-				// Custom date range trigger.
-				$('[data-action="custom-date"]').on('click', function() {
-					$('.boldform-dropdown').removeClass('is-open');
-					$('#boldform-custom-dates').removeAttr('hidden');
-					$('#boldform-custom-dates input[type="date"]:first').focus();
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -1452,18 +1570,6 @@ class BoldForm_Lite_Admin {
 							</div>
 						</form>
 
-						<script>
-						(function(){
-							var options = document.querySelectorAll('.boldform-style-option');
-							for (var i = 0; i < options.length; i++) {
-								options[i].querySelector('input').addEventListener('change', function() {
-									for (var j = 0; j < options.length; j++) options[j].classList.remove('is-selected');
-									this.closest('.boldform-style-option').classList.add('is-selected');
-								});
-							}
-						})();
-						</script>
-
 					<?php elseif ( 'captcha' === $active_tab ) : ?>
 						<h2><?php esc_html_e( 'Captcha Settings', 'boldform-lite' ); ?></h2>
 						<p class="boldform-tab-description"><?php esc_html_e( 'Choose which captcha service should protect all frontend forms.', 'boldform-lite' ); ?></p>
@@ -1543,33 +1649,6 @@ class BoldForm_Lite_Admin {
 								<?php submit_button( __( 'Save Changes', 'boldform-lite' ), 'primary', 'submit', false ); ?>
 							</div>
 						</form>
-
-						<script>
-						(function () {
-							var providerInputs = document.querySelectorAll('input[name="boldform_captcha_provider"]');
-							var panels = document.querySelectorAll('[data-captcha-panel]');
-							var cards = document.querySelectorAll('.boldform-captcha-card');
-
-							function updateCaptchaPanels() {
-								var selected = 'simple_math';
-								for (var i = 0; i < providerInputs.length; i++) {
-									if (providerInputs[i].checked) selected = providerInputs[i].value;
-								}
-								for (var j = 0; j < panels.length; j++) {
-									panels[j].hidden = panels[j].getAttribute('data-captcha-panel') !== selected;
-								}
-								for (var k = 0; k < cards.length; k++) {
-									var input = cards[k].querySelector('input[type="radio"]');
-									cards[k].classList.toggle('is-selected', !!input && input.checked);
-								}
-							}
-
-							for (var i = 0; i < providerInputs.length; i++) {
-								providerInputs[i].addEventListener('change', updateCaptchaPanels);
-							}
-							updateCaptchaPanels();
-						})();
-						</script>
 
 					<?php elseif ( 'smtp' === $active_tab ) : ?>
 						<?php
@@ -1686,25 +1765,6 @@ class BoldForm_Lite_Admin {
 								</div>
 							</form>
 
-							<script>
-							(function () {
-								var enableYes  = document.getElementById('boldform-smtp-enable-yes');
-								var enableNo   = document.getElementById('boldform-smtp-enable-no');
-								var smtpFields = document.getElementById('boldform-smtp-fields');
-								var authYes    = document.getElementById('boldform-smtp-auth-yes');
-								var authNo     = document.getElementById('boldform-smtp-auth-no');
-								var authFields = document.getElementById('boldform-smtp-auth-fields');
-
-								function toggleSmtp() { smtpFields.style.display = enableYes.checked ? '' : 'none'; }
-								function toggleAuth() { authFields.style.display = authYes.checked ? '' : 'none'; }
-
-								enableYes.addEventListener('change', toggleSmtp);
-								enableNo.addEventListener('change', toggleSmtp);
-								authYes.addEventListener('change', toggleAuth);
-								authNo.addEventListener('change', toggleAuth);
-							})();
-							</script>
-
 						<?php else : ?>
 							<div class="boldform-card">
 								<h3><?php esc_html_e( 'Send a Test Email', 'boldform-lite' ); ?></h3>
@@ -1731,39 +1791,6 @@ class BoldForm_Lite_Admin {
 								<button type="button" id="boldform-send-test-mail" class="button button-primary"><?php esc_html_e( 'Send Test Mail', 'boldform-lite' ); ?></button>
 								<span id="boldform-test-mail-result" class="boldform-test-mail-result"></span>
 							</div>
-
-							<script>
-							(function () {
-								var btn    = document.getElementById('boldform-send-test-mail');
-								var result = document.getElementById('boldform-test-mail-result');
-
-								btn.addEventListener('click', function () {
-									btn.disabled = true;
-									result.textContent = '<?php echo esc_js( __( 'Sending...', 'boldform-lite' ) ); ?>';
-									result.style.color = '#646970';
-
-									var data = new FormData();
-									data.append('action', 'boldform_lite_send_test_mail');
-									data.append('_ajax_nonce', '<?php echo esc_js( wp_create_nonce( 'boldform_lite_test_mail' ) ); ?>');
-									data.append('to', document.getElementById('boldform-test-to').value);
-									data.append('subject', document.getElementById('boldform-test-subject').value);
-									data.append('message', document.getElementById('boldform-test-message').value);
-
-									fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
-										.then(function (r) { return r.json(); })
-										.then(function (r) {
-											result.textContent = r.data && r.data.message ? r.data.message : (r.success ? '<?php echo esc_js( __( 'Email sent successfully!', 'boldform-lite' ) ); ?>' : '<?php echo esc_js( __( 'Failed to send email.', 'boldform-lite' ) ); ?>');
-											result.style.color = r.success ? '#00a32a' : '#d63638';
-											btn.disabled = false;
-										})
-										.catch(function () {
-											result.textContent = '<?php echo esc_js( __( 'Request failed.', 'boldform-lite' ) ); ?>';
-											result.style.color = '#d63638';
-											btn.disabled = false;
-										});
-								});
-							})();
-							</script>
 						<?php endif; ?>
 
 					<?php elseif ( 'tools' === $active_tab ) : ?>
@@ -2498,28 +2525,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_entry_status' ) ); ?>';
-				var entryId = <?php echo absint( $entry->id ); ?>;
-
-				function updateStatus(status) {
-					$.post(ajaxurl, { action: 'boldform_lite_update_entry_status', _ajax_nonce: nonce, entry_id: entryId, status: status }, function(r){
-						if (r.success) {
-							$('#boldform-detail-status').attr('class', 'boldform-status-badge boldform-status--' + status).text(status.charAt(0).toUpperCase() + status.slice(1));
-							$('#boldform-mark-unread').prop('disabled', status === 'unread');
-							$('#boldform-mark-starred').find('.dashicons').attr('class', 'dashicons ' + (status === 'starred' ? 'dashicons-star-filled' : 'dashicons-star-empty'));
-						}
-					});
-				}
-
-				$('#boldform-mark-unread').on('click', function(){ updateStatus('unread'); });
-				$('#boldform-mark-starred').on('click', function(){
-					var current = $('#boldform-detail-status').text().toLowerCase();
-					updateStatus(current === 'starred' ? 'read' : 'starred');
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -3250,6 +3255,7 @@ class BoldForm_Lite_Admin {
 		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Entries per form.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
 		$per_form = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			"SELECT f.id, f.title, COUNT(e.id) AS total,
 				SUM(CASE WHEN e.status = 'unread' THEN 1 ELSE 0 END) AS unread,
@@ -3259,20 +3265,23 @@ class BoldForm_Lite_Admin {
 			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id
 			WHERE f.status != 'trash'
 			GROUP BY f.id
-			ORDER BY total DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			ORDER BY total DESC"
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Daily submissions for last 30 days.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $entries_table sanitized via esc_sql() above.
 		$daily_data = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS entry_date, COUNT(*) AS total
 				FROM `{$entries_table}`
 				WHERE created_at >= %s
 				GROUP BY DATE(created_at)
-				ORDER BY entry_date ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				ORDER BY entry_date ASC",
 				wp_date( 'Y-m-d', strtotime( '-30 days' ) ) . ' 00:00:00'
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Build 30-day labels and values arrays.
 		$daily_map = array();
@@ -3289,13 +3298,15 @@ class BoldForm_Lite_Admin {
 		}
 
 		// Recent entries (last 10).
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
 		$recent_entries = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			"SELECT e.id, e.form_id, e.entry_data_json, e.status, e.created_at, f.title AS form_title
 			FROM `{$entries_table}` e
 			LEFT JOIN `{$forms_table}` f ON f.id = e.form_id
 			ORDER BY e.created_at DESC
-			LIMIT 10" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			LIMIT 10"
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Max entries for progress bars in "Entries by Form".
 		$max_form_entries = 1;
@@ -3463,9 +3474,9 @@ class BoldForm_Lite_Admin {
 											<td>
 												<div class="boldform-reports-bar-wrap">
 													<div class="boldform-reports-bar" style="width:<?php echo absint( $bar_pct ); ?>%;">
-														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--unread" style="width:<?php echo $total ? round( ( (int) $row->unread / $total ) * 100 ) : 0; ?>%;" title="<?php /* translators: %d: unread count */ printf( esc_attr__( 'Unread: %d', 'boldform-lite' ), absint( $row->unread ) ); ?>"></span>
-														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--read" style="width:<?php echo $total ? round( ( (int) $row->is_read / $total ) * 100 ) : 0; ?>%;" title="<?php /* translators: %d: read count */ printf( esc_attr__( 'Read: %d', 'boldform-lite' ), absint( $row->is_read ) ); ?>"></span>
-														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--starred" style="width:<?php echo $total ? round( ( (int) $row->starred / $total ) * 100 ) : 0; ?>%;" title="<?php /* translators: %d: starred count */ printf( esc_attr__( 'Starred: %d', 'boldform-lite' ), absint( $row->starred ) ); ?>"></span>
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--unread" style="width:<?php echo $total ? absint( round( ( (int) $row->unread / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: unread count */ printf( esc_attr__( 'Unread: %d', 'boldform-lite' ), absint( $row->unread ) ); ?>"></span>
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--read" style="width:<?php echo $total ? absint( round( ( (int) $row->is_read / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: read count */ printf( esc_attr__( 'Read: %d', 'boldform-lite' ), absint( $row->is_read ) ); ?>"></span>
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--starred" style="width:<?php echo $total ? absint( round( ( (int) $row->starred / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: starred count */ printf( esc_attr__( 'Starred: %d', 'boldform-lite' ), absint( $row->starred ) ); ?>"></span>
 													</div>
 												</div>
 											</td>
@@ -3541,188 +3552,140 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 		</div>
-
-		<script>
-		(function(){
-			/* ---- Chart ---- */
-			var labels = <?php echo wp_json_encode( $chart_labels ); ?>;
-			var values = <?php echo wp_json_encode( $chart_values ); ?>;
-			var canvas = document.getElementById('boldform-submissions-chart');
-			if (canvas) {
-				var ctx = canvas.getContext('2d');
-				var dpr = window.devicePixelRatio || 1;
-				var rect = canvas.parentElement.getBoundingClientRect();
-				var w = rect.width;
-				var h = 300;
-				canvas.width = w * dpr;
-				canvas.height = h * dpr;
-				canvas.style.width = w + 'px';
-				canvas.style.height = h + 'px';
-				ctx.scale(dpr, dpr);
-
-				var padL = 50, padR = 20, padT = 20, padB = 50;
-				var chartW = w - padL - padR;
-				var chartH = h - padT - padB;
-				var maxVal = Math.max.apply(null, values) || 1;
-				var step = Math.ceil(maxVal / 5) || 1;
-				maxVal = step * 5;
-
-				ctx.strokeStyle = '#e2e8f0';
-				ctx.lineWidth = 1;
-				ctx.fillStyle = '#94a3b8';
-				ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-				ctx.textAlign = 'right';
-				ctx.textBaseline = 'middle';
-				for (var i = 0; i <= 5; i++) {
-					var y = Math.round(padT + chartH - (chartH * i / 5)) + 0.5;
-					ctx.beginPath();
-					ctx.setLineDash(i === 0 ? [] : [4, 4]);
-					ctx.moveTo(padL, y);
-					ctx.lineTo(w - padR, y);
-					ctx.stroke();
-					ctx.fillText(String(step * i), padL - 10, y);
-				}
-				ctx.setLineDash([]);
-
-				var barW = Math.max(6, Math.min(20, (chartW / labels.length) - 6));
-				for (var j = 0; j < values.length; j++) {
-					var barH = maxVal > 0 ? (values[j] / maxVal) * chartH : 0;
-					if (barH < 0) barH = 0;
-					var x = padL + (chartW / labels.length) * j + ((chartW / labels.length) - barW) / 2;
-					var barY = padT + chartH - barH;
-					var gradient = ctx.createLinearGradient(x, barY, x, padT + chartH);
-					gradient.addColorStop(0, '#3b82f6');
-					gradient.addColorStop(1, '#93c5fd');
-					ctx.fillStyle = gradient;
-					var r = Math.min(barW / 2, 4);
-					if (barH > r) {
-						ctx.beginPath();
-						ctx.moveTo(x + r, barY);
-						ctx.lineTo(x + barW - r, barY);
-						ctx.quadraticCurveTo(x + barW, barY, x + barW, barY + r);
-						ctx.lineTo(x + barW, padT + chartH);
-						ctx.lineTo(x, padT + chartH);
-						ctx.lineTo(x, barY + r);
-						ctx.quadraticCurveTo(x, barY, x + r, barY);
-						ctx.fill();
-					} else if (barH > 0) {
-						ctx.fillRect(x, barY, barW, barH);
-					}
-				}
-
-				ctx.fillStyle = '#94a3b8';
-				ctx.font = '10px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-				ctx.textAlign = 'center';
-				ctx.textBaseline = 'top';
-				var labelStep = labels.length <= 15 ? 1 : Math.ceil(labels.length / 10);
-				for (var k = 0; k < labels.length; k++) {
-					if (k % labelStep === 0) {
-						var lx = padL + (chartW / labels.length) * k + (chartW / labels.length) / 2;
-						ctx.save();
-						ctx.translate(lx, padT + chartH + 10);
-						ctx.rotate(-0.45);
-						ctx.fillText(labels[k], 0, 0);
-						ctx.restore();
-					}
-				}
-
-				var tooltipEl = document.createElement('div');
-				tooltipEl.className = 'boldform-chart-tooltip';
-				canvas.parentElement.style.position = 'relative';
-				canvas.parentElement.appendChild(tooltipEl);
-				canvas.addEventListener('mousemove', function(e) {
-					var cRect = canvas.getBoundingClientRect();
-					var mx = e.clientX - cRect.left;
-					var slotW = chartW / labels.length;
-					var idx = Math.floor((mx - padL) / slotW);
-					if (idx >= 0 && idx < labels.length) {
-						tooltipEl.innerHTML = '<strong>' + labels[idx] + '</strong><br>' + values[idx] + ' <?php echo esc_js( __( 'entries', 'boldform-lite' ) ); ?>';
-						tooltipEl.style.display = 'block';
-						tooltipEl.style.left = (padL + slotW * idx + slotW / 2) + 'px';
-						tooltipEl.style.top = '10px';
-					} else {
-						tooltipEl.style.display = 'none';
-					}
-				});
-				canvas.addEventListener('mouseleave', function() {
-					tooltipEl.style.display = 'none';
-				});
-			}
-
-			/* ---- Client-side pagination for both panels ---- */
-			document.querySelectorAll('.boldform-reports-paginated').forEach(function(wrap) {
-				var perPage = parseInt(wrap.getAttribute('data-per-page'), 10) || 5;
-				var table = wrap.querySelector('table');
-				var activity = wrap.querySelector('.boldform-reports-activity');
-				var items, isTable;
-
-				if (table) {
-					items = Array.prototype.slice.call(table.querySelectorAll('tbody tr'));
-					isTable = true;
-				} else if (activity) {
-					items = Array.prototype.slice.call(activity.children);
-					isTable = false;
-				} else {
-					return;
-				}
-
-				var totalPages = Math.ceil(items.length / perPage);
-				if (totalPages <= 1) return; // no pagination needed
-
-				var currentPage = 1;
-				var pagerEl = wrap.querySelector('.boldform-reports-pager');
-				var infoEl = wrap.querySelector('.boldform-reports-pager-info');
-
-				function showPage(page) {
-					currentPage = page;
-					var start = (page - 1) * perPage;
-					var end = start + perPage;
-					items.forEach(function(item, idx) {
-						item.style.display = (idx >= start && idx < end) ? '' : 'none';
-					});
-					renderPager();
-					if (infoEl) {
-						infoEl.textContent = page + ' / ' + totalPages;
-					}
-				}
-
-				function renderPager() {
-					if (!pagerEl) return;
-					pagerEl.innerHTML = '';
-
-					// Prev button.
-					var prev = document.createElement('button');
-					prev.type = 'button';
-					prev.className = 'boldform-pager-btn';
-					prev.innerHTML = '&lsaquo;';
-					prev.disabled = currentPage === 1;
-					prev.addEventListener('click', function() { showPage(currentPage - 1); });
-					pagerEl.appendChild(prev);
-
-					// Page numbers.
-					for (var p = 1; p <= totalPages; p++) {
-						var btn = document.createElement('button');
-						btn.type = 'button';
-						btn.className = 'boldform-pager-btn' + (p === currentPage ? ' is-active' : '');
-						btn.textContent = p;
-						btn.addEventListener('click', (function(pg) { return function() { showPage(pg); }; })(p));
-						pagerEl.appendChild(btn);
-					}
-
-					// Next button.
-					var next = document.createElement('button');
-					next.type = 'button';
-					next.className = 'boldform-pager-btn';
-					next.innerHTML = '&rsaquo;';
-					next.disabled = currentPage === totalPages;
-					next.addEventListener('click', function() { showPage(currentPage + 1); });
-					pagerEl.appendChild(next);
-				}
-
-				showPage(1);
-			});
-		})();
-		</script>
 		<?php
+		// Pass chart data to the already-enqueued admin handle, then add the chart+pagination script.
+		wp_localize_script(
+			'boldform-lite-admin',
+			'boldformReports',
+			array(
+				'chartLabels'  => $chart_labels,
+				'chartValues'  => $chart_values,
+				'entriesLabel' => __( 'entries', 'boldform-lite' ),
+			)
+		);
+		wp_add_inline_script(
+			'boldform-lite-admin',
+			'(function(){
+				var labels=boldformReports.chartLabels;
+				var values=boldformReports.chartValues;
+				var canvas=document.getElementById("boldform-submissions-chart");
+				if(canvas){
+					var ctx=canvas.getContext("2d");
+					var dpr=window.devicePixelRatio||1;
+					var rect=canvas.parentElement.getBoundingClientRect();
+					var w=rect.width;
+					var h=300;
+					canvas.width=w*dpr;canvas.height=h*dpr;
+					canvas.style.width=w+"px";canvas.style.height=h+"px";
+					ctx.scale(dpr,dpr);
+					var padL=50,padR=20,padT=20,padB=50;
+					var chartW=w-padL-padR;
+					var chartH=h-padT-padB;
+					var maxVal=Math.max.apply(null,values)||1;
+					var step=Math.ceil(maxVal/5)||1;
+					maxVal=step*5;
+					ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+					ctx.fillStyle="#94a3b8";
+					ctx.font="11px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif";
+					ctx.textAlign="right";ctx.textBaseline="middle";
+					for(var i=0;i<=5;i++){
+						var y=Math.round(padT+chartH-(chartH*i/5))+0.5;
+						ctx.beginPath();ctx.setLineDash(i===0?[]:[4,4]);
+						ctx.moveTo(padL,y);ctx.lineTo(w-padR,y);ctx.stroke();
+						ctx.fillText(String(step*i),padL-10,y);
+					}
+					ctx.setLineDash([]);
+					var barW=Math.max(6,Math.min(20,(chartW/labels.length)-6));
+					for(var j=0;j<values.length;j++){
+						var barH=maxVal>0?(values[j]/maxVal)*chartH:0;
+						if(barH<0)barH=0;
+						var x=padL+(chartW/labels.length)*j+((chartW/labels.length)-barW)/2;
+						var barY=padT+chartH-barH;
+						var gradient=ctx.createLinearGradient(x,barY,x,padT+chartH);
+						gradient.addColorStop(0,"#3b82f6");gradient.addColorStop(1,"#93c5fd");
+						ctx.fillStyle=gradient;
+						var r=Math.min(barW/2,4);
+						if(barH>r){
+							ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);
+							ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);
+							ctx.lineTo(x+barW,padT+chartH);ctx.lineTo(x,padT+chartH);
+							ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);
+							ctx.fill();
+						}else if(barH>0){ctx.fillRect(x,barY,barW,barH);}
+					}
+					ctx.fillStyle="#94a3b8";
+					ctx.font="10px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif";
+					ctx.textAlign="center";ctx.textBaseline="top";
+					var labelStep=labels.length<=15?1:Math.ceil(labels.length/10);
+					for(var k=0;k<labels.length;k++){
+						if(k%labelStep===0){
+							var lx=padL+(chartW/labels.length)*k+(chartW/labels.length)/2;
+							ctx.save();ctx.translate(lx,padT+chartH+10);ctx.rotate(-0.45);
+							ctx.fillText(labels[k],0,0);ctx.restore();
+						}
+					}
+					var tooltipEl=document.createElement("div");
+					tooltipEl.className="boldform-chart-tooltip";
+					canvas.parentElement.style.position="relative";
+					canvas.parentElement.appendChild(tooltipEl);
+					canvas.addEventListener("mousemove",function(e){
+						var cRect=canvas.getBoundingClientRect();
+						var mx=e.clientX-cRect.left;
+						var slotW=chartW/labels.length;
+						var idx=Math.floor((mx-padL)/slotW);
+						if(idx>=0&&idx<labels.length){
+							tooltipEl.innerHTML="<strong>"+labels[idx]+"</strong><br>"+values[idx]+" "+boldformReports.entriesLabel;
+							tooltipEl.style.display="block";
+							tooltipEl.style.left=(padL+slotW*idx+slotW/2)+"px";
+							tooltipEl.style.top="10px";
+						}else{tooltipEl.style.display="none";}
+					});
+					canvas.addEventListener("mouseleave",function(){tooltipEl.style.display="none";});
+				}
+				document.querySelectorAll(".boldform-reports-paginated").forEach(function(wrap){
+					var perPage=parseInt(wrap.getAttribute("data-per-page"),10)||5;
+					var table=wrap.querySelector("table");
+					var activity=wrap.querySelector(".boldform-reports-activity");
+					var items;
+					if(table){items=Array.prototype.slice.call(table.querySelectorAll("tbody tr"));}
+					else if(activity){items=Array.prototype.slice.call(activity.children);}
+					else{return;}
+					var totalPages=Math.ceil(items.length/perPage);
+					if(totalPages<=1)return;
+					var currentPage=1;
+					var pagerEl=wrap.querySelector(".boldform-reports-pager");
+					var infoEl=wrap.querySelector(".boldform-reports-pager-info");
+					function showPage(page){
+						currentPage=page;
+						var start=(page-1)*perPage,end=start+perPage;
+						items.forEach(function(item,idx){item.style.display=(idx>=start&&idx<end)?"":"none";});
+						renderPager();
+						if(infoEl)infoEl.textContent=page+" / "+totalPages;
+					}
+					function renderPager(){
+						if(!pagerEl)return;
+						pagerEl.innerHTML="";
+						var prev=document.createElement("button");prev.type="button";
+						prev.className="boldform-pager-btn";prev.innerHTML="&lsaquo;";
+						prev.disabled=currentPage===1;
+						prev.addEventListener("click",function(){showPage(currentPage-1);});
+						pagerEl.appendChild(prev);
+						for(var p=1;p<=totalPages;p++){
+							var btn=document.createElement("button");btn.type="button";
+							btn.className="boldform-pager-btn"+(p===currentPage?" is-active":"");
+							btn.textContent=p;
+							btn.addEventListener("click",(function(pg){return function(){showPage(pg);};})(p));
+							pagerEl.appendChild(btn);
+						}
+						var next=document.createElement("button");next.type="button";
+						next.className="boldform-pager-btn";next.innerHTML="&rsaquo;";
+						next.disabled=currentPage===totalPages;
+						next.addEventListener("click",function(){showPage(currentPage+1);});
+						pagerEl.appendChild(next);
+					}
+					showPage(1);
+				});
+			})();'
+		);
 	}
 }

@@ -1,12 +1,13 @@
 <?php
 /**
  * Plugin Name:       BoldForm Lite
- * Plugin URI:        https://themewant.com/
  * Description:       Lightweight drag and drop form builder for WordPress.
  * Version:           1.0.0
  * Requires at least: 6.0
  * Tested up to:      6.9
  * Requires PHP:      7.4
+ * Author:      Themewant
+ * Author URI:  http://themewant.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       boldform-lite

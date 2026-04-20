@@ -179,10 +179,13 @@ class BoldForm_Lite_Block {
 		$needs_wrap = $style || count( $classes ) > 1;
 
 		if ( $needs_wrap ) {
+			// $html is the fully pre-escaped output of render_shortcode() via do_shortcode().
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			return '<div class="' . esc_attr( implode( ' ', $classes ) ) . '"' . ( $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>' . $html . '</div>';
 		}
 
-		return $html;
+		// $html is the fully pre-escaped output of render_shortcode() via do_shortcode().
+		return $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**

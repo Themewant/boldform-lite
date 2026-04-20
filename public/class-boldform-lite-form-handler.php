@@ -511,6 +511,8 @@ class BoldForm_Lite_Form_Handler {
 	private function duplicate_json_field_match( $table, $form_id, $value, $field_id = '' ) {
 		global $wpdb;
 
+		$table = esc_sql( $table );
+
 		if ( '' !== $field_id ) {
 			// Targeted path: JSON_EXTRACT('$."<field_id>".value').
 			// Wrap field_id in quotes inside the JSON path — sanitize_key already stripped special chars.

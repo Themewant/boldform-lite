@@ -328,7 +328,9 @@ class BoldForm_Lite_Shortcode {
 		 */
 		do_action( 'boldform_form_rendered', $form_id );
 
-		return $form_html;
+		// $form_html is structured HTML built entirely from escaped values (esc_attr, esc_html,
+		// wp_kses_post) inside ob_start(). Escaping the whole string here would corrupt the HTML.
+		return $form_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -690,8 +692,7 @@ class BoldForm_Lite_Shortcode {
 	 */
 	private function resolve_auto_populate( string $key ): string {
 		// 1. URL parameter.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( isset( $_GET[ $key ] ) ) {
+		if ( isset( $_GET[ $key ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only pre-fill, no data mutation.
 			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) );
 		}
 
