@@ -1,27 +1,24 @@
 /**
  * BoldForm Integrations — Builder assign panel
  *
- * Injects an "Integrations" tab into the form settings panel.
- * Users pick which globally-configured connections to activate for this form,
- * then map the Email / First Name / Last Name fields for each connection.
- *
- * Global connections are loaded from boldformLiteBuilder.globalConnections.
- * Assignment + field map are synced to formSettings via boldform:before_save.
+ * Only active (enabled) global connections appear here.
+ * If none are active, a message + link to the integrations page is shown.
+ * Each connection can be toggled on/off for this form.
+ * Clicking the gear icon opens that connection's field mapping inline — others stay closed.
  */
 ( function ( $ ) {
 	'use strict';
 
-	var cfg        = window.boldformLiteBuilder || {};
-	var ajaxUrl    = cfg.ajaxUrl || '';
-	var nonce      = cfg.integrationsNonce || '';
-	var adminUrl   = cfg.integrationsAdminUrl || '';
+	var cfg      = window.boldformLiteBuilder || {};
+	var adminUrl = cfg.integrationsAdminUrl || '';
 
-	// Global connections catalogue (loaded from PHP, never mutated here).
-	var globalConns = Array.isArray( cfg.globalConnections ) ? cfg.globalConnections : [];
+	// Only active connections are relevant inside the builder.
+	var globalConns = ( Array.isArray( cfg.globalConnections ) ? cfg.globalConnections : [] )
+		.filter( function ( c ) { return c.status === 'active'; } );
 
 	// Per-form state — populated from formSettings on render.
-	var assignedIds = [];    // string[]  — connection IDs active for this form
-	var fieldMap    = {};    // { [connId]: { email, fname, lname } }
+	var assignedIds = [];   // string[]
+	var fieldMap    = {};   // { [connId]: { email, fname, lname } }
 
 	// =========================================================================
 	// Helpers
@@ -39,7 +36,6 @@
 		return assignedIds.indexOf( id ) !== -1;
 	}
 
-	/** Pull form fields from live builder state for field-mapping dropdowns. */
 	function getFormFields() {
 		var fields = [];
 		var state  = window.boldformBuilderState;
@@ -58,79 +54,90 @@
 
 	function fieldOptions( selectedId ) {
 		var fields = getFormFields();
-		var opts = '<option value="">— map field —</option>';
+		var opts = '<option value="">— select field —</option>';
 		fields.forEach( function ( f ) {
-			opts += '<option value="' + escHtml( f.id ) + '"' + ( f.id === selectedId ? ' selected' : '' ) + '>' + escHtml( f.label ) + '</option>';
+			opts += '<option value="' + escHtml( f.id ) + '"' +
+				( f.id === selectedId ? ' selected' : '' ) + '>' +
+				escHtml( f.label ) + '</option>';
 		} );
 		return opts;
 	}
 
 	// =========================================================================
-	// Render pane
+	// Render
 	// =========================================================================
 
 	function renderPane( formSettings ) {
-		// Sync from formSettings snapshot.
 		if ( formSettings ) {
-			assignedIds = Array.isArray( formSettings.assigned_connections ) ? formSettings.assigned_connections.slice() : [];
-			fieldMap    = ( formSettings.connection_field_map && typeof formSettings.connection_field_map === 'object' )
-				? $.extend( true, {}, formSettings.connection_field_map )
-				: {};
+			assignedIds = Array.isArray( formSettings.assigned_connections )
+				? formSettings.assigned_connections.slice() : [];
+			fieldMap = ( formSettings.connection_field_map && typeof formSettings.connection_field_map === 'object' )
+				? $.extend( true, {}, formSettings.connection_field_map ) : {};
 		}
 
 		var html = '<div class="bf-assign-pane">';
 
-		// ── No connections message ──────────────────────────────────────────
+		// ── No active connections ───────────────────────────────────────────
 		if ( ! globalConns.length ) {
 			html +=
 				'<div class="bf-assign-empty">' +
 					'<span class="dashicons dashicons-randomize"></span>' +
-					'<p>No connections configured yet.</p>' +
-					( adminUrl ? '<a href="' + escHtml( adminUrl ) + '" target="_blank" class="button button-primary">Configure Integrations</a>' : '' ) +
+					'<p>No active integrations found.</p>' +
+					'<p style="font-size:12px;color:#94a3b8;margin-top:4px">Enable a connection on the Integrations page first, then come back to assign it to this form.</p>' +
+					( adminUrl
+						? '<a href="' + escHtml( adminUrl ) + '" target="_blank" class="button button-primary" style="margin-top:12px">Go to Integrations</a>'
+						: '' ) +
 				'</div>';
 			html += '</div>';
 			return html;
 		}
 
-		// ── Connection cards ────────────────────────────────────────────────
-		html += '<div class="bf-assign-grid">';
+		// ── Connection list ─────────────────────────────────────────────────
+		html += '<div class="bf-assign-list">';
 
 		globalConns.forEach( function ( conn ) {
 			var on  = isAssigned( conn.id );
-			var cls = 'bf-assign-card' + ( on ? ' is-on' : '' );
+			var map = fieldMap[ conn.id ] || {};
+
 			html +=
-				'<div class="' + cls + '" data-conn-id="' + escHtml( conn.id ) + '">' +
-					'<div class="bf-assign-card__check">' +
-						( on ? '<span class="dashicons dashicons-yes-alt"></span>' : '<span class="dashicons dashicons-marker"></span>' ) +
+				'<div class="bf-assign-item' + ( on ? ' is-on' : '' ) + '" data-conn-id="' + escHtml( conn.id ) + '">' +
+
+					// Row: toggle + name/type + gear
+					'<div class="bf-assign-item__row">' +
+						'<label class="bf-int-toggle" title="' + ( on ? 'Disable' : 'Enable' ) + ' for this form">' +
+							'<input type="checkbox" class="bf-assign-toggle" data-conn-id="' + escHtml( conn.id ) + '"' + ( on ? ' checked' : '' ) + '>' +
+							'<span class="bf-int-toggle__track"></span>' +
+						'</label>' +
+						'<div class="bf-assign-item__info">' +
+							'<span class="bf-assign-item__name">' + escHtml( conn.name ) + '</span>' +
+							'<span class="bf-assign-item__type">' + escHtml( conn.type ) + '</span>' +
+						'</div>' +
+						( on
+							? '<button type="button" class="bf-assign-gear" data-conn-id="' + escHtml( conn.id ) + '" title="Field mapping">' +
+								'<span class="dashicons dashicons-admin-generic"></span>' +
+							'</button>'
+							: '<span class="bf-assign-gear-placeholder"></span>'
+						) +
 					'</div>' +
-					'<div class="bf-assign-card__info">' +
-						'<span class="bf-assign-card__name">' + escHtml( conn.name ) + '</span>' +
-						'<span class="bf-assign-card__type">' + escHtml( conn.type ) + '</span>' +
-					'</div>' +
-					'<label class="bf-int-toggle" title="' + ( on ? 'Disable' : 'Enable' ) + ' for this form">' +
-						'<input type="checkbox" class="bf-assign-toggle" data-conn-id="' + escHtml( conn.id ) + '"' + ( on ? ' checked' : '' ) + '>' +
-						'<span class="bf-int-toggle__track"></span>' +
-					'</label>' +
+
+					// Field mapping panel — hidden by default, toggled by gear
+					( on
+						? '<div class="bf-assign-map-panel" id="bf-map-' + escHtml( conn.id ) + '" hidden>' +
+							renderMapFields( conn.id, map ) +
+						'</div>'
+						: '' ) +
+
 				'</div>';
 		} );
 
-		html += '</div>'; // .bf-assign-grid
-
-		// ── Field mapping for assigned connections ──────────────────────────
-		html += '<div class="bf-assign-maps" id="bf-assign-maps">';
-
-		if ( assignedIds.length ) {
-			html += renderFieldMaps();
-		}
-
-		html += '</div>';
+		html += '</div>'; // .bf-assign-list
 
 		// ── Manage link ─────────────────────────────────────────────────────
 		if ( adminUrl ) {
 			html +=
 				'<div class="bf-assign-footer">' +
 					'<a href="' + escHtml( adminUrl ) + '" target="_blank" class="bf-assign-manage-link">' +
-						'<span class="dashicons dashicons-external"></span> Manage Connections' +
+						'<span class="dashicons dashicons-external"></span> Manage Integrations' +
 					'</a>' +
 				'</div>';
 		}
@@ -139,66 +146,43 @@
 		return html;
 	}
 
-	function renderFieldMaps() {
-		var html = '<h4 class="bf-assign-maps__title">Field Mapping</h4>';
-
-		assignedIds.forEach( function ( connId ) {
-			var conn = connById( connId );
-			if ( ! conn ) return;
-			var map = fieldMap[ connId ] || {};
-
-			html +=
-				'<div class="bf-assign-map" data-conn-id="' + escHtml( connId ) + '">' +
-					'<div class="bf-assign-map__head">' +
-						'<span class="bf-assign-map__name">' + escHtml( conn.name ) + '</span>' +
-						'<span class="bf-assign-map__type">' + escHtml( conn.type ) + '</span>' +
-					'</div>' +
-					'<div class="bf-assign-map__rows">' +
-
-						'<div class="bf-assign-map__row">' +
-							'<label class="bf-assign-map__label">Email <span class="bf-assign-map__req">*</span></label>' +
-							'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="email">' +
-								fieldOptions( map.email || '' ) +
-							'</select>' +
-						'</div>' +
-
-						'<div class="bf-assign-map__row">' +
-							'<label class="bf-assign-map__label">First Name</label>' +
-							'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="fname">' +
-								fieldOptions( map.fname || '' ) +
-							'</select>' +
-						'</div>' +
-
-						'<div class="bf-assign-map__row">' +
-							'<label class="bf-assign-map__label">Last Name</label>' +
-							'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="lname">' +
-								fieldOptions( map.lname || '' ) +
-							'</select>' +
-						'</div>' +
-
-					'</div>' +
-				'</div>';
-		} );
-
-		return html;
+	function renderMapFields( connId, map ) {
+		return '<div class="bf-assign-map__rows">' +
+			'<div class="bf-assign-map__row">' +
+				'<label class="bf-assign-map__label">Email <span class="bf-assign-map__req">*</span></label>' +
+				'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="email">' +
+					fieldOptions( map.email || '' ) +
+				'</select>' +
+			'</div>' +
+			'<div class="bf-assign-map__row">' +
+				'<label class="bf-assign-map__label">First Name</label>' +
+				'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="fname">' +
+					fieldOptions( map.fname || '' ) +
+				'</select>' +
+			'</div>' +
+			'<div class="bf-assign-map__row">' +
+				'<label class="bf-assign-map__label">Last Name</label>' +
+				'<select class="bf-assign-map__select" data-conn-id="' + escHtml( connId ) + '" data-map-key="lname">' +
+					fieldOptions( map.lname || '' ) +
+				'</select>' +
+			'</div>' +
+		'</div>';
 	}
 
 	// =========================================================================
-	// Inject tab into builder form settings panel
+	// Inject tab
 	// =========================================================================
 
 	function injectTab( formSettings ) {
 		var $panel   = $( '#boldform-form-settings-panel' );
 		var $navSlot = $panel.find( '.bfsп-stab-nav-pro-slots' );
 		var $content = $panel.find( '.bfsп-stab-content' );
-
 		if ( ! $navSlot.length || ! $content.length ) return;
 
-		// Remove stale injected elements.
 		$panel.find( '.bfsп-stab-nav-item[data-stab="integrations"]' ).remove();
 		$panel.find( '.bfsп-stab-pane[data-pane="integrations"]' ).remove();
 
-		var count   = assignedIds.length;
+		var count      = assignedIds.length;
 		var countBadge = count ? ' <span class="bf-int-count-badge">' + count + '</span>' : '';
 
 		$navSlot.append(
@@ -218,17 +202,19 @@
 	}
 
 	// =========================================================================
-	// Event handlers
+	// Events
 	// =========================================================================
 
 	$( document ).on( 'boldform:form_settings_rendered', function ( e, formSettings ) {
 		injectTab( formSettings );
 	} );
 
-	// Toggle a connection on/off for this form.
+	// Toggle connection on/off for this form.
 	$( document ).on( 'change', '.bf-assign-toggle', function () {
 		var connId = String( $( this ).data( 'conn-id' ) );
 		var on     = $( this ).is( ':checked' );
+		var conn   = connById( connId );
+		if ( ! conn ) return;
 
 		if ( on ) {
 			if ( assignedIds.indexOf( connId ) === -1 ) assignedIds.push( connId );
@@ -237,28 +223,52 @@
 			assignedIds = assignedIds.filter( function ( id ) { return id !== connId; } );
 		}
 
-		// Update card class.
-		var $card = $( '.bf-assign-card[data-conn-id="' + connId + '"]' );
-		$card.toggleClass( 'is-on', on );
-		$card.find( '.bf-assign-card__check .dashicons' )
-			.toggleClass( 'dashicons-yes-alt', on )
-			.toggleClass( 'dashicons-marker', ! on );
+		var $item = $( '.bf-assign-item[data-conn-id="' + connId + '"]' );
+		$item.toggleClass( 'is-on', on );
 
-		// Re-render maps section.
-		$( '#bf-assign-maps' ).html( assignedIds.length ? renderFieldMaps() : '' );
-
-		// Update count badge in nav.
-		var $badge = $( '.bfsп-stab-nav-item[data-stab="integrations"] .bf-int-count-badge' );
-		if ( assignedIds.length ) {
-			if ( $badge.length ) {
-				$badge.text( assignedIds.length );
-			} else {
-				$( '.bfsп-stab-nav-item[data-stab="integrations"] .bfsп-stab-nav-label' ).append(
-					' <span class="bf-int-count-badge">' + assignedIds.length + '</span>'
+		// Swap gear button in/out.
+		var $row = $item.find( '.bf-assign-item__row' );
+		$row.find( '.bf-assign-gear, .bf-assign-gear-placeholder' ).remove();
+		if ( on ) {
+			$row.append(
+				'<button type="button" class="bf-assign-gear" data-conn-id="' + escHtml( connId ) + '" title="Field mapping">' +
+					'<span class="dashicons dashicons-admin-generic"></span>' +
+				'</button>'
+			);
+			// Add (hidden) map panel if not present.
+			if ( ! $item.find( '.bf-assign-map-panel' ).length ) {
+				$item.append(
+					'<div class="bf-assign-map-panel" id="bf-map-' + escHtml( connId ) + '" hidden>' +
+						renderMapFields( connId, fieldMap[ connId ] || {} ) +
+					'</div>'
 				);
 			}
 		} else {
-			$badge.remove();
+			$row.append( '<span class="bf-assign-gear-placeholder"></span>' );
+			$item.find( '.bf-assign-map-panel' ).remove();
+		}
+
+		// Update count badge.
+		var $label = $( '.bfsп-stab-nav-item[data-stab="integrations"] .bfsп-stab-nav-label' );
+		$label.find( '.bf-int-count-badge' ).remove();
+		if ( assignedIds.length ) {
+			$label.append( ' <span class="bf-int-count-badge">' + assignedIds.length + '</span>' );
+		}
+	} );
+
+	// Gear click — toggle this connection's map panel; close all others.
+	$( document ).on( 'click', '.bf-assign-gear', function () {
+		var connId  = String( $( this ).data( 'conn-id' ) );
+		var $panel  = $( '#bf-map-' + connId );
+		var isOpen  = ! $panel.attr( 'hidden' );
+
+		// Close all panels first.
+		$( '.bf-assign-map-panel' ).attr( 'hidden', true );
+		$( '.bf-assign-gear' ).removeClass( 'is-active' );
+
+		if ( ! isOpen ) {
+			$panel.removeAttr( 'hidden' );
+			$( this ).addClass( 'is-active' );
 		}
 	} );
 
@@ -270,10 +280,10 @@
 		fieldMap[ connId ][ key ] = $( this ).val() || '';
 	} );
 
-	// Before save — write back into formSettings.
+	// Before save — write back to formSettings.
 	$( document ).on( 'boldform:before_save', function ( e, formSettings ) {
-		formSettings.assigned_connections  = assignedIds.slice();
-		formSettings.connection_field_map  = $.extend( true, {}, fieldMap );
+		formSettings.assigned_connections = assignedIds.slice();
+		formSettings.connection_field_map = $.extend( true, {}, fieldMap );
 	} );
 
 }( jQuery ) );

@@ -239,6 +239,20 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_responsive_control(
+			'column_gap',
+			array(
+				'label'      => __( 'Column Gap', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 0, 'max' => 80 ) ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__row'    => 'margin-left: -{{SIZE}}px; margin-right: -{{SIZE}}px;',
+					'{{WRAPPER}} .boldform-lite-form__column' => 'padding-left: {{SIZE}}px; padding-right: {{SIZE}}px;',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
 			'field_margin',
 			array(
 				'label'      => __( 'Field Margin', 'boldform-lite' ),

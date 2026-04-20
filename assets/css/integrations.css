@@ -388,51 +388,34 @@
 	font-size: 13px;
 }
 
-/* Connection cards grid */
-.bf-assign-grid {
+/* ── Connection list ─────────────────────────────────────────────────────── */
+.bf-assign-list {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
 	margin-bottom: 16px;
 }
 
-.bf-assign-card {
+.bf-assign-item {
+	background: #fff;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	overflow: hidden;
+	transition: border-color 0.12s;
+}
+
+.bf-assign-item.is-on {
+	border-color: #10b981;
+}
+
+.bf-assign-item__row {
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	padding: 10px 12px;
-	background: #fff;
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
-	transition: border-color 0.12s, background 0.12s;
 }
 
-.bf-assign-card.is-on {
-	border-color: #10b981;
-	background: #f0fdf4;
-}
-
-.bf-assign-card__check {
-	flex-shrink: 0;
-	width: 20px;
-	height: 20px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.bf-assign-card__check .dashicons {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-	color: #d1d5db;
-}
-
-.bf-assign-card.is-on .bf-assign-card__check .dashicons {
-	color: #10b981;
-}
-
-.bf-assign-card__info {
+.bf-assign-item__info {
 	flex: 1;
 	min-width: 0;
 	display: flex;
@@ -440,7 +423,7 @@
 	gap: 1px;
 }
 
-.bf-assign-card__name {
+.bf-assign-item__name {
 	font-size: 12px;
 	font-weight: 600;
 	color: #111827;
@@ -449,61 +432,57 @@
 	text-overflow: ellipsis;
 }
 
-.bf-assign-card__type {
+.bf-assign-item__type {
 	font-size: 10px;
 	color: #9ca3af;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 }
 
-/* Field mapping section */
-.bf-assign-maps {
-	margin-bottom: 12px;
-}
-
-.bf-assign-maps__title {
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: #374151;
-	margin: 0 0 8px;
-	padding: 0;
-}
-
-.bf-assign-map {
-	background: #f9fafb;
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
-	margin-bottom: 8px;
-	overflow: hidden;
-}
-
-.bf-assign-map__head {
+/* Gear button */
+.bf-assign-gear {
+	flex-shrink: 0;
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	padding: 8px 12px;
-	background: #fff;
-	border-bottom: 1px solid #e5e7eb;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	background: #f3f4f6;
+	border: 1px solid #e5e7eb;
+	border-radius: 6px;
+	color: #6b7280;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s, border-color 0.12s;
 }
 
-.bf-assign-map__name {
-	font-size: 12px;
-	font-weight: 600;
-	color: #111827;
-	flex: 1;
+.bf-assign-gear:hover,
+.bf-assign-gear.is-active {
+	background: #ede9fe;
+	border-color: #6366f1;
+	color: #6366f1;
 }
 
-.bf-assign-map__type {
-	font-size: 10px;
-	color: #9ca3af;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
+.bf-assign-gear .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+}
+
+.bf-assign-gear-placeholder {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+}
+
+/* Field mapping panel (collapsible) */
+.bf-assign-map-panel {
+	padding: 10px 12px 12px;
+	background: #f9fafb;
+	border-top: 1px solid #e5e7eb;
 }
 
 .bf-assign-map__rows {
-	padding: 10px 12px;
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
