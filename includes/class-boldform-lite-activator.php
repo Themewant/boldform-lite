@@ -17,19 +17,60 @@ class BoldForm_Lite_Activator {
 	/**
 	 * Runs on plugin activation.
 	 *
+	 * On a standard (single-site) install this creates the tables for the current
+	 * site.  On a multisite network the $network_wide flag is true when the plugin
+	 * is network-activated, so we iterate every site and create tables for each.
+	 *
+	 * @param bool $network_wide Whether activated network-wide.
 	 * @return void
 	 */
-	public static function activate() {
-		self::create_tables();
-		update_option( 'boldform_lite_db_version', BOLDFORM_LITE_DB_VERSION );
+	public static function activate( $network_wide = false ) {
+		if ( is_multisite() && $network_wide ) {
+			// Network activation — create tables for every existing subsite.
+			$site_ids = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
+			foreach ( $site_ids as $site_id ) {
+				switch_to_blog( $site_id );
+				self::create_tables();
+				update_option( 'boldform_lite_db_version', BOLDFORM_LITE_DB_VERSION );
+				restore_current_blog();
+			}
+		} else {
+			// Standard or per-site activation.
+			self::create_tables();
+			update_option( 'boldform_lite_db_version', BOLDFORM_LITE_DB_VERSION );
+		}
 	}
 
 	/**
-	 * Creates the plugin database tables.
+	 * Creates tables for a newly created subsite.
+	 *
+	 * Hooked to `wp_initialize_site` (WP 5.1+) and the legacy `wpmu_new_blog`.
+	 *
+	 * @param int|\WP_Site $site Site ID or WP_Site object.
+	 * @return void
+	 */
+	public static function on_new_site( $site ) {
+		if ( ! is_plugin_active_for_network( plugin_basename( BOLDFORM_LITE_FILE ) ) ) {
+			return;
+		}
+
+		$site_id = $site instanceof \WP_Site ? (int) $site->id : (int) $site;
+
+		switch_to_blog( $site_id );
+		self::create_tables();
+		update_option( 'boldform_lite_db_version', BOLDFORM_LITE_DB_VERSION );
+		restore_current_blog();
+	}
+
+	/**
+	 * Creates the plugin database tables for the current blog context.
+	 *
+	 * Uses $wpdb->prefix so it automatically picks up the correct per-site
+	 * table prefix after switch_to_blog() has been called.
 	 *
 	 * @return void
 	 */
-	private static function create_tables() {
+	public static function create_tables() {
 		global $wpdb;
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';

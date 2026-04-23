@@ -188,14 +188,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'form_bg_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'form_background',
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form',
 			)
 		);
 
@@ -219,6 +217,9 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->start_controls_tabs( 'form_shadow_tabs' );
+
+		$this->start_controls_tab( 'form_shadow_normal', array( 'label' => __( 'Normal', 'boldform-lite' ) ) );
 		$this->add_group_control(
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
@@ -226,6 +227,19 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'selector' => '{{WRAPPER}} .boldform-lite-form',
 			)
 		);
+		$this->end_controls_tab();
+
+		$this->start_controls_tab( 'form_shadow_hover', array( 'label' => __( 'Hover', 'boldform-lite' ) ) );
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'form_box_shadow_hover',
+				'selector' => '{{WRAPPER}} .boldform-lite-form:hover',
+			)
+		);
+		$this->end_controls_tab();
+
+		$this->end_controls_tabs();
 
 		$this->end_controls_section();
 
@@ -318,6 +332,17 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'required_indicator_color',
+			array(
+				'label'     => __( 'Required Indicator Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__required' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
 		$this->end_controls_section();
 
 		// ── Style: Input Fields ──
@@ -368,14 +393,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'field_bg_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'field_background',
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
 			)
 		);
 
@@ -444,11 +467,14 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Focus Border Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus' => 'border-color: {{VALUE}}; box-shadow: 0 0 0 1px {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field input:focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus' => 'border-color: {{VALUE}};',
 				),
 			)
 		);
 
+		$this->start_controls_tabs( 'field_shadow_tabs' );
+
+		$this->start_controls_tab( 'field_shadow_normal', array( 'label' => __( 'Normal', 'boldform-lite' ) ) );
 		$this->add_group_control(
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
@@ -456,6 +482,19 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
 			)
 		);
+		$this->end_controls_tab();
+
+		$this->start_controls_tab( 'field_shadow_focus', array( 'label' => __( 'Focus', 'boldform-lite' ) ) );
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'field_box_shadow_focus',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus',
+			)
+		);
+		$this->end_controls_tab();
+
+		$this->end_controls_tabs();
 
 		$this->add_responsive_control(
 			'input_el_margin',
@@ -582,15 +621,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 
 		// ── Trigger (closed state) ────────────────────────────────────────────
 
-		$this->add_control(
-			'select_bg_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__trigger' => 'background-color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form select' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_background',
+				'label'    => __( 'Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select',
 			)
 		);
 
@@ -669,6 +706,9 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->start_controls_tabs( 'select_shadow_tabs' );
+
+		$this->start_controls_tab( 'select_shadow_normal', array( 'label' => __( 'Normal', 'boldform-lite' ) ) );
 		$this->add_group_control(
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
@@ -676,6 +716,19 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select',
 			)
 		);
+		$this->end_controls_tab();
+
+		$this->start_controls_tab( 'select_shadow_focus', array( 'label' => __( 'Focus', 'boldform-lite' ) ) );
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'select_box_shadow_focus',
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select.is-open .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select:focus',
+			)
+		);
+		$this->end_controls_tab();
+
+		$this->end_controls_tabs();
 
 		// ── Open / Focus state ────────────────────────────────────────────────
 
@@ -721,14 +774,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'select_dropdown_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Panel Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__panel' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_dropdown_background',
+				'label'    => __( 'Panel Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__panel',
 			)
 		);
 
@@ -775,15 +827,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'select_search_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Search Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__search-wrap' => 'background-color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form .bf-select__panel-search' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_search_background',
+				'label'    => __( 'Search Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__search-wrap, {{WRAPPER}} .boldform-lite-form .bf-select__panel-search',
 			)
 		);
 
@@ -820,14 +870,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'select_option_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Option Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__option' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_option_background',
+				'label'    => __( 'Option Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__option',
 			)
 		);
 
@@ -851,14 +900,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'select_option_hover',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Option Hover Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__option:hover' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_option_hover_background',
+				'label'    => __( 'Option Hover Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__option:hover',
 			)
 		);
 
@@ -873,14 +921,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'select_option_active_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Selected Option Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form .bf-select__option.is-active' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'select_option_active_background',
+				'label'    => __( 'Selected Option Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form .bf-select__option.is-active',
 			)
 		);
 
@@ -1153,14 +1200,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'button_bg_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'button_background',
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form__submit',
 			)
 		);
 
@@ -1182,14 +1227,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'button_hover_bg_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit:hover' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'button_hover_background',
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form__submit:hover',
 			)
 		);
 
@@ -1248,6 +1291,8 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'selectors' => array(
 					'{{WRAPPER}} .boldform-lite-form__submit .dashicons' => 'color: {{VALUE}};',
 					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg' => 'fill: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg path' => 'fill: {{VALUE}};',	
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg rect' => 'fill: {{VALUE}};',
 				),
 			)
 		);
@@ -1273,6 +1318,9 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->start_controls_tabs( 'button_shadow_tabs' );
+
+		$this->start_controls_tab( 'button_shadow_normal', array( 'label' => __( 'Normal', 'boldform-lite' ) ) );
 		$this->add_group_control(
 			\Elementor\Group_Control_Box_Shadow::get_type(),
 			array(
@@ -1280,6 +1328,19 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'selector' => '{{WRAPPER}} .boldform-lite-form__submit',
 			)
 		);
+		$this->end_controls_tab();
+
+		$this->start_controls_tab( 'button_shadow_hover', array( 'label' => __( 'Hover', 'boldform-lite' ) ) );
+		$this->add_group_control(
+			\Elementor\Group_Control_Box_Shadow::get_type(),
+			array(
+				'name'     => 'button_box_shadow_hover',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__submit:hover',
+			)
+		);
+		$this->end_controls_tab();
+
+		$this->end_controls_tabs();
 
 		$this->add_responsive_control(
 			'button_el_margin',
@@ -1339,14 +1400,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'error_message_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Notice Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__message.is-error' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'error_message_background',
+				'label'    => __( 'Notice Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-error',
 			)
 		);
 
@@ -1412,14 +1472,13 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'success_message_bg',
+		$this->add_group_control(
+			\Elementor\Group_Control_Background::get_type(),
 			array(
-				'label'     => __( 'Background', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__message.is-success' => 'background-color: {{VALUE}};',
-				),
+				'name'     => 'success_message_background',
+				'label'    => __( 'Background', 'boldform-lite' ),
+				'types'    => array( 'classic', 'gradient' ),
+				'selector' => '{{WRAPPER}} .boldform-lite-form__message.is-success',
 			)
 		);
 

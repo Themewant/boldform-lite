@@ -50,6 +50,7 @@ jQuery(
 				submission_type: submissionType,
 				enable_ajax: 'ajax' === submissionType,
 				enable_redirect: 'redirect' === submissionType,
+				redirect_type: settings && settings.redirect_type ? settings.redirect_type : ( settings && settings.redirect_url ? 'custom' : 'page' ),
 				redirect_url: settings && settings.redirect_url ? settings.redirect_url : '',
 				thank_you_message: settings && settings.thank_you_message ? settings.thank_you_message : ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.thankYouMessage || 'Thanks! Your form was submitted successfully.' ),
 				button_text: settings && settings.button_text ? settings.button_text : ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.submitText || 'Submit' ),
@@ -804,6 +805,30 @@ jQuery(
 			renderAll();
 		}
 
+		function duplicateRow( rowIndex ) {
+			var rows = getAllRows();
+
+			if ( ! rows[ rowIndex ] ) {
+				return;
+			}
+
+			// Deep-clone the row and assign fresh IDs to every field.
+			var clone = $.extend( true, {}, rows[ rowIndex ] );
+			clone.columns.forEach( function ( col ) {
+				col.fields = col.fields.map( function ( field ) {
+					var f = $.extend( true, {}, field );
+					f.id = generateId();
+					return f;
+				} );
+			} );
+
+			// Insert the clone immediately after the source row.
+			rows.splice( rowIndex + 1, 0, clone );
+			setActiveColumn( rowIndex + 1, 0 );
+			switchEditorView( 'builder' );
+			renderAll();
+		}
+
 		function deleteRow( rowIndex ) {
 			var rows = getAllRows();
 
@@ -1454,6 +1479,7 @@ jQuery(
 					markup += '<div class="boldform-row__head"><strong>' + escapeHtml( boldformLiteBuilder.labels.row ) + ' ' + ( rowIndex + 1 ) + '</strong><span>' + row.columns.length + ' ' + escapeHtml( boldformLiteBuilder.labels.columns ) + '</span><div class="boldform-row__actions">';
 					markup += '<button type="button" class="boldform-action-icon boldform-row-settings' + ( rowSelected ? ' is-active' : '' ) + '" title="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '"><span class="dashicons dashicons-admin-generic"></span></button>';
 					markup += '<button type="button" class="boldform-action-icon boldform-row-move" title="Move row" aria-label="Move row" draggable="true"><span class="dashicons dashicons-move"></span></button>';
+					markup += '<button type="button" class="boldform-action-icon boldform-row-duplicate" title="Duplicate row" aria-label="Duplicate row"><span class="dashicons dashicons-admin-page"></span></button>';
 					markup += '<button type="button" class="boldform-action-icon is-danger boldform-row-delete" title="Delete row" aria-label="Delete row"><span class="dashicons dashicons-trash"></span></button>';
 					markup += '</div></div>';
 					markup += '<div class="boldform-row__columns">';
@@ -2581,19 +2607,16 @@ jQuery(
 				'<div class="boldform-choice-grid boldform-choice-grid--3">' +
 					'<label class="boldform-choice-card' + ( 'ajax' === submitMode ? ' is-selected' : '' ) + '">' +
 						'<input type="radio" name="boldform-submit-mode" value="ajax"' + ( 'ajax' === submitMode ? ' checked' : '' ) + '>' +
-						'<span class="boldform-choice-card__icon">&#10003;</span>' +
 						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmit ) + '</span>' +
 						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.ajaxSubmitDesc || 'Show a success message without reloading.' ) + '</span>' +
 					'</label>' +
 					'<label class="boldform-choice-card' + ( 'page' === submitMode ? ' is-selected' : '' ) + '">' +
 						'<input type="radio" name="boldform-submit-mode" value="page"' + ( 'page' === submitMode ? ' checked' : '' ) + '>' +
-						'<span class="boldform-choice-card__icon">&#8594;</span>' +
 						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'To a Page' ) + '</span>' +
 						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.toAPageDesc || 'Redirect to an existing page.' ) + '</span>' +
 					'</label>' +
 					'<label class="boldform-choice-card' + ( 'custom_url' === submitMode ? ' is-selected' : '' ) + '">' +
 						'<input type="radio" name="boldform-submit-mode" value="custom_url"' + ( 'custom_url' === submitMode ? ' checked' : '' ) + '>' +
-						'<span class="boldform-choice-card__icon">&#128279;</span>' +
 						'<span class="boldform-choice-card__title">' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</span>' +
 						'<span class="boldform-choice-card__description">' + escapeHtml( boldformLiteBuilder.labels.customUrlDesc || 'Redirect to any URL you specify.' ) + '</span>' +
 					'</label>' +
@@ -2712,19 +2735,16 @@ jQuery(
 								'<div class="boldform-choice-grid boldform-choice-grid--3">' +
 									'<label class="boldform-choice-card' + ( 'email' === dupMethod ? ' is-selected' : '' ) + '">' +
 										'<input type="radio" name="boldform-dup-method" value="email"' + ( 'email' === dupMethod ? ' checked' : '' ) + '>' +
-										'<span class="boldform-choice-card__icon">&#9993;</span>' +
 										'<span class="boldform-choice-card__title">Email</span>' +
 										'<span class="boldform-choice-card__description">Match on email field value</span>' +
 									'</label>' +
 									'<label class="boldform-choice-card' + ( 'ip' === dupMethod ? ' is-selected' : '' ) + '">' +
 										'<input type="radio" name="boldform-dup-method" value="ip"' + ( 'ip' === dupMethod ? ' checked' : '' ) + '>' +
-										'<span class="boldform-choice-card__icon">&#127760;</span>' +
 										'<span class="boldform-choice-card__title">IP Address</span>' +
 										'<span class="boldform-choice-card__description">Match on submitter IP</span>' +
 									'</label>' +
 									'<label class="boldform-choice-card' + ( 'field' === dupMethod ? ' is-selected' : '' ) + '">' +
 										'<input type="radio" name="boldform-dup-method" value="field"' + ( 'field' === dupMethod ? ' checked' : '' ) + '>' +
-										'<span class="boldform-choice-card__icon">&#35;</span>' +
 										'<span class="boldform-choice-card__title">Custom Field</span>' +
 										'<span class="boldform-choice-card__description">Match on any field value</span>' +
 									'</label>' +
@@ -3280,6 +3300,18 @@ jQuery(
 							state.formId = response.data.formId;
 							updateShortcodeDisplay();
 							$( '#boldform-builder-status' ).text( response.data.message );
+
+							// Keep form_id in the URL so a page refresh stays on the builder.
+							if ( state.formId && window.history && window.history.replaceState ) {
+								var url = window.location.href;
+								if ( url.indexOf( 'form_id=' ) !== -1 ) {
+									url = url.replace( /form_id=\d*/, 'form_id=' + state.formId );
+								} else {
+									url += ( url.indexOf( '?' ) !== -1 ? '&' : '?' ) + 'form_id=' + state.formId;
+								}
+								window.history.replaceState( null, '', url );
+							}
+
 							return;
 						}
 
@@ -3885,6 +3917,16 @@ jQuery(
 			function ( event ) {
 				event.stopPropagation();
 				deleteField( $( this ).closest( '.boldform-canvas-field' ).data( 'field-id' ) );
+			}
+		);
+
+
+		$( document ).on(
+			'click',
+			'.boldform-row-duplicate',
+			function ( event ) {
+				event.stopPropagation();
+				duplicateRow( Number( $( this ).closest( '.boldform-row' ).data( 'row-index' ) ) );
 			}
 		);
 

@@ -211,7 +211,7 @@ class BoldForm_Lite_Shortcode {
 			method="post"
 			enctype="multipart/form-data"
 			data-form-id="<?php echo esc_attr( $form_id ); ?>"
-			data-enable-ajax="1"
+			data-enable-ajax="<?php echo esc_attr( $form_settings['enable_ajax'] ? '1' : '0' ); ?>"
 			data-enable-redirect="<?php echo esc_attr( $form_settings['enable_redirect'] ? '1' : '0' ); ?>"
 			data-redirect-url="<?php echo esc_attr( $form_settings['redirect_url'] ); ?>"
 		>

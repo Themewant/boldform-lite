@@ -412,10 +412,15 @@ class BoldForm_Lite_Ajax_Save {
 			: ( ! empty( $settings_payload['admin_email'] ) ? 'custom' : 'site_admin' );
 		$admin_email = isset( $settings_payload['admin_email'] ) ? sanitize_email( (string) $settings_payload['admin_email'] ) : '';
 
+		$redirect_type = isset( $settings_payload['redirect_type'] ) && in_array( $settings_payload['redirect_type'], array( 'page', 'custom' ), true )
+			? $settings_payload['redirect_type']
+			: ( ! empty( $settings_payload['redirect_url'] ) ? 'custom' : 'page' );
+
 		$normalized = array(
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
+			'redirect_type'     => $redirect_type,
 			'redirect_url'      => isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
 			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? sanitize_textarea_field( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],

@@ -108,7 +108,7 @@
 }
 
 .boldform-lite-form__required {
-	color: var(--bf-error-color, #dc2626);
+	color: var(--bf-required-color, var(--bf-error-color, #dc2626));
 }
 
 .boldform-lite-form__field-error {
@@ -200,7 +200,7 @@ input[data-boldform-picker] {
 
 .boldform-lite-form .flatpickr-input.active + input.form-control {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	box-shadow: var(--bf-field-focus-shadow, none);
 }
 
 /* Match flatpickr alt input to our field styles */
@@ -221,7 +221,7 @@ input[data-boldform-picker] {
 
 .boldform-lite-form input.flatpickr-input + input:focus {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	box-shadow: var(--bf-field-focus-shadow, none);
 	outline: none;
 }
 
@@ -229,7 +229,7 @@ input[data-boldform-picker] {
 .boldform-lite-form select:focus,
 .boldform-lite-form textarea:focus {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--bf-focus-color, #0f766e) 15%, transparent);
+	box-shadow: var(--bf-field-focus-shadow, none);
 	outline: none;
 }
 
@@ -421,13 +421,13 @@ input[data-boldform-picker] {
 	font-size: var(--bf-button-font-size, 14px);
 	font-weight: 600;
 	cursor: pointer;
-	box-shadow: none;
+	box-shadow: var(--bf-button-shadow, none);
 	transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
 .boldform-lite-form__submit:hover {
 	transform: translateY(-1px);
-	box-shadow: none;
+	box-shadow: var(--bf-button-hover-shadow, none);
 }
 
 .boldform-lite-form__submit .boldform-btn-inner {
@@ -619,9 +619,12 @@ input[data-boldform-picker] {
 	background: var(--bfb-btn-hover-bg);
 }
 
-.boldform-block-wrap .boldform-lite-form__field-error,
-.boldform-block-wrap .boldform-lite-form__required {
+.boldform-block-wrap .boldform-lite-form__field-error {
 	color: var(--bfb-error-color);
+}
+
+.boldform-block-wrap .boldform-lite-form__required {
+	color: var(--bfb-required-color, var(--bfb-error-color));
 }
 
 .boldform-block-wrap .boldform-lite-form__field.is-invalid input,
@@ -881,7 +884,7 @@ input[data-boldform-picker] {
 
 .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 var(--bf-focus-ring-width, 3px) var(--bf-focus-ring, rgba(15, 118, 110, 0.15));
+	box-shadow: var(--bf-select-focus-shadow, none);
 }
 
 .bf-select__value,

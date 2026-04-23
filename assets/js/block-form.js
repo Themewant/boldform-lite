@@ -198,7 +198,8 @@
 								value: attributes.labelFontSize || '',
 								onChange: setAttrStr( 'labelFontSize' ),
 								placeholder: '17px'
-							} )
+							} ),
+							colorField( __( 'Required Indicator Color', 'boldform-lite' ), attributes.requiredIndicatorColor, setAttrStr( 'requiredIndicatorColor' ) )
 						),
 
 						/* ── Input Fields ── */

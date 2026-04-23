@@ -85,7 +85,8 @@ class BoldForm_Lite_Block {
 			'buttonBorderRadius'  => array( 'type' => 'string', 'default' => '' ),
 			'buttonFontSize'      => array( 'type' => 'string', 'default' => '' ),
 			'buttonFullWidth'     => array( 'type' => 'boolean', 'default' => false ),
-			'errorColor'          => array( 'type' => 'string', 'default' => '' ),
+			'errorColor'               => array( 'type' => 'string', 'default' => '' ),
+			'requiredIndicatorColor'   => array( 'type' => 'string', 'default' => '' ),
 		);
 
 		/**
@@ -222,7 +223,8 @@ class BoldForm_Lite_Block {
 			'buttonHoverBgColor'=> '--bfb-btn-hover-bg',
 			'buttonBorderRadius'=> '--bfb-btn-radius',
 			'buttonFontSize'    => '--bfb-btn-font-size',
-			'errorColor'        => '--bfb-error-color',
+			'errorColor'             => '--bfb-error-color',
+			'requiredIndicatorColor' => '--bfb-required-color',
 		);
 
 		$vars = array();

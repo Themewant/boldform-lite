@@ -65,7 +65,7 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		if ( ! empty( $result['redirect_url'] ) ) {
-			wp_safe_redirect( $result['redirect_url'] );
+			wp_redirect( esc_url_raw( $result['redirect_url'] ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- URL is user-configured in the form builder, external redirects are intentional.
 			exit;
 		}
 
@@ -691,10 +691,15 @@ class BoldForm_Lite_Form_Handler {
 			? $decoded['admin_email_type']
 			: ( $admin_email ? 'custom' : 'site_admin' );
 
+		$redirect_type = isset( $decoded['redirect_type'] ) && in_array( $decoded['redirect_type'], array( 'page', 'custom' ), true )
+			? $decoded['redirect_type']
+			: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' );
+
 		return array(
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
+			'redirect_type'     => $redirect_type,
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : '',
 			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],

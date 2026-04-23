@@ -1672,6 +1672,29 @@ class BoldForm_Lite_Admin {
 								<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
 
 								<div class="boldform-card">
+									<h3><?php esc_html_e( 'Sender', 'boldform-lite' ); ?></h3>
+									<p class="description"><?php esc_html_e( 'Applied to all BoldForm emails, even when SMTP is disabled.', 'boldform-lite' ); ?></p>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-from-email"><?php esc_html_e( 'From Email', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="email" id="boldform-smtp-from-email" name="boldform_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" placeholder="<?php esc_attr_e( 'you@example.com', 'boldform-lite' ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-from-name"><?php esc_html_e( 'From Name', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="text" id="boldform-smtp-from-name" name="boldform_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-reply-to"><?php esc_html_e( 'Reply-To', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="email" id="boldform-smtp-reply-to" name="boldform_smtp_reply_to" value="<?php echo esc_attr( $settings['smtp_reply_to'] ); ?>" placeholder="<?php esc_attr_e( 'reply@example.com', 'boldform-lite' ); ?>">
+										</div>
+									</div>
+								</div>
+
+								<div class="boldform-card">
 									<div class="boldform-field-row">
 										<div class="boldform-field-label"><?php esc_html_e( 'Enable SMTP', 'boldform-lite' ); ?></div>
 										<div class="boldform-field-control">
@@ -1684,28 +1707,6 @@ class BoldForm_Lite_Admin {
 								</div>
 
 								<div id="boldform-smtp-fields" style="<?php echo $settings['smtp_enabled'] ? '' : 'display:none;'; ?>">
-									<div class="boldform-card">
-										<h3><?php esc_html_e( 'Sender', 'boldform-lite' ); ?></h3>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-from-email"><?php esc_html_e( 'From Email', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="email" id="boldform-smtp-from-email" name="boldform_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" placeholder="<?php esc_attr_e( 'you@example.com', 'boldform-lite' ); ?>">
-											</div>
-										</div>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-from-name"><?php esc_html_e( 'From Name', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="text" id="boldform-smtp-from-name" name="boldform_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
-											</div>
-										</div>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-reply-to"><?php esc_html_e( 'Reply-To', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="email" id="boldform-smtp-reply-to" name="boldform_smtp_reply_to" value="<?php echo esc_attr( $settings['smtp_reply_to'] ); ?>" placeholder="<?php esc_attr_e( 'reply@example.com', 'boldform-lite' ); ?>">
-											</div>
-										</div>
-									</div>
-
 									<div class="boldform-card">
 										<h3><?php esc_html_e( 'Server', 'boldform-lite' ); ?></h3>
 										<div class="boldform-field-row">
@@ -1926,8 +1927,79 @@ class BoldForm_Lite_Admin {
 	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
 	 * @return void
 	 */
+	/**
+	 * Filters the From email address for all wp_mail() calls.
+	 *
+	 * Applied even when SMTP is disabled so admin/user emails don't
+	 * fall back to the WordPress default wordpress@domain.com address,
+	 * which many mail servers reject.
+	 *
+	 * @param string $from Default from address.
+	 * @return string
+	 */
+	public function filter_mail_from( $from ) {
+		$settings = $this->get_global_settings();
+
+		if ( empty( $settings['smtp_from_email'] ) || ! is_email( $settings['smtp_from_email'] ) ) {
+			return $from;
+		}
+
+		$configured_email = $settings['smtp_from_email'];
+
+		// If SMTP is enabled, trust it to handle any from address (credentials authenticate the sender).
+		if ( ! empty( $settings['smtp_enabled'] ) && ! empty( $settings['smtp_host'] ) ) {
+			return $configured_email;
+		}
+
+		// Without SMTP, only use the configured address as From if its domain matches the site domain.
+		// Using a Gmail/Yahoo/external address as From without SMTP causes DMARC rejection.
+		$site_domain       = wp_parse_url( home_url(), PHP_URL_HOST );
+		$configured_domain = substr( strrchr( $configured_email, '@' ), 1 );
+
+		if ( $configured_domain && $site_domain && rtrim( $configured_domain, '.' ) === rtrim( $site_domain, '.' ) ) {
+			return $configured_email;
+		}
+
+		// Domain mismatch — keep site's default From and let configure_smtp handle Reply-To.
+		return $from;
+	}
+
+	/**
+	 * Filters the From name for all wp_mail() calls.
+	 *
+	 * @param string $name Default from name.
+	 * @return string
+	 */
+	public function filter_mail_from_name( $name ) {
+		$settings = $this->get_global_settings();
+
+		if ( ! empty( $settings['smtp_from_name'] ) ) {
+			return $settings['smtp_from_name'];
+		}
+
+		return $name;
+	}
+
 	public function configure_smtp( $phpmailer ) {
 		$settings = $this->get_global_settings();
+
+		// Always apply Reply-To if configured (works with or without SMTP).
+		$reply_to = ! empty( $settings['smtp_reply_to'] ) ? $settings['smtp_reply_to'] : '';
+
+		// If From Email is set but its domain doesn't match the site (e.g. Gmail),
+		// use it as Reply-To instead so replies go to the right address without DMARC failure.
+		if ( empty( $reply_to ) && ! empty( $settings['smtp_from_email'] ) && is_email( $settings['smtp_from_email'] ) ) {
+			$site_domain       = wp_parse_url( home_url(), PHP_URL_HOST );
+			$configured_domain = substr( strrchr( $settings['smtp_from_email'], '@' ), 1 );
+			if ( $configured_domain && $site_domain && rtrim( $configured_domain, '.' ) !== rtrim( $site_domain, '.' ) ) {
+				$reply_to = $settings['smtp_from_email'];
+			}
+		}
+
+		if ( $reply_to ) {
+			$phpmailer->clearReplyTos();
+			$phpmailer->addReplyTo( $reply_to );
+		}
 
 		if ( empty( $settings['smtp_enabled'] ) || empty( $settings['smtp_host'] ) ) {
 			return;
@@ -1963,10 +2035,6 @@ class BoldForm_Lite_Admin {
 			$phpmailer->FromName = $settings['smtp_from_name']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		}
 
-		if ( ! empty( $settings['smtp_reply_to'] ) ) {
-			$phpmailer->clearReplyTos();
-			$phpmailer->addReplyTo( $settings['smtp_reply_to'] );
-		}
 	}
 
 	/**
