@@ -604,6 +604,7 @@ input[data-boldform-picker] {
 .boldform-block-wrap .boldform-lite-form__field .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bfb-focus-color);
 	box-shadow: 0 0 0 1px var(--bfb-focus-color);
+	background-color: var(--bfb-focus-bg);
 }
 
 .boldform-block-wrap .boldform-lite-form__submit {

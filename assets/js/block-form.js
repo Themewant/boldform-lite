@@ -239,7 +239,8 @@
 								onChange: setAttrStr( 'fieldBorderRadius' ),
 								placeholder: '16px'
 							} ),
-							colorField( __( 'Focus Border Color', 'boldform-lite' ), attributes.fieldFocusColor, setAttrStr( 'fieldFocusColor' ) )
+							colorField( __( 'Focus Border Color', 'boldform-lite' ), attributes.fieldFocusColor, setAttrStr( 'fieldFocusColor' ) ),
+							colorField( __( 'Focus Background Color', 'boldform-lite' ), attributes.fieldFocusBgColor, setAttrStr( 'fieldFocusBgColor' ) )
 						),
 
 						/* ── Submit Button ── */

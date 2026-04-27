@@ -253,6 +253,22 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_responsive_control(
+			'row_gap',
+			array(
+				'label'      => __( 'Row Gap', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px', 'em' ),
+				'range'      => array(
+					'px' => array( 'min' => 0, 'max' => 100 ),
+					'em' => array( 'min' => 0, 'max' => 6, 'step' => 0.1 ),
+				),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__fields' => 'row-gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
 			'column_gap',
 			array(
 				'label'      => __( 'Column Gap', 'boldform-lite' ),
@@ -467,7 +483,18 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Focus Border Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:focus, {{WRAPPER}} .boldform-lite-form__field textarea:focus' => 'border-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, {{WRAPPER}} .boldform-lite-form textarea:focus, {{WRAPPER}} .boldform-lite-form select:focus' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'field_focus_bg_color',
+			array(
+				'label'     => __( 'Focus Background Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus, {{WRAPPER}} .boldform-lite-form textarea:focus, {{WRAPPER}} .boldform-lite-form select:focus' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -748,6 +775,17 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} .boldform-lite-form .bf-select.is-open .bf-select__trigger' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'select_focus_bg_color',
+			array(
+				'label'     => __( 'Focus Background Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form .bf-select.is-open .bf-select__trigger' => 'background-color: {{VALUE}};',
 				),
 			)
 		);
@@ -1289,10 +1327,11 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'separator' => 'before',
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__submit .dashicons' => 'color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg' => 'fill: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg path' => 'fill: {{VALUE}};',	
-					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg rect' => 'fill: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__submit .dashicons' => 'color: {{VALUE}} !important;',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg' => 'fill: {{VALUE}} !important; color: {{VALUE}} !important;',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg' => 'fill: {{VALUE}} !important;',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg path' => 'fill: {{VALUE}} !important;',
+					'{{WRAPPER}} .boldform-lite-form__submit .boldform-btn-icon-svg svg rect' => 'fill: {{VALUE}} !important;',
 				),
 			)
 		);
