@@ -1,5 +1,5 @@
 === BoldForm Lite ===
-Contributors: boldform
+Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.0
 Tested up to: 6.9
@@ -45,6 +45,20 @@ Open `BoldForm > Entries` in the WordPress admin.
 1. Form builder interface
 2. Frontend form display
 3. Entries management page
+
+== Bundled Libraries ==
+
+All JavaScript and CSS assets used by this plugin are bundled locally within the plugin directory. No scripts or styles are loaded from a CDN or any remote server except for the explicitly documented external services listed below.
+
+Bundled third-party libraries:
+
+* **SortableJS** (assets/js/sortable.js) — MIT License — https://github.com/SortableJS/Sortable
+  This file is a local copy of SortableJS. It is served directly from the plugin directory and is not fetched from any CDN. The value `Node.DOCUMENT_POSITION_PRECEDING` that appears at line 187 of this file is a standard browser DOM API constant used for drag-and-drop ordering logic — it is not a remote resource URL.
+
+* **Flatpickr** (assets/js/flatpickr.min.js, assets/css/flatpickr.min.css) — MIT License — https://github.com/flatpickr/flatpickr
+  This file is a local copy of the Flatpickr date/time picker library. It is served directly from the plugin directory and is not fetched from any CDN.
+
+The submissions chart on the Reports page is rendered using the browser's native HTML5 Canvas API. No external charting library (e.g. Chart.js) is loaded or referenced.
 
 == External Services ==
 

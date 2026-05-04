@@ -74,6 +74,21 @@ jQuery(
 		// Disable native browser validation only when JS is loaded — keeps HTML5 required as fallback.
 		$( '.boldform-lite-form' ).attr( 'novalidate', 'novalidate' );
 
+		// ── Live email validation ──
+		$( document ).on( 'blur', '.boldform-lite-form input[type="email"]', function () {
+			var $input   = $( this );
+			var $wrapper = $input.closest( '.boldform-lite-form__field' );
+			var val      = $.trim( $input.val() || '' );
+
+			// Clear any previous email error on this field.
+			$wrapper.find( '.boldform-lite-form__field-error' ).remove();
+			$wrapper.removeClass( 'is-invalid' );
+
+			if ( val && ! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( val ) ) {
+				showFieldError( $wrapper, boldformLiteFrontend.invalidEmail || 'Please enter a valid email address.' );
+			}
+		} );
+
 		// ── Flatpickr date/time pickers ──
 		if ( typeof flatpickr !== 'undefined' ) {
 			$( 'input[data-boldform-picker="date"]' ).each( function () {

@@ -35,7 +35,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 			</a>
 			<div class="boldform-setup-header__brand">
 				<span class="dashicons dashicons-feedback"></span>
-				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
+				<span><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 			</div>
 		</div>
 		<div class="boldform-setup-body">
@@ -139,7 +139,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 										/**
 										 * Filter the complete field library used in the builder sidebar.
 										 *
-										 * Pro can add new field types (page_break, signature, etc.).
+										 * Additional field types can be added via this filter.
 										 *
 										 * @param array<string, array<string, string>> $fields All field definitions.
 										 * @param string                               $group  Current group being rendered.

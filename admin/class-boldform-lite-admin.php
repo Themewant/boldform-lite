@@ -89,8 +89,8 @@ class BoldForm_Lite_Admin {
 	 */
 	public function register_menu() {
 		$this->list_page_hook = add_menu_page(
-			__( 'BoldForm', 'boldform-lite' ),
-			__( 'BoldForm', 'boldform-lite' ),
+			__( 'Bold Form', 'boldform-lite' ),
+			__( 'Bold Form', 'boldform-lite' ),
 			'manage_options',
 			'boldform-lite',
 			array( $this, 'render_forms_page' ),
@@ -153,6 +153,16 @@ class BoldForm_Lite_Admin {
 		);
 
 		add_action( 'load-' . $this->preview_page_hook, array( $this, 'set_preview_title' ) );
+
+		// Documentation — links to static HTML docs (opens in new tab).
+		add_submenu_page(
+			'boldform-lite',
+			__( 'Documentation', 'boldform-lite' ),
+			__( 'Documentation', 'boldform-lite' ),
+			'manage_options',
+			'boldform-lite-docs',
+			array( $this, 'render_docs_page' )
+		);
 
 		/**
 		 * Fires after BoldForm Lite registers all its admin submenu pages.
@@ -431,9 +441,6 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
-					// Pro feature flags — overridden to true by boldform_builder_localize_data filter when Pro is active.
-					'hasPro'             => false,
-					'proTemplates'       => array(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
@@ -845,7 +852,7 @@ class BoldForm_Lite_Admin {
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
 				<span class="dashicons dashicons-feedback"></span>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">
@@ -922,7 +929,7 @@ class BoldForm_Lite_Admin {
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'boldform-bar',
-				'title' => __( 'BoldForm', 'boldform-lite' ),
+				'title' => __( 'Bold Form', 'boldform-lite' ),
 				'href'  => admin_url( 'admin.php?page=boldform-lite' ),
 			)
 		);
@@ -1126,6 +1133,42 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Renders the documentation page with links to user and developer guides.
+	 *
+	 * @return void
+	 */
+	public function render_docs_page() {
+		$docs_url = BOLDFORM_LITE_URL . 'docs/';
+		?>
+		<?php $this->render_admin_topbar( 'boldform-lite-docs' ); ?>
+		<div class="wrap">
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Documentation', 'boldform-lite' ); ?></h1>
+			<hr class="wp-header-end">
+
+			<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:20px;">
+				<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;">
+					<span class="dashicons dashicons-book" style="font-size:40px;width:40px;height:40px;color:#0f766e;margin-bottom:12px;"></span>
+					<h2 style="font-size:17px;margin:0 0 8px;border:none;padding:0;"><?php esc_html_e( 'User Guide', 'boldform-lite' ); ?></h2>
+					<p style="color:#64748b;font-size:13px;margin-bottom:16px;"><?php esc_html_e( 'Learn how to create forms, manage entries, configure settings, and embed forms on your site.', 'boldform-lite' ); ?></p>
+					<a href="<?php echo esc_url( $docs_url . 'user-guide.html' ); ?>" target="_blank" class="button button-primary" style="min-width:140px;">
+						<?php esc_html_e( 'Open User Guide', 'boldform-lite' ); ?> <span class="dashicons dashicons-external" style="font-size:14px;line-height:1.8;margin-left:4px;"></span>
+					</a>
+				</div>
+
+				<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;">
+					<span class="dashicons dashicons-editor-code" style="font-size:40px;width:40px;height:40px;color:#6366f1;margin-bottom:12px;"></span>
+					<h2 style="font-size:17px;margin:0 0 8px;border:none;padding:0;"><?php esc_html_e( 'Developer Guide', 'boldform-lite' ); ?></h2>
+					<p style="color:#64748b;font-size:13px;margin-bottom:16px;"><?php esc_html_e( 'Hooks, filters, custom field types, integrations API, database schema, and file structure reference.', 'boldform-lite' ); ?></p>
+					<a href="<?php echo esc_url( $docs_url . 'developer-guide.html' ); ?>" target="_blank" class="button button-primary" style="min-width:140px;background:#6366f1;border-color:#6366f1;">
+						<?php esc_html_e( 'Open Developer Guide', 'boldform-lite' ); ?> <span class="dashicons dashicons-external" style="font-size:14px;line-height:1.8;margin-left:4px;"></span>
+					</a>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
 	public function render_preview_page() {
 		$form_id = isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
@@ -1474,7 +1517,7 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Bold Form Settings', 'boldform-lite' ); ?></h1>
 			<hr class="wp-header-end">
 
 			<div class="boldform-settings-wrap">
@@ -2933,6 +2976,7 @@ class BoldForm_Lite_Admin {
 			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'       => $admin_email,
+			// Multi-step settings (data passthrough for Pro's multi-page module).
 			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
 			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
@@ -3290,7 +3334,7 @@ class BoldForm_Lite_Admin {
 		/**
 		 * Filter the field library items available in the builder sidebar.
 		 *
-		 * Pro can add new field types here (page_break, signature, payment, etc.).
+		 * Pro can add new field types here (signature, payment, etc.).
 		 * Each entry: 'type_key' => array( 'label' => '', 'icon' => 'dashicons-...', 'group' => 'basic|advanced|pro' )
 		 *
 		 * @param array<string, array<string, string>> $library Field library items.

@@ -49,8 +49,10 @@ class BoldForm_Lite_Ajax_Save {
 
 		$form_id           = isset( $_POST['form_id'] ) ? absint( wp_unslash( $_POST['form_id'] ) ) : 0;
 		$title             = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
-		$structure_raw     = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; individual values are sanitized after json_decode below.
-		$settings_raw      = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON string; individual values are sanitized via normalize_form_settings().
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- raw JSON string; sanitize_text_field() would strip HTML used in terms/content fields. Every decoded value is individually sanitized below via sanitize_text_field(), sanitize_key(), wp_kses_post(), absint(), etc.
+		$structure_raw     = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- same as above; decoded values sanitized in normalize_form_settings().
+		$settings_raw      = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : '';
 		$allowed_types     = array( 'text', 'name', 'email', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'radio', 'date', 'time', 'tel', 'url', 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'input_mask', 'html_editor', 'paragraph', 'numeric', 'address', 'country', 'star_rating', 'slider_range' );
 
 		/**
@@ -62,8 +64,17 @@ class BoldForm_Lite_Ajax_Save {
 		 */
 		$allowed_types = apply_filters( 'boldform_allowed_field_types', $allowed_types );
 		$allowed_widths    = array( '100%', '50%', '33.33%', '25%' );
+
 		$payload           = json_decode( $structure_raw, true );
 		$settings_payload  = json_decode( $settings_raw, true );
+
+		if ( ! is_array( $payload ) ) {
+			$payload = array();
+		}
+		if ( ! is_array( $settings_payload ) ) {
+			$settings_payload = array();
+		}
+
 		$prepared_rows     = array();
 		$prepared_settings = $this->normalize_form_settings( $settings_payload );
 
@@ -457,6 +468,7 @@ class BoldForm_Lite_Ajax_Save {
 			'enable_admin_email'=> isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'       => 'custom' === $admin_email_type ? $admin_email : '',
+			// Multi-step settings (saved by Pro's builder UI, passed through for Pro's rendering).
 			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
 			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
@@ -472,8 +484,6 @@ class BoldForm_Lite_Ajax_Save {
 			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
 			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
 			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
-			'custom_css'          => isset( $settings_payload['custom_css'] ) ? wp_strip_all_tags( (string) $settings_payload['custom_css'] ) : '',
-			'custom_js'           => isset( $settings_payload['custom_js'] )  ? (string) $settings_payload['custom_js']                      : '',
 		);
 
 		/**

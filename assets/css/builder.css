@@ -652,7 +652,7 @@
 	color: #2271b1;
 }
 
-/* Pro-locked template option */
+/* Template option */
 .boldform-template-option {
 	display: flex;
 	align-items: center;
@@ -663,90 +663,6 @@
 .boldform-tpl-option-label {
 	flex: 1;
 	min-width: 0;
-}
-
-.boldform-template-option.is-pro-locked {
-	opacity: 0.75;
-	cursor: default;
-}
-
-.boldform-template-option.is-pro-locked:hover {
-	background: transparent;
-}
-
-.boldform-template-option.is-pro-locked.is-active {
-	background: #faf5ff;
-}
-
-.boldform-tpl-pro-badge {
-	flex-shrink: 0;
-	display: inline-flex;
-	align-items: center;
-	padding: 2px 7px;
-	border-radius: 999px;
-	background: linear-gradient(135deg, #7c3aed, #a855f7);
-	color: #fff;
-	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-}
-
-/* Pro gate overlay in preview pane */
-.boldform-tpl-pro-gate {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	text-align: center;
-	padding: 48px 32px;
-	gap: 12px;
-	height: 100%;
-	min-height: 320px;
-}
-
-.boldform-tpl-pro-gate__icon {
-	font-size: 48px;
-	line-height: 1;
-	opacity: 0.35;
-}
-
-.boldform-tpl-pro-gate h3 {
-	margin: 0;
-	font-size: 17px;
-	font-weight: 700;
-	color: #0f172a;
-}
-
-.boldform-tpl-pro-gate p {
-	margin: 0;
-	font-size: 13px;
-	color: #64748b;
-	line-height: 1.6;
-	max-width: 320px;
-}
-
-.boldform-tpl-pro-gate__msg {
-	margin-top: 8px;
-	padding: 10px 18px;
-	border-radius: 8px;
-	background: #faf5ff;
-	border: 1px solid #e9d5ff;
-	color: #6d28d9;
-	font-size: 13px;
-	font-weight: 500;
-}
-
-/* Upgrade CTA button state */
-#boldform-import-template.boldform-tpl-upgrade-btn {
-	background: linear-gradient(135deg, #7c3aed, #a855f7);
-	border-color: transparent;
-	color: #fff;
-	box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
-}
-
-#boldform-import-template.boldform-tpl-upgrade-btn:hover {
-	background: linear-gradient(135deg, #6d28d9, #9333ea);
 }
 
 .boldform-start-card strong,
@@ -3564,25 +3480,6 @@
 	}
 }
 
-/* Page break field canvas preview */
-.boldform-canvas-page-break {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	padding: 12px 16px;
-	background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
-	border: 2px dashed #14b8a6;
-	border-radius: 6px;
-	color: #0d9488;
-	font-weight: 600;
-	font-size: 13px;
-}
-
-.boldform-canvas-page-break .dashicons {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
-}
 
 .boldform-canvas-payment-block {
 	display: flex;
@@ -3948,48 +3845,6 @@
 	.boldform-theme-grid {
 		grid-template-columns: repeat(3, 1fr);
 	}
-}
-
-/* ============================================================
-   Custom Code section — code editor textarea
-   ============================================================ */
-
-.boldform-custom-code-editor {
-	width: 100%;
-	box-sizing: border-box;
-	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-	font-size: 12px;
-	line-height: 1.6;
-	color: #1e293b;
-	background: #f8fafc;
-	border: 1.5px solid #e2e8f0;
-	border-radius: 8px;
-	padding: 10px 12px;
-	resize: vertical;
-	outline: none;
-	transition: border-color 0.15s, box-shadow 0.15s;
-	tab-size: 2;
-}
-
-.boldform-custom-code-editor:focus {
-	border-color: #2271b1;
-	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
-	background: #fff;
-}
-
-.boldform-custom-code-hint {
-	font-size: 11px;
-	color: #94a3b8;
-	margin: -2px 0 6px;
-	line-height: 1.5;
-}
-
-.boldform-custom-code-hint code {
-	background: #f1f5f9;
-	border-radius: 3px;
-	padding: 1px 4px;
-	font-size: 11px;
-	color: #475569;
 }
 
 /* ============================================================

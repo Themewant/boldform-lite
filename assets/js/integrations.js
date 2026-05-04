@@ -43,7 +43,7 @@
 		state.structure.rows.forEach( function ( row ) {
 			row.columns.forEach( function ( col ) {
 				col.fields.forEach( function ( f ) {
-					var skip = [ 'submit', 'section_break', 'html_editor', 'paragraph', 'page_break' ];
+					var skip = [ 'submit', 'section_break', 'html_editor', 'paragraph' ];
 					if ( skip.indexOf( f.type ) !== -1 ) return;
 					fields.push( { id: f.id, label: f.label || f.type } );
 				} );

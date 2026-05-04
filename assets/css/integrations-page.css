@@ -99,15 +99,6 @@
 	background: #f8fdf9;
 }
 
-.bf-int-card.is-locked {
-	opacity: 0.65;
-}
-
-.bf-int-card.is-locked:hover {
-	box-shadow: none;
-	border-color: #e2e4e7;
-}
-
 /* Icon */
 .bf-int-card__icon {
 	width: 42px;
@@ -156,6 +147,13 @@
 	justify-content: center;
 }
 
+/* Static pro-available note */
+.bf-int-card__pro-note {
+	font-size: 11px;
+	color: #6b7280;
+	font-style: italic;
+}
+
 /* Settings button — hidden until enabled */
 .bf-int-card__settings {
 	display: none;
@@ -191,27 +189,6 @@
 
 .bf-int-card__settings:hover .dashicons {
 	color: #2271b1;
-}
-
-/* Upgrade button */
-.bf-int-card__upgrade {
-	display: inline-flex;
-	align-items: center;
-	padding: 6px 12px;
-	background: #2271b1;
-	color: #fff;
-	font-size: 11px;
-	font-weight: 700;
-	border-radius: 6px;
-	text-decoration: none;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	transition: background 0.14s;
-}
-
-.bf-int-card__upgrade:hover {
-	background: #135e96;
-	color: #fff;
 }
 
 /* ── Toggle switch ───────────────────────────────────────────────────────── */

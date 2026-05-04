@@ -12,8 +12,6 @@
 	var nonce     = cfg.nonce     || '';
 	var i18n      = cfg.i18n      || {};
 	var typeDefs  = Array.isArray( cfg.typeDefs ) ? cfg.typeDefs : [];
-	var freeTypes = Array.isArray( cfg.freeTypes ) ? cfg.freeTypes : [];
-	var hasPro    = !! cfg.hasPro;
 
 	// Live connections state — object keyed by conn_id.
 	var connections = ( cfg.connections && typeof cfg.connections === 'object' ) ? $.extend( true, {}, cfg.connections ) : {};

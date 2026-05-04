@@ -182,24 +182,7 @@ class BoldForm_Lite_Shortcode {
 			$form_class .= ' boldform-hide-ph-yes';
 		}
 
-		// Inject per-form custom CSS/JS if set.
-		$custom_css = isset( $form_settings['custom_css'] ) ? trim( $form_settings['custom_css'] ) : '';
-		$custom_js  = isset( $form_settings['custom_js'] )  ? trim( $form_settings['custom_js'] )  : '';
-		$form_uid   = 'boldform-' . $form_id;
-
-		if ( '' !== $custom_css ) {
-			// Scope every rule under the unique form wrapper so it can't bleed out.
-			$scoped_css = preg_replace(
-				'/(?:^|\})(\s*)([^{@][^{]*)(\s*\{)/m',
-				'$1 #' . $form_uid . ' $2$3',
-				$custom_css
-			);
-			wp_add_inline_style( 'boldform-lite-frontend', $scoped_css );
-		}
-
-		if ( '' !== $custom_js ) {
-			wp_add_inline_script( 'boldform-lite-frontend', '(function(){var __f=document.getElementById(' . wp_json_encode( $form_uid ) . ');if(__f){(function(){' . $custom_js . '}).call(__f);}})();' );
-		}
+		$form_uid = 'boldform-' . $form_id;
 
 		// Output buffering keeps the template readable while still returning a shortcode string.
 		ob_start();
@@ -224,70 +207,43 @@ class BoldForm_Lite_Shortcode {
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
 					<?php
-					// Check if this row contains any page_break field.
-					$row_has_page_break = false;
-					if ( ! empty( $row['columns'] ) ) {
-						foreach ( $row['columns'] as $_col ) {
-							foreach ( $_col['fields'] ?? array() as $_f ) {
-								if ( isset( $_f['type'] ) && 'page_break' === $_f['type'] ) {
-									$row_has_page_break = true;
-									break 2;
+					$has_pb  = $this->row_has_page_break( $row );
+					$row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : '';
+
+					if ( $has_pb ) :
+						// Output non-page_break fields as a row, then the marker.
+						$pb_fields = array();
+						$pb_idx    = 0;
+						foreach ( $row['columns'] as $column ) {
+							foreach ( $column['fields'] ?? array() as $field ) {
+								if ( isset( $field['type'] ) && 'page_break' !== $field['type'] ) {
+									$pb_fields[] = array( 'field' => $field, 'idx' => ( $row_index * 100 ) + $pb_idx );
 								}
+								$pb_idx++;
 							}
 						}
-					}
-
-					if ( ! $row_has_page_break ) :
-						// Normal row — render with original layout (preserves multi-column widths).
-						$row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : '';
+						if ( ! empty( $pb_fields ) ) :
 					?>
+					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
+						<div class="boldform-lite-form__column" style="width:100%;">
+							<?php foreach ( $pb_fields as $pbf ) : ?>
+								<?php echo wp_kses( $this->render_field( $pbf['field'], $pbf['idx'] ), $this->get_field_kses_allowed() ); ?>
+							<?php endforeach; ?>
+						</div>
+					</div>
+						<?php endif; ?>
+					<?php echo '<!--boldform-page-break-->'; ?>
+					<?php else : ?>
 					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
 								<?php foreach ( $column['fields'] as $field_index => $field ) : ?>
-									<?php echo $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+									<?php echo wp_kses( $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ), $this->get_field_kses_allowed() ); ?>
 								<?php endforeach; ?>
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<?php else :
-						// Row contains page_break(s). Render field-by-field:
-						// - Non-page_break fields are buffered and flushed as a row.
-						// - page_break outputs the marker between flushed rows.
-						$pb_buffer = array();
-						$pb_field_idx = 0;
-						foreach ( $row['columns'] as $column ) {
-							foreach ( $column['fields'] ?? array() as $field ) {
-								if ( isset( $field['type'] ) && 'page_break' === $field['type'] ) {
-									// Flush buffer as a row if non-empty.
-									if ( ! empty( $pb_buffer ) ) {
-										echo '<div class="boldform-lite-form__row"><div class="boldform-lite-form__column" style="width:100%;">';
-										foreach ( $pb_buffer as $bf ) {
-											echo $this->render_field( $bf['field'], $bf['idx'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-										}
-										echo '</div></div>';
-										$pb_buffer = array();
-									}
-									echo '<!--boldform-page-break-->';
-								} else {
-									$pb_buffer[] = array(
-										'field' => $field,
-										'idx'   => ( $row_index * 100 ) + $pb_field_idx,
-									);
-								}
-								$pb_field_idx++;
-							}
-						}
-						// Flush remaining buffered fields.
-						if ( ! empty( $pb_buffer ) ) {
-							echo '<div class="boldform-lite-form__row"><div class="boldform-lite-form__column" style="width:100%;">';
-							foreach ( $pb_buffer as $bf ) {
-								echo $this->render_field( $bf['field'], $bf['idx'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-							}
-							echo '</div></div>';
-						}
-					endif;
-					?>
+					<?php endif; ?>
 				<?php endforeach; ?>
 			</div>
 			<div style="position:absolute;left:-9999px;" aria-hidden="true">
@@ -299,7 +255,7 @@ class BoldForm_Lite_Shortcode {
 			<input type="hidden" name="boldform_nonce" value="<?php echo esc_attr( wp_create_nonce( 'boldform_lite_submit_form_' . $form_id ) ); ?>">
 			<?php if ( ! $has_submit_field ) : ?>
 			<div class="boldform-lite-form__actions is-align-<?php echo esc_attr( $form_settings['button_alignment'] ); ?>">
-				<button type="submit" class="boldform-lite-form__submit"><?php echo $this->build_button_content( $form_settings ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in build_button_content. ?></button>
+				<button type="submit" class="boldform-lite-form__submit"><?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?></button>
 			</div>
 			<?php endif; ?>
 		</form>
@@ -505,6 +461,7 @@ class BoldForm_Lite_Shortcode {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			// ── Pro: Multi-step (data passthrough for Pro's multi-page module) ───
 			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
 			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
@@ -606,6 +563,26 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 
+		return false;
+	}
+
+	/**
+	 * Checks whether a row contains a page_break field.
+	 *
+	 * @param array<string, mixed> $row Row definition.
+	 * @return bool
+	 */
+	private function row_has_page_break( $row ) {
+		if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+			return false;
+		}
+		foreach ( $row['columns'] as $col ) {
+			foreach ( $col['fields'] ?? array() as $f ) {
+				if ( isset( $f['type'] ) && 'page_break' === $f['type'] ) {
+					return true;
+				}
+			}
+		}
 		return false;
 	}
 
@@ -766,14 +743,6 @@ class BoldForm_Lite_Shortcode {
 			// Fall through to render as a normal field wrapper with file input.
 		}
 
-		if ( 'page_break' === $type ) {
-			return '';
-		}
-
-		// Pro payment field types — render a placeholder that Pro replaces with proper UI.
-		if ( in_array( $type, array( 'product', 'quantity', 'custom_amount', 'order_summary', 'payment', 'order_total' ), true ) ) {
-			return '<div class="boldform-pro-field-placeholder" data-field-id="' . esc_attr( $field_id ) . '" data-field-type="' . esc_attr( $type ) . '"></div>';
-		}
 
 		if ( 'submit' === $type ) {
 			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit">' . $this->build_button_content( $this->current_form_settings ?? array() ) . '</button></div>';
@@ -896,8 +865,11 @@ class BoldForm_Lite_Shortcode {
 		 * @param array<string, mixed> $field       Field definition.
 		 */
 		$cond_attrs = apply_filters( 'boldform_field_conditional_attrs', $cond_attrs, $field );
+		// After the filter, strip any HTML tags to prevent injection; attribute values were
+		// already individually escaped with esc_attr() before the filter was applied.
+		$cond_attrs = wp_strip_all_tags( (string) $cond_attrs );
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -921,7 +893,7 @@ class BoldForm_Lite_Shortcode {
 				 * @param string               $field_name Input name attribute.
 				 * @param array<string, mixed> $field      Full field definition.
 				 */
-				echo apply_filters( 'boldform_field_control_html', $field_control_html, $type, $field_name, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo wp_kses( apply_filters( 'boldform_field_control_html', $field_control_html, $type, $field_name, $field ), $this->get_field_kses_allowed() );
 				?>
 			</div>
 		</div>
@@ -1172,6 +1144,131 @@ class BoldForm_Lite_Shortcode {
 	 * @param string                     $options_layout 'block' or 'inline'.
 	 * @return string
 	 */
+	/**
+	 * Returns the allowed HTML tags and attributes for form field output.
+	 *
+	 * Used with wp_kses() when echoing render_field() or filtered field HTML
+	 * to satisfy WordPress.org escaping requirements while preserving all
+	 * necessary form elements (input, select, textarea, svg, etc.).
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
+	private function get_field_kses_allowed() {
+		$global_attrs = array(
+			'id'            => true,
+			'class'         => true,
+			'style'         => true,
+			'data-*'        => true,
+			'aria-*'        => true,
+			'role'          => true,
+			'tabindex'      => true,
+			'hidden'        => true,
+			'title'         => true,
+			'lang'          => true,
+			'dir'           => true,
+		);
+
+		return array(
+			'div'      => $global_attrs,
+			'span'     => $global_attrs,
+			'p'        => $global_attrs,
+			'label'    => array_merge( $global_attrs, array( 'for' => true ) ),
+			'input'    => array_merge(
+				$global_attrs,
+				array(
+					'type'         => true,
+					'name'         => true,
+					'value'        => true,
+					'placeholder'  => true,
+					'required'     => true,
+					'checked'      => true,
+					'disabled'     => true,
+					'readonly'     => true,
+					'autocomplete' => true,
+					'min'          => true,
+					'max'          => true,
+					'step'         => true,
+					'maxlength'    => true,
+					'accept'       => true,
+					'multiple'     => true,
+				)
+			),
+			'textarea' => array_merge(
+				$global_attrs,
+				array(
+					'name'        => true,
+					'placeholder' => true,
+					'required'    => true,
+					'rows'        => true,
+					'cols'        => true,
+					'readonly'    => true,
+					'disabled'    => true,
+					'maxlength'   => true,
+				)
+			),
+			'select'   => array_merge(
+				$global_attrs,
+				array(
+					'name'     => true,
+					'required' => true,
+					'multiple' => true,
+					'disabled' => true,
+					'size'     => true,
+				)
+			),
+			'option'   => array(
+				'value'    => true,
+				'selected' => true,
+				'disabled' => true,
+			),
+			'optgroup' => array( 'label' => true, 'disabled' => true ),
+			'button'   => array_merge(
+				$global_attrs,
+				array(
+					'type'     => true,
+					'name'     => true,
+					'value'    => true,
+					'disabled' => true,
+				)
+			),
+			'a'        => array_merge( $global_attrs, array( 'href' => true, 'target' => true, 'rel' => true ) ),
+			'strong'   => $global_attrs,
+			'em'       => $global_attrs,
+			'br'       => array(),
+			'ul'       => $global_attrs,
+			'ol'       => $global_attrs,
+			'li'       => $global_attrs,
+			'h1'       => $global_attrs,
+			'h2'       => $global_attrs,
+			'h3'       => $global_attrs,
+			'h4'       => $global_attrs,
+			'h5'       => $global_attrs,
+			'h6'       => $global_attrs,
+			'img'      => array_merge( $global_attrs, array( 'src' => true, 'alt' => true, 'width' => true, 'height' => true ) ),
+			'svg'      => array_merge(
+				$global_attrs,
+				array(
+					'xmlns'           => true,
+					'viewbox'         => true,
+					'fill'            => true,
+					'stroke'          => true,
+					'stroke-width'    => true,
+					'stroke-linecap'  => true,
+					'stroke-linejoin' => true,
+					'width'           => true,
+					'height'          => true,
+					'aria-hidden'     => true,
+				)
+			),
+			'path'     => array( 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
+			'polyline' => array( 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
+			'line'     => array( 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true ),
+			'circle'   => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ),
+			'rect'     => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'fill' => true, 'stroke' => true ),
+			'g'        => array( 'fill' => true, 'stroke' => true, 'transform' => true ),
+		);
+	}
+
 	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
@@ -1541,8 +1638,14 @@ class BoldForm_Lite_Shortcode {
 			return $html;
 		}
 
+		// Unknown/pro field types — return empty so the boldform_field_control_html
+		// filter can provide the markup.  Without Pro the field renders empty.
 		$allowed_input_types = array( 'text', 'email', 'number', 'tel', 'url' );
-		$input_type          = in_array( $type, $allowed_input_types, true ) ? $type : 'text';
+		if ( ! in_array( $type, $allowed_input_types, true ) ) {
+			return '';
+		}
+
+		$input_type = $type;
 
 		return sprintf(
 			'<input id="%1$s" type="%2$s" name="%1$s" placeholder="%3$s" value="%4$s"%5$s>',
@@ -1618,6 +1721,7 @@ class BoldForm_Lite_Shortcode {
 				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
 				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
 				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
+			'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
 			)
 		);
 

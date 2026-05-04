@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bold Form Lite &mdash; Developer Guide</title>
+<style>
+:root{--bf-primary:#0f766e;--bf-dark:#0f172a;--bf-text:#334155;--bf-muted:#64748b;--bf-border:#e2e8f0;--bf-bg:#f8fafc;--bf-code-bg:#f1f5f9;--bf-link:#2563eb;--bf-sidebar-w:260px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--bf-text);line-height:1.7;background:#fff}
+a{color:var(--bf-link);text-decoration:none}
+a:hover{text-decoration:underline}
+.bf-docs{display:flex;min-height:100vh}
+.bf-sidebar{position:fixed;top:0;left:0;width:var(--bf-sidebar-w);height:100vh;overflow-y:auto;background:var(--bf-dark);color:#fff;padding:24px 0;z-index:10}
+.bf-sidebar::-webkit-scrollbar{width:5px}
+.bf-sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.bf-main{margin-left:var(--bf-sidebar-w);flex:1;max-width:900px;padding:40px 48px 80px}
+.bf-sidebar__brand{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.bf-sidebar__brand span{color:var(--bf-primary);font-weight:400}
+.bf-sidebar__group{padding:8px 20px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:8px}
+.bf-sidebar__link{display:block;padding:6px 20px 6px 28px;font-size:13px;color:rgba(255,255,255,.7);transition:all .12s}
+.bf-sidebar__link:hover,.bf-sidebar__link.is-active{background:rgba(255,255,255,.06);color:#fff;text-decoration:none}
+.bf-sidebar__link.is-active{border-left:3px solid var(--bf-primary);padding-left:25px}
+h1{font-size:28px;font-weight:800;color:var(--bf-dark);margin-bottom:8px;letter-spacing:-.03em}
+h2{font-size:22px;font-weight:700;color:var(--bf-dark);margin:48px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--bf-border)}
+h3{font-size:17px;font-weight:700;color:var(--bf-dark);margin:32px 0 10px}
+h4{font-size:14px;font-weight:700;color:var(--bf-dark);margin:20px 0 8px}
+p{margin-bottom:14px}
+.bf-subtitle{font-size:15px;color:var(--bf-muted);margin-bottom:32px}
+ul,ol{margin:0 0 16px 24px}
+li{margin-bottom:6px}
+li ul{margin-top:6px}
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px}
+th,td{padding:10px 14px;text-align:left;border:1px solid var(--bf-border)}
+th{background:var(--bf-bg);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--bf-muted)}
+tr:nth-child(even) td{background:var(--bf-bg)}
+code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;background:var(--bf-code-bg);padding:2px 6px;border-radius:4px;color:#0f172a}
+pre{background:var(--bf-dark);color:#e2e8f0;padding:18px 20px;border-radius:8px;overflow-x:auto;margin:12px 0 20px;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit}
+.bf-tip,.bf-note,.bf-warn{padding:14px 18px;border-radius:8px;margin:16px 0 20px;font-size:13px;line-height:1.6}
+.bf-tip{background:#f0fdfa;border-left:4px solid #0f766e;color:#134e4a}
+.bf-note{background:#eff6ff;border-left:4px solid #3b82f6;color:#1e3a5f}
+.bf-warn{background:#fef3c7;border-left:4px solid #f59e0b;color:#78350f}
+@media(max-width:900px){
+  .bf-sidebar{position:relative;width:100%;height:auto}
+  .bf-main{margin-left:0;padding:24px 20px 60px}
+  .bf-docs{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="bf-docs">
+
+<!-- ─── Sidebar ─────────────────────────────────────────────────────── -->
+<nav class="bf-sidebar">
+  <div class="bf-sidebar__brand">Bold Form <span>Dev Guide</span></div>
+  <div class="bf-sidebar__nav">
+    <div class="bf-sidebar__group">Overview</div>
+    <a href="#introduction" class="bf-sidebar__link">Introduction</a>
+    <a href="#architecture" class="bf-sidebar__link">Architecture</a>
+    <a href="#database" class="bf-sidebar__link">Database Schema</a>
+
+    <div class="bf-sidebar__group">Hooks &amp; Filters</div>
+    <a href="#form-rendering" class="bf-sidebar__link">Form Rendering</a>
+    <a href="#field-types" class="bf-sidebar__link">Custom Field Types</a>
+    <a href="#submission-flow" class="bf-sidebar__link">Submission Flow</a>
+    <a href="#email-hooks" class="bf-sidebar__link">Email Notifications</a>
+    <a href="#builder-hooks" class="bf-sidebar__link">Builder &amp; Admin</a>
+    <a href="#block-elementor" class="bf-sidebar__link">Block &amp; Elementor</a>
+    <a href="#integration-hooks" class="bf-sidebar__link">Integrations</a>
+
+    <div class="bf-sidebar__group">Extending</div>
+    <a href="#add-field-type" class="bf-sidebar__link">Adding a Field Type</a>
+    <a href="#add-integration" class="bf-sidebar__link">Adding an Integration</a>
+    <a href="#add-template" class="bf-sidebar__link">Adding a Template</a>
+    <a href="#custom-validation" class="bf-sidebar__link">Custom Validation</a>
+
+    <div class="bf-sidebar__group">Reference</div>
+    <a href="#css-variables" class="bf-sidebar__link">CSS Variables</a>
+    <a href="#js-events" class="bf-sidebar__link">JavaScript Events</a>
+    <a href="#rest-ajax" class="bf-sidebar__link">AJAX Endpoints</a>
+    <a href="#file-structure" class="bf-sidebar__link">File Structure</a>
+  </div>
+</nav>
+
+<!-- ─── Main Content ───────────────────────────────────────────────── -->
+<main class="bf-main">
+
+<h1 id="introduction">Bold Form Lite &mdash; Developer Guide</h1>
+<p class="bf-subtitle">Extend, customize, and integrate with Bold Form using hooks, filters, and the plugin's architecture.</p>
+
+<p>Bold Form Lite is designed with extensibility in mind. Every major operation &mdash; rendering, saving, validation, email &mdash; passes through WordPress filters and actions. This guide covers the public API surface available to developers.</p>
+
+<!-- Architecture -->
+<h2 id="architecture">Architecture</h2>
+
+<h3>Plugin Bootstrap</h3>
+<p>The plugin initializes on <code>plugins_loaded</code> via a singleton pattern:</p>
+
+<pre><code>// boldform-lite.php
+function boldform_lite() {
+    return BoldForm_Lite::get_instance();
+}
+add_action( 'plugins_loaded', 'boldform_lite' );</code></pre>
+
+<h3>Core Classes</h3>
+<table>
+  <thead><tr><th>Class</th><th>Responsibility</th></tr></thead>
+  <tbody>
+    <tr><td><code>BoldForm_Lite</code></td><td>Singleton, wires all components together</td></tr>
+    <tr><td><code>BoldForm_Lite_Admin</code></td><td>Admin pages, menus, builder, settings, reports</td></tr>
+    <tr><td><code>BoldForm_Lite_Shortcode</code></td><td>Frontend form rendering via <code>[boldform]</code></td></tr>
+    <tr><td><code>BoldForm_Lite_Form_Handler</code></td><td>Submission processing, validation, file uploads</td></tr>
+    <tr><td><code>BoldForm_Lite_Email_Handler</code></td><td>Admin &amp; user email notifications</td></tr>
+    <tr><td><code>BoldForm_Lite_Ajax_Save</code></td><td>AJAX handler for saving forms in the builder</td></tr>
+    <tr><td><code>BoldForm_Lite_Block</code></td><td>Gutenberg block registration &amp; rendering</td></tr>
+    <tr><td><code>BoldForm_Lite_Elementor_Widget</code></td><td>Elementor widget with full styling controls</td></tr>
+    <tr><td><code>BoldForm_Lite_Integrations</code></td><td>Per-form integration dispatch (Mailchimp, Brevo)</td></tr>
+    <tr><td><code>BoldForm_Lite_Integrations_Page</code></td><td>Global integrations admin page &amp; AJAX handlers</td></tr>
+    <tr><td><code>BoldForm_Lite_Export_Import</code></td><td>JSON export &amp; import of forms/entries/settings</td></tr>
+    <tr><td><code>BoldForm_Lite_Activator</code></td><td>Database table creation, multisite support</td></tr>
+  </tbody>
+</table>
+
+<!-- Database Schema -->
+<h2 id="database">Database Schema</h2>
+
+<h3>wp_boldform_forms</h3>
+<pre><code>CREATE TABLE wp_boldform_forms (
+  id            BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  title         VARCHAR(191) NOT NULL,
+  status        VARCHAR(20)  NOT NULL DEFAULT 'draft',   -- draft | publish | trash
+  fields_json   LONGTEXT     NOT NULL,                   -- JSON: { rows: [...] }
+  settings_json LONGTEXT     NULL,                       -- JSON: form settings
+  created_by    BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+  created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY status (status),
+  KEY created_by (created_by)
+);</code></pre>
+
+<h3>wp_boldform_entries</h3>
+<pre><code>CREATE TABLE wp_boldform_entries (
+  id              BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+  form_id         BIGINT(20) UNSIGNED NOT NULL,
+  entry_data_json LONGTEXT     NOT NULL,                 -- JSON: { field_id: value, ... }
+  submission_key  VARCHAR(64)  NULL,                     -- unique submission identifier
+  user_id         BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
+  user_ip         VARCHAR(100) NULL,
+  user_agent      TEXT         NULL,
+  status          VARCHAR(20)  NOT NULL DEFAULT 'unread', -- unread | read | starred
+  created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY form_id (form_id),
+  KEY status (status),
+  KEY created_at (created_at),
+  KEY submission_key (submission_key)
+);</code></pre>
+
+<div class="bf-note"><strong>Multisite:</strong> On multisite, each sub-site gets its own tables (e.g. <code>wp_2_boldform_forms</code>). Tables are created on network activation, new site creation, and via a <code>plugins_loaded</code> safety net.</div>
+
+<!-- Form Rendering Hooks -->
+<h2 id="form-rendering">Form Rendering Hooks</h2>
+
+<h3>boldform_form_output</h3>
+<p>Filter the complete rendered form HTML before output.</p>
+<pre><code>add_filter( 'boldform_form_output', function( $html, $form_id, $form_record, $settings ) {
+    // Wrap form in a custom container
+    return '&lt;div class="my-form-wrapper"&gt;' . $html . '&lt;/div&gt;';
+}, 10, 4 );</code></pre>
+
+<h3>boldform_field_control_html</h3>
+<p>Filter the inner HTML of any field control. This is the primary hook for adding custom field type rendering.</p>
+<pre><code>add_filter( 'boldform_field_control_html', function( $html, $type, $field_name, $field ) {
+    if ( 'my_custom_type' === $type ) {
+        return '&lt;div class="my-field"&gt;Custom field HTML&lt;/div&gt;';
+    }
+    return $html;
+}, 10, 4 );</code></pre>
+
+<table>
+  <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><code>$html</code></td><td>string</td><td>Current control HTML from Lite's renderer</td></tr>
+    <tr><td><code>$type</code></td><td>string</td><td>Field type slug</td></tr>
+    <tr><td><code>$field_name</code></td><td>string</td><td>Input name attribute (e.g. <code>boldform_field_abc</code>)</td></tr>
+    <tr><td><code>$field</code></td><td>array</td><td>Full field definition array</td></tr>
+  </tbody>
+</table>
+
+<h3>boldform_field_conditional_attrs</h3>
+<p>Modify the conditional logic data attributes on field wrappers.</p>
+<pre><code>add_filter( 'boldform_field_conditional_attrs', function( $attrs, $field ) {
+    // Add custom data attributes
+    return $attrs;
+}, 10, 2 );</code></pre>
+
+<h3>boldform_max_file_size</h3>
+<p>Override the maximum file upload size (in MB) per field.</p>
+<pre><code>add_filter( 'boldform_max_file_size', function( $max_mb, $field ) {
+    if ( 'resume' === ( $field['css_class'] ?? '' ) ) {
+        return 10; // Allow 10 MB for resume uploads
+    }
+    return $max_mb;
+}, 10, 2 );</code></pre>
+
+<!-- Custom Field Types -->
+<h2 id="field-types">Custom Field Types</h2>
+
+<h3>boldform_field_library</h3>
+<p>Add new field types to the builder's sidebar library.</p>
+<pre><code>add_filter( 'boldform_field_library', function( $library ) {
+    $library['color_picker'] = array(
+        'label' =&gt; 'Color Picker',
+        'icon'  =&gt; 'dashicons-art',
+        'group' =&gt; 'advanced',
+    );
+    return $library;
+} );</code></pre>
+
+<h3>boldform_builder_field_groups</h3>
+<p>Add new field group headings in the sidebar.</p>
+<pre><code>add_filter( 'boldform_builder_field_groups', function( $groups ) {
+    $groups['custom'] = 'My Custom Fields';
+    return $groups;
+} );</code></pre>
+
+<h3>boldform_allowed_field_types</h3>
+<p>Whitelist your custom field type so it passes save validation.</p>
+<pre><code>add_filter( 'boldform_allowed_field_types', function( $types ) {
+    $types[] = 'color_picker';
+    return $types;
+} );</code></pre>
+
+<h3>boldform_field_extra_keys</h3>
+<p>Persist additional field properties during form save.</p>
+<pre><code>add_filter( 'boldform_field_extra_keys', function( $extra, $field, $field_type ) {
+    if ( 'color_picker' === $field_type ) {
+        $extra['default_color'] = sanitize_hex_color( $field['default_color'] ?? '#000000' );
+    }
+    return $extra;
+}, 10, 3 );</code></pre>
+
+<!-- Submission Flow -->
+<h2 id="submission-flow">Submission Flow Hooks</h2>
+
+<p>The submission lifecycle in order:</p>
+<ol>
+  <li><code>boldform_gate_submission</code> &mdash; accept or reject before validation</li>
+  <li><code>boldform_before_submission</code> &mdash; fires before field validation</li>
+  <li><code>boldform_submission_request</code> &mdash; modify raw request payload</li>
+  <li><code>boldform_entry_data</code> &mdash; mutate validated entry data</li>
+  <li><code>boldform_should_save_entry</code> &mdash; control whether entry is persisted</li>
+  <li><code>boldform_before_entry_save</code> &mdash; last chance before DB insert</li>
+  <li><code>boldform_entry_saved</code> &mdash; after entry inserted</li>
+  <li><code>boldform_entry_created</code> &mdash; entry ID available, triggers integrations</li>
+  <li><code>boldform_submission_result</code> &mdash; filter the final JSON response</li>
+</ol>
+
+<h3>boldform_gate_submission</h3>
+<p>Return a <code>WP_Error</code> to block submission entirely.</p>
+<pre><code>add_filter( 'boldform_gate_submission', function( $result, $form_id, $form_record ) {
+    if ( is_user_logged_in() === false ) {
+        return new WP_Error( 'login_required', 'Please log in to submit this form.' );
+    }
+    return $result;
+}, 10, 3 );</code></pre>
+
+<h3>boldform_entry_data</h3>
+<p>Modify entry data after validation, before saving.</p>
+<pre><code>add_filter( 'boldform_entry_data', function( $data, $form_id ) {
+    $data['submitted_url'] = sanitize_url( wp_get_referer() );
+    return $data;
+}, 10, 2 );</code></pre>
+
+<h3>boldform_should_save_entry</h3>
+<p>Return <code>false</code> to skip saving the entry to the database.</p>
+<pre><code>add_filter( 'boldform_should_save_entry', function( $should_save, $form_id, $entry_data, $form_record, $settings ) {
+    // Don't save entries for a specific form
+    if ( 42 === $form_id ) {
+        return false;
+    }
+    return $should_save;
+}, 10, 5 );</code></pre>
+
+<h3>boldform_entry_created</h3>
+<p>Fires after a new entry is saved. Use this to trigger external actions.</p>
+<pre><code>add_action( 'boldform_entry_created', function( $entry_id, $form_id, $entry_data ) {
+    // Send data to an external API
+    wp_remote_post( 'https://api.example.com/webhook', array(
+        'body' =&gt; wp_json_encode( $entry_data ),
+    ) );
+}, 10, 3 );</code></pre>
+
+<h3>boldform_submission_result</h3>
+<p>Filter the JSON response sent back to the browser.</p>
+<pre><code>add_filter( 'boldform_submission_result', function( $result, $form_id, $entry_id, $entry_data, $form_record, $settings ) {
+    $result['custom_data'] = 'Extra info for JS';
+    return $result;
+}, 10, 6 );</code></pre>
+
+<!-- Email Hooks -->
+<h2 id="email-hooks">Email Notification Hooks</h2>
+
+<h3>Lifecycle</h3>
+<pre><code>boldform_before_notifications  &rarr;  send emails  &rarr;  boldform_after_notifications</code></pre>
+
+<h3>boldform_email_subject_{type}</h3>
+<p>Filter email subjects. Types: <code>admin</code>, <code>user</code>.</p>
+<pre><code>add_filter( 'boldform_email_subject_admin', function( $subject, $form_id, $entry_data ) {
+    return '[Priority] ' . $subject;
+}, 10, 3 );</code></pre>
+
+<h3>boldform_email_message_{type}</h3>
+<p>Filter email body content.</p>
+<pre><code>add_filter( 'boldform_email_message_admin', function( $message, $form_id, $entry_data ) {
+    $message .= "\n\nForm URL: " . get_permalink();
+    return $message;
+}, 10, 3 );</code></pre>
+
+<!-- Builder Hooks -->
+<h2 id="builder-hooks">Builder &amp; Admin Hooks</h2>
+
+<h3>boldform_builder_localize_data</h3>
+<p>Inject data into the builder's JavaScript environment.</p>
+<pre><code>add_filter( 'boldform_builder_localize_data', function( $data ) {
+    $data['myCustomConfig'] = array( 'key' =&gt; 'value' );
+    return $data;
+} );</code></pre>
+
+<h3>boldform_builder_enqueue_assets</h3>
+<p>Enqueue additional scripts/styles for the builder page.</p>
+<pre><code>add_action( 'boldform_builder_enqueue_assets', function() {
+    wp_enqueue_script( 'my-builder-addon', plugin_dir_url( __FILE__ ) . 'addon.js', array( 'jquery' ), '1.0', true );
+} );</code></pre>
+
+<h3>boldform_form_saved</h3>
+<p>Fires after a form is saved via the builder.</p>
+<pre><code>add_action( 'boldform_form_saved', function( $form_id, $data, $is_new ) {
+    if ( $is_new ) {
+        // New form created
+    }
+}, 10, 3 );</code></pre>
+
+<h3>boldform_form_settings_extra</h3>
+<p>Add custom form-level settings to the saved JSON.</p>
+<pre><code>add_filter( 'boldform_form_settings_extra', function( $extra, $settings_payload ) {
+    $extra['my_option'] = sanitize_text_field( $settings_payload['my_option'] ?? '' );
+    return $extra;
+}, 10, 2 );</code></pre>
+
+<h3>boldform_admin_bar_items</h3>
+<p>Add items to the Bold Form admin bar dropdown.</p>
+<pre><code>add_filter( 'boldform_admin_bar_items', function( $items ) {
+    $items[] = array(
+        'id'    =&gt; 'my-addon',
+        'title' =&gt; 'My Addon',
+        'href'  =&gt; admin_url( 'admin.php?page=my-addon' ),
+    );
+    return $items;
+} );</code></pre>
+
+<!-- Block & Elementor -->
+<h2 id="block-elementor">Block &amp; Elementor Hooks</h2>
+
+<h3>boldform_block_attributes</h3>
+<p>Add custom attributes to the Gutenberg block.</p>
+<pre><code>add_filter( 'boldform_block_attributes', function( $attrs ) {
+    $attrs['myCustomColor'] = array( 'type' =&gt; 'string', 'default' =&gt; '' );
+    return $attrs;
+} );</code></pre>
+
+<h3>boldform_block_editor_data</h3>
+<p>Inject data into the block editor JavaScript.</p>
+
+<h3>boldform_block_editor_enqueue</h3>
+<p>Enqueue additional scripts for the block editor.</p>
+
+<h3>boldform_elementor_widget_controls</h3>
+<p>Add custom Elementor widget controls after the default sections.</p>
+
+<!-- Integration Hooks -->
+<h2 id="integration-hooks">Integration Hooks</h2>
+
+<h3>boldform_integration_type_defs</h3>
+<p>Register new integration types with their configuration fields.</p>
+<pre><code>add_filter( 'boldform_integration_type_defs', function( $defs ) {
+    $defs['my_crm'] = array(
+        'type'       =&gt; 'my_crm',
+        'label'      =&gt; 'My CRM',
+        'icon'       =&gt; 'dashicons-admin-users',
+        'color'      =&gt; '#ff6600',
+        'icon_color' =&gt; '#fff',
+        'category'   =&gt; 'crm',
+        'desc'       =&gt; 'Sync contacts with My CRM.',
+        'list_label' =&gt; 'List',
+        'fields'     =&gt; array(
+            array( 'key' =&gt; 'api_key', 'label' =&gt; 'API Key', 'type' =&gt; 'password', 'required' =&gt; true ),
+            array( 'key' =&gt; 'list_id', 'label' =&gt; 'List',    'type' =&gt; 'list_select' ),
+        ),
+    );
+    return $defs;
+} );</code></pre>
+
+<h3>boldform_integration_dispatch_{type}</h3>
+<p>Handle the actual integration dispatch when a form is submitted.</p>
+<pre><code>add_action( 'boldform_integration_dispatch_my_crm', function( $connection, $entry_data, $form_id, $field_map ) {
+    $api_key = $connection['api_key'] ?? '';
+    $email   = $entry_data[ $field_map['email'] ] ?? '';
+
+    wp_remote_post( 'https://api.mycrm.com/contacts', array(
+        'headers' =&gt; array( 'Authorization' =&gt; 'Bearer ' . $api_key ),
+        'body'    =&gt; wp_json_encode( array( 'email' =&gt; $email ) ),
+    ) );
+}, 10, 4 );</code></pre>
+
+<h3>boldform_connection_normalize_fields</h3>
+<p>Sanitize custom connection fields before storage.</p>
+
+<h3>boldform_connection_fetch_lists_{type}</h3>
+<p>Fetch available lists/resources for a connection type (used in settings modal).</p>
+
+<!-- Adding a Field Type -->
+<h2 id="add-field-type">Adding a Field Type (Step by Step)</h2>
+
+<ol>
+  <li><strong>Register in field library</strong> via <code>boldform_field_library</code></li>
+  <li><strong>Whitelist for save</strong> via <code>boldform_allowed_field_types</code></li>
+  <li><strong>Render on frontend</strong> via <code>boldform_field_control_html</code></li>
+  <li><strong>Save extra properties</strong> via <code>boldform_field_extra_keys</code> (optional)</li>
+  <li><strong>Add builder JS data</strong> via <code>boldform_builder_localize_data</code> (optional)</li>
+  <li><strong>Add builder preview</strong> via inline script (optional)</li>
+</ol>
+
+<h3>Minimal Example</h3>
+<pre><code>&lt;?php
+// 1. Add to field library
+add_filter( 'boldform_field_library', function( $lib ) {
+    $lib['color_picker'] = array(
+        'label' =&gt; 'Color Picker',
+        'icon'  =&gt; 'dashicons-art',
+        'group' =&gt; 'advanced',
+    );
+    return $lib;
+} );
+
+// 2. Allow saving
+add_filter( 'boldform_allowed_field_types', function( $types ) {
+    $types[] = 'color_picker';
+    return $types;
+} );
+
+// 3. Render on frontend
+add_filter( 'boldform_field_control_html', function( $html, $type, $name, $field ) {
+    if ( 'color_picker' !== $type ) return $html;
+
+    $default = esc_attr( $field['default_value'] ?? '#000000' );
+    $req     = ! empty( $field['required'] ) ? ' required' : '';
+
+    return '&lt;input type="color" id="' . esc_attr( $name ) . '" name="' . esc_attr( $name ) . '" value="' . $default . '"' . $req . '&gt;';
+}, 10, 4 );</code></pre>
+
+<!-- Adding an Integration -->
+<h2 id="add-integration">Adding an Integration</h2>
+
+<ol>
+  <li>Register the type definition via <code>boldform_integration_type_defs</code></li>
+  <li>Handle dispatch via <code>boldform_integration_dispatch_{type}</code></li>
+  <li>Optionally provide list fetching via <code>boldform_connection_fetch_lists_{type}</code></li>
+  <li>Optionally normalize extra fields via <code>boldform_connection_normalize_fields</code></li>
+</ol>
+
+<!-- Adding a Template -->
+<h2 id="add-template">Adding a Template</h2>
+
+<p>Inject templates via the builder localize data:</p>
+<pre><code>add_filter( 'boldform_builder_localize_data', function( $data ) {
+    $data['proTemplates']['my_template'] = array(
+        'title'       =&gt; 'My Custom Template',
+        'description' =&gt; 'A specialized form for...',
+        'rows'        =&gt; array(
+            array( 'columns' =&gt; array(
+                array( 'width' =&gt; '100%', 'fields' =&gt; array(
+                    array( 'type' =&gt; 'text',  'label' =&gt; 'Full Name', 'required' =&gt; true ),
+                    array( 'type' =&gt; 'email', 'label' =&gt; 'Email',     'required' =&gt; true ),
+                ) ),
+            ) ),
+        ),
+    );
+    return $data;
+} );</code></pre>
+
+<!-- Custom Validation -->
+<h2 id="custom-validation">Custom Validation</h2>
+
+<p>Use <code>boldform_gate_submission</code> for form-level validation, or <code>boldform_entry_data</code> for field-level checks:</p>
+
+<pre><code>add_filter( 'boldform_gate_submission', function( $result, $form_id ) {
+    if ( 5 === $form_id ) {
+        $age = absint( $_POST['boldform_field_age'] ?? 0 );
+        if ( $age &lt; 18 ) {
+            return new WP_Error( 'age_check', 'You must be 18 or older.' );
+        }
+    }
+    return $result;
+}, 10, 2 );</code></pre>
+
+<!-- CSS Variables -->
+<h2 id="css-variables">CSS Custom Properties</h2>
+
+<p>Bold Form uses CSS variables on the <code>.boldform-lite-form</code> element. Override these in your theme:</p>
+
+<pre><code>/* Field styling */
+--bf-field-padding-y: 10px;
+--bf-field-padding-x: 14px;
+--bf-field-border-width: 1.5px;
+--bf-field-border-style: solid;
+--bf-field-border: #d1d5db;
+--bf-field-radius: 8px;
+--bf-field-bg: #fff;
+--bf-field-text: #111827;
+--bf-field-font-size: 14px;
+
+/* Focus state */
+--bf-focus-color: #0f766e;
+
+/* Error state */
+--bf-error-color: #dc2626;
+--bf-required-color: var(--bf-error-color);
+
+/* Button */
+--bf-button-padding-y: 10px;
+--bf-button-padding-x: 24px;
+--bf-button-radius: 6px;
+--bf-button-bg: #2f80ed;
+--bf-button-text: #fff;
+--bf-button-font-size: 14px;
+
+/* Gutenberg block overrides (on .boldform-block-wrap) */
+--bfb-form-max-width, --bfb-form-padding, --bfb-form-bg
+--bfb-label-color, --bfb-label-font-size
+--bfb-field-height, --bfb-field-padding, --bfb-field-bg, --bfb-field-text
+--bfb-field-border-width, --bfb-field-border-color, --bfb-field-radius
+--bfb-focus-color, --bfb-focus-bg
+--bfb-btn-padding, --bfb-btn-bg, --bfb-btn-text, --bfb-btn-hover-bg, --bfb-btn-radius
+--bfb-error-color, --bfb-required-color</code></pre>
+
+<!-- JavaScript Events -->
+<h2 id="js-events">JavaScript Events</h2>
+
+<table>
+  <thead><tr><th>Event</th><th>Trigger</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr><td><code>boldform:form_rendered</code></td><td>document</td><td><code>$form</code> jQuery element</td></tr>
+    <tr><td><code>boldform:before_save</code></td><td>document</td><td><code>formSettings</code> object (builder)</td></tr>
+    <tr><td><code>boldform:total_updated</code></td><td>form element</td><td><code>{ total, display }</code> (payment calc)</td></tr>
+  </tbody>
+</table>
+
+<!-- AJAX Endpoints -->
+<h2 id="rest-ajax">AJAX Endpoints</h2>
+
+<table>
+  <thead><tr><th>Action</th><th>Purpose</th><th>Auth</th></tr></thead>
+  <tbody>
+    <tr><td><code>boldform_lite_submit_form</code></td><td>Form submission</td><td>Public (nopriv)</td></tr>
+    <tr><td><code>boldform_lite_save_form</code></td><td>Save form in builder</td><td>Admin only</td></tr>
+    <tr><td><code>boldform_save_connection</code></td><td>Save integration connection</td><td>Admin only</td></tr>
+    <tr><td><code>boldform_delete_connection</code></td><td>Delete integration connection</td><td>Admin only</td></tr>
+    <tr><td><code>boldform_toggle_connection</code></td><td>Enable/disable connection</td><td>Admin only</td></tr>
+    <tr><td><code>boldform_test_connection</code></td><td>Test integration &amp; fetch lists</td><td>Admin only</td></tr>
+    <tr><td><code>boldform_fetch_lists</code></td><td>Fetch lists for saved connection</td><td>Admin only</td></tr>
+  </tbody>
+</table>
+
+<!-- File Structure -->
+<h2 id="file-structure">File Structure</h2>
+
+<pre><code>boldform-lite/
+  boldform-lite.php          # Plugin bootstrap
+  uninstall.php              # Cleanup on uninstall
+  readme.txt                 # WordPress.org readme
+
+  admin/
+    class-boldform-lite-admin.php             # Admin pages, menus, builder data
+    admin-builder.php                         # Builder page template
+    ajax-save.php                             # AJAX form save handler
+    class-boldform-lite-export-import.php     # Export/import tools
+    class-boldform-lite-integrations-page.php # Integrations admin page
+
+  includes/
+    class-boldform-lite.php                   # Main plugin class (singleton)
+    class-boldform-lite-activator.php         # Activation &amp; table creation
+    class-boldform-lite-loader.php            # Hook registration helper
+    class-boldform-lite-email-handler.php     # Email notification handler
+    class-boldform-lite-integrations.php      # Per-form integration dispatch
+
+  public/
+    class-boldform-lite-shortcode.php         # Shortcode rendering
+    class-boldform-lite-form-handler.php      # Submission processing
+    class-boldform-lite-block.php             # Gutenberg block
+    class-boldform-lite-elementor.php         # Elementor bootstrap
+    class-boldform-lite-elementor-widget.php  # Elementor widget
+
+  assets/
+    css/
+      frontend.css      # Frontend form styles
+      builder.css       # Admin builder styles
+      settings.css      # Admin settings/entries/reports styles
+      integrations.css  # Per-form integrations panel
+      integrations-page.css  # Global integrations page
+    js/
+      frontend.js       # Frontend form logic (AJAX, validation, pickers)
+      builder.js        # Admin builder logic
+      block-form.js     # Gutenberg block editor script
+      integrations.js   # Per-form integrations panel
+      integrations-page.js  # Global integrations page
+      flatpickr.min.js  # Date/time picker library
+      sortable.js       # Drag &amp; drop library
+
+  languages/
+    boldform-lite.pot   # Translation template
+
+  docs/
+    user-guide.html     # User documentation
+    developer-guide.html  # This file</code></pre>
+
+<hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
+<p style="font-size:13px;color:var(--bf-muted)">Bold Form Lite v1.0.0 &mdash; Developer Guide &mdash; &copy; Themewant</p>
+
+</main>
+</div>
+
+<script>
+(function(){
+  var links=document.querySelectorAll('.bf-sidebar__link');
+  var sections=[];
+  links.forEach(function(l){var h=l.getAttribute('href');if(h&&h.charAt(0)==='#'){var el=document.getElementById(h.slice(1));if(el)sections.push({link:l,el:el})}});
+  function update(){var st=window.scrollY+80;sections.forEach(function(s){s.link.classList.remove('is-active')});for(var i=sections.length-1;i>=0;i--){if(sections[i].el.offsetTop<=st){sections[i].link.classList.add('is-active');break}}}
+  window.addEventListener('scroll',update);update();
+})();
+</script>
+
+</body>
+</html>

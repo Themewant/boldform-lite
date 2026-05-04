@@ -4,8 +4,7 @@
  *
  * Unified integrations list — each service is a row with toggle + settings.
  * Free: Mailchimp, Brevo (fully configurable).
- * Pro:  ActiveCampaign, ConvertKit, HubSpot, Google Sheets, Slack
- *       (shown with "Upgrade" badge; functional when Pro active).
+
  *
  * Connections stored in wp_options under `boldform_connections` keyed by type.
  *
@@ -140,8 +139,6 @@ class BoldForm_Lite_Integrations_Page {
 				'nonce'       => wp_create_nonce( 'boldform_integration_nonce' ),
 				'connections' => (object) $connections, // keyed by type or conn_id
 				'typeDefs'    => array_values( $this->get_type_defs() ),
-				'freeTypes'   => self::FREE_TYPES,
-				'hasPro'      => (bool) apply_filters( 'boldform_has_pro', false ),
 				'i18n'        => array(
 					'save'           => __( 'Save', 'boldform-lite' ),
 					'saving'         => __( 'Saving…', 'boldform-lite' ),
@@ -156,7 +153,6 @@ class BoldForm_Lite_Integrations_Page {
 					'testFail'       => __( 'Connection failed: ', 'boldform-lite' ),
 					'saved'          => __( 'Saved.', 'boldform-lite' ),
 					'errRequired'    => __( 'API Key is required.', 'boldform-lite' ),
-					'upgradeTo'      => __( 'Upgrade to Pro', 'boldform-lite' ),
 				),
 			)
 		);
@@ -175,7 +171,6 @@ class BoldForm_Lite_Integrations_Page {
 		$active_tab  = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$active_tab  = in_array( $active_tab, array( 'all', 'newsletter', 'crm', 'productivity', 'automation', 'messaging', 'storage' ), true ) ? $active_tab : 'all';
 		$type_defs   = $this->get_type_defs();
-		$has_pro     = (bool) apply_filters( 'boldform_has_pro', false );
 		$connections = $this->get_all_connections();
 		?>
 		<?php $this->render_topbar(); ?>
@@ -215,23 +210,22 @@ class BoldForm_Lite_Integrations_Page {
 						continue;
 					}
 
-					$is_free  = in_array( $type, self::FREE_TYPES, true );
-					$is_pro   = ! $is_free;
-					$locked   = $is_pro && ! $has_pro;
-					$conn     = null;
+					$is_static = ! empty( $def['pro'] );
+					$conn      = null;
 
-					foreach ( $connections as $c ) {
-						if ( ( $c['type'] ?? '' ) === $type ) {
-							$conn = $c;
-							break;
+					if ( ! $is_static ) {
+						foreach ( $connections as $c ) {
+							if ( ( $c['type'] ?? '' ) === $type ) {
+								$conn = $c;
+								break;
+							}
 						}
 					}
 
 					$is_on = $conn && 'active' === ( $conn['status'] ?? 'inactive' );
 				?>
-					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?><?php echo $locked ? ' is-locked' : ''; ?>"
-						 data-type="<?php echo esc_attr( $type ); ?>"
-						 data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"
+					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?>"
+						 <?php if ( ! $is_static ) : ?>data-type="<?php echo esc_attr( $type ); ?>" data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"<?php endif; ?>
 						 style="--bf-svc-color:<?php echo esc_attr( $def['color'] ); ?>">
 
 						<div class="bf-int-card__icon" style="background:<?php echo esc_attr( $def['color'] ); ?>">
@@ -242,10 +236,8 @@ class BoldForm_Lite_Integrations_Page {
 						<span class="bf-int-card__desc"><?php echo esc_html( $def['desc'] ?? '' ); ?></span>
 
 						<div class="bf-int-card__actions">
-							<?php if ( $locked ) : ?>
-								<a href="https://boldform.dev/pro" target="_blank" class="bf-int-card__upgrade">
-									<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
-								</a>
+							<?php if ( $is_static ) : ?>
+								<span class="bf-int-card__pro-note"><?php esc_html_e( 'Available in BoldForm Pro', 'boldform-lite' ); ?></span>
 							<?php else : ?>
 								<label class="bf-int-toggle" title="<?php echo $is_on ? esc_attr__( 'Disable', 'boldform-lite' ) : esc_attr__( 'Enable', 'boldform-lite' ); ?>">
 									<input type="checkbox" class="bf-toggle-input" data-type="<?php echo esc_attr( $type ); ?>"<?php echo $is_on ? ' checked' : ''; ?>>
@@ -304,7 +296,7 @@ class BoldForm_Lite_Integrations_Page {
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
 				<span class="dashicons dashicons-feedback"></span>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">
@@ -424,7 +416,7 @@ class BoldForm_Lite_Integrations_Page {
 					array( 'key' => 'tags',    'label' => 'Tags',         'type' => 'text',     'placeholder' => 'subscriber' ),
 				),
 			),
-			// Pro types — always shown, locked unless Pro is active. Fields injected by Pro via filter.
+			// Additional types — shown as static cards. Pro replaces with functional entries via filter.
 			// ── Newsletter ──
 			'activecampaign' => array(
 				'type'       => 'activecampaign',
@@ -436,6 +428,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add contacts and apply tags in ActiveCampaign.', 'boldform-lite' ),
 				'list_label' => __( 'List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'convertkit' => array(
 				'type'       => 'convertkit',
@@ -447,6 +440,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Subscribe to a Kit form or sequence.', 'boldform-lite' ),
 				'list_label' => __( 'Form', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'aweber' => array(
 				'type'       => 'aweber',
@@ -458,6 +452,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add subscribers to an AWeber list.', 'boldform-lite' ),
 				'list_label' => __( 'List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'getresponse' => array(
 				'type'       => 'getresponse',
@@ -469,6 +464,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add contacts to a GetResponse campaign.', 'boldform-lite' ),
 				'list_label' => __( 'Campaign', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'mailerlite' => array(
 				'type'       => 'mailerlite',
@@ -480,6 +476,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add subscribers to a MailerLite group.', 'boldform-lite' ),
 				'list_label' => __( 'Group', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── CRM & Apps ──
 			'hubspot' => array(
@@ -492,6 +489,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create or update HubSpot CRM contacts.', 'boldform-lite' ),
 				'list_label' => __( 'Portal', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'zoho' => array(
 				'type'       => 'zoho',
@@ -503,6 +501,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Push leads and contacts to Zoho CRM.', 'boldform-lite' ),
 				'list_label' => __( 'Module', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'helpscout' => array(
 				'type'       => 'helpscout',
@@ -514,6 +513,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create conversations in Help Scout.', 'boldform-lite' ),
 				'list_label' => __( 'Mailbox', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'fluentcrm' => array(
 				'type'       => 'fluentcrm',
@@ -525,6 +525,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add contacts and tags in FluentCRM.', 'boldform-lite' ),
 				'list_label' => __( 'List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'googlesheets' => array(
 				'type'       => 'googlesheets',
@@ -536,6 +537,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Append each submission as a new row.', 'boldform-lite' ),
 				'list_label' => __( 'Spreadsheet', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'dropbox' => array(
 				'type'       => 'dropbox',
@@ -547,6 +549,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Upload file submissions to Dropbox.', 'boldform-lite' ),
 				'list_label' => __( 'Folder', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'slack' => array(
 				'type'       => 'slack',
@@ -558,6 +561,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Post a notification to a Slack channel.', 'boldform-lite' ),
 				'list_label' => __( 'Channel', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── Newsletter (new) ──
 			'constantcontact' => array(
@@ -570,6 +574,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add contacts to a Constant Contact list.', 'boldform-lite' ),
 				'list_label' => __( 'List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'drip' => array(
 				'type'       => 'drip',
@@ -581,6 +586,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Subscribe to a Drip campaign.', 'boldform-lite' ),
 				'list_label' => __( 'Campaign', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'moosend' => array(
 				'type'       => 'moosend',
@@ -592,6 +598,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add subscribers to a Moosend mailing list.', 'boldform-lite' ),
 				'list_label' => __( 'Mailing List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── CRM (new) ──
 			'salesforce' => array(
@@ -604,6 +611,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create leads or contacts in Salesforce.', 'boldform-lite' ),
 				'list_label' => __( 'Object', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'pipedrive' => array(
 				'type'       => 'pipedrive',
@@ -615,6 +623,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create deals and contacts in Pipedrive.', 'boldform-lite' ),
 				'list_label' => __( 'Pipeline', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'freshsales' => array(
 				'type'       => 'freshsales',
@@ -626,6 +635,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create leads in Freshsales CRM.', 'boldform-lite' ),
 				'list_label' => __( 'View', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'monday' => array(
 				'type'       => 'monday',
@@ -637,6 +647,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create items on a Monday.com board.', 'boldform-lite' ),
 				'list_label' => __( 'Board', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── Productivity ──
 			'notion' => array(
@@ -649,6 +660,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Add entries to a Notion database.', 'boldform-lite' ),
 				'list_label' => __( 'Database', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'airtable' => array(
 				'type'       => 'airtable',
@@ -660,6 +672,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create records in an Airtable base.', 'boldform-lite' ),
 				'list_label' => __( 'Table', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'trello' => array(
 				'type'       => 'trello',
@@ -671,6 +684,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create cards on a Trello board.', 'boldform-lite' ),
 				'list_label' => __( 'List', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'asana' => array(
 				'type'       => 'asana',
@@ -682,6 +696,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Create tasks in an Asana project.', 'boldform-lite' ),
 				'list_label' => __( 'Project', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── Automation ──
 			'zapier' => array(
@@ -694,6 +709,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Trigger a Zapier webhook on submission.', 'boldform-lite' ),
 				'list_label' => __( 'Zap', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'make' => array(
 				'type'       => 'make',
@@ -705,6 +721,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Trigger a Make scenario via webhook.', 'boldform-lite' ),
 				'list_label' => __( 'Scenario', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'pabbly' => array(
 				'type'       => 'pabbly',
@@ -716,6 +733,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Trigger a Pabbly Connect workflow.', 'boldform-lite' ),
 				'list_label' => __( 'Workflow', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── Messaging ──
 			'discord' => array(
@@ -728,6 +746,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Post notifications to a Discord channel.', 'boldform-lite' ),
 				'list_label' => __( 'Channel', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'telegram' => array(
 				'type'       => 'telegram',
@@ -739,6 +758,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Send messages to a Telegram chat.', 'boldform-lite' ),
 				'list_label' => __( 'Chat', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			'msteams' => array(
 				'type'       => 'msteams',
@@ -750,6 +770,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Post notifications to a Teams channel.', 'boldform-lite' ),
 				'list_label' => __( 'Channel', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 			// ── Storage ──
 			'googledrive' => array(
@@ -762,6 +783,7 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Upload file submissions to Google Drive.', 'boldform-lite' ),
 				'list_label' => __( 'Folder', 'boldform-lite' ),
 				'fields'     => array(),
+				'pro'        => true,
 			),
 		);
 
@@ -781,11 +803,13 @@ class BoldForm_Lite_Integrations_Page {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$data = isset( $_POST['connection'] ) ? (array) wp_unslash( $_POST['connection'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$data = isset( $_POST['connection'] ) ? map_deep( wp_unslash( $_POST['connection'] ), 'sanitize_text_field' ) : array();
 
 		if ( empty( $data['type'] ) ) {
 			wp_send_json_error( array( 'message' => __( 'Type is required.', 'boldform-lite' ) ) );
 		}
+
+		$data['type'] = sanitize_key( $data['type'] );
 
 		// Use type label as default name.
 		if ( empty( $data['name'] ) ) {
@@ -863,7 +887,7 @@ class BoldForm_Lite_Integrations_Page {
 
 		$type    = isset( $_POST['type'] )    ? sanitize_key( wp_unslash( $_POST['type'] ) )           : '';
 		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
-		$extra   = isset( $_POST['extra'] )   ? (array) wp_unslash( $_POST['extra'] )                  : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$extra = isset( $_POST['extra'] ) ? map_deep( wp_unslash( $_POST['extra'] ), 'sanitize_text_field' ) : array();
 
 		$result = $this->fetch_lists_for_type( $type, $api_key, $extra );
 

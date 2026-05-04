@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'page_break', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -86,14 +86,6 @@ jQuery(
 				enable_admin_email: ! settings || typeof settings.enable_admin_email === 'undefined' ? true : !! settings.enable_admin_email,
 				enable_user_email: ! settings || typeof settings.enable_user_email === 'undefined' ? true : !! settings.enable_user_email,
 				admin_email: adminEmail,
-				step_progress_style: settings && settings.step_progress_style ? settings.step_progress_style : 'bar',
-				step_progress_color: settings && settings.step_progress_color ? settings.step_progress_color : '',
-				step_btn_color: settings && settings.step_btn_color ? settings.step_btn_color : '',
-				step_btn_text_color: settings && settings.step_btn_text_color ? settings.step_btn_text_color : '',
-				step_btn_size: settings && settings.step_btn_size ? settings.step_btn_size : 'medium',
-				step_btn_radius: settings && settings.step_btn_radius !== '' && typeof settings.step_btn_radius !== 'undefined' ? Number( settings.step_btn_radius ) : '',
-				step_next_text: settings && settings.step_next_text ? settings.step_next_text : 'Next',
-				step_prev_text: settings && settings.step_prev_text ? settings.step_prev_text : 'Previous',
 				design_theme: settings && settings.design_theme ? settings.design_theme : '',
 				hide_labels: false,
 				hide_placeholders: false,
@@ -101,8 +93,6 @@ jQuery(
 				dup_method:   settings && settings.dup_method   ? settings.dup_method   : 'email',
 				dup_field_id: settings && settings.dup_field_id ? settings.dup_field_id : '',
 				dup_message:  settings && settings.dup_message  ? settings.dup_message  : '',
-				custom_css:   settings && typeof settings.custom_css !== 'undefined' ? settings.custom_css : '',
-				custom_js:    settings && typeof settings.custom_js  !== 'undefined' ? settings.custom_js  : '',
 			};
 		}
 
@@ -142,14 +132,14 @@ jQuery(
 				slider_color: '',
 				slider_height: '',
 				step_title: '',
-				next_text: 'page_break' === type ? 'Next' : '',
-				prev_text: 'page_break' === type ? 'Previous' : '',
+				next_text: '',
+				prev_text: '',
 				btn_color: '',
 				btn_text_color: '',
-				btn_size: 'page_break' === type ? 'medium' : '',
+				btn_size: '',
 				btn_radius: '',
 				progress_color: '',
-				progress_style: 'page_break' === type ? 'bar' : '',
+				progress_style: '',
 				product_options: 'product' === type ? [ { label: 'Option 1', price: '10.00' } ] : [],
 				product_style: 'product' === type ? 'radio' : '',
 				linked_product: 'quantity' === type ? '' : '',
@@ -987,8 +977,6 @@ jQuery(
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
 				return '<div class="boldform-canvas-submit is-inline"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
-			} else if ( field.type === 'page_break' ) {
-				html = '<div class="boldform-canvas-page-break"><span class="dashicons dashicons-layout"></span> ' + escapeHtml( field.label || 'Page Break' ) + ( field.step_title ? ' — <em>' + escapeHtml( field.step_title ) + '</em>' : '' ) + '</div>';
 			} else if ( field.type === 'product' ) {
 				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
 				if ( 'select' === field.product_style ) {
@@ -1037,7 +1025,7 @@ jQuery(
 				html += '</tbody>';
 				html += '<tfoot style="background:#f9fafb;border-top:2px solid #e5e7eb;"><tr><td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600;">Order Total</td><td style="padding:10px 12px;text-align:right;font-weight:700;font-size:15px;">$' + osTotal.toFixed(2) + '</td></tr></tfoot>';
 				html += '</table>';
-				html += '<div style="padding:10px 12px;background:#f8fafc;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;"><span class="dashicons dashicons-lock" style="font-size:14px;"></span> Gateway configured in <strong>Pro → Payment Settings</strong></div>';
+				html += '';
 				html += '</div>';
 				return html;
 			} else if ( field.type === 'section_break' ) {
@@ -2059,21 +2047,6 @@ jQuery(
 							'<textarea id="boldform-setting-description" rows="4">' + escapeHtml( selected.field.description || '' ) + '</textarea>' +
 						'</div>' : ''
 					) +
-					( 'page_break' === selected.field.type ?
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-step-title">Step Title</label>' +
-							'<input type="text" id="boldform-setting-step-title" value="' + escapeHtml( selected.field.step_title || '' ) + '" placeholder="e.g. Billing Information">' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-step-progress-style-field">Progress Style</label>' +
-							'<select id="boldform-step-progress-style-field">' +
-								'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
-								'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Dots</option>' +
-								'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Headings</option>' +
-							'</select>' +
-						'</div>' +
-						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">More multi-step options in <strong>Style</strong> tab → <strong>Multi-Step</strong>.</p>' : ''
-					) +
 					( 'terms_conditions' === selected.field.type ?
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-content">' + escapeHtml( boldformLiteBuilder.labels.termsContent || 'Terms text' ) + '</label>' +
@@ -2151,10 +2124,10 @@ jQuery(
 							'<label for="boldform-setting-amount-default">Default Amount</label>' +
 							'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '0.00' ) + '" min="0" step="0.01" placeholder="0.00">' +
 						'</div>' +
-						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">User enters their own amount. Gateway configured in <strong>Pro → Payment Settings</strong>.</p>'
+						''
 					: '' ) +
 					( 'order_summary' === selected.field.type ?
-						'<p class="description" style="color:#9ca3af;font-size:12px;margin:4px 0 0">Displays a live order breakdown of all payment fields above, plus the gateway checkout UI. Gateway configured in <strong>Pro → Payment Settings</strong>.</p>'
+						''
 					: '' ) +
 					( 'calculation' === selected.field.type ? ( function () {
 						var calcField   = selected.field;
@@ -2857,10 +2830,6 @@ jQuery(
 			// Map focus color to nearest named value for build_form_style_variables
 			var focusMap = { '#2f80ed': 'blue', '#2563eb': 'blue', '#0f766e': '', '#16a34a': 'green', '#334155': 'dark' };
 			state.formSettings.field_focus_color = focusMap[ theme.focus ] || '';
-			// Also store direct hex for step progress
-			state.formSettings.step_progress_color = theme.primary;
-			state.formSettings.step_btn_color = theme.btnBg;
-			state.formSettings.step_btn_text_color = theme.btnText;
 			renderAll();
 		}
 
@@ -2941,53 +2910,7 @@ jQuery(
 						'</div>' +
 					'</div>' +
 				'</div>' +
-				'<div class="boldform-style-section">' +
-					'<div class="boldform-style-section__head"><h3>Multi-Step</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
-					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-step-progress-style">Progress Style</label>' +
-								'<select id="boldform-step-progress-style">' +
-									'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
-									'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Dots</option>' +
-									'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Step Headings</option>' +
-								'</select>' +
-							'</div>' +
-							'<div class="boldform-setting-group"><label for="boldform-step-btn-size">Button Size</label>' +
-								'<select id="boldform-step-btn-size">' +
-									'<option value="small"' + ( 'small' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Small</option>' +
-									'<option value="medium"' + ( 'medium' === ( state.formSettings.step_btn_size || 'medium' ) ? ' selected' : '' ) + '>Medium</option>' +
-									'<option value="large"' + ( 'large' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Large</option>' +
-								'</select>' +
-							'</div>' +
-							'<div class="boldform-setting-group"><label for="boldform-step-btn-radius">Button Radius</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-step-btn-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.step_btn_radius ) + '"><span>px</span></div></div>' +
-						'</div>' +
-						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-step-next-text">Next Text</label><input type="text" id="boldform-step-next-text" value="' + escapeHtml( state.formSettings.step_next_text || 'Next' ) + '"></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-step-prev-text">Previous Text</label><input type="text" id="boldform-step-prev-text" value="' + escapeHtml( state.formSettings.step_prev_text || 'Previous' ) + '"></div>' +
-						'</div>' +
-						'<div class="boldform-style-color-grid">' +
-							colorField( 'boldform-step-progress-color', 'Progress Color', state.formSettings.step_progress_color, '#2f80ed' ) +
-							colorField( 'boldform-step-btn-color', 'Button Background', state.formSettings.step_btn_color, '#2f80ed' ) +
-							colorField( 'boldform-step-btn-text-color', 'Button Text', state.formSettings.step_btn_text_color, '#ffffff' ) +
-						'</div>' +
-					'</div>' +
-				'</div>' +
-
-				'<div class="boldform-style-section">' +
-					'<div class="boldform-style-section__head"><h3>Custom Code</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
-					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-custom-css">Custom CSS</label>' +
-							'<p class="boldform-custom-code-hint">Applies only to this form. Use <code>.boldform-wrap</code> as the root selector.</p>' +
-							'<textarea id="boldform-custom-css" class="boldform-custom-code-editor" rows="6" spellcheck="false" placeholder=".boldform-wrap .boldform-lite-form__field {\n  /* your styles */\n}">' + escapeHtml( state.formSettings.custom_css || '' ) + '</textarea>' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-custom-js">Custom JS</label>' +
-							'<p class="boldform-custom-code-hint">Runs after the form renders. <code>this</code> is the form element.</p>' +
-							'<textarea id="boldform-custom-js" class="boldform-custom-code-editor" rows="6" spellcheck="false" placeholder="// document.querySelector(\'.boldform-wrap\')...">' + escapeHtml( state.formSettings.custom_js || '' ) + '</textarea>' +
-						'</div>' +
-					'</div>' +
-				'</div>'
+				''
 			);
 		}
 
@@ -3072,8 +2995,7 @@ jQuery(
 
 		function getAllTemplateDefinitions() {
 			var lite = getTemplateDefinitions();
-			// Pro templates are pre-built JS structures passed via boldformLiteBuilder.proTemplates.
-			// They have pro:true so the modal can gate them without any trialware logic.
+			// Additional templates can be added via boldformLiteBuilder.proTemplates.
 			var pro = ( boldformLiteBuilder.proTemplates && typeof boldformLiteBuilder.proTemplates === 'object' )
 				? boldformLiteBuilder.proTemplates
 				: {};
@@ -3086,11 +3008,6 @@ jQuery(
 
 			if ( ! template ) {
 				openRowModal();
-				return;
-			}
-
-			// Pro template — not available without Pro active.
-			if ( template.pro && ! boldformLiteBuilder.hasPro ) {
 				return;
 			}
 
@@ -3128,17 +3045,13 @@ jQuery(
 			lead: 'business', support: 'business', order_form: 'business',
 			event_rsvp: 'events', booking: 'events',
 			job_application: 'hr_survey', customer_survey: 'hr_survey',
-			// Pro templates — added via boldformLiteBuilder.proTemplates
-			payment_order: 'payment', donation_form: 'payment', service_calculator: 'payment',
-			multi_step_registration: 'multi_step', multi_step_survey: 'multi_step', multi_step_booking: 'multi_step'
+			// Additional template category mappings can be added dynamically.
 		};
 
 		function renderTemplateModal() {
 			var templates = getAllTemplateDefinitions();
-			var hasPro = !! boldformLiteBuilder.hasPro;
 
-			// Default selected key — skip pro-locked templates when Pro is absent.
-			var selectedKey = ( templates[ state.selectedTemplate ] && ( ! templates[ state.selectedTemplate ].pro || hasPro ) )
+			var selectedKey = templates[ state.selectedTemplate ]
 				? state.selectedTemplate
 				: 'contact';
 			var selectedTemplate = templates[ selectedKey ];
@@ -3160,69 +3073,41 @@ jQuery(
 				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] ) + '</div>';
 				grouped[ cat ].forEach( function ( key ) {
 					var tpl = templates[ key ];
-					var isProLocked = tpl.pro && ! hasPro;
 					var isActive = key === selectedKey;
 					listMarkup += '<button type="button" class="boldform-template-option' +
 						( isActive ? ' is-active' : '' ) +
-						( isProLocked ? ' is-pro-locked' : '' ) +
 						'" data-template-option="' + escapeHtml( key ) + '">';
 					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
-					if ( isProLocked ) {
-						listMarkup += '<span class="boldform-tpl-pro-badge">Pro</span>';
-					}
 					listMarkup += '</button>';
 				} );
 				listMarkup += '</div>';
 			} );
 
-			// Preview pane — show lock screen for pro-locked templates.
-			var isSelectedProLocked = selectedTemplate.pro && ! hasPro;
-
-			if ( isSelectedProLocked ) {
-				previewMarkup = '<div class="boldform-tpl-pro-gate">' +
-					'<div class="boldform-tpl-pro-gate__icon">&#128274;</div>' +
-					'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
-					'<p>' + escapeHtml( selectedTemplate.description ) + '</p>' +
-					'<div class="boldform-tpl-pro-gate__msg">This template requires <strong>BoldForm Pro</strong>.</div>' +
-				'</div>';
-			} else {
-				selectedTemplate.rows.forEach( function ( row ) {
-					previewMarkup += '<div class="boldform-template-preview-row">';
-					row.columns.forEach( function ( column ) {
-						previewMarkup += '<div class="boldform-template-preview-column" style="width:' + escapeHtml( column.width ) + ';">';
-						column.fields.forEach( function ( field ) {
-							previewMarkup += '<div class="boldform-template-preview-field">';
-							previewMarkup += renderInputPreview( field );
-							previewMarkup += '</div>';
-						} );
+			selectedTemplate.rows.forEach( function ( row ) {
+				previewMarkup += '<div class="boldform-template-preview-row">';
+				row.columns.forEach( function ( column ) {
+					previewMarkup += '<div class="boldform-template-preview-column" style="width:' + escapeHtml( column.width ) + ';">';
+					column.fields.forEach( function ( field ) {
+						previewMarkup += '<div class="boldform-template-preview-field">';
+						previewMarkup += renderInputPreview( field );
 						previewMarkup += '</div>';
 					} );
 					previewMarkup += '</div>';
 				} );
-				previewMarkup += '<div class="boldform-template-preview-submit"><button type="button" class="boldform-canvas-submit__button">' + escapeHtml( state.formSettings.button_text || 'Submit' ) + '</button></div>';
-			}
+				previewMarkup += '</div>';
+			} );
+			previewMarkup += '<div class="boldform-template-preview-submit"><button type="button" class="boldform-canvas-submit__button">' + escapeHtml( state.formSettings.button_text || 'Submit' ) + '</button></div>';
 
 			$( '#boldform-template-list' ).html( listMarkup );
 			$( '#boldform-template-preview-canvas' ).html( previewMarkup );
-			$( '#boldform-template-preview-canvas' ).attr( 'style', isSelectedProLocked ? '' : getFormStyleVariables() );
+			$( '#boldform-template-preview-canvas' ).attr( 'style', getFormStyleVariables() );
 			$( '#boldform-template-preview__head' ).html(
 				'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
 				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>'
 			);
 
-			// Import button — show upgrade CTA for locked templates.
-			var $importBtn = $( '#boldform-import-template' );
-			if ( isSelectedProLocked ) {
-				$importBtn
-					.text( 'Upgrade to Pro' )
-					.addClass( 'boldform-tpl-upgrade-btn' )
-					.attr( 'data-pro-locked', '1' );
-			} else {
-				$importBtn
-					.text( boldformLiteBuilder.labels.importTemplate || 'Import Template' )
-					.removeClass( 'boldform-tpl-upgrade-btn' )
-					.removeAttr( 'data-pro-locked' );
-			}
+			$( '#boldform-import-template' )
+				.text( boldformLiteBuilder.labels.importTemplate || 'Import Template' );
 		}
 
 		function updateShortcodeDisplay() {
@@ -4043,33 +3928,6 @@ jQuery(
 				if ( $( '#boldform-setting-step-title' ).length ) {
 					selected.field.step_title = $( '#boldform-setting-step-title' ).val();
 				}
-				if ( $( '#boldform-step-progress-style-field' ).length ) {
-					state.formSettings.step_progress_style = $( '#boldform-step-progress-style-field' ).val();
-				}
-				if ( $( '#boldform-setting-next-text' ).length ) {
-					selected.field.next_text = $( '#boldform-setting-next-text' ).val();
-				}
-				if ( $( '#boldform-setting-prev-text' ).length ) {
-					selected.field.prev_text = $( '#boldform-setting-prev-text' ).val();
-				}
-				if ( $( '#boldform-setting-btn-color' ).length ) {
-					selected.field.btn_color = $( '#boldform-setting-btn-color' ).val();
-				}
-				if ( $( '#boldform-setting-btn-text-color' ).length ) {
-					selected.field.btn_text_color = $( '#boldform-setting-btn-text-color' ).val();
-				}
-				if ( $( '#boldform-setting-btn-size' ).length ) {
-					selected.field.btn_size = $( '#boldform-setting-btn-size' ).val();
-				}
-				if ( $( '#boldform-setting-btn-radius' ).length ) {
-					selected.field.btn_radius = $( '#boldform-setting-btn-radius' ).val();
-				}
-				if ( $( '#boldform-setting-progress-color' ).length ) {
-					selected.field.progress_color = $( '#boldform-setting-progress-color' ).val();
-				}
-				if ( $( '#boldform-setting-progress-style' ).length ) {
-					selected.field.progress_style = $( '#boldform-setting-progress-style' ).val();
-				}
 				if ( $( '#boldform-setting-product-style' ).length ) {
 					selected.field.product_style = $( '#boldform-setting-product-style' ).val();
 				}
@@ -4506,32 +4364,6 @@ jQuery(
 					state.formSettings.button_text_color = normalizeStyleColorValue( $( '#boldform-button-text-color' ).val() || '#ffffff', '#ffffff' );
 				}
 
-				// Multi-step settings.
-				if ( $( '#boldform-step-progress-style' ).length ) {
-					state.formSettings.step_progress_style = $( '#boldform-step-progress-style' ).val();
-				}
-				if ( $( '#boldform-step-progress-color' ).length ) {
-					state.formSettings.step_progress_color = normalizeStyleColorValue( $( '#boldform-step-progress-color' ).val() || '#2f80ed', '#2f80ed' );
-				}
-				if ( $( '#boldform-step-btn-color' ).length ) {
-					state.formSettings.step_btn_color = normalizeStyleColorValue( $( '#boldform-step-btn-color' ).val() || '#2f80ed', '#2f80ed' );
-				}
-				if ( $( '#boldform-step-btn-text-color' ).length ) {
-					state.formSettings.step_btn_text_color = normalizeStyleColorValue( $( '#boldform-step-btn-text-color' ).val() || '#ffffff', '#ffffff' );
-				}
-				if ( $( '#boldform-step-btn-size' ).length ) {
-					state.formSettings.step_btn_size = $( '#boldform-step-btn-size' ).val();
-				}
-				if ( $( '#boldform-step-btn-radius' ).length ) {
-					state.formSettings.step_btn_radius = $( '#boldform-step-btn-radius' ).val();
-				}
-				if ( $( '#boldform-step-next-text' ).length ) {
-					state.formSettings.step_next_text = $( '#boldform-step-next-text' ).val();
-				}
-				if ( $( '#boldform-step-prev-text' ).length ) {
-					state.formSettings.step_prev_text = $( '#boldform-step-prev-text' ).val();
-				}
-	
 				// Duplicate prevention settings.
 				if ( $( '#boldform-dup-enabled' ).length ) {
 					state.formSettings.dup_enabled = $( '#boldform-dup-enabled' ).is( ':checked' );
@@ -4545,13 +4377,6 @@ jQuery(
 				if ( $( '#boldform-dup-message' ).length ) {
 					state.formSettings.dup_message = $( '#boldform-dup-message' ).val() || '';
 				}
-				if ( $( '#boldform-custom-css' ).length ) {
-					state.formSettings.custom_css = $( '#boldform-custom-css' ).val();
-				}
-				if ( $( '#boldform-custom-js' ).length ) {
-					state.formSettings.custom_js = $( '#boldform-custom-js' ).val();
-				}
-
 				if (
 					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
@@ -4789,10 +4614,6 @@ jQuery(
 
 		// Import template — also closes setup screen if open.
 		$( '#boldform-import-template' ).on( 'click', function () {
-			// Pro-locked: button acts as upgrade CTA, do not import.
-			if ( $( this ).attr( 'data-pro-locked' ) ) {
-				return;
-			}
 			closeTemplateModal();
 			if ( ! $( '#boldform-setup-screen' ).is( '[hidden]' ) ) {
 				closeSetupScreen();
