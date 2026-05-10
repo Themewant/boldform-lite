@@ -947,7 +947,8 @@ class BoldForm_Lite_Form_Handler {
 			$label    = isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '';
 			$required = ! empty( $field['required'] );
 
-			if ( in_array( $type, array( 'captcha', 'section_break', 'submit', 'paragraph', 'html_editor', 'page_break' ), true ) ) {
+			$skip_types = apply_filters( 'boldform_skip_field_types', array( 'captcha', 'section_break', 'submit', 'paragraph', 'html_editor' ) );
+			if ( in_array( $type, $skip_types, true ) ) {
 				continue;
 			}
 

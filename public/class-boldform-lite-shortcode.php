@@ -206,34 +206,7 @@ class BoldForm_Lite_Shortcode {
 			<?php $has_submit_field = $this->structure_contains_field_type( $structure, 'submit' ); ?>
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
-					<?php
-					$has_pb  = $this->row_has_page_break( $row );
-					$row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : '';
-
-					if ( $has_pb ) :
-						// Output non-page_break fields as a row, then the marker.
-						$pb_fields = array();
-						$pb_idx    = 0;
-						foreach ( $row['columns'] as $column ) {
-							foreach ( $column['fields'] ?? array() as $field ) {
-								if ( isset( $field['type'] ) && 'page_break' !== $field['type'] ) {
-									$pb_fields[] = array( 'field' => $field, 'idx' => ( $row_index * 100 ) + $pb_idx );
-								}
-								$pb_idx++;
-							}
-						}
-						if ( ! empty( $pb_fields ) ) :
-					?>
-					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
-						<div class="boldform-lite-form__column" style="width:100%;">
-							<?php foreach ( $pb_fields as $pbf ) : ?>
-								<?php echo wp_kses( $this->render_field( $pbf['field'], $pbf['idx'] ), $this->get_field_kses_allowed() ); ?>
-							<?php endforeach; ?>
-						</div>
-					</div>
-						<?php endif; ?>
-					<?php echo '<!--boldform-page-break-->'; ?>
-					<?php else : ?>
+					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; ?>
 					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
@@ -243,7 +216,6 @@ class BoldForm_Lite_Shortcode {
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<?php endif; ?>
 				<?php endforeach; ?>
 			</div>
 			<div style="position:absolute;left:-9999px;" aria-hidden="true">
@@ -567,26 +539,6 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
-	 * Checks whether a row contains a page_break field.
-	 *
-	 * @param array<string, mixed> $row Row definition.
-	 * @return bool
-	 */
-	private function row_has_page_break( $row ) {
-		if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
-			return false;
-		}
-		foreach ( $row['columns'] as $col ) {
-			foreach ( $col['fields'] ?? array() as $f ) {
-				if ( isset( $f['type'] ) && 'page_break' === $f['type'] ) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
 	 * Renders the captcha widget for the selected provider.
 	 *
 	 * @param array<string, string|bool> $captcha Captcha settings.
@@ -746,6 +698,21 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'submit' === $type ) {
 			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit">' . $this->build_button_content( $this->current_form_settings ?? array() ) . '</button></div>';
+		}
+
+		/**
+		 * Allow Pro or third-party plugins to render HTML for field types not
+		 * natively handled by Lite. Return a non-empty string to short-circuit
+		 * Lite's own rendering pipeline for that field.
+		 *
+		 * @param string               $html  Empty string by default.
+		 * @param string               $type  Field type key.
+		 * @param array<string, mixed> $field Full field definition.
+		 * @param int                  $index Field index in the form structure.
+		 */
+		$custom_html = (string) apply_filters( 'boldform_render_field', '', $type, $field, $index );
+		if ( '' !== $custom_html ) {
+			return $custom_html;
 		}
 
 		if ( 'section_break' === $type ) {
