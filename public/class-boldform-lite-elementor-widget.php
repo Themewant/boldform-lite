@@ -1632,12 +1632,24 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->end_controls_tabs();
 
 		$this->add_responsive_control(
-			'button_el_margin',
+			'button_margin',
 			array(
-				'label'      => __( 'Margin', 'boldform-lite' ),
+				'label'      => __( 'Button Margin', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
 				'size_units' => array( 'px', 'em' ),
 				'separator'  => 'before',
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__submit' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'button_el_margin',
+			array(
+				'label'      => __( 'Button Container Margin', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', 'em' ),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__actions' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
