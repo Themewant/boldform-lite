@@ -1324,20 +1324,25 @@ class BoldForm_Lite_Shortcode {
 				$data_attrs .= ' data-searchable="1"';
 			}
 
+			$listbox_id = $field_name . '_listbox';
 			$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
 
 			// Trigger.
 			$arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 			$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
 
+			// Prepare accessible label for the trigger
+			$trigger_aria_label = $label && '' !== $label ? esc_attr( $label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
+			$trigger_aria_attrs = ' aria-label="' . $trigger_aria_label . '" aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
+
 			if ( $is_multiple ) {
 				$selected_opts = array_filter( $default_values, function ( $v ) use ( $normalized_options ) {
 					return '' !== $v && in_array( $v, $normalized_options, true );
 				} );
 				if ( empty( $selected_opts ) ) {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
 				} else {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__tags">';
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__tags">';
 					foreach ( $selected_opts as $v ) {
 						$html .= '<span class="bf-select__tag">' . esc_html( $v ) . '<button type="button" class="bf-select__tag-x" data-val="' . esc_attr( $v ) . '" aria-label="' . esc_attr__( 'Remove', 'boldform-lite' ) . '">&times;</button></span>';
 					}
@@ -1346,9 +1351,9 @@ class BoldForm_Lite_Shortcode {
 			} else {
 				$selected_val = ! empty( $default_values[0] ) && in_array( $default_values[0], $normalized_options, true ) ? $default_values[0] : '';
 				if ( $selected_val ) {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__value">' . esc_html( $selected_val ) . '</span>' . $arrow . '</div>';
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__value">' . esc_html( $selected_val ) . '</span>' . $arrow . '</div>';
 				} else {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
 				}
 			}
 
@@ -1357,12 +1362,12 @@ class BoldForm_Lite_Shortcode {
 
 			if ( $is_searchable ) {
 				$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-				$html .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off"></div>';
+				$html .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off" aria-label="' . esc_attr__( 'Search', 'boldform-lite' ) . '"></div>';
 			}
 
 			$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
-			$html .= '<div class="bf-select__list" role="listbox">';
+			$html .= '<div class="bf-select__list" role="listbox" id="' . esc_attr( $listbox_id ) . '">';
 			foreach ( $normalized_options as $option ) {
 				$is_active = in_array( $option, $default_values, true );
 				$active_class = $is_active ? ' is-active' : '';
