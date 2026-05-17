@@ -703,7 +703,10 @@ class BoldForm_Lite_Shortcode {
 
 
 		if ( 'submit' === $type ) {
-			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit">' . $this->build_button_content( $this->current_form_settings ?? array() ) . '</button></div>';
+			$form_settings = $this->current_form_settings ?? array();
+			$button_label  = $this->get_button_accessible_label( $form_settings );
+			$aria_label    = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
+			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
 		}
 
 		/**
