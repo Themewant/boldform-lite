@@ -1033,14 +1033,136 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
+			'terms_copy_heading',
+			array(
+				'label'     => __( 'Copy Text', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'terms_copy_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__terms-copy, {{WRAPPER}} .boldform-lite-form__terms-copy a',
+			)
+		);
+
+		$this->add_control(
+			'terms_checkbox_heading',
+			array(
+				'label'     => __( 'Checkbox', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
 			'terms_checkbox_size',
 			array(
 				'label'      => __( 'Checkbox Size', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
 				'range'      => array( 'px' => array( 'min' => 12, 'max' => 30 ) ),
+				'default'    => array( 'size' => 18, 'unit' => 'px' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__terms input[type="checkbox"]' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}}; min-width: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'terms_checkbox_border_color',
+			array(
+				'label'     => __( 'Checkbox Border Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'terms_checkbox_bg_color',
+			array(
+				'label'     => __( 'Checkbox Background', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'terms_checkbox_checked_color',
+			array(
+				'label'     => __( 'Checkbox Checked Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control' => 'border-color: {{VALUE}}; background-color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'terms_checkbox_border_width',
+			array(
+				'label'      => __( 'Checkbox Border Width', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 1, 'max' => 5 ) ),
+				'default'    => array( 'size' => 2, 'unit' => 'px' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-width: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'terms_checkbox_border_radius',
+			array(
+				'label'      => __( 'Checkbox Border Radius', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 0, 'max' => 10 ) ),
+				'default'    => array( 'size' => 5, 'unit' => 'px' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-radius: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'terms_gap_heading',
+			array(
+				'label'     => __( 'Spacing', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_responsive_control(
+			'terms_checkbox_gap',
+			array(
+				'label'      => __( 'Gap Between Checkbox & Text', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 5, 'max' => 30 ) ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__terms' => 'gap: {{SIZE}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'terms_field_margin',
+			array(
+				'label'      => __( 'Field Margin', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__field--terms_conditions' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -1135,6 +1257,104 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_responsive_control(
+			'section_break_margin',
+			array(
+				'label'      => __( 'Margin', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'section_break_padding',
+			array(
+				'label'      => __( 'Padding', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'section_break_border_heading',
+			array(
+				'label'     => __( 'Border', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
+		$this->add_control(
+			'section_break_border_enable',
+			array(
+				'label'        => __( 'Show Border', 'boldform-lite' ),
+				'type'         => \Elementor\Controls_Manager::SWITCHER,
+				'label_on'     => __( 'Yes', 'boldform-lite' ),
+				'label_off'    => __( 'No', 'boldform-lite' ),
+				'return_value' => 'yes',
+				'default'      => '',
+				'selectors'    => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'border-style: solid;',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'section_break_border_width',
+			array(
+				'label'      => __( 'Border Width', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'border-width: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+				'condition'  => array(
+					'section_break_border_enable' => 'yes',
+				),
+			)
+		);
+
+		$this->add_control(
+			'section_break_border_color',
+			array(
+				'label'     => __( 'Border Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'border-color: {{VALUE}};',
+				),
+				'condition' => array(
+					'section_break_border_enable' => 'yes',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'section_break_border_radius',
+			array(
+				'label'      => __( 'Border Radius', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-break' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'section_break_title_heading',
+			array(
+				'label'     => __( 'Title', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
 		$this->add_control(
 			'section_break_color',
 			array(
@@ -1154,6 +1374,27 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_responsive_control(
+			'section_break_title_margin',
+			array(
+				'label'      => __( 'Title Margin', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-title' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
+				),
+			)
+		);
+
+		$this->add_control(
+			'section_break_desc_heading',
+			array(
+				'label'     => __( 'Description', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::HEADING,
+				'separator' => 'before',
+			)
+		);
+
 		$this->add_control(
 			'section_break_desc_color',
 			array(
@@ -1165,13 +1406,22 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'section_break_border_color',
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
 			array(
-				'label'     => __( 'Border Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__section-break' => 'border-bottom-color: {{VALUE}};',
+				'name'     => 'section_break_desc_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__section-description',
+			)
+		);
+
+		$this->add_responsive_control(
+			'section_break_desc_margin',
+			array(
+				'label'      => __( 'Description Margin', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%', 'em' ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-form__section-description' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
