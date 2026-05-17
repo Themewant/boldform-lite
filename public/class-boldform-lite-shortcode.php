@@ -227,7 +227,13 @@ class BoldForm_Lite_Shortcode {
 			<input type="hidden" name="boldform_nonce" value="<?php echo esc_attr( wp_create_nonce( 'boldform_lite_submit_form_' . $form_id ) ); ?>">
 			<?php if ( ! $has_submit_field ) : ?>
 			<div class="boldform-lite-form__actions is-align-<?php echo esc_attr( $form_settings['button_alignment'] ); ?>">
-				<button type="submit" class="boldform-lite-form__submit"><?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?></button>
+				<?php
+				$button_label = $this->get_button_accessible_label( $form_settings );
+				$aria_label   = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
+				?>
+				<button type="submit" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+					<?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?>
+				</button>
 			</div>
 			<?php endif; ?>
 		</form>
@@ -899,6 +905,19 @@ class BoldForm_Lite_Shortcode {
 	 * @param bool   $required Required flag.
 	 * @return string
 	 */
+
+	/**
+	 * Returns the accessible label for the submit button.
+	 * Used for aria-label when button has no visible text.
+	 *
+	 * @param array<string, mixed> $settings Form settings.
+	 * @return string
+	 */
+	private function get_button_accessible_label( $settings ) {
+		$text = isset( $settings['button_text'] ) ? esc_html( $settings['button_text'] ) : '';
+		return '' !== $text ? $text : esc_html__( 'Submit', 'boldform-lite' );
+	}
+
 	/**
 	 * Builds the submit button inner HTML including optional icon.
 	 *

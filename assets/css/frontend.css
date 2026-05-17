@@ -193,6 +193,11 @@
 	color: #111827;
 }
 
+/* ── Hide native select when custom dropdown is used ── */
+.boldform-lite-form select[data-boldform-select] {
+	display: none !important;
+}
+
 /* ── Flatpickr date/time customizations ── */
 input[data-boldform-picker] {
 	cursor: pointer;
