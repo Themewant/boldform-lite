@@ -41,6 +41,17 @@ class BoldForm_Lite_Email_Handler {
 	public function send_notifications( $form_record, $settings, $entry_data ) {
 		$attachments = $this->collect_file_attachments( $entry_data );
 
+		/**
+		 * Fires before any notification emails are dispatched.
+		 *
+		 * Pro can add integrations (Slack, webhook, SMS) here before emails go out.
+		 *
+		 * @param object                              $form_record Form database row.
+		 * @param array<string, mixed>                $settings    Form settings.
+		 * @param array<string, array<string, mixed>> $entry_data  Saved entry data.
+		 */
+		do_action( 'boldform_before_notifications', $form_record, $settings, $entry_data );
+
 		if ( ! empty( $settings['enable_admin_email'] ) ) {
 			$this->send_admin_email( $form_record, $settings, $entry_data, $attachments );
 		}
@@ -48,6 +59,17 @@ class BoldForm_Lite_Email_Handler {
 		if ( ! empty( $settings['enable_user_email'] ) ) {
 			$this->send_user_email( $form_record, $entry_data );
 		}
+
+		/**
+		 * Fires after BoldForm Lite's built-in notification emails are sent.
+		 *
+		 * Pro can send additional conditional notifications, webhooks, or third-party pushes.
+		 *
+		 * @param object                              $form_record Form database row.
+		 * @param array<string, mixed>                $settings    Form settings.
+		 * @param array<string, array<string, mixed>> $entry_data  Saved entry data.
+		 */
+		do_action( 'boldform_after_notifications', $form_record, $settings, $entry_data );
 	}
 
 	/**
@@ -81,6 +103,7 @@ class BoldForm_Lite_Email_Handler {
 		if ( ! empty( $settings['admin_email_type'] ) && 'custom' === $settings['admin_email_type'] && ! empty( $settings['admin_email'] ) && is_email( $settings['admin_email'] ) ) {
 			$to = sanitize_email( (string) $settings['admin_email'] );
 		}
+
 		$subject = apply_filters(
 			'boldform_lite_admin_email_subject',
 			sprintf(
@@ -204,4 +227,5 @@ class BoldForm_Lite_Email_Handler {
 			. '<table style="border-collapse:collapse;width:100%;max-width:680px;">' . $rows . '</table>'
 			. '</div>';
 	}
+
 }

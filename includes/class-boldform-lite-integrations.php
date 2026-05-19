@@ -1,0 +1,321 @@
+<?php
+/**
+ * BoldForm Lite Integrations dispatcher.
+ *
+ * Dispatches form submissions to globally-configured connections.
+ * Connections are stored in wp_options by BoldForm_Lite_Integrations_Page.
+ *
+ * Each form stores a list of assigned connection IDs in its settings_json:
+ *   "assigned_connections": ["conn_abc123", "conn_xyz456"]
+ *
+ * Field mapping (which field = email, first name, last name) is stored
+ * per-form in settings_json under "connection_field_map":
+ *   "connection_field_map": {
+ *     "conn_abc123": { "email": "field_1", "fname": "field_2", "lname": "field_3" }
+ *   }
+ *
+ * @package BoldFormLite
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Integrations dispatcher.
+ */
+class BoldForm_Lite_Integrations {
+
+	/**
+	 * Main plugin instance.
+	 *
+	 * @var BoldForm_Lite
+	 */
+	private $plugin;
+
+	/**
+	 * Integrations page handler (connection store).
+	 *
+	 * @var BoldForm_Lite_Integrations_Page
+	 */
+	private $page;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param BoldForm_Lite                   $plugin Plugin instance.
+	 * @param BoldForm_Lite_Integrations_Page $page   Integrations page handler.
+	 */
+	public function __construct( $plugin, $page ) {
+		$this->plugin = $plugin;
+		$this->page   = $page;
+	}
+
+	/**
+	 * Registers hooks.
+	 *
+	 * @return void
+	 */
+	public function init(): void {
+		// Persist assigned connections + field map on form save.
+		add_filter( 'boldform_form_settings_extra', array( $this, 'save_assignment_settings' ), 10, 2 );
+
+		// Dispatch after a successful entry is saved.
+		add_action( 'boldform_entry_created', array( $this, 'handle_entry_created' ), 20, 4 );
+
+		// Cron handler.
+		add_action( 'boldform_integration_dispatch', array( $this, 'run_dispatch' ), 10, 4 );
+
+		// Builder: supply connections list for the assign panel.
+		add_filter( 'boldform_builder_localize_data', array( $this, 'inject_builder_data' ) );
+	}
+
+	// =========================================================================
+	// Settings persistence
+	// =========================================================================
+
+	/**
+	 * Saves assigned connections + field mapping into form settings.
+	 *
+	 * @param array<string, mixed> $extra           Existing extra.
+	 * @param array<string, mixed> $settings_payload Raw POST payload.
+	 * @return array<string, mixed>
+	 */
+	public function save_assignment_settings( array $extra, array $settings_payload ): array {
+		// Assigned connection IDs.
+		$raw_ids = isset( $settings_payload['assigned_connections'] ) && is_array( $settings_payload['assigned_connections'] )
+			? $settings_payload['assigned_connections']
+			: array();
+
+		$extra['assigned_connections'] = array_values(
+			array_filter( array_map( 'sanitize_key', $raw_ids ) )
+		);
+
+		// Field mapping per connection: { conn_id: { email, fname, lname } }
+		$raw_map = isset( $settings_payload['connection_field_map'] ) && is_array( $settings_payload['connection_field_map'] )
+			? $settings_payload['connection_field_map']
+			: array();
+
+		$clean_map = array();
+		foreach ( $raw_map as $conn_id => $map ) {
+			if ( ! is_array( $map ) ) continue;
+			$clean_map[ sanitize_key( (string) $conn_id ) ] = array(
+				'email' => sanitize_key( (string) ( $map['email'] ?? '' ) ),
+				'fname' => sanitize_key( (string) ( $map['fname'] ?? '' ) ),
+				'lname' => sanitize_key( (string) ( $map['lname'] ?? '' ) ),
+			);
+		}
+
+		$extra['connection_field_map'] = $clean_map;
+
+		return $extra;
+	}
+
+	// =========================================================================
+	// Dispatch
+	// =========================================================================
+
+	/**
+	 * Schedules async dispatch for each assigned connection.
+	 *
+	 * @param int                  $entry_id   Entry ID.
+	 * @param int                  $form_id    Form ID.
+	 * @param array<string, mixed> $entry_data Submitted field data.
+	 * @param array<string, mixed> $settings   Form settings.
+	 * @return void
+	 */
+	public function handle_entry_created( int $entry_id, int $form_id, array $entry_data, array $settings ): void {
+		$assigned = isset( $settings['assigned_connections'] ) && is_array( $settings['assigned_connections'] )
+			? $settings['assigned_connections']
+			: array();
+
+		if ( empty( $assigned ) ) return;
+
+		$field_map = isset( $settings['connection_field_map'] ) && is_array( $settings['connection_field_map'] )
+			? $settings['connection_field_map']
+			: array();
+
+		foreach ( $assigned as $conn_id ) {
+			$connection = $this->page->get_connection( $conn_id );
+
+			if ( ! $connection || 'inactive' === ( $connection['status'] ?? 'active' ) ) {
+				continue;
+			}
+
+			$map = $field_map[ $conn_id ] ?? array();
+
+			wp_schedule_single_event(
+				time(),
+				'boldform_integration_dispatch',
+				array( $connection, $entry_data, $map, $entry_id )
+			);
+		}
+
+		spawn_cron();
+	}
+
+	/**
+	 * Cron handler — executes one integration dispatch.
+	 *
+	 * @param array<string, mixed> $connection Connection config from global store.
+	 * @param array<string, mixed> $entry_data Submitted field data.
+	 * @param array<string, mixed> $field_map  { email, fname, lname } field ID mapping.
+	 * @param int                  $entry_id   Entry ID.
+	 * @return void
+	 */
+	public function run_dispatch( array $connection, array $entry_data, array $field_map, int $entry_id ): void {
+		$type = $connection['type'] ?? '';
+
+		switch ( $type ) {
+			case 'mailchimp':
+				$this->subscribe_mailchimp( $connection, $entry_data, $field_map );
+				break;
+
+			case 'brevo':
+				$this->subscribe_brevo( $connection, $entry_data, $field_map );
+				break;
+
+			default:
+				/**
+				 * Allow Pro to handle its own connection types.
+				 *
+				 * @param array<string, mixed> $connection Connection config.
+				 * @param array<string, mixed> $entry_data Submission data.
+				 * @param array<string, mixed> $field_map  Email/name field mapping.
+				 * @param int                  $entry_id   Entry ID.
+				 */
+				do_action( 'boldform_integration_dispatch_' . sanitize_key( $type ), $connection, $entry_data, $field_map, $entry_id );
+				break;
+		}
+	}
+
+	// =========================================================================
+	// Mailchimp
+	// =========================================================================
+
+	/**
+	 * Subscribes a contact to a Mailchimp audience.
+	 *
+	 * @param array<string, mixed> $conn       Connection config.
+	 * @param array<string, mixed> $entry_data Submission data.
+	 * @param array<string, mixed> $field_map  Field mapping.
+	 * @return void
+	 */
+	private function subscribe_mailchimp( array $conn, array $entry_data, array $field_map ): void {
+		$api_key = trim( (string) ( $conn['api_key'] ?? '' ) );
+		$list_id = trim( (string) ( $conn['list_id'] ?? '' ) );
+		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
+
+		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
+
+		$dc = 'us1';
+		if ( preg_match( '/-([a-z0-9]+)$/', $api_key, $m ) ) {
+			$dc = $m[1];
+		}
+
+		$body = array(
+			'email_address' => $email,
+			'status'        => ! empty( $conn['double_optin'] ) ? 'pending' : 'subscribed',
+		);
+
+		$merge = array();
+		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
+		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
+		if ( $fname ) $merge['FNAME'] = $fname;
+		if ( $lname ) $merge['LNAME'] = $lname;
+		if ( $merge ) $body['merge_fields'] = $merge;
+
+		if ( ! empty( $conn['tags'] ) ) {
+			$body['tags'] = array_values( array_filter( array_map( 'trim', explode( ',', (string) $conn['tags'] ) ) ) );
+		}
+
+		wp_remote_post(
+			"https://{$dc}.api.mailchimp.com/3.0/lists/{$list_id}/members",
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'Authorization' => 'Basic ' . base64_encode( 'anystring:' . $api_key ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+	}
+
+	// =========================================================================
+	// Brevo
+	// =========================================================================
+
+	/**
+	 * Subscribes a contact to a Brevo list.
+	 *
+	 * @param array<string, mixed> $conn       Connection config.
+	 * @param array<string, mixed> $entry_data Submission data.
+	 * @param array<string, mixed> $field_map  Field mapping.
+	 * @return void
+	 */
+	private function subscribe_brevo( array $conn, array $entry_data, array $field_map ): void {
+		$api_key = trim( (string) ( $conn['api_key'] ?? '' ) );
+		$list_id = (int) ( $conn['list_id'] ?? 0 );
+		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
+
+		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
+
+		$body = array( 'email' => $email, 'listIds' => array( $list_id ), 'updateEnabled' => true );
+
+		$attrs = array();
+		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
+		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
+		if ( $fname ) $attrs['FIRSTNAME'] = $fname;
+		if ( $lname ) $attrs['LASTNAME']  = $lname;
+		if ( $attrs ) $body['attributes'] = $attrs;
+
+		wp_remote_post(
+			'https://api.brevo.com/v3/contacts',
+			array(
+				'timeout' => 15,
+				'headers' => array(
+					'api-key'      => $api_key,
+					'Content-Type' => 'application/json',
+					'Accept'       => 'application/json',
+				),
+				'body'    => wp_json_encode( $body ),
+			)
+		);
+	}
+
+	// =========================================================================
+	// Builder data injection
+	// =========================================================================
+
+	/**
+	 * Injects global connections list into the builder localize data.
+	 *
+	 * @param array<string, mixed> $data Builder data.
+	 * @return array<string, mixed>
+	 */
+	public function inject_builder_data( array $data ): array {
+		$data['globalConnections']      = array_values( $this->page->get_all_connections() );
+		$data['integrationsNonce']      = wp_create_nonce( 'boldform_integration_nonce' );
+		$data['integrationsAdminUrl']   = admin_url( 'admin.php?page=boldform-lite-integrations' );
+		return $data;
+	}
+
+	// =========================================================================
+	// Helper
+	// =========================================================================
+
+	/**
+	 * Extracts a scalar value from entry_data by field ID.
+	 *
+	 * @param array<string, mixed> $entry_data Submission data.
+	 * @param string               $field_id   Field ID.
+	 * @return string
+	 */
+	private function get_field_value( array $entry_data, string $field_id ): string {
+		if ( ! $field_id || ! isset( $entry_data[ $field_id ] ) ) return '';
+		$field = $entry_data[ $field_id ];
+		$val   = is_array( $field ) ? ( $field['value'] ?? '' ) : $field;
+		return is_array( $val ) ? implode( ', ', $val ) : (string) $val;
+	}
+}

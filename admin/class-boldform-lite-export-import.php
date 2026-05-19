@@ -140,20 +140,23 @@ class BoldForm_Lite_Export_Import {
 					</div>
 				</form>
 
-				<script>
-				(function(){
-					var radios = document.querySelectorAll('input[name="boldform_export_scope"]');
-					var formSelect = document.getElementById('boldform-export-form-select');
-					var entriesRow = document.getElementById('boldform-export-entries-row');
-					function toggle() {
-						var val = document.querySelector('input[name="boldform_export_scope"]:checked').value;
-						formSelect.style.display = val === 'single' ? '' : 'none';
-						entriesRow.style.display = val === 'settings_only' ? 'none' : '';
-					}
-					for (var i = 0; i < radios.length; i++) radios[i].addEventListener('change', toggle);
-					toggle();
-				})();
-				</script>
+				<?php
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'(function(){
+						var radios=document.querySelectorAll("input[name=\'boldform_export_scope\']");
+						var formSelect=document.getElementById("boldform-export-form-select");
+						var entriesRow=document.getElementById("boldform-export-entries-row");
+						function toggle(){
+							var val=document.querySelector("input[name=\'boldform_export_scope\']:checked").value;
+							if(formSelect)formSelect.style.display=val==="single"?"":"none";
+							if(entriesRow)entriesRow.style.display=val==="settings_only"?"none":"";
+						}
+						for(var i=0;i<radios.length;i++)radios[i].addEventListener("change",toggle);
+						toggle();
+					})();'
+				);
+				?>
 			</div>
 
 		<?php else : ?>

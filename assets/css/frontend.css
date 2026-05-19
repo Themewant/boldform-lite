@@ -17,7 +17,6 @@
 .boldform-lite-form__fields {
 	display: grid;
 	gap: 24px;
-	margin-bottom: 28px;
 }
 
 .boldform-lite-form__row {
@@ -109,7 +108,7 @@
 }
 
 .boldform-lite-form__required {
-	color: var(--bf-error-color, #dc2626);
+	color: var(--bf-required-color, var(--bf-error-color, #dc2626));
 }
 
 .boldform-lite-form__field-error {
@@ -118,9 +117,14 @@
 	margin-top: 4px;
 }
 
-.boldform-lite-form__field.is-invalid input,
+.boldform-lite-form__field.is-invalid input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-lite-form__field.is-invalid textarea,
 .boldform-lite-form__field.is-invalid select {
+	border-color: var(--bf-error-color, #dc2626);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--bf-error-color, #dc2626) 12%, transparent);
+}
+
+.boldform-lite-form__field.is-invalid .boldform-lite-form__choice-control {
 	border-color: var(--bf-error-color, #dc2626);
 }
 
@@ -148,33 +152,35 @@
 	border: 1px solid #fecaca;
 }
 
-.boldform-lite-form input,
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-lite-form select,
 .boldform-lite-form textarea {
 	width: 100%;
 	max-width: 100%;
-	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
-	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 16px);
+	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px);
+	border: var(--bf-field-border-width, 1.5px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
+	border-radius: var(--bf-field-radius, 8px);
 	background: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 16px);
+	font-size: var(--bf-field-font-size, 14px);
 	line-height: 1.5;
 	box-sizing: border-box;
 	transition: border-color 0.18s ease, box-shadow 0.18s ease;
+	height: auto;
 }
 
-/* ── Custom select ── */
+/* ── Native select — custom arrow ── */
 .boldform-lite-form select {
 	-webkit-appearance: none;
 	-moz-appearance: none;
 	appearance: none;
 	background-color: var(--bf-field-bg, #fff);
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right var(--bf-field-padding-x, 18px) center;
-	background-size: 12px;
-	padding-right: calc(var(--bf-field-padding-x, 18px) + 24px);
+	background-position: right 12px center;
+	background-size: 16px;
+	padding-right: 40px;
+	cursor: pointer;
 	color: var(--bf-field-text, #111827);
 }
 
@@ -187,6 +193,11 @@
 	color: #111827;
 }
 
+/* ── Hide native select when custom dropdown is used ── */
+.boldform-lite-form select[data-boldform-select] {
+	display: none !important;
+}
+
 /* ── Flatpickr date/time customizations ── */
 input[data-boldform-picker] {
 	cursor: pointer;
@@ -194,19 +205,19 @@ input[data-boldform-picker] {
 
 .boldform-lite-form .flatpickr-input.active + input.form-control {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	box-shadow: var(--bf-field-focus-shadow, none);
 }
 
 /* Match flatpickr alt input to our field styles */
 .boldform-lite-form input.flatpickr-input + input {
 	width: 100%;
 	max-width: 100%;
-	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
+	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px);
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 16px);
+	border-radius: var(--bf-field-radius, 6px);
 	background: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 16px);
+	font-size: var(--bf-field-font-size, 14px);
 	line-height: 1.5;
 	box-sizing: border-box;
 	cursor: pointer;
@@ -215,37 +226,39 @@ input[data-boldform-picker] {
 
 .boldform-lite-form input.flatpickr-input + input:focus {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	box-shadow: var(--bf-field-focus-shadow, none);
 	outline: none;
 }
 
-.boldform-lite-form input:focus,
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 .boldform-lite-form select:focus,
 .boldform-lite-form textarea:focus {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+	box-shadow: var(--bf-field-focus-shadow, none);
 	outline: none;
 }
 
 .boldform-lite-form textarea {
-	min-height: 150px;
+	min-height: 110px;
 	resize: vertical;
+	line-height: 1.6;
 }
 
+/* ── Radio & Checkbox choice groups ── */
 .boldform-lite-form__choices {
-	display: grid;
+	display: flex;
+	flex-direction: column;
 	gap: 10px;
 }
 
 .boldform-lite-form__choices.is-inline {
-	display: flex;
+	flex-direction: row;
 	flex-wrap: wrap;
-	gap: 8px 20px;
+	gap: 8px 16px;
 }
 
 .boldform-lite-form__actions {
 	display: flex;
-	margin-top: 4px;
 }
 
 .boldform-lite-form__actions.is-align-left {
@@ -288,6 +301,7 @@ input[data-boldform-picker] {
 	width: 100%;
 }
 
+/* ── Individual choice item ── */
 .boldform-lite-form__choice {
 	display: flex;
 	align-items: center;
@@ -297,26 +311,91 @@ input[data-boldform-picker] {
 	border-radius: 0;
 	background: transparent;
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 15px);
+	font-size: var(--bf-field-font-size, 14px);
 	cursor: pointer;
+	line-height: 1.4;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
-.boldform-lite-form__choice input {
+/* Hide native input, replaced by ::before pseudo-element */
+.boldform-lite-form__choice input[type="checkbox"],
+.boldform-lite-form__choice input[type="radio"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	margin: 0;
+}
+
+/* Custom control shell */
+.boldform-lite-form__choice-control {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	width: 18px;
 	height: 18px;
-	min-height: 0;
-	padding: 0;
-	margin: 0;
-	border: 2px solid #cbd5e1;
-	border-radius: 4px;
-	background: #fff;
+	min-width: 18px;
+	border: 2px solid var(--bf-field-border, #cbd5e1);
+	border-radius: 5px;
+	background: var(--bf-field-bg, #fff);
 	flex-shrink: 0;
-	-webkit-appearance: auto;
-	appearance: auto;
+	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.boldform-lite-form__choice input[type="radio"] {
+.boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
 	border-radius: 50%;
+}
+
+/* Checked state */
+.boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-focus-color, #0f766e);
+	background: var(--bf-focus-color, #0f766e);
+}
+
+.boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-focus-color, #0f766e);
+	background: #fff;
+}
+
+/* Checkmark tick */
+.boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 9px;
+	border-right: 2px solid #fff;
+	border-bottom: 2px solid #fff;
+	transform: rotate(45deg) translate(-1px, -1px);
+}
+
+/* Radio dot */
+.boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--bf-focus-color, #0f766e);
+}
+
+/* Focus ring */
+.boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-control {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--bf-focus-color, #0f766e) 18%, transparent);
+	border-color: var(--bf-focus-color, #0f766e);
+}
+
+/* Hover */
+.boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-focus-color, #0f766e);
+}
+
+/* Choice label text */
+.boldform-lite-form__choice-label {
+	flex: 1;
+	min-width: 0;
 }
 
 /* Terms & conditions */
@@ -324,7 +403,7 @@ input[data-boldform-picker] {
 	align-items: flex-start;
 }
 
-.boldform-lite-form__terms input[type="checkbox"] {
+.boldform-lite-form__terms .boldform-lite-form__choice-control {
 	margin-top: 2px;
 }
 
@@ -339,21 +418,22 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-form__submit {
-	padding: var(--bf-button-padding-y, 18px) var(--bf-button-padding-x, 42px);
+	padding: var(--bf-button-padding-y, 10px) var(--bf-button-padding-x, 24px);
 	border: var(--bf-button-border-width, 0) var(--bf-button-border-style, none) var(--bf-button-border, transparent);
-	border-radius: var(--bf-button-radius, 16px);
+	border-radius: var(--bf-button-radius, 6px);
 	background: var(--bf-button-bg, #2f80ed);
 	color: var(--bf-button-text, #fff);
-	font-size: var(--bf-button-font-size, 18px);
+	font-size: var(--bf-button-font-size, 14px);
 	font-weight: 600;
 	cursor: pointer;
-	box-shadow: none;
+	box-shadow: var(--bf-button-shadow, none);
 	transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+	margin-top: 10px;
 }
 
 .boldform-lite-form__submit:hover {
 	transform: translateY(-1px);
-	box-shadow: none;
+	box-shadow: var(--bf-button-hover-shadow, none);
 }
 
 .boldform-lite-form__submit .boldform-btn-inner {
@@ -369,15 +449,11 @@ input[data-boldform-picker] {
 	line-height: 18px;
 }
 
-.boldform-lite-form__submit .boldform-btn-icon-svg {
-	display: inline-flex;
-	align-items: center;
-}
-
-.boldform-lite-form__submit .boldform-btn-icon-svg svg {
+.boldform-lite-form__submit img.boldform-btn-icon-svg {
 	width: 18px;
 	height: 18px;
-	fill: currentColor;
+	display: inline-block;
+	vertical-align: middle;
 }
 
 .boldform-lite-form__submit:focus-visible {
@@ -427,14 +503,17 @@ input[data-boldform-picker] {
 	min-height: 120px;
 }
 
-.boldform-lite-form--theme .boldform-lite-form__choice input {
+.boldform-lite-form--theme .boldform-lite-form__choice input[type="checkbox"],
+.boldform-lite-form--theme .boldform-lite-form__choice input[type="radio"] {
+	position: revert;
+	opacity: revert;
 	width: auto;
 	height: auto;
-	padding: revert;
-	margin: revert;
-	border: revert;
-	border-radius: revert;
-	background: revert;
+	pointer-events: revert;
+}
+
+.boldform-lite-form--theme .boldform-lite-form__choice-control {
+	display: none;
 }
 
 .boldform-lite-form--theme .boldform-lite-form__submit {
@@ -503,8 +582,10 @@ input[data-boldform-picker] {
 }
 
 .boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
-.boldform-block-wrap .boldform-lite-form__field select {
+.boldform-block-wrap .boldform-lite-form__field select,
+.boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
 	height: var(--bfb-field-height);
+	min-height: var(--bfb-field-height);
 }
 
 .boldform-block-wrap .boldform-lite-form__field textarea {
@@ -513,7 +594,8 @@ input[data-boldform-picker] {
 
 .boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
 .boldform-block-wrap .boldform-lite-form__field textarea,
-.boldform-block-wrap .boldform-lite-form__field select {
+.boldform-block-wrap .boldform-lite-form__field select,
+.boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
 	padding: var(--bfb-field-padding);
 	background-color: var(--bfb-field-bg);
 	color: var(--bfb-field-text);
@@ -524,9 +606,11 @@ input[data-boldform-picker] {
 
 .boldform-block-wrap .boldform-lite-form__field input:focus,
 .boldform-block-wrap .boldform-lite-form__field textarea:focus,
-.boldform-block-wrap .boldform-lite-form__field select:focus {
+.boldform-block-wrap .boldform-lite-form__field select:focus,
+.boldform-block-wrap .boldform-lite-form__field .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bfb-focus-color);
 	box-shadow: 0 0 0 1px var(--bfb-focus-color);
+	background-color: var(--bfb-focus-bg);
 }
 
 .boldform-block-wrap .boldform-lite-form__submit {
@@ -542,14 +626,18 @@ input[data-boldform-picker] {
 	background: var(--bfb-btn-hover-bg);
 }
 
-.boldform-block-wrap .boldform-lite-form__field-error,
-.boldform-block-wrap .boldform-lite-form__required {
+.boldform-block-wrap .boldform-lite-form__field-error {
 	color: var(--bfb-error-color);
+}
+
+.boldform-block-wrap .boldform-lite-form__required {
+	color: var(--bfb-required-color, var(--bfb-error-color));
 }
 
 .boldform-block-wrap .boldform-lite-form__field.is-invalid input,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid textarea,
-.boldform-block-wrap .boldform-lite-form__field.is-invalid select {
+.boldform-block-wrap .boldform-lite-form__field.is-invalid select,
+.boldform-block-wrap .boldform-lite-form__field.is-invalid .bf-select__trigger {
 	border-color: var(--bfb-error-color);
 }
 
@@ -720,7 +808,7 @@ input[data-boldform-picker] {
 /* ── HTML Editor (unused on frontend — kept for legacy) ── */
 .bf-editor {
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 16px);
+	border-radius: var(--bf-field-radius, 6px);
 	background: var(--bf-field-bg, #fff);
 	overflow: hidden;
 }
@@ -763,8 +851,8 @@ input[data-boldform-picker] {
 
 .bf-editor__content {
 	min-height: 150px;
-	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
-	font-size: var(--bf-field-font-size, 16px);
+	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px);
+	font-size: var(--bf-field-font-size, 14px);
 	color: var(--bf-field-text, #111827);
 	line-height: 1.6;
 	outline: none;
@@ -784,13 +872,13 @@ input[data-boldform-picker] {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	min-height: calc(1.5em + var(--bf-field-padding-y, 18px) * 2 + var(--bf-field-border-width, 1px) * 2);
-	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
-	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 16px);
-	background: var(--bf-field-bg, #fff);
+	min-height: calc(1.5em + var(--bf-field-padding-y, 10px) * 2 + var(--bf-field-border-width, 1.5px) * 2);
+	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px);
+	border: var(--bf-field-border-width, 1.5px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
+	border-radius: var(--bf-field-radius, 8px);
+	background-color: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 16px);
+	font-size: var(--bf-field-font-size, 14px);
 	line-height: 1.5;
 	cursor: pointer;
 	box-sizing: border-box;
@@ -803,7 +891,7 @@ input[data-boldform-picker] {
 
 .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: 0 0 0 var(--bf-focus-ring-width, 3px) var(--bf-focus-ring, rgba(15, 118, 110, 0.15));
+	box-shadow: var(--bf-select-focus-shadow, none);
 }
 
 .bf-select__value,
@@ -853,18 +941,17 @@ input[data-boldform-picker] {
 
 .bf-select__arrow {
 	flex-shrink: 0;
-	width: 10px;
-	height: 10px;
-	border-right: 2px solid #6b7280;
-	border-bottom: 2px solid #6b7280;
-	transform: rotate(45deg);
-	margin-top: -3px;
-	transition: transform 0.18s ease;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	color: #6b7280;
+	transition: transform 0.2s ease, color 0.18s ease;
 }
 
 .bf-select.is-open .bf-select__arrow {
-	transform: rotate(-135deg);
-	margin-top: 3px;
+	transform: rotate(180deg);
 }
 
 /* Tags (multiselect) */
@@ -920,7 +1007,7 @@ input[data-boldform-picker] {
 	right: 0;
 	z-index: 100;
 	border: 1px solid var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 16px);
+	border-radius: var(--bf-field-radius, 6px);
 	background: var(--bf-field-bg, #fff);
 	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
 	overflow: hidden;
@@ -1003,4 +1090,35 @@ input[data-boldform-picker] {
 	color: #9ca3af;
 	font-size: 14px;
 	text-align: center;
+}
+
+/* Widget-level display overrides */
+.boldform-hide-ph-yes .boldform-lite-form input::placeholder,
+.boldform-hide-ph-yes .boldform-lite-form textarea::placeholder {
+	color: transparent !important;
+}
+
+.boldform-hide-labels .boldform-lite-form__label {
+	display: none !important;
+}
+
+/* ── Calculation field ──────────────────────────────────────────────────── */
+.bf-calc-field-wrap {
+	display: block;
+	width: 100%;
+}
+
+.bf-calc-field-wrap .bf-calc-input {
+	width: 100%;
+	box-sizing: border-box;
+	background: var(--bf-field-bg, #f8fafc);
+	color: var(--bf-field-color, #0f172a);
+	border: var(--bf-field-border-width, 1.5px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
+	border-radius: var(--bf-field-radius, 8px);
+	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px);
+	font-size: 15px;
+	font-weight: 600;
+	cursor: default;
+	pointer-events: none;
+	outline: none;
 }

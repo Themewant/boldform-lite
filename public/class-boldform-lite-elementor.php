@@ -45,4 +45,27 @@ class BoldForm_Lite_Elementor {
 
 		$widgets_manager->register( new BoldForm_Lite_Elementor_Widget( array(), null, $this->plugin ) );
 	}
+
+	/**
+	 * Enqueues JS for the Elementor editor panel (not the preview iframe).
+	 *
+	 * @return void
+	 */
+	public function enqueue_editor_scripts() {
+		wp_enqueue_script(
+			'boldform-elementor-editor',
+			BOLDFORM_LITE_URL . 'assets/js/elementor-editor.js',
+			array( 'jquery' ),
+			BOLDFORM_LITE_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'boldform-elementor-editor',
+			'boldformElementorEditor',
+			array(
+				'builderBase' => admin_url( 'admin.php?page=boldform-lite-builder&form_id=' ),
+			)
+		);
+	}
 }

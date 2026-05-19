@@ -36,6 +36,13 @@ class BoldForm_Lite_Shortcode {
 	private $frontend_script_localized = false;
 
 	/**
+	 * Current form settings for the form being rendered.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private $current_form_settings = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param BoldForm_Lite $plugin Main plugin instance.
@@ -84,6 +91,15 @@ class BoldForm_Lite_Shortcode {
 		if ( $this->has_script_translation_files() ) {
 			wp_set_script_translations( 'boldform-lite-frontend', 'boldform-lite', BOLDFORM_LITE_PATH . 'languages' );
 		}
+
+		/**
+		 * Fires after BoldForm Lite registers its frontend assets.
+		 *
+		 * Pro can register additional scripts/styles (e.g. signature pad, payment SDK).
+		 *
+		 * @param BoldForm_Lite_Shortcode $shortcode The shortcode renderer instance.
+		 */
+		do_action( 'boldform_register_assets', $this );
 	}
 
 	/**
@@ -159,10 +175,19 @@ class BoldForm_Lite_Shortcode {
 		$status     = $this->get_form_status_message( $form_id );
 		$style_mode = $this->get_form_style_mode();
 		$form_class = 'boldform-lite-form' . ( 'theme' === $style_mode ? ' boldform-lite-form--theme' : '' );
+		if ( ! empty( $form_settings['hide_labels'] ) ) {
+			$form_class .= ' boldform-hide-labels';
+		}
+		if ( ! empty( $form_settings['hide_placeholders'] ) ) {
+			$form_class .= ' boldform-hide-ph-yes';
+		}
+
+		$form_uid = 'boldform-' . $form_id;
 
 		// Output buffering keeps the template readable while still returning a shortcode string.
 		ob_start();
 		?>
+		<div id="<?php echo esc_attr( $form_uid ); ?>" class="boldform-wrap">
 		<form
 			class="<?php echo esc_attr( $form_class ); ?>"
 			style="<?php echo esc_attr( $this->build_form_style_variables( $form_settings ) ); ?>"
@@ -173,9 +198,6 @@ class BoldForm_Lite_Shortcode {
 			data-enable-redirect="<?php echo esc_attr( $form_settings['enable_redirect'] ? '1' : '0' ); ?>"
 			data-redirect-url="<?php echo esc_attr( $form_settings['redirect_url'] ); ?>"
 		>
-			<?php if ( ! empty( $form_record->title ) ) : ?>
-				<h3 class="boldform-lite-form__title"><?php echo esc_html( (string) $form_record->title ); ?></h3>
-			<?php endif; ?>
 
 			<div class="boldform-lite-form__message<?php echo $status ? ' is-visible is-' . esc_attr( $status['type'] ) : ''; ?>" data-boldform-message aria-live="polite">
 				<?php echo $status ? esc_html( $status['message'] ) : ''; ?>
@@ -185,11 +207,11 @@ class BoldForm_Lite_Shortcode {
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
 					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; ?>
-				<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
+					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
 								<?php foreach ( $column['fields'] as $field_index => $field ) : ?>
-									<?php echo $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+									<?php echo wp_kses( $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ), $this->get_field_kses_allowed() ); ?>
 								<?php endforeach; ?>
 							</div>
 						<?php endforeach; ?>
@@ -205,13 +227,44 @@ class BoldForm_Lite_Shortcode {
 			<input type="hidden" name="boldform_nonce" value="<?php echo esc_attr( wp_create_nonce( 'boldform_lite_submit_form_' . $form_id ) ); ?>">
 			<?php if ( ! $has_submit_field ) : ?>
 			<div class="boldform-lite-form__actions is-align-<?php echo esc_attr( $form_settings['button_alignment'] ); ?>">
-				<button type="submit" class="boldform-lite-form__submit"><?php echo $this->build_button_content( $form_settings ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in build_button_content. ?></button>
+				<?php
+				$button_label = $this->get_button_accessible_label( $form_settings );
+				$aria_label   = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
+				?>
+				<button type="submit" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+					<?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?>
+				</button>
 			</div>
 			<?php endif; ?>
 		</form>
+		</div><?php // .boldform-wrap ?>
 		<?php
 
-		return (string) apply_filters( 'boldform_lite_form_output', (string) ob_get_clean(), $form_id, $form_record );
+		$form_html = (string) ob_get_clean();
+
+		/**
+		 * Filter the complete rendered form HTML.
+		 *
+		 * Pro can wrap the form (e.g. multi-step page wrapper, payment summary).
+		 *
+		 * @param string  $form_html   Full form HTML output.
+		 * @param int     $form_id     Form ID.
+		 * @param object  $form_record Form database row.
+		 * @param array<string, mixed> $form_settings Resolved form settings.
+		 */
+		$form_html = (string) apply_filters( 'boldform_form_output', apply_filters( 'boldform_lite_form_output', $form_html, $form_id, $form_record ), $form_id, $form_record, $form_settings );
+
+		/**
+		 * Fires after a form is rendered on the frontend.
+		 * Used by Pro modules (e.g. analytics) to track form views.
+		 *
+		 * @param int $form_id Form ID.
+		 */
+		do_action( 'boldform_form_rendered', $form_id );
+
+		// $form_html is structured HTML built entirely from escaped values (esc_attr, esc_html,
+		// wp_kses_post) inside ob_start(). Escaping the whole string here would corrupt the HTML.
+		return $form_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -372,10 +425,36 @@ class BoldForm_Lite_Shortcode {
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
 			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
 			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
+			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
 			'admin_email_type'  => $admin_email_type,
 			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'       => $admin_email,
+			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			// ── Pro: Multi-step (data passthrough for Pro's multi-page module) ───
+			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
+			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
+			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
+			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
+			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
+			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
+			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			// ── Pro: Scheduling ──────────────────────────────────────────────────
+			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )      : '',
+			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] )     : '',
+			'schedule_tz'             => isset( $decoded['schedule_tz'] )             ? sanitize_text_field( (string) $decoded['schedule_tz'] )             : '',
+			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )            : '',
+			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )            : '',
+			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
 		);
 	}
 
@@ -535,6 +614,56 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
+	 * Resolves an auto-populate value for a given key.
+	 *
+	 * Priority:
+	 *  1. URL parameter (?key=value) — sanitized text.
+	 *  2. Logged-in user built-in data (user_email, user_login, display_name,
+	 *     first_name, last_name, user_url, user_registered).
+	 *  3. Pro extension via `boldform_auto_populate_{key}` filter.
+	 *
+	 * @param string $key The auto-populate key set on the field.
+	 * @return string Resolved value, or empty string if nothing matched.
+	 */
+	private function resolve_auto_populate( string $key ): string {
+		// 1. URL parameter.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- read-only pre-fill, no data mutation.
+		if ( isset( $_GET[ $key ] ) ) {
+			return sanitize_text_field( wp_unslash( (string) $_GET[ $key ] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// 2. Logged-in user built-in properties.
+		if ( is_user_logged_in() ) {
+			$user = wp_get_current_user();
+
+			$user_map = array(
+				'user_email'      => $user->user_email,
+				'email'           => $user->user_email,
+				'user_login'      => $user->user_login,
+				'display_name'    => $user->display_name,
+				'first_name'      => $user->first_name,
+				'last_name'       => $user->last_name,
+				'user_url'        => $user->user_url,
+				'user_registered' => $user->user_registered,
+			);
+
+			if ( isset( $user_map[ $key ] ) ) {
+				return (string) $user_map[ $key ];
+			}
+		}
+
+		/**
+		 * Filter to allow Pro or third-party plugins to provide a value
+		 * for auto-populate keys not handled by Lite (e.g. user meta, post meta).
+		 *
+		 * @param string $value Empty string by default.
+		 * @param string $key   The auto-populate key.
+		 */
+		return (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+	}
+
+	/**
 	 * Renders one field wrapper.
 	 *
 	 * @param array<string, mixed> $field Field configuration.
@@ -546,6 +675,15 @@ class BoldForm_Lite_Shortcode {
 		$label          = isset( $field['label'] ) ? (string) $field['label'] : '';
 		$placeholder    = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
 		$default        = isset( $field['default_value'] ) ? (string) $field['default_value'] : '';
+
+		// Auto-population: resolve a value from URL param or logged-in user data.
+		$auto_key = isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '';
+		if ( '' !== $auto_key ) {
+			$auto_value = $this->resolve_auto_populate( $auto_key );
+			if ( '' !== $auto_value ) {
+				$default = $auto_value;
+			}
+		}
 		$required       = ! empty( $field['required'] );
 		$custom_error   = isset( $field['custom_error'] ) ? (string) $field['custom_error'] : '';
 		$options        = isset( $field['options'] ) && is_array( $field['options'] ) ? $field['options'] : array();
@@ -557,13 +695,33 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'file' === $type ) {
 			$accept   = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
-			$max_size = isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : 5;
+			/** This filter is documented in class-boldform-lite-form-handler.php */
+			$max_size = apply_filters( 'boldform_max_file_size', 2, $field );
 			$accept_attr = $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
 			// Fall through to render as a normal field wrapper with file input.
 		}
 
+
 		if ( 'submit' === $type ) {
-			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit">' . $this->build_button_content( $this->current_form_settings ?? array() ) . '</button></div>';
+			$form_settings = $this->current_form_settings ?? array();
+			$button_label  = $this->get_button_accessible_label( $form_settings );
+			$aria_label    = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
+			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
+		}
+
+		/**
+		 * Allow Pro or third-party plugins to render HTML for field types not
+		 * natively handled by Lite. Return a non-empty string to short-circuit
+		 * Lite's own rendering pipeline for that field.
+		 *
+		 * @param string               $html  Empty string by default.
+		 * @param string               $type  Field type key.
+		 * @param array<string, mixed> $field Full field definition.
+		 * @param int                  $index Field index in the form structure.
+		 */
+		$custom_html = (string) apply_filters( 'boldform_render_field', '', $type, $field, $index );
+		if ( '' !== $custom_html ) {
+			return $custom_html;
 		}
 
 		if ( 'section_break' === $type ) {
@@ -589,9 +747,9 @@ class BoldForm_Lite_Shortcode {
 			ob_start();
 			?>
 			<?php $field_css_name = isset( $field['css_class'] ) && '' !== $field['css_class'] ? ' ' . sanitize_html_class( $field['css_class'] ) : ''; ?>
-			<?php $label_pos_name = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom' ), true ) ? $field['label_placement'] : 'top'; ?>
+			<?php $label_pos_name = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top'; ?>
 			<div class="boldform-lite-form__field boldform-lite-form__field--name boldform-lite-label-<?php echo esc_attr( $label_pos_name ); ?><?php echo esc_attr( $field_css_name ); ?>">
-				<?php if ( '' !== $label ) : ?>
+				<?php if ( '' !== $label && 'hidden' !== $label_pos_name ) : ?>
 					<label class="boldform-lite-form__label">
 						<?php echo esc_html( $label ); ?>
 						<?php if ( $required ) : ?>
@@ -644,18 +802,51 @@ class BoldForm_Lite_Shortcode {
 		}
 		?>
 		<?php $field_css = isset( $field['css_class'] ) && '' !== $field['css_class'] ? ' ' . sanitize_html_class( $field['css_class'] ) : ''; ?>
-		<?php $label_pos = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom' ), true ) ? $field['label_placement'] : 'top'; ?>
+		<?php $label_pos = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top'; ?>
 		<?php
 		$cond_attrs = '';
-		if ( ! empty( $field['conditional']['enabled'] ) && ! empty( $field['conditional']['field_id'] ) ) {
-			$cond_attrs .= ' data-cond-action="' . esc_attr( $field['conditional']['action'] ?? 'show' ) . '"';
-			$cond_attrs .= ' data-cond-field="boldform_' . esc_attr( $field['conditional']['field_id'] ) . '"';
-			$cond_attrs .= ' data-cond-operator="' . esc_attr( $field['conditional']['operator'] ?? 'is' ) . '"';
-			$cond_attrs .= ' data-cond-value="' . esc_attr( $field['conditional']['value'] ?? '' ) . '"';
+		if ( ! empty( $field['conditional']['enabled'] ) ) {
+			$cond_data = $field['conditional'];
+			if ( isset( $cond_data['conditions'] ) && is_array( $cond_data['conditions'] ) ) {
+				// Multi-condition structure — prefix field_ids with boldform_ for the JS engine.
+				$conditions_out = array();
+				foreach ( $cond_data['conditions'] as $c ) {
+					$conditions_out[] = array(
+						'field_id' => 'boldform_' . ( isset( $c['field_id'] ) ? $c['field_id'] : '' ),
+						'operator' => isset( $c['operator'] ) ? $c['operator'] : 'is',
+						'value'    => isset( $c['value'] ) ? $c['value'] : '',
+					);
+				}
+				$cond_payload = array(
+					'action'     => isset( $cond_data['action'] ) && 'hide' === $cond_data['action'] ? 'hide' : 'show',
+					'logic'      => isset( $cond_data['logic'] ) && 'OR' === $cond_data['logic'] ? 'OR' : 'AND',
+					'conditions' => $conditions_out,
+				);
+				$cond_attrs .= ' data-bf-conditions="' . esc_attr( wp_json_encode( $cond_payload ) ) . '"';
+			} elseif ( ! empty( $cond_data['field_id'] ) ) {
+				// Legacy single-rule fallback.
+				$cond_attrs .= ' data-cond-action="' . esc_attr( $cond_data['action'] ?? 'show' ) . '"';
+				$cond_attrs .= ' data-cond-field="boldform_' . esc_attr( $cond_data['field_id'] ) . '"';
+				$cond_attrs .= ' data-cond-operator="' . esc_attr( $cond_data['operator'] ?? 'is' ) . '"';
+				$cond_attrs .= ' data-cond-value="' . esc_attr( $cond_data['value'] ?? '' ) . '"';
+			}
 		}
+
+		/**
+		 * Filter the conditional logic HTML attributes for a field wrapper.
+		 *
+		 * Pro can replace these with richer multi-rule conditional data attributes.
+		 *
+		 * @param string               $cond_attrs Pre-built attribute string (already escaped).
+		 * @param array<string, mixed> $field       Field definition.
+		 */
+		$cond_attrs = apply_filters( 'boldform_field_conditional_attrs', $cond_attrs, $field );
+		// After the filter, strip any HTML tags to prevent injection; attribute values were
+		// already individually escaped with esc_attr() before the filter was applied.
+		$cond_attrs = wp_strip_all_tags( (string) $cond_attrs );
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-			<?php if ( '' !== $label ) : ?>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name ); ?>">
 					<?php echo esc_html( $label ); ?>
 					<?php if ( $required ) : ?>
@@ -665,7 +856,21 @@ class BoldForm_Lite_Shortcode {
 			<?php endif; ?>
 
 			<div class="boldform-lite-form__control">
-				<?php echo $this->render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				<?php
+				$field_control_html = $this->render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout, $field );
+				/**
+				 * Filter the rendered HTML for a field control.
+				 *
+				 * Pro modules (e.g. calculation) can intercept this to render their own control HTML
+				 * for custom field types before the output is printed.
+				 *
+				 * @param string               $html       Rendered control HTML.
+				 * @param string               $type       Field type.
+				 * @param string               $field_name Input name attribute.
+				 * @param array<string, mixed> $field      Full field definition.
+				 */
+				echo wp_kses( apply_filters( 'boldform_field_control_html', $field_control_html, $type, $field_name, $field ), $this->get_field_kses_allowed() );
+				?>
 			</div>
 		</div>
 		<?php
@@ -703,6 +908,19 @@ class BoldForm_Lite_Shortcode {
 	 * @param bool   $required Required flag.
 	 * @return string
 	 */
+
+	/**
+	 * Returns the accessible label for the submit button.
+	 * Used for aria-label when button has no visible text.
+	 *
+	 * @param array<string, mixed> $settings Form settings.
+	 * @return string
+	 */
+	private function get_button_accessible_label( $settings ) {
+		$text = isset( $settings['button_text'] ) ? esc_html( $settings['button_text'] ) : '';
+		return '' !== $text ? $text : esc_html__( 'Submit', 'boldform-lite' );
+	}
+
 	/**
 	 * Builds the submit button inner HTML including optional icon.
 	 *
@@ -710,30 +928,178 @@ class BoldForm_Lite_Shortcode {
 	 * @return string
 	 */
 	private function build_button_content( $settings ) {
-		$text      = esc_html( $settings['button_text'] ?? __( 'Submit', 'boldform-lite' ) );
+		$raw_text  = $settings['button_text'] ?? '';
+		$text      = esc_html( $raw_text );
 		$icon_type = $settings['button_icon_type'] ?? 'none';
 
+		// No icon — return text (or default if empty).
 		if ( 'none' === $icon_type ) {
-			return $text;
+			return '' !== $text ? $text : esc_html__( 'Submit', 'boldform-lite' );
 		}
 
 		$icon     = '';
 		$position = $settings['button_icon_position'] ?? 'right';
 		$gap      = absint( $settings['button_icon_gap'] ?? 8 );
 
+		$icon_size  = absint( $settings['button_icon_size'] ?? 18 );
+		$icon_color = ! empty( $settings['button_icon_color'] ) ? $settings['button_icon_color'] : '';
+		$icon_style = '';
+		if ( $icon_size && 18 !== $icon_size ) {
+			$icon_style .= 'font-size:' . $icon_size . 'px;width:' . $icon_size . 'px;height:' . $icon_size . 'px;';
+		}
+		if ( $icon_color ) {
+			$icon_style .= 'color:' . esc_attr( $icon_color ) . ';';
+		}
+		$icon_style_attr = $icon_style ? ' style="' . esc_attr( $icon_style ) . '"' : '';
+
 		if ( 'dashicon' === $icon_type && ! empty( $settings['button_icon_dashicon'] ) ) {
-			$icon = '<span class="dashicons ' . esc_attr( $settings['button_icon_dashicon'] ) . '"></span>';
+			if ( ! is_admin() ) {
+				wp_enqueue_style( 'dashicons' );
+			}
+			$icon = '<span class="dashicons ' . esc_attr( $settings['button_icon_dashicon'] ) . '"' . $icon_style_attr . '></span>';
 		} elseif ( 'svg' === $icon_type && ! empty( $settings['button_icon_svg'] ) ) {
-			$icon = '<span class="boldform-btn-icon-svg">' . $settings['button_icon_svg'] . '</span>';
+			$img_w       = ( $icon_size && 18 !== $icon_size ) ? $icon_size : 18;
+			$svg_url     = $settings['button_icon_svg'];
+			$svg_style   = 'width:' . $img_w . 'px;height:' . $img_w . 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
+			if ( $icon_color ) {
+				$svg_style .= 'fill:' . esc_attr( $icon_color ) . ';color:' . esc_attr( $icon_color ) . ';';
+			}
+			// Try to inline the SVG so fill/color CSS applies.
+			$inline_svg = $this->get_inline_svg( $svg_url, $img_w, $icon_color );
+			if ( $inline_svg ) {
+				$icon = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true">' . $inline_svg . '</span>';
+			} else {
+				$icon = '<img src="' . esc_url( $svg_url ) . '" class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" alt="">';
+			}
 		}
 
+		// No valid icon resolved — return text only.
 		if ( ! $icon ) {
-			return $text;
+			return '' !== $text ? $text : esc_html__( 'Submit', 'boldform-lite' );
 		}
 
+		// Icon-only button (no text).
+		if ( '' === $text ) {
+			return '<span class="boldform-btn-inner boldform-btn-inner--icon-only" style="display:inline-flex;align-items:center;">' . $icon . '</span>';
+		}
+
+		// Icon + text.
 		$inner = 'left' === $position ? $icon . $text : $text . $icon;
 
 		return '<span class="boldform-btn-inner" style="display:inline-flex;align-items:center;gap:' . esc_attr( $gap ) . 'px;">' . $inner . '</span>';
+	}
+
+	/**
+	 * Reads an uploaded SVG file by URL and returns sanitized inline SVG markup
+	 * with size and fill applied, so CSS color controls work.
+	 *
+	 * Returns empty string on failure so caller falls back to <img>.
+	 *
+	 * @param string $url        Attachment URL.
+	 * @param int    $size       Width/height in px.
+	 * @param string $fill_color Hex color or empty.
+	 * @return string
+	 */
+	private function get_inline_svg( $url, $size, $fill_color = '' ) {
+		// Only allow files from the uploads directory.
+		$upload_dir = wp_upload_dir();
+		$base_url   = $upload_dir['baseurl'];
+		$base_dir   = $upload_dir['basedir'];
+
+		if ( strpos( $url, $base_url ) !== 0 ) {
+			return '';
+		}
+
+		$relative = substr( $url, strlen( $base_url ) );
+		$path     = $base_dir . $relative;
+
+		if ( ! is_file( $path ) || ! is_readable( $path ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		$svg = file_get_contents( $path );
+		if ( empty( $svg ) ) {
+			return '';
+		}
+
+		// Parse with DOMDocument for reliable sanitization.
+		$dom = new \DOMDocument();
+		libxml_use_internal_errors( true );
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$dom->loadXML( $svg );
+		libxml_clear_errors();
+
+		$svg_el = $dom->getElementsByTagName( 'svg' )->item( 0 );
+		if ( ! $svg_el ) {
+			return '';
+		}
+
+		// Set size.
+		$svg_el->setAttribute( 'width', (string) $size );
+		$svg_el->setAttribute( 'height', (string) $size );
+		$svg_el->removeAttribute( 'x' );
+		$svg_el->removeAttribute( 'y' );
+		$svg_el->removeAttribute( 'xml:space' );
+		$svg_el->removeAttribute( 'version' );
+		$svg_el->removeAttribute( 'id' );
+
+		// Apply color — set fill on root SVG so currentColor cascade works.
+		if ( $fill_color ) {
+			$existing_style = $svg_el->getAttribute( 'style' );
+			// Strip enable-background junk from Illustrator exports.
+			$existing_style = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
+			$svg_el->setAttribute( 'style', trim( $existing_style . ';fill:' . esc_attr( $fill_color ) . ';', ';' ) );
+		} else {
+			// Remove Illustrator style bloat even when no color override.
+			$existing_style = $svg_el->getAttribute( 'style' );
+			$clean = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
+			if ( trim( $clean ) !== '' ) {
+				$svg_el->setAttribute( 'style', trim( $clean, ';' ) );
+			} else {
+				$svg_el->removeAttribute( 'style' );
+			}
+		}
+
+		// Remove script/event-handler nodes recursively for safety.
+		$this->remove_unsafe_svg_nodes( $dom );
+
+		// Serialize just the <svg> element.
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		$output = $dom->saveXML( $svg_el );
+
+		return $output ? $output : '';
+	}
+
+	/**
+	 * Removes unsafe nodes (script, foreignObject, on* attributes) from SVG DOM.
+	 *
+	 * @param \DOMDocument $dom The SVG document.
+	 * @return void
+	 */
+	private function remove_unsafe_svg_nodes( \DOMDocument $dom ) {
+		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use' );
+		foreach ( $unsafe_tags as $tag ) {
+			foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
+				$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			}
+		}
+		// Strip on* event attributes from all elements.
+		$xpath = new \DOMXPath( $dom );
+		foreach ( iterator_to_array( $xpath->query( '//*[@*]' ) ) as $el ) {
+			if ( ! $el instanceof \DOMElement ) {
+				continue;
+			}
+			$attrs_to_remove = array();
+			foreach ( $el->attributes as $attr ) {
+				if ( stripos( $attr->name, 'on' ) === 0 || stripos( $attr->name, 'xlink:href' ) === 0 ) {
+					$attrs_to_remove[] = $attr->name;
+				}
+			}
+			foreach ( $attrs_to_remove as $name ) {
+				$el->removeAttribute( $name );
+			}
+		}
 	}
 
 	private function render_terms_field( $field_name, $content, $required ) {
@@ -743,7 +1109,8 @@ class BoldForm_Lite_Shortcode {
 		<div class="boldform-lite-form__field boldform-lite-form__field--terms_conditions">
 			<label class="boldform-lite-form__choice boldform-lite-form__terms">
 				<input type="checkbox" name="<?php echo esc_attr( $field_name ); ?>" value="1"<?php echo esc_attr( $required_attr ); ?>>
-				<span>
+				<span class="boldform-lite-form__choice-control" aria-hidden="true"></span>
+				<span class="boldform-lite-form__choice-label">
 					<?php if ( '' !== $content ) : ?>
 						<span class="boldform-lite-form__terms-copy"><?php echo wp_kses_post( $content ); ?></span>
 					<?php endif; ?>
@@ -766,6 +1133,131 @@ class BoldForm_Lite_Shortcode {
 	 * @param string                     $options_layout 'block' or 'inline'.
 	 * @return string
 	 */
+	/**
+	 * Returns the allowed HTML tags and attributes for form field output.
+	 *
+	 * Used with wp_kses() when echoing render_field() or filtered field HTML
+	 * to satisfy WordPress.org escaping requirements while preserving all
+	 * necessary form elements (input, select, textarea, svg, etc.).
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
+	private function get_field_kses_allowed() {
+		$global_attrs = array(
+			'id'            => true,
+			'class'         => true,
+			'style'         => true,
+			'data-*'        => true,
+			'aria-*'        => true,
+			'role'          => true,
+			'tabindex'      => true,
+			'hidden'        => true,
+			'title'         => true,
+			'lang'          => true,
+			'dir'           => true,
+		);
+
+		return array(
+			'div'      => $global_attrs,
+			'span'     => $global_attrs,
+			'p'        => $global_attrs,
+			'label'    => array_merge( $global_attrs, array( 'for' => true ) ),
+			'input'    => array_merge(
+				$global_attrs,
+				array(
+					'type'         => true,
+					'name'         => true,
+					'value'        => true,
+					'placeholder'  => true,
+					'required'     => true,
+					'checked'      => true,
+					'disabled'     => true,
+					'readonly'     => true,
+					'autocomplete' => true,
+					'min'          => true,
+					'max'          => true,
+					'step'         => true,
+					'maxlength'    => true,
+					'accept'       => true,
+					'multiple'     => true,
+				)
+			),
+			'textarea' => array_merge(
+				$global_attrs,
+				array(
+					'name'        => true,
+					'placeholder' => true,
+					'required'    => true,
+					'rows'        => true,
+					'cols'        => true,
+					'readonly'    => true,
+					'disabled'    => true,
+					'maxlength'   => true,
+				)
+			),
+			'select'   => array_merge(
+				$global_attrs,
+				array(
+					'name'     => true,
+					'required' => true,
+					'multiple' => true,
+					'disabled' => true,
+					'size'     => true,
+				)
+			),
+			'option'   => array(
+				'value'    => true,
+				'selected' => true,
+				'disabled' => true,
+			),
+			'optgroup' => array( 'label' => true, 'disabled' => true ),
+			'button'   => array_merge(
+				$global_attrs,
+				array(
+					'type'     => true,
+					'name'     => true,
+					'value'    => true,
+					'disabled' => true,
+				)
+			),
+			'a'        => array_merge( $global_attrs, array( 'href' => true, 'target' => true, 'rel' => true ) ),
+			'strong'   => $global_attrs,
+			'em'       => $global_attrs,
+			'br'       => array(),
+			'ul'       => $global_attrs,
+			'ol'       => $global_attrs,
+			'li'       => $global_attrs,
+			'h1'       => $global_attrs,
+			'h2'       => $global_attrs,
+			'h3'       => $global_attrs,
+			'h4'       => $global_attrs,
+			'h5'       => $global_attrs,
+			'h6'       => $global_attrs,
+			'img'      => array_merge( $global_attrs, array( 'src' => true, 'alt' => true, 'width' => true, 'height' => true ) ),
+			'svg'      => array_merge(
+				$global_attrs,
+				array(
+					'xmlns'           => true,
+					'viewbox'         => true,
+					'fill'            => true,
+					'stroke'          => true,
+					'stroke-width'    => true,
+					'stroke-linecap'  => true,
+					'stroke-linejoin' => true,
+					'width'           => true,
+					'height'          => true,
+					'aria-hidden'     => true,
+				)
+			),
+			'path'     => array( 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
+			'polyline' => array( 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
+			'line'     => array( 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true ),
+			'circle'   => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ),
+			'rect'     => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'fill' => true, 'stroke' => true ),
+			'g'        => array( 'fill' => true, 'stroke' => true, 'transform' => true ),
+		);
+	}
+
 	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
@@ -795,6 +1287,7 @@ class BoldForm_Lite_Shortcode {
 				$extra_attrs .= ' data-searchable="1"';
 			}
 
+			// Hidden native <select> for form submission.
 			$html = sprintf(
 				'<select id="%1$s" name="%2$s"%3$s%4$s style="display:none">',
 				esc_attr( $field_name ),
@@ -810,7 +1303,9 @@ class BoldForm_Lite_Shortcode {
 				);
 			}
 
-			foreach ( $this->normalize_options( $options ) as $option ) {
+			$normalized_options = $this->normalize_options( $options );
+
+			foreach ( $normalized_options as $option ) {
 				$is_selected = in_array( $option, $default_values, true ) ? ' selected' : '';
 				$html       .= sprintf(
 					'<option value="%1$s"%2$s>%3$s</option>',
@@ -821,6 +1316,78 @@ class BoldForm_Lite_Shortcode {
 			}
 
 			$html .= '</select>';
+
+			// Custom select UI rendered in PHP so it works in Gutenberg SSR, Elementor editor, and normal frontend.
+			$wrap_class = 'bf-select' . ( $is_multiple ? ' bf-select--multi' : '' );
+			$data_attrs = ' data-boldform-custom-select="1"';
+			if ( $is_multiple ) {
+				$data_attrs .= ' data-multiple="1"';
+			}
+			if ( $is_searchable ) {
+				$data_attrs .= ' data-searchable="1"';
+			}
+
+			$listbox_id = $field_name . '_listbox';
+			$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
+
+			// Trigger.
+			$arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
+			$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
+
+			// Prepare accessible label for the trigger
+			$field_label = isset( $field['label'] ) ? (string) $field['label'] : '';
+			$trigger_aria_label = $field_label && '' !== $field_label ? esc_attr( $field_label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
+			$trigger_aria_attrs = ' aria-label="' . $trigger_aria_label . '" aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
+
+			if ( $is_multiple ) {
+				$selected_opts = array_filter( $default_values, function ( $v ) use ( $normalized_options ) {
+					return '' !== $v && in_array( $v, $normalized_options, true );
+				} );
+				if ( empty( $selected_opts ) ) {
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+				} else {
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__tags">';
+					foreach ( $selected_opts as $v ) {
+						$html .= '<span class="bf-select__tag">' . esc_html( $v ) . '<button type="button" class="bf-select__tag-x" data-val="' . esc_attr( $v ) . '" aria-label="' . esc_attr__( 'Remove', 'boldform-lite' ) . '">&times;</button></span>';
+					}
+					$html .= '</span>' . $arrow . '</div>';
+				}
+			} else {
+				$selected_val = ! empty( $default_values[0] ) && in_array( $default_values[0], $normalized_options, true ) ? $default_values[0] : '';
+				if ( $selected_val ) {
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__value">' . esc_html( $selected_val ) . '</span>' . $arrow . '</div>';
+				} else {
+					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+				}
+			}
+
+			// Panel.
+			$html .= '<div class="bf-select__panel">';
+
+			if ( $is_searchable ) {
+				$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+				$html .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off" aria-label="' . esc_attr__( 'Search', 'boldform-lite' ) . '"></div>';
+			}
+
+			$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+			$html .= '<div class="bf-select__list" role="listbox" id="' . esc_attr( $listbox_id ) . '">';
+			foreach ( $normalized_options as $option ) {
+				$is_active = in_array( $option, $default_values, true );
+				$active_class = $is_active ? ' is-active' : '';
+				$html .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $option ) . '">';
+				if ( $is_multiple ) {
+					$html .= '<span class="bf-select__check">' . ( $is_active ? $check_svg : '' ) . '</span>';
+				}
+				$html .= '<span class="bf-select__option-text">' . esc_html( $option ) . '</span>';
+				if ( ! $is_multiple && $is_active ) {
+					$html .= '<span class="bf-select__active-mark">' . $check_svg . '</span>';
+				}
+				$html .= '</div>';
+			}
+			$html .= '</div>'; // .bf-select__list
+			$html .= '</div>'; // .bf-select__panel
+			$html .= '</div>'; // .bf-select
 
 			return $html;
 		}
@@ -836,7 +1403,7 @@ class BoldForm_Lite_Shortcode {
 				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
 
 				$html .= sprintf(
-					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span>%7$s</span></label>',
+					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s</span></label>',
 					esc_attr( $choice_id ),
 					esc_attr( $type ),
 					esc_attr( $name_attr ),
@@ -973,18 +1540,56 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'country' === $type ) {
-			$countries = $this->get_country_list();
+			$countries       = $this->get_country_list();
+			$placeholder_text = $placeholder ? $placeholder : __( 'Select a country', 'boldform-lite' );
+
+			// Hidden native <select> for form submission.
 			$html = sprintf(
 				'<select id="%1$s" name="%1$s"%2$s data-boldform-select="1" data-searchable="1" style="display:none">',
 				esc_attr( $field_name ),
 				$required_attr
 			);
-			$html .= sprintf( '<option value="">%s</option>', esc_html( $placeholder ? $placeholder : __( 'Select a country', 'boldform-lite' ) ) );
+			$html .= sprintf( '<option value="">%s</option>', esc_html( $placeholder_text ) );
 			foreach ( $countries as $code => $name ) {
 				$sel = $default === $code ? ' selected' : '';
 				$html .= sprintf( '<option value="%s"%s>%s</option>', esc_attr( $code ), $sel, esc_html( $name ) );
 			}
 			$html .= '</select>';
+
+			// Custom select UI rendered in PHP.
+			$arrow     = '<span class="bf-select__arrow"></span>';
+			$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+			$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+
+			$selected_name = '';
+			if ( $default && isset( $countries[ $default ] ) ) {
+				$selected_name = $countries[ $default ];
+			}
+
+			$html .= '<div class="bf-select" data-boldform-custom-select="1" data-searchable="1">';
+			if ( $selected_name ) {
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__value">' . esc_html( $selected_name ) . '</span>' . $arrow . '</div>';
+			} else {
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+			}
+
+			$html .= '<div class="bf-select__panel">';
+			$html .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off"></div>';
+			$html .= '<div class="bf-select__list" role="listbox">';
+			foreach ( $countries as $code => $name ) {
+				$is_active    = $default === $code;
+				$active_class = $is_active ? ' is-active' : '';
+				$html .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $code ) . '">';
+				$html .= '<span class="bf-select__option-text">' . esc_html( $name ) . '</span>';
+				if ( $is_active ) {
+					$html .= '<span class="bf-select__active-mark">' . $check_svg . '</span>';
+				}
+				$html .= '</div>';
+			}
+			$html .= '</div>'; // .bf-select__list
+			$html .= '</div>'; // .bf-select__panel
+			$html .= '</div>'; // .bf-select
+
 			return $html;
 		}
 
@@ -1028,8 +1633,14 @@ class BoldForm_Lite_Shortcode {
 			return $html;
 		}
 
+		// Unknown/pro field types — return empty so the boldform_field_control_html
+		// filter can provide the markup.  Without Pro the field renders empty.
 		$allowed_input_types = array( 'text', 'email', 'number', 'tel', 'url' );
-		$input_type          = in_array( $type, $allowed_input_types, true ) ? $type : 'text';
+		if ( ! in_array( $type, $allowed_input_types, true ) ) {
+			return '';
+		}
+
+		$input_type = $type;
 
 		return sprintf(
 			'<input id="%1$s" type="%2$s" name="%1$s" placeholder="%3$s" value="%4$s"%5$s>',
@@ -1105,6 +1716,7 @@ class BoldForm_Lite_Shortcode {
 				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
 				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
 				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
+			'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
 			)
 		);
 

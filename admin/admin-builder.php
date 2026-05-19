@@ -13,6 +13,16 @@ $boldform_lite_field_groups = array(
 	'basic'    => __( 'Basic Fields', 'boldform-lite' ),
 	'advanced' => __( 'Advanced Fields', 'boldform-lite' ),
 );
+
+/**
+ * Filter the field group headings shown in the builder sidebar.
+ *
+ * Pro can add new groups (e.g. 'pro' => 'Pro Fields') so its field types
+ * appear under a dedicated section.
+ *
+ * @param array<string, string> $groups Group key => Label pairs.
+ */
+$boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $boldform_lite_field_groups );
 ?>
 <?php $boldform_lite_is_new_form = ! $form_data['id']; ?>
 <div class="wrap boldform-builder-page" id="boldform-builder-root">
@@ -25,7 +35,7 @@ $boldform_lite_field_groups = array(
 			</a>
 			<div class="boldform-setup-header__brand">
 				<span class="dashicons dashicons-feedback"></span>
-				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
+				<span><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 			</div>
 		</div>
 		<div class="boldform-setup-body">
@@ -69,6 +79,9 @@ $boldform_lite_field_groups = array(
 				<button type="button" class="boldform-editor-tab is-active" id="boldform-editor-tab-builder" data-editor-tab="builder" role="tab" aria-selected="true">
 					<?php esc_html_e( 'Builder', 'boldform-lite' ); ?>
 				</button>
+				<button type="button" class="boldform-editor-tab" id="boldform-editor-tab-style" data-editor-tab="style" role="tab" aria-selected="false">
+					<?php esc_html_e( 'Style', 'boldform-lite' ); ?>
+				</button>
 				<button type="button" class="boldform-editor-tab" id="boldform-editor-tab-settings" data-editor-tab="settings" role="tab" aria-selected="false">
 					<?php esc_html_e( 'Settings', 'boldform-lite' ); ?>
 				</button>
@@ -84,9 +97,6 @@ $boldform_lite_field_groups = array(
 				<span class="dashicons dashicons-visibility"></span>
 				<?php esc_html_e( 'Preview', 'boldform-lite' ); ?>
 			</a>
-			<button type="button" class="button" id="boldform-save-continue">
-				<?php esc_html_e( 'Save & Continue', 'boldform-lite' ); ?>
-			</button>
 			<button type="button" class="button button-primary" id="boldform-save-form">
 				<?php esc_html_e( 'Save Form', 'boldform-lite' ); ?>
 			</button>
@@ -105,9 +115,6 @@ $boldform_lite_field_groups = array(
 					<button type="button" class="boldform-sidebar-tab" id="boldform-tab-settings" data-tab="settings" role="tab" aria-selected="false">
 						<?php esc_html_e( 'Field Settings', 'boldform-lite' ); ?>
 					</button>
-					<button type="button" class="boldform-sidebar-tab" id="boldform-tab-styling" data-tab="styling" role="tab" aria-selected="false">
-						<?php esc_html_e( 'Styling', 'boldform-lite' ); ?>
-					</button>
 				</div>
 
 				<div class="boldform-sidebar-panel__content">
@@ -117,15 +124,33 @@ $boldform_lite_field_groups = array(
 							<p><?php esc_html_e( 'Drag fields into a column or click to insert into the selected column.', 'boldform-lite' ); ?></p>
 						</div>
 
-						<div class="boldform-field-library" id="boldform-field-library">
+						<div class="boldform-field-search">
+								<input type="text" id="boldform-field-search" placeholder="<?php esc_attr_e( 'Search fields...', 'boldform-lite' ); ?>" autocomplete="off">
+							</div>
+
+							<div class="boldform-field-library" id="boldform-field-library">
 							<?php foreach ( $boldform_lite_field_groups as $boldform_lite_group_key => $boldform_lite_group_label ) : ?>
 								<div class="boldform-library-group">
 									<h3><?php echo esc_html( $boldform_lite_group_label ); ?></h3>
 									<div class="boldform-library-grid">
-										<?php foreach ( $this->get_field_library() as $boldform_lite_field_type => $boldform_lite_field_data ) : ?>
-											<?php if ( ! isset( $boldform_lite_field_data['group'] ) || $boldform_lite_group_key !== $boldform_lite_field_data['group'] ) : ?>
-												<?php continue; ?>
-											<?php endif; ?>
+										<?php
+										$boldform_lite_all_fields = $this->get_field_library();
+
+										/**
+										 * Filter the complete field library used in the builder sidebar.
+										 *
+										 * Additional field types can be added via this filter.
+										 *
+										 * @param array<string, array<string, string>> $fields All field definitions.
+										 * @param string                               $group  Current group being rendered.
+										 */
+										$boldform_lite_all_fields = apply_filters( 'boldform_builder_fields', $boldform_lite_all_fields, $boldform_lite_group_key );
+
+										foreach ( $boldform_lite_all_fields as $boldform_lite_field_type => $boldform_lite_field_data ) :
+											if ( ! isset( $boldform_lite_field_data['group'] ) || $boldform_lite_group_key !== $boldform_lite_field_data['group'] ) :
+												continue;
+											endif;
+										?>
 											<button
 												type="button"
 												class="boldform-library-item"
@@ -155,14 +180,6 @@ $boldform_lite_field_groups = array(
 						<div class="boldform-settings-panel" id="boldform-settings-panel" hidden></div>
 					</section>
 
-					<section class="boldform-sidebar-view" id="boldform-sidebar-styling" data-tab-panel="styling" role="tabpanel" aria-labelledby="boldform-tab-styling" hidden>
-						<div class="boldform-panel-head">
-							<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
-							<p><?php esc_html_e( 'Change field and button styles and see the preview update instantly.', 'boldform-lite' ); ?></p>
-						</div>
-
-						<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
-					</section>
 				</div>
 			</div>
 		</aside>
@@ -174,7 +191,7 @@ $boldform_lite_field_groups = array(
 						<h2><?php esc_html_e( 'Form Canvas', 'boldform-lite' ); ?></h2>
 						<p><?php esc_html_e( 'Build layouts with rows and columns, then drop fields into each column.', 'boldform-lite' ); ?></p>
 					</div>
-					<button type="button" class="button button-secondary" id="boldform-add-row-inline">
+					<button type="button" class="button button-primary" id="boldform-add-row-inline">
 						<?php esc_html_e( 'Add Row', 'boldform-lite' ); ?>
 					</button>
 				</div>
@@ -204,6 +221,16 @@ $boldform_lite_field_groups = array(
 		</main>
 	</div>
 	</div>
+
+	<section class="boldform-editor-view" id="boldform-editor-view-style" data-editor-view="style" hidden>
+		<div class="boldform-panel boldform-global-settings-panel">
+			<div class="boldform-panel-head">
+				<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
+				<p><?php esc_html_e( 'Customize field, label, button, and multi-step styles. Changes preview instantly.', 'boldform-lite' ); ?></p>
+			</div>
+			<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
+		</div>
+	</section>
 
 	<section class="boldform-editor-view" id="boldform-editor-view-settings" data-editor-view="settings" hidden>
 		<div class="boldform-panel boldform-global-settings-panel">

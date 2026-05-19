@@ -64,6 +64,9 @@ claude.md
 .claude.md
 *.plan.md
 
+# Git
+.git/
+
 # Misc
 *.bak
 *.orig

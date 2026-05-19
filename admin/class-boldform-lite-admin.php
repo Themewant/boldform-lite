@@ -59,6 +59,13 @@ class BoldForm_Lite_Admin {
 	private $settings_page_hook = '';
 
 	/**
+	 * Reports page hook suffix.
+	 *
+	 * @var string
+	 */
+	private $reports_page_hook = '';
+
+	/**
 	 * AJAX handler.
 	 *
 	 * @var BoldForm_Lite_Ajax_Save
@@ -82,8 +89,8 @@ class BoldForm_Lite_Admin {
 	 */
 	public function register_menu() {
 		$this->list_page_hook = add_menu_page(
-			__( 'BoldForm', 'boldform-lite' ),
-			__( 'BoldForm', 'boldform-lite' ),
+			__( 'Bold Form', 'boldform-lite' ),
+			__( 'Bold Form', 'boldform-lite' ),
 			'manage_options',
 			'boldform-lite',
 			array( $this, 'render_forms_page' ),
@@ -127,6 +134,15 @@ class BoldForm_Lite_Admin {
 			array( $this, 'render_settings_page' )
 		);
 
+		$this->reports_page_hook = add_submenu_page(
+			'boldform-lite',
+			__( 'Reports', 'boldform-lite' ),
+			__( 'Reports', 'boldform-lite' ),
+			'manage_options',
+			'boldform-lite-reports',
+			array( $this, 'render_reports_page' )
+		);
+
 		$this->preview_page_hook = add_submenu_page(
 			'',
 			__( 'Preview Form', 'boldform-lite' ),
@@ -137,6 +153,25 @@ class BoldForm_Lite_Admin {
 		);
 
 		add_action( 'load-' . $this->preview_page_hook, array( $this, 'set_preview_title' ) );
+
+		// Documentation — links to static HTML docs (opens in new tab).
+		add_submenu_page(
+			'boldform-lite',
+			__( 'Documentation', 'boldform-lite' ),
+			__( 'Documentation', 'boldform-lite' ),
+			'manage_options',
+			'boldform-lite-docs',
+			array( $this, 'render_docs_page' )
+		);
+
+		/**
+		 * Fires after BoldForm Lite registers all its admin submenu pages.
+		 *
+		 * Pro can add its own submenu pages (Payments, Integrations, etc.) under boldform-lite.
+		 *
+		 * @param BoldForm_Lite_Admin $admin The admin instance.
+		 */
+		do_action( 'boldform_admin_menu', $this );
 	}
 
 	/**
@@ -148,6 +183,39 @@ class BoldForm_Lite_Admin {
 		global $title;
 
 		$title = __( 'Preview Form', 'boldform-lite' );
+	}
+
+	/**
+	 * Allow SVG uploads in the media library.
+	 *
+	 * @param array<string, string> $mimes Allowed mime types.
+	 * @return array<string, string>
+	 */
+	public function allow_svg_upload( $mimes ) {
+		$mimes['svg']  = 'image/svg+xml';
+		$mimes['svgz'] = 'image/svg+xml';
+		return $mimes;
+	}
+
+	/**
+	 * Fix SVG file type detection on upload.
+	 *
+	 * @param array<string, string|false> $data     File data.
+	 * @param string                      $file     Full path to the file.
+	 * @param string                      $filename The name of the file.
+	 * @param string[]|null               $mimes    Allowed mime types.
+	 * @return array<string, string|false>
+	 */
+	public function fix_svg_filetype( $data, $file, $filename, $mimes ) {
+		if ( ! empty( $data['ext'] ) && ! empty( $data['type'] ) ) {
+			return $data;
+		}
+		$ext = pathinfo( $filename, PATHINFO_EXTENSION );
+		if ( 'svg' === $ext || 'svgz' === $ext ) {
+			$data['ext']  = $ext;
+			$data['type'] = 'image/svg+xml';
+		}
+		return $data;
 	}
 
 	/**
@@ -163,6 +231,7 @@ class BoldForm_Lite_Admin {
 			$this->builder_page_hook,
 			$this->entries_page_hook,
 			$this->settings_page_hook,
+			$this->reports_page_hook,
 			$this->preview_page_hook,
 		);
 
@@ -192,6 +261,8 @@ class BoldForm_Lite_Admin {
 				true
 			);
 
+			wp_enqueue_media();
+
 			wp_enqueue_script(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
@@ -201,10 +272,7 @@ class BoldForm_Lite_Admin {
 			);
 
 			// Send the builder a fully normalized payload so the JS app does not need to understand raw DB rows.
-			wp_localize_script(
-				'boldform-lite-builder',
-				'boldformLiteBuilder',
-				array(
+			$builder_data = array(
 					'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
 					'nonce'              => wp_create_nonce( 'boldform_lite_save_form' ),
 					'formId'             => $form_data['id'],
@@ -235,8 +303,7 @@ class BoldForm_Lite_Admin {
 						),
 					),
 					'saveText'           => __( 'Save Form', 'boldform-lite' ),
-					'saveContinueText'   => __( 'Save & Continue', 'boldform-lite' ),
-					'savingText'         => __( 'Saving...', 'boldform-lite' ),
+						'savingText'         => __( 'Saving...', 'boldform-lite' ),
 					'emptyCanvasText'    => __( 'Start building your form by adding a row, then drag or click fields into a column.', 'boldform-lite' ),
 					'selectFieldText'    => __( 'Select a field to edit its settings.', 'boldform-lite' ),
 					'defaultFormTitle'   => __( 'Untitled Form', 'boldform-lite' ),
@@ -320,12 +387,16 @@ class BoldForm_Lite_Admin {
 						'buttonIconType'  => __( 'Icon', 'boldform-lite' ),
 						'dashicon'        => __( 'Dashicon', 'boldform-lite' ),
 						'customSvg'       => __( 'Custom SVG', 'boldform-lite' ),
-						'dashiconClass'   => __( 'Dashicon class', 'boldform-lite' ),
-						'browseDashicons' => __( 'Browse all Dashicons', 'boldform-lite' ),
-						'svgCode'         => __( 'SVG code', 'boldform-lite' ),
+						'dashiconClass'   => __( 'Dashicon', 'boldform-lite' ),
+						'uploadSvg'       => __( 'Upload SVG', 'boldform-lite' ),
+						'changeSvg'       => __( 'Change SVG', 'boldform-lite' ),
+						'useSvg'          => __( 'Use this SVG', 'boldform-lite' ),
+						'svgCode'         => __( 'SVG Icon', 'boldform-lite' ),
 						'iconPosition'    => __( 'Icon position', 'boldform-lite' ),
 						'iconGap'         => __( 'Icon gap (px)', 'boldform-lite' ),
-						'cssClass'        => __( 'CSS Class', 'boldform-lite' ),
+						'cssClass'          => __( 'CSS Class', 'boldform-lite' ),
+						'autoPopulateKey'   => __( 'Auto Populate Key', 'boldform-lite' ),
+						'autoPopulateDesc'  => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
 						'rowSettings'     => __( 'Row settings', 'boldform-lite' ),
 						'moveUp'          => __( 'Move up', 'boldform-lite' ),
 						'moveDown'        => __( 'Move down', 'boldform-lite' ),
@@ -370,8 +441,48 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
-				)
+					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
+				);
+
+			/**
+			 * Filter the data passed to the builder JS.
+			 *
+			 * Pro can add keys like proFileSize, extra field library items, etc.
+			 *
+			 * @param array<string, mixed> $builder_data Builder localize data.
+			 */
+			$builder_data = apply_filters( 'boldform_builder_localize_data', $builder_data );
+
+			wp_localize_script(
+				'boldform-lite-builder',
+				'boldformLiteBuilder',
+				$builder_data
 			);
+
+			// Integrations assign panel (builder tab).
+			wp_enqueue_style(
+				'boldform-lite-integrations',
+				BOLDFORM_LITE_URL . 'assets/css/integrations.css',
+				array(),
+				BOLDFORM_LITE_VERSION
+			);
+
+			wp_enqueue_script(
+				'boldform-lite-integrations',
+				BOLDFORM_LITE_URL . 'assets/js/integrations.js',
+				array( 'jquery', 'boldform-lite-builder' ),
+				BOLDFORM_LITE_VERSION,
+				true
+			);
+
+			/**
+			 * Fires after all core builder scripts and localisation are enqueued.
+			 * Pro modules should use this action to enqueue their own builder JS.
+			 *
+			 * At this point `boldform-lite-builder` is already registered,
+			 * so Pro scripts can safely depend on it.
+			 */
+			do_action( 'boldform_builder_enqueue_assets' );
 
 			return;
 		}
@@ -410,9 +521,29 @@ class BoldForm_Lite_Admin {
 					'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
 				)
 			);
+
+			/**
+			 * Fires after preview page assets are enqueued.
+			 *
+			 * Pro or other plugins should hook here to register and enqueue
+			 * their own assets for the admin form preview page.
+			 */
+			do_action( 'boldform_preview_enqueue_assets' );
+
+			wp_add_inline_script(
+				'boldform-lite-frontend',
+				'(function($){
+					$(document).on("click","[data-preview-device]",function(){
+						var device=String($(this).data("preview-device")||"desktop");
+						$("[data-preview-device]").removeClass("is-active");
+						$(this).addClass("is-active");
+						$("#boldform-preview-stage").removeClass("is-desktop is-tablet is-mobile").addClass("is-"+device);
+					});
+				}(jQuery));'
+			);
 		}
 
-		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook );
+		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook );
 
 		if ( in_array( $hook_suffix, $admin_pages, true ) ) {
 			wp_enqueue_style(
@@ -421,6 +552,222 @@ class BoldForm_Lite_Admin {
 				array(),
 				BOLDFORM_LITE_VERSION
 			);
+
+			// Shared admin JS handle — inline scripts for each page are attached below.
+			wp_register_script(
+				'boldform-lite-admin',
+				false,
+				array( 'jquery' ),
+				BOLDFORM_LITE_VERSION,
+				true
+			);
+			wp_enqueue_script( 'boldform-lite-admin' );
+
+			// ── Forms list page ──────────────────────────────────────────────────
+			if ( $this->list_page_hook === $hook_suffix ) {
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminForms',
+					array(
+						'statusNonce'   => wp_create_nonce( 'boldform_lite_form_status' ),
+						'labelActive'   => __( 'Active', 'boldform-lite' ),
+						'labelInactive' => __( 'Inactive', 'boldform-lite' ),
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						$("#boldform-select-all").on("change",function(){
+							$("input[name=\'boldform_form_ids[]\']").prop("checked",this.checked);
+						});
+						$(".boldform-copy-shortcode").on("click",function(e){
+							e.preventDefault();
+							var sc=$(this).data("shortcode");
+							if(navigator.clipboard){navigator.clipboard.writeText(sc);}
+							else{var $t=$("<textarea>").val(sc).appendTo("body").select();document.execCommand("copy");$t.remove();}
+							var $btn=$(this);
+							$btn.addClass("is-copied");
+							setTimeout(function(){$btn.removeClass("is-copied");},1500);
+						});
+						$(".boldform-form-actions-btn").on("click",function(e){
+							e.stopPropagation();
+							var $dd=$(this).closest(".boldform-form-actions-dd");
+							var wasOpen=$dd.hasClass("is-open");
+							$(".boldform-form-actions-dd").removeClass("is-open");
+							if(!wasOpen)$dd.addClass("is-open");
+						});
+						$(document).on("click",function(){$(".boldform-form-actions-dd").removeClass("is-open");});
+						$(".boldform-form-status-toggle input").on("change",function(){
+							var $toggle=$(this).closest(".boldform-form-status-toggle");
+							var formId=$toggle.data("form-id");
+							var isActive=$(this).is(":checked");
+							var newStatus=isActive?"publish":"draft";
+							var $label=$toggle.find(".boldform-form-status-toggle__label");
+							$label.text(isActive?boldformAdminForms.labelActive:boldformAdminForms.labelInactive);
+							$.post(ajaxurl,{action:"boldform_lite_toggle_form_status",_ajax_nonce:boldformAdminForms.statusNonce,form_id:formId,status:newStatus});
+						});
+					});'
+				);
+			}
+
+			// ── Entries list page ────────────────────────────────────────────────
+			if ( $this->entries_page_hook === $hook_suffix && ! isset( $_GET['entry_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminEntries',
+					array(
+						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						var nonce=boldformAdminEntries.entryStatusNonce;
+						$(".boldform-star-btn").on("click",function(){
+							var $btn=$(this),id=$btn.data("entry-id");
+							var isStarred=$btn.hasClass("is-starred");
+							var newStatus=isStarred?"read":"starred";
+							$.post(ajaxurl,{action:"boldform_lite_update_entry_status",_ajax_nonce:nonce,entry_id:id,status:newStatus},function(r){
+								if(r.success){
+									$btn.toggleClass("is-starred");
+									$btn.find(".dashicons").toggleClass("dashicons-star-filled dashicons-star-empty");
+									var $badge=$btn.closest("tr").find(".boldform-status-badge");
+									$badge.attr("class","boldform-status-badge boldform-status--"+newStatus).text(newStatus.charAt(0).toUpperCase()+newStatus.slice(1));
+									$btn.closest("tr").removeClass("boldform-entry--unread");
+								}
+							});
+						});
+						$(".boldform-dropdown__trigger").on("click",function(e){
+							e.stopPropagation();
+							var $dd=$(this).closest(".boldform-dropdown");
+							var wasOpen=$dd.hasClass("is-open");
+							$(".boldform-dropdown").removeClass("is-open");
+							if(!wasOpen)$dd.addClass("is-open");
+						});
+						$(document).on("click",function(){$(".boldform-dropdown").removeClass("is-open");});
+						$(".boldform-dropdown__panel").on("click",function(e){e.stopPropagation();});
+						$("[data-action=\'custom-date\']").on("click",function(){
+							$(".boldform-dropdown").removeClass("is-open");
+							$("#boldform-custom-dates").removeAttr("hidden");
+							$("#boldform-custom-dates input[type=\'date\']:first").focus();
+						});
+					});'
+				);
+			}
+
+			// ── Entry detail page ────────────────────────────────────────────────
+			if ( $this->entries_page_hook === $hook_suffix && isset( $_GET['entry_id'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$entry_id = absint( wp_unslash( $_GET['entry_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_localize_script(
+					'boldform-lite-admin',
+					'boldformAdminEntry',
+					array(
+						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+						'entryId'          => $entry_id,
+					)
+				);
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'jQuery(function($){
+						var nonce=boldformAdminEntry.entryStatusNonce;
+						var entryId=boldformAdminEntry.entryId;
+						function updateStatus(status){
+							$.post(ajaxurl,{action:"boldform_lite_update_entry_status",_ajax_nonce:nonce,entry_id:entryId,status:status},function(r){
+								if(r.success){
+									$("#boldform-detail-status").attr("class","boldform-status-badge boldform-status--"+status).text(status.charAt(0).toUpperCase()+status.slice(1));
+									$("#boldform-mark-unread").prop("disabled",status==="unread");
+									$("#boldform-mark-starred").find(".dashicons").attr("class","dashicons "+(status==="starred"?"dashicons-star-filled":"dashicons-star-empty"));
+								}
+							});
+						}
+						$("#boldform-mark-unread").on("click",function(){updateStatus("unread");});
+						$("#boldform-mark-starred").on("click",function(){
+							var current=$("#boldform-detail-status").text().toLowerCase();
+							updateStatus(current==="starred"?"read":"starred");
+						});
+					});'
+				);
+			}
+
+			// ── Settings page ─────────────────────────────────────────────────────
+			if ( $this->settings_page_hook === $hook_suffix ) {
+				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'(function(){
+						var options=document.querySelectorAll(".boldform-style-option");
+						for(var i=0;i<options.length;i++){
+							options[i].querySelector("input").addEventListener("change",function(){
+								for(var j=0;j<options.length;j++)options[j].classList.remove("is-selected");
+								this.closest(".boldform-style-option").classList.add("is-selected");
+							});
+						}
+						var providerInputs=document.querySelectorAll("input[name=\'boldform_captcha_provider\']");
+						var panels=document.querySelectorAll("[data-captcha-panel]");
+						var cards=document.querySelectorAll(".boldform-captcha-card");
+						function updateCaptchaPanels(){
+							var selected="simple_math";
+							for(var i=0;i<providerInputs.length;i++){if(providerInputs[i].checked)selected=providerInputs[i].value;}
+							for(var j=0;j<panels.length;j++){panels[j].hidden=panels[j].getAttribute("data-captcha-panel")!==selected;}
+							for(var k=0;k<cards.length;k++){cards[k].classList.toggle("is-selected",cards[k].querySelector("input").checked);}
+						}
+						for(var i=0;i<providerInputs.length;i++){providerInputs[i].addEventListener("change",updateCaptchaPanels);}
+						updateCaptchaPanels();
+						var enableYes=document.getElementById("boldform-smtp-enable-yes");
+						var enableNo=document.getElementById("boldform-smtp-enable-no");
+						var smtpFields=document.getElementById("boldform-smtp-fields");
+						var authYes=document.getElementById("boldform-smtp-auth-yes");
+						var authNo=document.getElementById("boldform-smtp-auth-no");
+						var authFields=document.getElementById("boldform-smtp-auth-fields");
+						if(enableYes){
+							function toggleSmtp(){smtpFields.style.display=enableYes.checked?"":"none";}
+							function toggleAuth(){authFields.style.display=authYes.checked?"":"none";}
+							enableYes.addEventListener("change",toggleSmtp);
+							enableNo.addEventListener("change",toggleSmtp);
+							authYes.addEventListener("change",toggleAuth);
+							authNo.addEventListener("change",toggleAuth);
+						}
+					})();'
+				);
+				if ( 'smtp' === $active_tab ) {
+					wp_localize_script(
+						'boldform-lite-admin',
+						'boldformAdminSmtp',
+						array(
+							'testMailNonce'   => wp_create_nonce( 'boldform_lite_test_mail' ),
+							'sendingText'     => __( 'Sending...', 'boldform-lite' ),
+							'sentText'        => __( 'Email sent successfully!', 'boldform-lite' ),
+							'failedText'      => __( 'Failed to send email.', 'boldform-lite' ),
+						)
+					);
+					wp_add_inline_script(
+						'boldform-lite-admin',
+						'(function(){
+							var btn=document.getElementById("boldform-send-test-mail");
+							var result=document.getElementById("boldform-test-mail-result");
+							if(!btn)return;
+							btn.addEventListener("click",function(){
+								btn.disabled=true;
+								result.textContent=boldformAdminSmtp.sendingText;
+								result.style.color="#646970";
+								var data=new FormData();
+								data.append("action","boldform_lite_send_test_mail");
+								data.append("_ajax_nonce",boldformAdminSmtp.testMailNonce);
+								data.append("to",document.getElementById("boldform-test-to").value);
+								data.append("subject",document.getElementById("boldform-test-subject").value);
+								data.append("message",document.getElementById("boldform-test-message").value);
+								fetch(ajaxurl,{method:"POST",body:data,credentials:"same-origin"})
+									.then(function(r){return r.json();})
+									.then(function(r){
+										result.textContent=r.data&&r.data.message?r.data.message:(r.success?boldformAdminSmtp.sentText:boldformAdminSmtp.failedText);
+										result.style.color=r.success?"#00a32a":"#d63638";
+										btn.disabled=false;
+									});
+							});
+						})();'
+					);
+				}
+			}
 		}
 
 	}
@@ -460,6 +807,18 @@ class BoldForm_Lite_Admin {
 				'url'   => admin_url( 'admin.php?page=boldform-lite-entries' ),
 			),
 			array(
+				'slug'  => 'boldform-lite-reports',
+				'label' => __( 'Reports', 'boldform-lite' ),
+				'icon'  => 'dashicons-chart-bar',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-integrations',
+				'label' => __( 'Integrations', 'boldform-lite' ),
+				'icon'  => 'dashicons-randomize',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-integrations' ),
+			),
+			array(
 				'slug'  => 'boldform-lite-settings',
 				'label' => __( 'Settings', 'boldform-lite' ),
 				'icon'  => 'dashicons-admin-generic',
@@ -478,11 +837,22 @@ class BoldForm_Lite_Admin {
 				'url'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
 			),
 		);
+
+		/**
+		 * Filter the admin topbar navigation items.
+		 *
+		 * Pro can append items (e.g. Payments, Integrations) to the topbar.
+		 * Each item must be an array with keys: slug, label, icon (dashicon class), url.
+		 *
+		 * @param array<int, array<string, string>> $nav_items Topbar navigation items.
+		 * @param string                            $active_page Currently active page slug.
+		 */
+		$nav_items = apply_filters( 'boldform_admin_topbar_items', $nav_items, $active_page );
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
 				<span class="dashicons dashicons-feedback"></span>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">
@@ -496,6 +866,85 @@ class BoldForm_Lite_Admin {
 			</nav>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Registers BoldForm nodes in the WordPress admin bar.
+	 *
+	 * Adds a top-level "BoldForm" node with dropdown children for each nav item.
+	 * Pro can append extra items via the `boldform_admin_bar_items` filter.
+	 *
+	 * @param WP_Admin_Bar $wp_admin_bar The admin bar instance.
+	 * @return void
+	 */
+	public function register_admin_bar( $wp_admin_bar ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$nav_items = array(
+			array(
+				'id'     => 'boldform-bar-forms',
+				'title'  => __( 'All Forms', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite' ),
+			),
+			array(
+				'id'     => 'boldform-bar-entries',
+				'title'  => __( 'Entries', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-entries' ),
+			),
+			array(
+				'id'     => 'boldform-bar-reports',
+				'title'  => __( 'Reports', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
+			),
+			array(
+				'id'     => 'boldform-bar-settings',
+				'title'  => __( 'Settings', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings' ),
+			),
+			array(
+				'id'     => 'boldform-bar-smtp',
+				'title'  => __( 'SMTP', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ),
+			),
+			array(
+				'id'     => 'boldform-bar-tools',
+				'title'  => __( 'Tools', 'boldform-lite' ),
+				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
+			),
+		);
+
+		/**
+		 * Filter the BoldForm admin bar dropdown items.
+		 *
+		 * Pro can append items (e.g. Payments, Integrations).
+		 * Each item must have: id (string), title (string), href (string).
+		 *
+		 * @param array<int, array<string, string>> $nav_items Admin bar child nodes.
+		 */
+		$nav_items = apply_filters( 'boldform_admin_bar_items', $nav_items );
+
+		// Top-level parent node.
+		$wp_admin_bar->add_node(
+			array(
+				'id'    => 'boldform-bar',
+				'title' => __( 'Bold Form', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite' ),
+			)
+		);
+
+		// Child nodes.
+		foreach ( $nav_items as $item ) {
+			$wp_admin_bar->add_node(
+				array(
+					'parent' => 'boldform-bar',
+					'id'     => sanitize_key( $item['id'] ),
+					'title'  => esc_html( $item['title'] ),
+					'href'   => esc_url( $item['href'] ),
+				)
+			);
+		}
 	}
 
 	public function render_forms_page() {
@@ -585,7 +1034,7 @@ class BoldForm_Lite_Admin {
 									$shortcode_str = '[boldform id="' . $form_id_int . '"]';
 									?>
 									<tr>
-										<td class="boldform-col-cb"><input type="checkbox" name="boldform_form_ids[]" value="<?php echo $form_id_int; ?>"></td>
+										<td class="boldform-col-cb"><input type="checkbox" name="boldform_form_ids[]" value="<?php echo absint( $form_id_int ); ?>"></td>
 										<td class="boldform-col-title">
 											<div class="boldform-form-title-wrap">
 												<?php if ( $is_trash ) : ?>
@@ -621,12 +1070,12 @@ class BoldForm_Lite_Admin {
 										</td>
 										<td class="boldform-col-entries">
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . $form_id_int ) ); ?>" class="boldform-entries-link">
-												<?php echo $form_entries; ?>
+												<?php echo absint( $form_entries ); ?>
 											</a>
 										</td>
 										<td class="boldform-col-status">
 											<?php $form_is_active = 'publish' === ( $form->status ?? 'publish' ); ?>
-											<label class="boldform-form-status-toggle" data-form-id="<?php echo $form_id_int; ?>">
+											<label class="boldform-form-status-toggle" data-form-id="<?php echo absint( $form_id_int ); ?>">
 												<input type="checkbox"<?php echo $form_is_active ? ' checked' : ''; ?>>
 												<span class="boldform-form-status-toggle__track"><span class="boldform-form-status-toggle__thumb"></span></span>
 												<span class="boldform-form-status-toggle__label"><?php echo $form_is_active ? esc_html__( 'Active', 'boldform-lite' ) : esc_html__( 'Inactive', 'boldform-lite' ); ?></span>
@@ -662,52 +1111,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</form>
 
-			<script>
-			jQuery(function($){
-				// Select all checkbox.
-				$('#boldform-select-all').on('change', function(){
-					$('input[name="boldform_form_ids[]"]').prop('checked', this.checked);
-				});
-
-				// Copy shortcode.
-				$('.boldform-copy-shortcode').on('click', function(e){
-					e.preventDefault();
-					var sc = $(this).data('shortcode');
-					if (navigator.clipboard) {
-						navigator.clipboard.writeText(sc);
-					} else {
-						var $t = $('<textarea>').val(sc).appendTo('body').select();
-						document.execCommand('copy');
-						$t.remove();
-					}
-					var $btn = $(this);
-					$btn.addClass('is-copied');
-					setTimeout(function(){ $btn.removeClass('is-copied'); }, 1500);
-				});
-
-				// Actions dropdown.
-				$('.boldform-form-actions-btn').on('click', function(e){
-					e.stopPropagation();
-					var $dd = $(this).closest('.boldform-form-actions-dd');
-					var wasOpen = $dd.hasClass('is-open');
-					$('.boldform-form-actions-dd').removeClass('is-open');
-					if (!wasOpen) $dd.addClass('is-open');
-				});
-				$(document).on('click', function(){ $('.boldform-form-actions-dd').removeClass('is-open'); });
-
-				// Form status toggle.
-				var statusNonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_form_status' ) ); ?>';
-				$('.boldform-form-status-toggle input').on('change', function(){
-					var $toggle = $(this).closest('.boldform-form-status-toggle');
-					var formId = $toggle.data('form-id');
-					var isActive = $(this).is(':checked');
-					var newStatus = isActive ? 'publish' : 'draft';
-					var $label = $toggle.find('.boldform-form-status-toggle__label');
-					$label.text(isActive ? '<?php echo esc_js( __( 'Active', 'boldform-lite' ) ); ?>' : '<?php echo esc_js( __( 'Inactive', 'boldform-lite' ) ); ?>');
-					$.post(ajaxurl, { action: 'boldform_lite_toggle_form_status', _ajax_nonce: statusNonce, form_id: formId, status: newStatus });
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -730,6 +1133,42 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @return void
 	 */
+	/**
+	 * Renders the documentation page with links to user and developer guides.
+	 *
+	 * @return void
+	 */
+	public function render_docs_page() {
+		$docs_url = BOLDFORM_LITE_URL . 'docs/';
+		?>
+		<?php $this->render_admin_topbar( 'boldform-lite-docs' ); ?>
+		<div class="wrap">
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Documentation', 'boldform-lite' ); ?></h1>
+			<hr class="wp-header-end">
+
+			<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;margin-top:20px;">
+				<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;">
+					<span class="dashicons dashicons-book" style="font-size:40px;width:40px;height:40px;color:#0f766e;margin-bottom:12px;"></span>
+					<h2 style="font-size:17px;margin:0 0 8px;border:none;padding:0;"><?php esc_html_e( 'User Guide', 'boldform-lite' ); ?></h2>
+					<p style="color:#64748b;font-size:13px;margin-bottom:16px;"><?php esc_html_e( 'Learn how to create forms, manage entries, configure settings, and embed forms on your site.', 'boldform-lite' ); ?></p>
+					<a href="<?php echo esc_url( $docs_url . 'user-guide.html' ); ?>" target="_blank" class="button button-primary" style="min-width:140px;">
+						<?php esc_html_e( 'Open User Guide', 'boldform-lite' ); ?> <span class="dashicons dashicons-external" style="font-size:14px;line-height:1.8;margin-left:4px;"></span>
+					</a>
+				</div>
+
+				<div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:28px;text-align:center;">
+					<span class="dashicons dashicons-editor-code" style="font-size:40px;width:40px;height:40px;color:#6366f1;margin-bottom:12px;"></span>
+					<h2 style="font-size:17px;margin:0 0 8px;border:none;padding:0;"><?php esc_html_e( 'Developer Guide', 'boldform-lite' ); ?></h2>
+					<p style="color:#64748b;font-size:13px;margin-bottom:16px;"><?php esc_html_e( 'Hooks, filters, custom field types, integrations API, database schema, and file structure reference.', 'boldform-lite' ); ?></p>
+					<a href="<?php echo esc_url( $docs_url . 'developer-guide.html' ); ?>" target="_blank" class="button button-primary" style="min-width:140px;background:#6366f1;border-color:#6366f1;">
+						<?php esc_html_e( 'Open Developer Guide', 'boldform-lite' ); ?> <span class="dashicons dashicons-external" style="font-size:14px;line-height:1.8;margin-left:4px;"></span>
+					</a>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
 	public function render_preview_page() {
 		$form_id = isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
@@ -751,9 +1190,9 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-preview-shell">
 				<div class="boldform-preview-toolbar">
 					<div class="boldform-preview-toolbar__devices" role="tablist" aria-label="<?php esc_attr_e( 'Preview devices', 'boldform-lite' ); ?>">
-						<button type="button" class="button button-secondary is-active" data-preview-device="desktop"><?php esc_html_e( 'Desktop', 'boldform-lite' ); ?></button>
-						<button type="button" class="button button-secondary" data-preview-device="tablet"><?php esc_html_e( 'Tablet', 'boldform-lite' ); ?></button>
-						<button type="button" class="button button-secondary" data-preview-device="mobile"><?php esc_html_e( 'Mobile', 'boldform-lite' ); ?></button>
+						<button type="button" class="boldform-device-btn is-active" data-preview-device="desktop" title="<?php esc_attr_e( 'Desktop', 'boldform-lite' ); ?>"><span class="dashicons dashicons-desktop"></span></button>
+						<button type="button" class="boldform-device-btn" data-preview-device="tablet" title="<?php esc_attr_e( 'Tablet', 'boldform-lite' ); ?>"><span class="dashicons dashicons-tablet"></span></button>
+						<button type="button" class="boldform-device-btn" data-preview-device="mobile" title="<?php esc_attr_e( 'Mobile', 'boldform-lite' ); ?>"><span class="dashicons dashicons-smartphone"></span></button>
 					</div>
 					<div class="boldform-preview-toolbar__meta">
 						<strong><?php echo esc_html( (string) $form->title ); ?></strong>
@@ -768,26 +1207,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 		</div>
-		<script>
-			jQuery(
-				function ( $ ) {
-					$( document ).on(
-						'click',
-						'[data-preview-device]',
-						function () {
-							var device = String( $( this ).data( 'preview-device' ) || 'desktop' );
-
-							$( '[data-preview-device]' ).removeClass( 'is-active' );
-							$( this ).addClass( 'is-active' );
-
-							$( '#boldform-preview-stage' )
-								.removeClass( 'is-desktop is-tablet is-mobile' )
-								.addClass( 'is-' + device );
-						}
-					);
-				}
-			);
-		</script>
 		<?php
 	}
 
@@ -1067,50 +1486,6 @@ class BoldForm_Lite_Admin {
 					</div>
 				<?php endif; ?>
 			</div>
-
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_entry_status' ) ); ?>';
-				$('.boldform-star-btn').on('click', function(){
-					var $btn = $(this), id = $btn.data('entry-id');
-					var isStarred = $btn.hasClass('is-starred');
-					var newStatus = isStarred ? 'read' : 'starred';
-					$.post(ajaxurl, { action: 'boldform_lite_update_entry_status', _ajax_nonce: nonce, entry_id: id, status: newStatus }, function(r){
-						if (r.success) {
-							$btn.toggleClass('is-starred');
-							$btn.find('.dashicons').toggleClass('dashicons-star-filled dashicons-star-empty');
-							var $badge = $btn.closest('tr').find('.boldform-status-badge');
-							$badge.attr('class', 'boldform-status-badge boldform-status--' + newStatus).text(newStatus.charAt(0).toUpperCase() + newStatus.slice(1));
-							$btn.closest('tr').removeClass('boldform-entry--unread');
-						}
-					});
-				});
-
-				// Custom dropdowns.
-				$('.boldform-dropdown__trigger').on('click', function(e) {
-					e.stopPropagation();
-					var $dd = $(this).closest('.boldform-dropdown');
-					var wasOpen = $dd.hasClass('is-open');
-					$('.boldform-dropdown').removeClass('is-open');
-					if (!wasOpen) $dd.addClass('is-open');
-				});
-
-				$(document).on('click', function() {
-					$('.boldform-dropdown').removeClass('is-open');
-				});
-
-				$('.boldform-dropdown__panel').on('click', function(e) {
-					e.stopPropagation();
-				});
-
-				// Custom date range trigger.
-				$('[data-action="custom-date"]').on('click', function() {
-					$('.boldform-dropdown').removeClass('is-open');
-					$('#boldform-custom-dates').removeAttr('hidden');
-					$('#boldform-custom-dates input[type="date"]:first').focus();
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -1142,7 +1517,7 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'Bold Form Settings', 'boldform-lite' ); ?></h1>
 			<hr class="wp-header-end">
 
 			<div class="boldform-settings-wrap">
@@ -1238,18 +1613,6 @@ class BoldForm_Lite_Admin {
 							</div>
 						</form>
 
-						<script>
-						(function(){
-							var options = document.querySelectorAll('.boldform-style-option');
-							for (var i = 0; i < options.length; i++) {
-								options[i].querySelector('input').addEventListener('change', function() {
-									for (var j = 0; j < options.length; j++) options[j].classList.remove('is-selected');
-									this.closest('.boldform-style-option').classList.add('is-selected');
-								});
-							}
-						})();
-						</script>
-
 					<?php elseif ( 'captcha' === $active_tab ) : ?>
 						<h2><?php esc_html_e( 'Captcha Settings', 'boldform-lite' ); ?></h2>
 						<p class="boldform-tab-description"><?php esc_html_e( 'Choose which captcha service should protect all frontend forms.', 'boldform-lite' ); ?></p>
@@ -1330,33 +1693,6 @@ class BoldForm_Lite_Admin {
 							</div>
 						</form>
 
-						<script>
-						(function () {
-							var providerInputs = document.querySelectorAll('input[name="boldform_captcha_provider"]');
-							var panels = document.querySelectorAll('[data-captcha-panel]');
-							var cards = document.querySelectorAll('.boldform-captcha-card');
-
-							function updateCaptchaPanels() {
-								var selected = 'simple_math';
-								for (var i = 0; i < providerInputs.length; i++) {
-									if (providerInputs[i].checked) selected = providerInputs[i].value;
-								}
-								for (var j = 0; j < panels.length; j++) {
-									panels[j].hidden = panels[j].getAttribute('data-captcha-panel') !== selected;
-								}
-								for (var k = 0; k < cards.length; k++) {
-									var input = cards[k].querySelector('input[type="radio"]');
-									cards[k].classList.toggle('is-selected', !!input && input.checked);
-								}
-							}
-
-							for (var i = 0; i < providerInputs.length; i++) {
-								providerInputs[i].addEventListener('change', updateCaptchaPanels);
-							}
-							updateCaptchaPanels();
-						})();
-						</script>
-
 					<?php elseif ( 'smtp' === $active_tab ) : ?>
 						<?php
 						$smtp_sub = isset( $_GET['smtp_tab'] ) ? sanitize_key( wp_unslash( $_GET['smtp_tab'] ) ) : 'config'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -1379,6 +1715,29 @@ class BoldForm_Lite_Admin {
 								<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
 
 								<div class="boldform-card">
+									<h3><?php esc_html_e( 'Sender', 'boldform-lite' ); ?></h3>
+									<p class="description"><?php esc_html_e( 'Applied to all BoldForm emails, even when SMTP is disabled.', 'boldform-lite' ); ?></p>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-from-email"><?php esc_html_e( 'From Email', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="email" id="boldform-smtp-from-email" name="boldform_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" placeholder="<?php esc_attr_e( 'you@example.com', 'boldform-lite' ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-from-name"><?php esc_html_e( 'From Name', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="text" id="boldform-smtp-from-name" name="boldform_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-smtp-reply-to"><?php esc_html_e( 'Reply-To', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="email" id="boldform-smtp-reply-to" name="boldform_smtp_reply_to" value="<?php echo esc_attr( $settings['smtp_reply_to'] ); ?>" placeholder="<?php esc_attr_e( 'reply@example.com', 'boldform-lite' ); ?>">
+										</div>
+									</div>
+								</div>
+
+								<div class="boldform-card">
 									<div class="boldform-field-row">
 										<div class="boldform-field-label"><?php esc_html_e( 'Enable SMTP', 'boldform-lite' ); ?></div>
 										<div class="boldform-field-control">
@@ -1391,28 +1750,6 @@ class BoldForm_Lite_Admin {
 								</div>
 
 								<div id="boldform-smtp-fields" style="<?php echo $settings['smtp_enabled'] ? '' : 'display:none;'; ?>">
-									<div class="boldform-card">
-										<h3><?php esc_html_e( 'Sender', 'boldform-lite' ); ?></h3>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-from-email"><?php esc_html_e( 'From Email', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="email" id="boldform-smtp-from-email" name="boldform_smtp_from_email" value="<?php echo esc_attr( $settings['smtp_from_email'] ); ?>" placeholder="<?php esc_attr_e( 'you@example.com', 'boldform-lite' ); ?>">
-											</div>
-										</div>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-from-name"><?php esc_html_e( 'From Name', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="text" id="boldform-smtp-from-name" name="boldform_smtp_from_name" value="<?php echo esc_attr( $settings['smtp_from_name'] ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
-											</div>
-										</div>
-										<div class="boldform-field-row">
-											<div class="boldform-field-label"><label for="boldform-smtp-reply-to"><?php esc_html_e( 'Reply-To', 'boldform-lite' ); ?></label></div>
-											<div class="boldform-field-control">
-												<input type="email" id="boldform-smtp-reply-to" name="boldform_smtp_reply_to" value="<?php echo esc_attr( $settings['smtp_reply_to'] ); ?>" placeholder="<?php esc_attr_e( 'reply@example.com', 'boldform-lite' ); ?>">
-											</div>
-										</div>
-									</div>
-
 									<div class="boldform-card">
 										<h3><?php esc_html_e( 'Server', 'boldform-lite' ); ?></h3>
 										<div class="boldform-field-row">
@@ -1472,25 +1809,6 @@ class BoldForm_Lite_Admin {
 								</div>
 							</form>
 
-							<script>
-							(function () {
-								var enableYes  = document.getElementById('boldform-smtp-enable-yes');
-								var enableNo   = document.getElementById('boldform-smtp-enable-no');
-								var smtpFields = document.getElementById('boldform-smtp-fields');
-								var authYes    = document.getElementById('boldform-smtp-auth-yes');
-								var authNo     = document.getElementById('boldform-smtp-auth-no');
-								var authFields = document.getElementById('boldform-smtp-auth-fields');
-
-								function toggleSmtp() { smtpFields.style.display = enableYes.checked ? '' : 'none'; }
-								function toggleAuth() { authFields.style.display = authYes.checked ? '' : 'none'; }
-
-								enableYes.addEventListener('change', toggleSmtp);
-								enableNo.addEventListener('change', toggleSmtp);
-								authYes.addEventListener('change', toggleAuth);
-								authNo.addEventListener('change', toggleAuth);
-							})();
-							</script>
-
 						<?php else : ?>
 							<div class="boldform-card">
 								<h3><?php esc_html_e( 'Send a Test Email', 'boldform-lite' ); ?></h3>
@@ -1517,39 +1835,6 @@ class BoldForm_Lite_Admin {
 								<button type="button" id="boldform-send-test-mail" class="button button-primary"><?php esc_html_e( 'Send Test Mail', 'boldform-lite' ); ?></button>
 								<span id="boldform-test-mail-result" class="boldform-test-mail-result"></span>
 							</div>
-
-							<script>
-							(function () {
-								var btn    = document.getElementById('boldform-send-test-mail');
-								var result = document.getElementById('boldform-test-mail-result');
-
-								btn.addEventListener('click', function () {
-									btn.disabled = true;
-									result.textContent = '<?php echo esc_js( __( 'Sending...', 'boldform-lite' ) ); ?>';
-									result.style.color = '#646970';
-
-									var data = new FormData();
-									data.append('action', 'boldform_lite_send_test_mail');
-									data.append('_ajax_nonce', '<?php echo esc_js( wp_create_nonce( 'boldform_lite_test_mail' ) ); ?>');
-									data.append('to', document.getElementById('boldform-test-to').value);
-									data.append('subject', document.getElementById('boldform-test-subject').value);
-									data.append('message', document.getElementById('boldform-test-message').value);
-
-									fetch(ajaxurl, { method: 'POST', body: data, credentials: 'same-origin' })
-										.then(function (r) { return r.json(); })
-										.then(function (r) {
-											result.textContent = r.data && r.data.message ? r.data.message : (r.success ? '<?php echo esc_js( __( 'Email sent successfully!', 'boldform-lite' ) ); ?>' : '<?php echo esc_js( __( 'Failed to send email.', 'boldform-lite' ) ); ?>');
-											result.style.color = r.success ? '#00a32a' : '#d63638';
-											btn.disabled = false;
-										})
-										.catch(function () {
-											result.textContent = '<?php echo esc_js( __( 'Request failed.', 'boldform-lite' ) ); ?>';
-											result.style.color = '#d63638';
-											btn.disabled = false;
-										});
-								});
-							})();
-							</script>
 						<?php endif; ?>
 
 					<?php elseif ( 'tools' === $active_tab ) : ?>
@@ -1685,8 +1970,79 @@ class BoldForm_Lite_Admin {
 	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
 	 * @return void
 	 */
+	/**
+	 * Filters the From email address for all wp_mail() calls.
+	 *
+	 * Applied even when SMTP is disabled so admin/user emails don't
+	 * fall back to the WordPress default wordpress@domain.com address,
+	 * which many mail servers reject.
+	 *
+	 * @param string $from Default from address.
+	 * @return string
+	 */
+	public function filter_mail_from( $from ) {
+		$settings = $this->get_global_settings();
+
+		if ( empty( $settings['smtp_from_email'] ) || ! is_email( $settings['smtp_from_email'] ) ) {
+			return $from;
+		}
+
+		$configured_email = $settings['smtp_from_email'];
+
+		// If SMTP is enabled, trust it to handle any from address (credentials authenticate the sender).
+		if ( ! empty( $settings['smtp_enabled'] ) && ! empty( $settings['smtp_host'] ) ) {
+			return $configured_email;
+		}
+
+		// Without SMTP, only use the configured address as From if its domain matches the site domain.
+		// Using a Gmail/Yahoo/external address as From without SMTP causes DMARC rejection.
+		$site_domain       = wp_parse_url( home_url(), PHP_URL_HOST );
+		$configured_domain = substr( strrchr( $configured_email, '@' ), 1 );
+
+		if ( $configured_domain && $site_domain && rtrim( $configured_domain, '.' ) === rtrim( $site_domain, '.' ) ) {
+			return $configured_email;
+		}
+
+		// Domain mismatch — keep site's default From and let configure_smtp handle Reply-To.
+		return $from;
+	}
+
+	/**
+	 * Filters the From name for all wp_mail() calls.
+	 *
+	 * @param string $name Default from name.
+	 * @return string
+	 */
+	public function filter_mail_from_name( $name ) {
+		$settings = $this->get_global_settings();
+
+		if ( ! empty( $settings['smtp_from_name'] ) ) {
+			return $settings['smtp_from_name'];
+		}
+
+		return $name;
+	}
+
 	public function configure_smtp( $phpmailer ) {
 		$settings = $this->get_global_settings();
+
+		// Always apply Reply-To if configured (works with or without SMTP).
+		$reply_to = ! empty( $settings['smtp_reply_to'] ) ? $settings['smtp_reply_to'] : '';
+
+		// If From Email is set but its domain doesn't match the site (e.g. Gmail),
+		// use it as Reply-To instead so replies go to the right address without DMARC failure.
+		if ( empty( $reply_to ) && ! empty( $settings['smtp_from_email'] ) && is_email( $settings['smtp_from_email'] ) ) {
+			$site_domain       = wp_parse_url( home_url(), PHP_URL_HOST );
+			$configured_domain = substr( strrchr( $settings['smtp_from_email'], '@' ), 1 );
+			if ( $configured_domain && $site_domain && rtrim( $configured_domain, '.' ) !== rtrim( $site_domain, '.' ) ) {
+				$reply_to = $settings['smtp_from_email'];
+			}
+		}
+
+		if ( $reply_to ) {
+			$phpmailer->clearReplyTos();
+			$phpmailer->addReplyTo( $reply_to );
+		}
 
 		if ( empty( $settings['smtp_enabled'] ) || empty( $settings['smtp_host'] ) ) {
 			return;
@@ -1722,10 +2078,6 @@ class BoldForm_Lite_Admin {
 			$phpmailer->FromName = $settings['smtp_from_name']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		}
 
-		if ( ! empty( $settings['smtp_reply_to'] ) ) {
-			$phpmailer->clearReplyTos();
-			$phpmailer->addReplyTo( $settings['smtp_reply_to'] );
-		}
 	}
 
 	/**
@@ -2284,28 +2636,6 @@ class BoldForm_Lite_Admin {
 				</div>
 			</div>
 
-			<script>
-			jQuery(function($){
-				var nonce = '<?php echo esc_js( wp_create_nonce( 'boldform_lite_entry_status' ) ); ?>';
-				var entryId = <?php echo absint( $entry->id ); ?>;
-
-				function updateStatus(status) {
-					$.post(ajaxurl, { action: 'boldform_lite_update_entry_status', _ajax_nonce: nonce, entry_id: entryId, status: status }, function(r){
-						if (r.success) {
-							$('#boldform-detail-status').attr('class', 'boldform-status-badge boldform-status--' + status).text(status.charAt(0).toUpperCase() + status.slice(1));
-							$('#boldform-mark-unread').prop('disabled', status === 'unread');
-							$('#boldform-mark-starred').find('.dashicons').attr('class', 'dashicons ' + (status === 'starred' ? 'dashicons-star-filled' : 'dashicons-star-empty'));
-						}
-					});
-				}
-
-				$('#boldform-mark-unread').on('click', function(){ updateStatus('unread'); });
-				$('#boldform-mark-starred').on('click', function(){
-					var current = $('#boldform-detail-status').text().toLowerCase();
-					updateStatus(current === 'starred' ? 'read' : 'starred');
-				});
-			});
-			</script>
 		</div>
 		<?php
 	}
@@ -2634,10 +2964,30 @@ class BoldForm_Lite_Admin {
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
 			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
 			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? (string) $decoded['button_icon_svg'] : '',
+			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
+			'button_layout'     => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : 'below',
 			'admin_email_type'  => $admin_email_type,
 			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'       => $admin_email,
+			// Multi-step settings (data passthrough for Pro's multi-page module).
+			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
+			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
+			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
+			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
+			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
+			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
+			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
 		);
 	}
 
@@ -2979,6 +3329,475 @@ class BoldForm_Lite_Admin {
 				'icon'  => 'dashicons-button',
 				'group' => 'advanced',
 			),
+		);
+
+		/**
+		 * Filter the field library items available in the builder sidebar.
+		 *
+		 * Pro can add new field types here (signature, payment, etc.).
+		 * Each entry: 'type_key' => array( 'label' => '', 'icon' => 'dashicons-...', 'group' => 'basic|advanced|pro' )
+		 *
+		 * @param array<string, array<string, string>> $library Field library items.
+		 */
+		return apply_filters( 'boldform_field_library', $library );
+	}
+
+	/**
+	 * Renders the Reports page.
+	 *
+	 * @return void
+	 */
+	public function render_reports_page() {
+		global $wpdb;
+
+		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
+		$forms_table   = esc_sql( $this->plugin->get_forms_table_name() );
+
+		// Overview stats.
+		$total_forms   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Today's entries.
+		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// This week entries.
+		$week_start  = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
+		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Entries per form.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
+		$per_form = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			"SELECT f.id, f.title, COUNT(e.id) AS total,
+				SUM(CASE WHEN e.status = 'unread' THEN 1 ELSE 0 END) AS unread,
+				SUM(CASE WHEN e.status = 'read' THEN 1 ELSE 0 END) AS is_read,
+				SUM(CASE WHEN e.status = 'starred' THEN 1 ELSE 0 END) AS starred
+			FROM `{$forms_table}` f
+			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id
+			WHERE f.status != 'trash'
+			GROUP BY f.id
+			ORDER BY total DESC"
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// Daily submissions for last 30 days.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $entries_table sanitized via esc_sql() above.
+		$daily_data = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS entry_date, COUNT(*) AS total
+				FROM `{$entries_table}`
+				WHERE created_at >= %s
+				GROUP BY DATE(created_at)
+				ORDER BY entry_date ASC",
+				wp_date( 'Y-m-d', strtotime( '-30 days' ) ) . ' 00:00:00'
+			)
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// Build 30-day labels and values arrays.
+		$daily_map = array();
+		foreach ( $daily_data as $row ) {
+			$daily_map[ $row->entry_date ] = (int) $row->total;
+		}
+
+		$chart_labels = array();
+		$chart_values = array();
+		for ( $i = 29; $i >= 0; $i-- ) {
+			$date           = wp_date( 'Y-m-d', strtotime( "-{$i} days" ) );
+			$chart_labels[] = wp_date( 'M j', strtotime( $date ) );
+			$chart_values[] = isset( $daily_map[ $date ] ) ? $daily_map[ $date ] : 0;
+		}
+
+		// Recent entries (last 10).
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
+		$recent_entries = $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			"SELECT e.id, e.form_id, e.entry_data_json, e.status, e.created_at, f.title AS form_title
+			FROM `{$entries_table}` e
+			LEFT JOIN `{$forms_table}` f ON f.id = e.form_id
+			ORDER BY e.created_at DESC
+			LIMIT 10"
+		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// Max entries for progress bars in "Entries by Form".
+		$max_form_entries = 1;
+		foreach ( $per_form as $row ) {
+			if ( (int) $row->total > $max_form_entries ) {
+				$max_form_entries = (int) $row->total;
+			}
+		}
+
+		$this->render_admin_topbar( 'boldform-lite-reports' );
+		?>
+		<div class="wrap boldform-reports-wrap">
+			<div class="boldform-page-header">
+				<h1><?php esc_html_e( 'Reports', 'boldform-lite' ); ?></h1>
+				<span class="boldform-page-header__badge"><?php esc_html_e( 'Overview', 'boldform-lite' ); ?></span>
+			</div>
+
+			<!-- Overview Stat Cards -->
+			<div class="boldform-reports-stats">
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--forms">
+						<span class="dashicons dashicons-feedback"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $total_forms ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'Total Forms', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--entries">
+						<span class="dashicons dashicons-email-alt"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $total_entries ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'Total Entries', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--unread">
+						<span class="dashicons dashicons-email"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $unread_count ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'Unread', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--starred">
+						<span class="dashicons dashicons-star-filled"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $starred_count ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'Starred', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--today">
+						<span class="dashicons dashicons-calendar-alt"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $today_count ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'Today', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+				<div class="boldform-stat-card">
+					<div class="boldform-stat-card__icon boldform-stat-card__icon--week">
+						<span class="dashicons dashicons-calendar"></span>
+					</div>
+					<div class="boldform-stat-card__body">
+						<span class="boldform-stat-card__value"><?php echo absint( $week_count ); ?></span>
+						<span class="boldform-stat-card__label"><?php esc_html_e( 'This Week', 'boldform-lite' ); ?></span>
+					</div>
+				</div>
+			</div>
+
+			<?php
+			/**
+			 * Fires after the stat cards row on the Reports page.
+			 * Pro modules can inject additional stat cards here.
+			 *
+			 * @param array<string, mixed> $stats {
+			 *     @type int $total_forms   Total active forms.
+			 *     @type int $total_entries Total submissions.
+			 *     @type int $unread_count  Unread entries.
+			 *     @type int $starred_count Starred entries.
+			 *     @type int $today_count   Entries today.
+			 *     @type int $week_count    Entries this week.
+			 * }
+			 */
+			do_action(
+				'boldform_reports_after_stats',
+				array(
+					'total_forms'   => $total_forms,
+					'total_entries' => $total_entries,
+					'unread_count'  => $unread_count,
+					'starred_count' => $starred_count,
+					'today_count'   => $today_count,
+					'week_count'    => $week_count,
+				)
+			);
+			?>
+
+			<!-- Submissions Chart (FREE) -->
+			<div class="boldform-reports-row">
+				<div class="boldform-reports-chart-card">
+					<div class="boldform-reports-card-header">
+						<h2><span class="dashicons dashicons-chart-area"></span> <?php esc_html_e( 'Submissions', 'boldform-lite' ); ?></h2>
+						<span class="boldform-reports-card-header__sub"><?php esc_html_e( 'Last 30 Days', 'boldform-lite' ); ?></span>
+					</div>
+					<canvas id="boldform-submissions-chart" height="300"></canvas>
+				</div>
+			</div>
+
+			<?php
+			/**
+			 * Fires after the submissions chart row on the Reports page.
+			 * Pro modules can inject additional chart rows here (e.g. views vs submissions).
+			 *
+			 * @param array<string, mixed> $chart_data {
+			 *     @type string[] $chart_labels 30-day date labels (e.g. "Apr 1").
+			 *     @type int[]    $chart_values 30-day submission counts.
+			 * }
+			 */
+			do_action(
+				'boldform_reports_after_chart',
+				array(
+					'chart_labels' => $chart_labels,
+					'chart_values' => $chart_values,
+				)
+			);
+			?>
+
+			<!-- Two-column: Entries by Form + Recent Entries -->
+			<div class="boldform-reports-row boldform-reports-row--two-col">
+				<!-- Entries by Form -->
+				<div class="boldform-reports-table-card boldform-reports-table-card--compact">
+					<div class="boldform-reports-card-header">
+						<h2><span class="dashicons dashicons-list-view"></span> <?php esc_html_e( 'Entries by Form', 'boldform-lite' ); ?></h2>
+					</div>
+					<?php if ( ! empty( $per_form ) ) : ?>
+						<div class="boldform-reports-paginated" id="boldform-forms-paginated" data-per-page="5">
+							<table class="boldform-reports-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
+										<th class="boldform-col-center"><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></th>
+										<th><?php esc_html_e( 'Breakdown', 'boldform-lite' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $per_form as $row ) : ?>
+										<?php
+										$total   = max( 1, (int) $row->total );
+										$bar_pct = round( ( $total / $max_form_entries ) * 100 );
+										?>
+										<tr>
+											<td>
+												<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&form_id=' . absint( $row->id ) ) ); ?>">
+													<?php echo esc_html( $row->title ? $row->title : '#' . $row->id ); ?>
+												</a>
+											</td>
+											<td class="boldform-col-center">
+												<span class="boldform-reports-count-badge"><?php echo absint( $row->total ); ?></span>
+											</td>
+											<td>
+												<div class="boldform-reports-bar-wrap">
+													<div class="boldform-reports-bar" style="width:<?php echo absint( $bar_pct ); ?>%;">
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--unread" style="width:<?php echo $total ? absint( round( ( (int) $row->unread / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: unread count */ printf( esc_attr__( 'Unread: %d', 'boldform-lite' ), absint( $row->unread ) ); ?>"></span>
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--read" style="width:<?php echo $total ? absint( round( ( (int) $row->is_read / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: read count */ printf( esc_attr__( 'Read: %d', 'boldform-lite' ), absint( $row->is_read ) ); ?>"></span>
+														<span class="boldform-reports-bar__segment boldform-reports-bar__segment--starred" style="width:<?php echo $total ? absint( round( ( (int) $row->starred / $total ) * 100 ) ) : 0; ?>%;" title="<?php /* translators: %d: starred count */ printf( esc_attr__( 'Starred: %d', 'boldform-lite' ), absint( $row->starred ) ); ?>"></span>
+													</div>
+												</div>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+							<div class="boldform-reports-card-footer">
+								<div class="boldform-reports-bar-legend">
+									<span class="boldform-reports-bar-legend__item"><span class="boldform-reports-bar-legend__dot boldform-reports-bar-legend__dot--unread"></span> <?php esc_html_e( 'Unread', 'boldform-lite' ); ?></span>
+									<span class="boldform-reports-bar-legend__item"><span class="boldform-reports-bar-legend__dot boldform-reports-bar-legend__dot--read"></span> <?php esc_html_e( 'Read', 'boldform-lite' ); ?></span>
+									<span class="boldform-reports-bar-legend__item"><span class="boldform-reports-bar-legend__dot boldform-reports-bar-legend__dot--starred"></span> <?php esc_html_e( 'Starred', 'boldform-lite' ); ?></span>
+								</div>
+								<div class="boldform-reports-pager"></div>
+							</div>
+						</div>
+					<?php else : ?>
+						<div class="boldform-reports-empty-state">
+							<span class="dashicons dashicons-chart-pie"></span>
+							<p><?php esc_html_e( 'No forms found. Create your first form to see reports.', 'boldform-lite' ); ?></p>
+						</div>
+					<?php endif; ?>
+				</div>
+
+				<!-- Recent Entries -->
+				<div class="boldform-reports-table-card boldform-reports-table-card--compact">
+					<div class="boldform-reports-card-header">
+						<h2><span class="dashicons dashicons-clock"></span> <?php esc_html_e( 'Recent Entries', 'boldform-lite' ); ?></h2>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries' ) ); ?>" class="boldform-reports-card-header__link"><?php esc_html_e( 'View All', 'boldform-lite' ); ?> &rarr;</a>
+					</div>
+					<?php if ( ! empty( $recent_entries ) ) : ?>
+						<div class="boldform-reports-paginated" id="boldform-entries-paginated" data-per-page="5">
+							<div class="boldform-reports-activity">
+								<?php foreach ( $recent_entries as $entry ) : ?>
+									<?php
+									$preview = '';
+									$decoded = json_decode( (string) $entry->entry_data_json, true );
+									if ( is_array( $decoded ) && ! empty( $decoded ) ) {
+										$first = reset( $decoded );
+										$val   = isset( $first['value'] ) ? $first['value'] : '';
+										if ( is_array( $val ) ) {
+											$val = implode( ', ', $val );
+										}
+										$preview = wp_trim_words( (string) $val, 6 );
+									}
+									?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-entries&entry_id=' . absint( $entry->id ) ) ); ?>" class="boldform-reports-activity__item">
+										<span class="boldform-reports-activity__dot boldform-reports-activity__dot--<?php echo esc_attr( $entry->status ); ?>"></span>
+										<div class="boldform-reports-activity__body">
+											<span class="boldform-reports-activity__text">
+												<?php echo esc_html( $preview ? $preview : __( 'Entry', 'boldform-lite' ) ); ?>
+												<span class="boldform-reports-activity__form"><?php echo esc_html( $entry->form_title ? $entry->form_title : '#' . $entry->form_id ); ?></span>
+											</span>
+											<span class="boldform-reports-activity__meta">
+												<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry->status ); ?>"><?php echo esc_html( ucfirst( (string) $entry->status ) ); ?></span>
+												<span class="boldform-reports-activity__date"><?php echo esc_html( human_time_diff( strtotime( (string) $entry->created_at ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'ago', 'boldform-lite' ); ?></span>
+											</span>
+										</div>
+									</a>
+								<?php endforeach; ?>
+							</div>
+							<div class="boldform-reports-card-footer">
+								<span class="boldform-reports-pager-info"></span>
+								<div class="boldform-reports-pager"></div>
+							</div>
+						</div>
+					<?php else : ?>
+						<div class="boldform-reports-empty-state">
+							<span class="dashicons dashicons-format-chat"></span>
+							<p><?php esc_html_e( 'No entries yet. Entries will appear here once forms are submitted.', 'boldform-lite' ); ?></p>
+						</div>
+					<?php endif; ?>
+				</div>
+			</div>
+		</div>
+		<?php
+		// Pass chart data to the already-enqueued admin handle, then add the chart+pagination script.
+		wp_localize_script(
+			'boldform-lite-admin',
+			'boldformReports',
+			array(
+				'chartLabels'  => $chart_labels,
+				'chartValues'  => $chart_values,
+				'entriesLabel' => __( 'entries', 'boldform-lite' ),
+			)
+		);
+		wp_add_inline_script(
+			'boldform-lite-admin',
+			'(function(){
+				var labels=boldformReports.chartLabels;
+				var values=boldformReports.chartValues;
+				var canvas=document.getElementById("boldform-submissions-chart");
+				if(canvas){
+					var ctx=canvas.getContext("2d");
+					var dpr=window.devicePixelRatio||1;
+					var rect=canvas.parentElement.getBoundingClientRect();
+					var w=rect.width;
+					var h=300;
+					canvas.width=w*dpr;canvas.height=h*dpr;
+					canvas.style.width=w+"px";canvas.style.height=h+"px";
+					ctx.scale(dpr,dpr);
+					var padL=50,padR=20,padT=20,padB=50;
+					var chartW=w-padL-padR;
+					var chartH=h-padT-padB;
+					var maxVal=Math.max.apply(null,values)||1;
+					var step=Math.ceil(maxVal/5)||1;
+					maxVal=step*5;
+					ctx.strokeStyle="#e2e8f0";ctx.lineWidth=1;
+					ctx.fillStyle="#94a3b8";
+					ctx.font="11px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif";
+					ctx.textAlign="right";ctx.textBaseline="middle";
+					for(var i=0;i<=5;i++){
+						var y=Math.round(padT+chartH-(chartH*i/5))+0.5;
+						ctx.beginPath();ctx.setLineDash(i===0?[]:[4,4]);
+						ctx.moveTo(padL,y);ctx.lineTo(w-padR,y);ctx.stroke();
+						ctx.fillText(String(step*i),padL-10,y);
+					}
+					ctx.setLineDash([]);
+					var barW=Math.max(6,Math.min(20,(chartW/labels.length)-6));
+					for(var j=0;j<values.length;j++){
+						var barH=maxVal>0?(values[j]/maxVal)*chartH:0;
+						if(barH<0)barH=0;
+						var x=padL+(chartW/labels.length)*j+((chartW/labels.length)-barW)/2;
+						var barY=padT+chartH-barH;
+						var gradient=ctx.createLinearGradient(x,barY,x,padT+chartH);
+						gradient.addColorStop(0,"#3b82f6");gradient.addColorStop(1,"#93c5fd");
+						ctx.fillStyle=gradient;
+						var r=Math.min(barW/2,4);
+						if(barH>r){
+							ctx.beginPath();ctx.moveTo(x+r,barY);ctx.lineTo(x+barW-r,barY);
+							ctx.quadraticCurveTo(x+barW,barY,x+barW,barY+r);
+							ctx.lineTo(x+barW,padT+chartH);ctx.lineTo(x,padT+chartH);
+							ctx.lineTo(x,barY+r);ctx.quadraticCurveTo(x,barY,x+r,barY);
+							ctx.fill();
+						}else if(barH>0){ctx.fillRect(x,barY,barW,barH);}
+					}
+					ctx.fillStyle="#94a3b8";
+					ctx.font="10px -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,sans-serif";
+					ctx.textAlign="center";ctx.textBaseline="top";
+					var labelStep=labels.length<=15?1:Math.ceil(labels.length/10);
+					for(var k=0;k<labels.length;k++){
+						if(k%labelStep===0){
+							var lx=padL+(chartW/labels.length)*k+(chartW/labels.length)/2;
+							ctx.save();ctx.translate(lx,padT+chartH+10);ctx.rotate(-0.45);
+							ctx.fillText(labels[k],0,0);ctx.restore();
+						}
+					}
+					var tooltipEl=document.createElement("div");
+					tooltipEl.className="boldform-chart-tooltip";
+					canvas.parentElement.style.position="relative";
+					canvas.parentElement.appendChild(tooltipEl);
+					canvas.addEventListener("mousemove",function(e){
+						var cRect=canvas.getBoundingClientRect();
+						var mx=e.clientX-cRect.left;
+						var slotW=chartW/labels.length;
+						var idx=Math.floor((mx-padL)/slotW);
+						if(idx>=0&&idx<labels.length){
+							tooltipEl.innerHTML="<strong>"+labels[idx]+"</strong><br>"+values[idx]+" "+boldformReports.entriesLabel;
+							tooltipEl.style.display="block";
+							tooltipEl.style.left=(padL+slotW*idx+slotW/2)+"px";
+							tooltipEl.style.top="10px";
+						}else{tooltipEl.style.display="none";}
+					});
+					canvas.addEventListener("mouseleave",function(){tooltipEl.style.display="none";});
+				}
+				document.querySelectorAll(".boldform-reports-paginated").forEach(function(wrap){
+					var perPage=parseInt(wrap.getAttribute("data-per-page"),10)||5;
+					var table=wrap.querySelector("table");
+					var activity=wrap.querySelector(".boldform-reports-activity");
+					var items;
+					if(table){items=Array.prototype.slice.call(table.querySelectorAll("tbody tr"));}
+					else if(activity){items=Array.prototype.slice.call(activity.children);}
+					else{return;}
+					var totalPages=Math.ceil(items.length/perPage);
+					if(totalPages<=1)return;
+					var currentPage=1;
+					var pagerEl=wrap.querySelector(".boldform-reports-pager");
+					var infoEl=wrap.querySelector(".boldform-reports-pager-info");
+					function showPage(page){
+						currentPage=page;
+						var start=(page-1)*perPage,end=start+perPage;
+						items.forEach(function(item,idx){item.style.display=(idx>=start&&idx<end)?"":"none";});
+						renderPager();
+						if(infoEl)infoEl.textContent=page+" / "+totalPages;
+					}
+					function renderPager(){
+						if(!pagerEl)return;
+						pagerEl.innerHTML="";
+						var prev=document.createElement("button");prev.type="button";
+						prev.className="boldform-pager-btn";prev.innerHTML="&lsaquo;";
+						prev.disabled=currentPage===1;
+						prev.addEventListener("click",function(){showPage(currentPage-1);});
+						pagerEl.appendChild(prev);
+						for(var p=1;p<=totalPages;p++){
+							var btn=document.createElement("button");btn.type="button";
+							btn.className="boldform-pager-btn"+(p===currentPage?" is-active":"");
+							btn.textContent=p;
+							btn.addEventListener("click",(function(pg){return function(){showPage(pg);};})(p));
+							pagerEl.appendChild(btn);
+						}
+						var next=document.createElement("button");next.type="button";
+						next.className="boldform-pager-btn";next.innerHTML="&rsaquo;";
+						next.disabled=currentPage===totalPages;
+						next.addEventListener("click",function(){showPage(currentPage+1);});
+						pagerEl.appendChild(next);
+					}
+					showPage(1);
+				});
+			})();'
 		);
 	}
 }

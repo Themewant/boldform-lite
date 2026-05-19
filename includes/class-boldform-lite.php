@@ -78,6 +78,20 @@ final class BoldForm_Lite {
 	private $export_import;
 
 	/**
+	 * Integrations page handler.
+	 *
+	 * @var BoldForm_Lite_Integrations_Page
+	 */
+	private $integrations_page;
+
+	/**
+	 * Integrations dispatcher.
+	 *
+	 * @var BoldForm_Lite_Integrations
+	 */
+	private $integrations;
+
+	/**
 	 * Returns the single instance of the plugin.
 	 *
 	 * @return BoldForm_Lite
@@ -127,15 +141,19 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-elementor.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-email-handler.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-export-import.php';
+		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-integrations-page.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
 
-		$this->loader        = new BoldForm_Lite_Loader();
-		$this->admin         = new BoldForm_Lite_Admin( $this );
-		$this->email_handler = new BoldForm_Lite_Email_Handler( $this );
-		$this->form_handler  = new BoldForm_Lite_Form_Handler( $this, $this->email_handler );
-		$this->shortcode     = new BoldForm_Lite_Shortcode( $this, $this->form_handler );
-		$this->block         = new BoldForm_Lite_Block( $this );
-		$this->elementor     = new BoldForm_Lite_Elementor( $this );
-		$this->export_import = new BoldForm_Lite_Export_Import( $this );
+		$this->loader            = new BoldForm_Lite_Loader();
+		$this->admin             = new BoldForm_Lite_Admin( $this );
+		$this->email_handler     = new BoldForm_Lite_Email_Handler( $this );
+		$this->form_handler      = new BoldForm_Lite_Form_Handler( $this, $this->email_handler );
+		$this->shortcode         = new BoldForm_Lite_Shortcode( $this, $this->form_handler );
+		$this->block             = new BoldForm_Lite_Block( $this );
+		$this->elementor         = new BoldForm_Lite_Elementor( $this );
+		$this->export_import     = new BoldForm_Lite_Export_Import( $this );
+		$this->integrations_page = new BoldForm_Lite_Integrations_Page( $this );
+		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
 	}
 
 	/**
@@ -155,13 +173,18 @@ final class BoldForm_Lite {
 	 */
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
+		$this->loader->add_action( 'admin_bar_menu', $this->admin, 'register_admin_bar', 100 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_assets' );
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );
+		$this->loader->add_filter( 'upload_mimes', $this->admin, 'allow_svg_upload' );
+		$this->loader->add_filter( 'wp_check_filetype_and_ext', $this->admin, 'fix_svg_filetype', 10, 4 );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_save_form', $this->admin, 'ajax_save_form' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_send_test_mail', $this->admin, 'ajax_send_test_mail' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_update_entry_status', $this->admin, 'ajax_update_entry_status' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_toggle_form_status', $this->admin, 'ajax_toggle_form_status' );
 		$this->loader->add_action( 'phpmailer_init', $this->admin, 'configure_smtp' );
+		$this->loader->add_filter( 'wp_mail_from',      $this->admin, 'filter_mail_from' );
+		$this->loader->add_filter( 'wp_mail_from_name', $this->admin, 'filter_mail_from_name' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $this->shortcode, 'register_assets' );
 		$this->loader->add_action( 'init', $this->shortcode, 'register_shortcode' );
 		$this->loader->add_action( 'init', $this->form_handler, 'handle_submission' );
@@ -170,10 +193,22 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'init', $this->block, 'register_block' );
 		$this->loader->add_action( 'enqueue_block_editor_assets', $this->block, 'enqueue_editor_assets' );
 		$this->loader->add_action( 'elementor/widgets/register', $this->elementor, 'register_widget' );
+		$this->loader->add_action( 'elementor/editor/after_enqueue_scripts', $this->elementor, 'enqueue_editor_scripts' );
 
 		$this->export_import->init();
+		$this->integrations_page->init();
+		$this->integrations->init();
 
 		$this->loader->run();
+
+		/**
+		 * Fires after BoldForm Lite has fully booted and all hooks are registered.
+		 *
+		 * Pro or third-party plugins should hook here to extend BoldForm.
+		 *
+		 * @param BoldForm_Lite $plugin The main plugin instance.
+		 */
+		do_action( 'boldform_loaded', $this );
 	}
 
 	/**

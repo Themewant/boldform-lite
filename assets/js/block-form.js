@@ -43,7 +43,7 @@
 	blocks.registerBlockType(
 		'boldform/form',
 		{
-			title: __( 'BoldForm', 'boldform-lite' ),
+			title: __( 'Bold Form', 'boldform-lite' ),
 			icon: 'feedback',
 			category: 'widgets',
 			description: __( 'Display a BoldForm form.', 'boldform-lite' ),
@@ -109,6 +109,27 @@
 								onChange: function ( value ) {
 									setAttributes( { formId: parseInt( value, 10 ) || 0 } );
 								}
+							} ),
+							attributes.formId ? el(
+								'a',
+								{
+									href: ( window.boldformLiteBlock && window.boldformLiteBlock.builderUrl || '/wp-admin/admin.php?page=boldform-lite-builder&form_id=' ) + attributes.formId,
+									target: '_blank',
+									rel: 'noopener',
+									style: { display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#2f80ed', fontWeight: 500, fontSize: '13px', textDecoration: 'none', marginBottom: '12px' }
+								},
+								el( 'span', { className: 'dashicons dashicons-edit', style: { fontSize: '14px', width: '14px', height: '14px' } } ),
+								__( 'Edit this form in builder', 'boldform-lite' )
+							) : null,
+							el( ToggleControl, {
+								label: __( 'Hide Labels', 'boldform-lite' ),
+								checked: !! attributes.hideLabels,
+								onChange: setAttr( 'hideLabels' )
+							} ),
+							el( ToggleControl, {
+								label: __( 'Hide Placeholders', 'boldform-lite' ),
+								checked: !! attributes.hidePlaceholders,
+								onChange: setAttr( 'hidePlaceholders' )
 							} )
 						),
 
@@ -177,7 +198,8 @@
 								value: attributes.labelFontSize || '',
 								onChange: setAttrStr( 'labelFontSize' ),
 								placeholder: '17px'
-							} )
+							} ),
+							colorField( __( 'Required Indicator Color', 'boldform-lite' ), attributes.requiredIndicatorColor, setAttrStr( 'requiredIndicatorColor' ) )
 						),
 
 						/* ── Input Fields ── */
@@ -217,7 +239,8 @@
 								onChange: setAttrStr( 'fieldBorderRadius' ),
 								placeholder: '16px'
 							} ),
-							colorField( __( 'Focus Border Color', 'boldform-lite' ), attributes.fieldFocusColor, setAttrStr( 'fieldFocusColor' ) )
+							colorField( __( 'Focus Border Color', 'boldform-lite' ), attributes.fieldFocusColor, setAttrStr( 'fieldFocusColor' ) ),
+							colorField( __( 'Focus Background Color', 'boldform-lite' ), attributes.fieldFocusBgColor, setAttrStr( 'fieldFocusBgColor' ) )
 						),
 
 						/* ── Submit Button ── */
@@ -266,7 +289,7 @@
 							: el(
 								Placeholder,
 								{
-									label: __( 'BoldForm', 'boldform-lite' ),
+									label: __( 'Bold Form', 'boldform-lite' ),
 									instructions: forms.length
 										? ( window.boldformLiteBlock && window.boldformLiteBlock.previewText ? window.boldformLiteBlock.previewText : __( 'Select a form to preview it in the editor.', 'boldform-lite' ) )
 										: ( window.boldformLiteBlock && window.boldformLiteBlock.emptyMessage ? window.boldformLiteBlock.emptyMessage : __( 'No published forms found.', 'boldform-lite' ) )

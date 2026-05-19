@@ -370,6 +370,9 @@
 .boldform-sidebar-panel {
 	overflow: hidden;
 	background: rgba(255, 255, 255, 0.86);
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 100px);
 }
 
 .boldform-sidebar-tabs {
@@ -399,7 +402,18 @@
 }
 
 .boldform-sidebar-panel__content {
-	min-height: 700px;
+	min-height: 0;
+	flex: 1;
+	overflow-y: auto;
+}
+
+.boldform-sidebar-panel__content::-webkit-scrollbar {
+	width: 5px;
+}
+
+.boldform-sidebar-panel__content::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 999px;
 }
 
 .boldform-sidebar-view {
@@ -441,7 +455,7 @@
 }
 
 .boldform-global-settings-panel {
-	max-width: 840px;
+	max-width: 960px;
 }
 
 .boldform-field-library {
@@ -638,6 +652,19 @@
 	color: #2271b1;
 }
 
+/* Template option */
+.boldform-template-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+}
+
+.boldform-tpl-option-label {
+	flex: 1;
+	min-width: 0;
+}
+
 .boldform-start-card strong,
 .boldform-template-card strong {
 	font-size: 14px;
@@ -732,15 +759,11 @@
 	vertical-align: middle;
 }
 
-.boldform-canvas-submit__button .boldform-btn-icon-svg {
-	display: inline-flex;
-	align-items: center;
-}
-
-.boldform-canvas-submit__button .boldform-btn-icon-svg svg {
+.boldform-canvas-submit__button img.boldform-btn-icon-svg {
 	width: 18px;
 	height: 18px;
-	fill: currentColor;
+	display: inline-block;
+	vertical-align: middle;
 }
 
 /* Submit button field — rendered as a draggable field */
@@ -759,20 +782,19 @@
 	gap: 8px;
 	width: 100%;
 	padding: 14px;
-	border: 2px dashed #e2e8f0;
-	border-radius: 14px;
-	background: transparent;
-	color: #64748b;
+	border: 1px solid #949494;
+	border-radius: 8px;
+	background: #fff;
+	color: #1e1e1e;
 	font-size: 13px;
 	font-weight: 600;
 	cursor: pointer;
-	transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+	transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .boldform-canvas-add-row:hover {
-	border-color: #2271b1;
-	color: #2271b1;
-	background: rgba(34, 113, 177, 0.04);
+	background: #f6f6f6;
+	border-color: #757575;
 }
 
 .boldform-canvas-add-row .dashicons {
@@ -1005,19 +1027,22 @@
 .boldform-setting-group select {
 	width: 100%;
 	max-width: 100%;
-	padding: 10px 12px;
+	padding: 5px 12px;
 	border: 1px solid #cbd5e1;
 	border-radius: 10px;
 	background: #fff;
+	color: #1e293b;
 	box-sizing: border-box;
 }
 
 .boldform-canvas .boldform-canvas-field-body input,
 .boldform-canvas .boldform-canvas-field-body textarea,
 .boldform-canvas .boldform-canvas-field-body select,
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger,
 .boldform-template-preview__canvas input,
 .boldform-template-preview__canvas textarea,
-.boldform-template-preview__canvas select {
+.boldform-template-preview__canvas select,
+.boldform-template-preview__canvas .bf-select__trigger {
 	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 16px);
@@ -1074,6 +1099,75 @@
 	background-size: 12px;
 	padding-right: 36px;
 	cursor: pointer;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select,
+.boldform-template-preview__canvas .bf-select {
+	width: 100%;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger,
+.boldform-template-preview__canvas .bf-select__trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: default;
+	box-sizing: border-box;
+	min-height: 0;
+	line-height: 1.5;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__arrow,
+.boldform-template-preview__canvas .bf-select__arrow {
+	margin-left: auto;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	color: #6b7280;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__placeholder,
+.boldform-template-preview__canvas .bf-select__placeholder {
+	color: #9ca3af;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__value,
+.boldform-template-preview__canvas .bf-select__value {
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__tags,
+.boldform-template-preview__canvas .bf-select__tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__tag,
+.boldform-template-preview__canvas .bf-select__tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 10px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	font-size: 13px;
+	color: #334155;
+	white-space: nowrap;
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__panel,
+.boldform-template-preview__canvas .bf-select__panel {
+	display: none;
 }
 
 .boldform-canvas .boldform-canvas-field-body {
@@ -1371,7 +1465,7 @@
 
 .boldform-field-accordion__body {
 	display: none;
-	padding: 14px;
+	padding: 16px 14px;
 	border-top: 1px solid #e2e8f0;
 }
 
@@ -1379,7 +1473,222 @@
 	display: block;
 }
 
-/* Conditional logic */
+/* Calculation field — canvas preview */
+.boldform-canvas-calculation {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.boldform-canvas-calc-input {
+	width: 100%;
+	box-sizing: border-box;
+	background: #f0f4f8;
+	border: 1px dashed #cbd5e1;
+	color: #475569;
+	font-style: italic;
+	cursor: default;
+	pointer-events: none;
+}
+
+.boldform-canvas-calc-badge {
+	font-size: 11px;
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	color: #64748b;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 4px;
+	padding: 2px 6px;
+	display: inline-block;
+	max-width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Conditional logic — multi-condition builder */
+.bfcl-builder {
+	margin-top: 10px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+/* "Show/Hide this field if ALL/ANY match:" sentence row */
+.bfcl-action-bar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	padding: 10px 12px;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.bfcl-action-bar select {
+	padding: 5px 8px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	font-size: 12px;
+	font-weight: 600;
+	color: #334155;
+	cursor: pointer;
+	outline: none;
+}
+
+.bfcl-action-bar select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.bfcl-action-label {
+	font-size: 12px;
+	color: #64748b;
+	white-space: nowrap;
+}
+
+/* AND / OR pill toggle */
+.bfcl-logic-toggle {
+	display: flex;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.bfcl-logic-opt {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 10px;
+	font-size: 11px;
+	font-weight: 700;
+	cursor: pointer;
+	color: #64748b;
+	background: transparent;
+	transition: background 0.14s, color 0.14s;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.bfcl-logic-opt + .bfcl-logic-opt {
+	border-left: 1px solid #cbd5e1;
+}
+
+.bfcl-logic-opt input[type="radio"] {
+	display: none;
+}
+
+.bfcl-logic-opt.is-active {
+	background: #2271b1;
+	color: #fff;
+}
+
+/* Conditions list area */
+.bfcl-conditions-list {
+	display: grid;
+	gap: 1px;
+	background: #e2e8f0;
+}
+
+.bfcl-condition-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	background: #fff;
+}
+
+/* Row number badge (AND/OR connector) */
+.bfcl-cond-connector {
+	flex-shrink: 0;
+	width: 32px;
+	text-align: center;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+.bfcl-condition-row select,
+.bfcl-condition-row input[type="text"] {
+	flex: 1;
+	min-width: 0;
+	padding: 7px 10px;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background: #f8fafc;
+	font-size: 12px;
+	color: #334155;
+	outline: none;
+	transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.bfcl-condition-row select:focus,
+.bfcl-condition-row input[type="text"]:focus {
+	border-color: #2271b1;
+	background: #fff;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.bfcl-remove-cond {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: #f1f5f9;
+	color: #94a3b8;
+	font-size: 13px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.14s, color 0.14s;
+}
+
+.bfcl-remove-cond:hover {
+	background: #fee2e2;
+	color: #dc2626;
+}
+
+.bfcl-remove-placeholder {
+	flex-shrink: 0;
+	width: 20px;
+}
+
+.bfcl-no-value {
+	flex: 1;
+	min-width: 0;
+}
+
+/* Add condition button */
+.bfcl-add-condition {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	width: 100%;
+	padding: 9px 12px;
+	border: none;
+	border-top: 1px solid #e2e8f0;
+	border-radius: 0;
+	background: #fff;
+	color: #2271b1;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.14s;
+	text-align: left;
+}
+
+.bfcl-add-condition:hover {
+	background: #f0f7ff;
+}
+
+/* Legacy single-rule (kept for backwards compat display) */
 .boldform-cond-rules {
 	display: grid;
 	gap: 10px;
@@ -1397,17 +1706,7 @@
 	flex-wrap: wrap;
 }
 
-.boldform-cond-row select {
-	flex: 1;
-	min-width: 80px;
-	padding: 8px 10px;
-	border: 1px solid #cbd5e1;
-	border-radius: 8px;
-	background: #fff;
-	font-size: 13px;
-	color: #334155;
-}
-
+.boldform-cond-row select,
 .boldform-cond-row input[type="text"] {
 	flex: 1;
 	min-width: 80px;
@@ -1438,7 +1737,16 @@
 .boldform-setting-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 10px;
+	gap: 12px;
+	align-items: start;
+}
+
+.boldform-setting-row .boldform-setting-group {
+	margin-bottom: 0;
+}
+
+.boldform-setting-row + .boldform-setting-row {
+	margin-top: 12px;
 }
 
 
@@ -1553,13 +1861,267 @@
 }
 
 .boldform-settings-panel {
-	padding: 18px;
+	padding: 14px 14px 18px;
+}
+
+/* The "Selected field" name row at the top of the field settings panel */
+.boldform-settings-panel > .boldform-setting-group:first-child {
+	margin-bottom: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #e2e8f0;
 }
 
 .boldform-settings-section + .boldform-settings-section {
 	margin-top: 18px;
 	padding-top: 18px;
 	border-top: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Settings tab layout  — left nav + right pane
+   Class prefix: bfsп- (boldform settings-panel)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.bfsп-stab-layout {
+	display: flex;
+	min-height: 480px;
+}
+
+/* ── Left nav ────────────────────────────────────────────────────────────── */
+.bfsп-stab-nav {
+	width: 220px;
+	flex-shrink: 0;
+	border-right: 1px solid rgba(226, 232, 240, 0.8);
+	padding: 14px 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: #f8fafc;
+	border-radius: 0 0 0 20px;
+}
+
+.bfsп-stab-nav-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	padding: 10px 12px;
+	border: none;
+	background: transparent;
+	border-radius: 10px;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.13s ease, color 0.13s ease;
+	color: #475569;
+	position: relative;
+}
+
+.bfsп-stab-nav-item:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.bfsп-stab-nav-item.is-active {
+	background: #fff;
+	color: #0f172a;
+	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+}
+
+.bfsп-stab-nav-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	background: #e2e8f0;
+	font-size: 13px;
+	flex-shrink: 0;
+	transition: background 0.13s ease;
+	color: #475569;
+}
+
+.bfsп-stab-nav-item.is-active .bfsп-stab-nav-icon {
+	background: #2271b1;
+	color: #fff;
+}
+
+.bfsп-stab-nav-text {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+
+.bfsп-stab-nav-label {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bfsп-stab-nav-desc {
+	font-size: 11px;
+	color: #94a3b8;
+	line-height: 1.3;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bfsп-stab-nav-item.is-active .bfsп-stab-nav-desc {
+	color: #64748b;
+}
+
+.bfsп-stab-nav-arrow {
+	font-size: 16px;
+	color: #cbd5e1;
+	flex-shrink: 0;
+	transition: color 0.13s ease;
+}
+
+.bfsп-stab-nav-item.is-active .bfsп-stab-nav-arrow {
+	color: #94a3b8;
+}
+
+/* Pro-slots area (spacer + separator before Pro tabs) */
+.bfsп-stab-nav-pro-slots {
+	display: contents;
+}
+
+.bfsп-stab-nav-divider {
+	margin: 8px 4px;
+	border: none;
+	border-top: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.bfsп-stab-nav-pro-label {
+	padding: 4px 12px 2px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+/* ── Right content area ──────────────────────────────────────────────────── */
+.bfsп-stab-content {
+	flex: 1;
+	min-width: 0;
+	overflow-y: auto;
+}
+
+.bfsп-stab-pane {
+	display: none;
+	padding: 24px 28px;
+}
+
+.bfsп-stab-pane.is-active {
+	display: block;
+}
+
+/* Pane header */
+.bfsп-stab-pane-head {
+	margin-bottom: 20px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+}
+
+.bfsп-stab-pane-head h3 {
+	margin: 0 0 4px;
+	font-size: 15px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.bfsп-stab-pane-head p {
+	margin: 0;
+	font-size: 13px;
+	color: #64748b;
+	line-height: 1.5;
+}
+
+/* Choice card icon */
+.boldform-choice-card__icon {
+	display: block;
+	font-size: 18px;
+	margin-bottom: 6px;
+	color: #94a3b8;
+}
+
+.boldform-choice-card.is-selected .boldform-choice-card__icon {
+	color: #2271b1;
+}
+
+/* ── Email notification blocks ───────────────────────────────────────────── */
+.bfsп-email-block {
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	overflow: hidden;
+	margin-bottom: 12px;
+	background: #fff;
+}
+
+.bfsп-email-block:last-child {
+	margin-bottom: 0;
+}
+
+.bfsп-email-block__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: #f8fafc;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.bfsп-email-block__head:only-child {
+	border-bottom: none;
+}
+
+.bfsп-email-block__title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.bfsп-email-block__body {
+	padding: 16px;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media ( max-width: 860px ) {
+	.bfsп-stab-layout {
+		flex-direction: column;
+	}
+
+	.bfsп-stab-nav {
+		width: auto;
+		flex-direction: row;
+		flex-wrap: wrap;
+		border-right: none;
+		border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+		border-radius: 20px 20px 0 0;
+		padding: 10px;
+		gap: 4px;
+	}
+
+	.bfsп-stab-nav-desc,
+	.bfsп-stab-nav-arrow {
+		display: none;
+	}
+
+	.bfsп-stab-nav-item {
+		flex: 0 0 auto;
+		padding: 7px 12px;
+	}
+
+	.bfsп-stab-pane {
+		padding: 18px;
+	}
 }
 
 .boldform-style-section + .boldform-style-section {
@@ -1680,7 +2242,11 @@
 .boldform-style-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 16px;
+	gap: 10px 14px;
+}
+
+.boldform-style-grid + .boldform-style-grid {
+	margin-top: 10px;
 }
 
 .boldform-style-grid.is-single {
@@ -1688,20 +2254,33 @@
 }
 
 .boldform-style-color-grid {
-	display: flex;
-	gap: 16px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 10px;
 	margin-top: 14px;
+	padding-top: 14px;
+	border-top: 1px solid #f1f5f9;
 }
 
 .boldform-style-color-grid .boldform-setting-group {
 	display: flex;
-	align-items: center;
-	gap: 8px;
+	flex-direction: column;
+	gap: 5px;
+	margin-bottom: 0;
 }
 
 .boldform-style-color-grid .boldform-setting-group label {
-	font-size: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
 	white-space: nowrap;
+	margin: 0;
+}
+
+.boldform-style-color-grid .boldform-color-field {
+	width: 100%;
 }
 
 .boldform-style-input-wrap {
@@ -1722,47 +2301,199 @@
 	pointer-events: none;
 }
 
-.boldform-color-wrap {
-	position: relative;
+/* ── Color field (swatch + hex text) ── */
+.boldform-color-field {
 	display: flex;
 	align-items: center;
+	gap: 0;
+	height: 40px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #f8fafc;
+	transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.boldform-color-wrap input[type="color"] {
-	width: 36px;
-	height: 36px !important;
+.boldform-color-field:focus-within {
+	border-color: #2271b1;
+	background: #fff;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+}
+
+.boldform-color-swatch {
+	position: relative;
+	width: 38px;
+	min-width: 38px;
+	height: 100%;
+	cursor: pointer;
+	overflow: hidden;
+	border-right: 1.5px solid rgba(0, 0, 0, 0.08);
+	flex-shrink: 0;
+}
+
+.boldform-color-swatch input[type="color"] {
+	position: absolute;
+	inset: -4px;
+	width: calc(100% + 8px);
+	height: calc(100% + 8px);
 	padding: 0;
-	border: 2px solid #e2e8f0;
-	border-radius: 999px;
+	border: 0;
 	background: transparent;
 	cursor: pointer;
 	-webkit-appearance: none;
 	appearance: none;
+	opacity: 0;
 }
 
-.boldform-color-wrap input[type="color"]:hover {
+.boldform-color-swatch input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.boldform-color-swatch input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
+.boldform-color-swatch input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
+
+.boldform-color-hex {
+	flex: 1;
+	min-width: 0;
+	height: 100% !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	padding: 0 10px !important;
+	font-size: 12px !important;
+	font-family: 'SFMono-Regular', Consolas, monospace;
+	color: #334155 !important;
+	letter-spacing: 0.5px;
+	outline: none;
+}
+
+/* Keep old .boldform-color-wrap for any non-style-tab usages */
+.boldform-color-wrap {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	overflow: hidden;
+	cursor: pointer;
+	background: #fff;
+	transition: border-color 0.15s;
+}
+
+.boldform-color-wrap:hover {
 	border-color: #94a3b8;
 }
 
-.boldform-color-wrap input[type="color"]::-webkit-color-swatch-wrapper {
-	padding: 2px;
+.boldform-color-wrap input[type="color"] {
+	position: absolute;
+	inset: -4px;
+	width: calc(100% + 8px);
+	height: calc(100% + 8px);
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	-webkit-appearance: none;
+	appearance: none;
+	opacity: 0;
 }
 
-.boldform-color-wrap input[type="color"]::-webkit-color-swatch {
-	border: 0;
-	border-radius: 999px;
+.boldform-color-preview {
+	display: block;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
 }
 
-.boldform-color-wrap input[type="color"]::-moz-color-swatch {
-	border: 0;
-	border-radius: 999px;
+.boldform-color-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.boldform-color-wrap input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
+.boldform-color-wrap input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
+
+.boldform-svg-preview {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+	padding: 10px 12px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+}
+
+.boldform-svg-preview__img {
+	width: 28px;
+	height: 28px;
+	padding: 4px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+}
+
+.boldform-svg-preview__name {
+	flex: 1;
+	font-size: 12px;
+	color: #64748b;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.boldform-svg-remove {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	background: none;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: color 0.15s, background 0.15s;
+}
+
+.boldform-svg-remove:hover {
+	color: #ef4444;
+	background: #fef2f2;
+}
+
+.boldform-svg-remove .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.boldform-svg-upload-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	color: #475569;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.boldform-svg-upload-btn:hover {
+	border-color: #94a3b8;
+	color: #1e293b;
+	background: #f8fafc;
+}
+
+.boldform-svg-upload-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	color: #94a3b8;
 }
 
 .boldform-settings-section__head {
-	display: flex;
-	justify-content: space-between;
-	align-items: flex-start;
-	gap: 12px;
 	margin-bottom: 16px;
 }
 
@@ -1773,28 +2504,63 @@
 }
 
 .boldform-setting-group {
-	margin-bottom: 16px;
+	margin-bottom: 14px;
 }
 
-.boldform-setting-group label,
+.boldform-setting-group:last-child {
+	margin-bottom: 0;
+}
 
-.boldform-setting-group p {
-	margin: 8px 0 0;
+.boldform-setting-group > label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #475569;
+	line-height: 1.4;
+}
+
+.boldform-setting-group > p {
+	margin: 5px 0 0;
 	font-size: 12px;
 	color: #64748b;
+	line-height: 1.4;
+}
+
+.boldform-style-grid .boldform-setting-group {
+	margin-bottom: 0;
 }
 
 .boldform-style-section .boldform-setting-group input,
 .boldform-style-section .boldform-setting-group select {
-	height: 52px;
-	border-color: #cbd5e1;
-	border-radius: 12px;
+	height: 40px;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	background: #f8fafc;
+	color: #1e293b;
+	font-size: 13px;
+	transition: border-color 0.15s, box-shadow 0.15s;
+	box-shadow: none;
+}
+
+.boldform-style-section .boldform-setting-group input:focus,
+.boldform-style-section .boldform-setting-group select:focus {
+	border-color: #2271b1;
 	background: #fff;
-	box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+	outline: none;
 }
 
 .boldform-style-section .boldform-setting-group select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
 	padding-right: 36px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 10px center;
+	background-size: 15px;
+	cursor: pointer;
 }
 
 .boldform-canvas-field-actions {
@@ -2009,6 +2775,12 @@
 	margin-bottom: 16px;
 }
 
+.boldform-choice-grid--3 .boldform-choice-card {
+	justify-content: center;
+	text-align: center;
+	padding: 10px 8px;
+}
+
 .boldform-choice-card {
 	position: relative;
 	display: flex;
@@ -2069,6 +2841,7 @@
 	align-items: center;
 	gap: 10px;
 	cursor: pointer;
+	margin-top: 10px;
 }
 
 .boldform-switch input {
@@ -2109,7 +2882,6 @@
 
 .boldform-switch__label {
 	font-size: 13px;
-	font-weight: 600;
 	color: #334155;
 }
 
@@ -2414,14 +3186,39 @@
 
 .boldform-preview-toolbar__devices {
 	display: inline-flex;
-	gap: 8px;
+	gap: 4px;
 	flex-wrap: wrap;
 }
 
-.boldform-preview-toolbar__devices .button.is-active {
-	border-color: #0f766e;
-	background: #ecfeff;
-	color: #155e75;
+.boldform-device-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	padding: 0;
+	border: none;
+	border-radius: 8px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.boldform-device-btn .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.boldform-device-btn:hover {
+	color: #475569;
+	background: #f1f5f9;
+}
+
+.boldform-device-btn.is-active {
+	color: #0f766e;
+	background: #f0fdfa;
 }
 
 .boldform-preview-toolbar__meta {
@@ -2681,4 +3478,674 @@
 	.boldform-preview-viewport {
 		padding: 16px;
 	}
+}
+
+
+.boldform-canvas-payment-block {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 14px 16px;
+	background: linear-gradient(135deg, #fdf6ec, #fef3c7);
+	border: 2px dashed #f59e0b;
+	border-radius: 6px;
+	color: #92400e;
+}
+
+.boldform-canvas-payment-block .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+
+.boldform-canvas-payment-info {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.boldform-canvas-payment-info strong {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.boldform-canvas-payment-info span {
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+.boldform-canvas-payment-desc {
+	font-style: italic;
+}
+
+/* Payment field canvas — checkout block preview */
+.boldform-canvas-checkout-block {
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.boldform-canvas-order-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.boldform-canvas-order-table thead tr {
+	background: #f3f4f6;
+}
+
+.boldform-canvas-order-table thead th {
+	padding: 7px 10px;
+	text-align: left;
+	font-weight: 600;
+	color: #6b7280;
+	border-bottom: 1px solid #e5e7eb;
+	font-size: 11px;
+}
+
+.boldform-canvas-order-table thead th:not(:first-child) {
+	text-align: right;
+}
+
+.boldform-canvas-order-table tbody td {
+	padding: 7px 10px;
+	color: #374151;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.boldform-canvas-order-table tfoot td {
+	padding: 8px 10px;
+	background: #f9fafb;
+	border-top: 2px solid #e5e7eb;
+}
+
+.boldform-canvas-gateway-placeholder {
+	padding: 10px 12px;
+	background: #f9fafb;
+	border-top: 1px solid #e5e7eb;
+	color: #9ca3af;
+	font-size: 12px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Product field canvas preview — uses native radio look via .boldform-choice */
+.boldform-choices-preview {
+	display: grid;
+	gap: 8px;
+}
+
+/* Quantity field canvas block */
+.boldform-canvas-quantity-block {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 14px;
+	background: linear-gradient(135deg, #eff6ff, #dbeafe);
+	border: 2px dashed #3b82f6;
+	border-radius: 6px;
+	color: #1e40af;
+}
+
+.boldform-canvas-quantity-block .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+
+.boldform-canvas-quantity-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.boldform-canvas-quantity-info strong {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.boldform-canvas-quantity-info span {
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+/* Order total field canvas block */
+.boldform-canvas-total-block {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 12px 14px;
+	background: linear-gradient(135deg, #faf5ff, #ede9fe);
+	border: 2px dashed #8b5cf6;
+	border-radius: 6px;
+	color: #4c1d95;
+}
+
+.boldform-canvas-total-block > .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+	flex-shrink: 0;
+}
+
+.boldform-canvas-total-info {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.boldform-canvas-total-info strong {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.boldform-canvas-total-info span {
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+.boldform-canvas-total-amount {
+	font-size: 20px;
+	font-weight: 700;
+	color: #7c3aed;
+}
+
+/* Product options repeater in settings panel */
+.boldform-product-options-repeater {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.boldform-product-option-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.boldform-product-option__drag {
+	cursor: grab;
+	color: #9ca3af;
+	flex-shrink: 0;
+}
+
+.boldform-product-option__label {
+	flex: 1;
+	min-width: 0;
+	padding: 6px 8px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.boldform-product-option__price {
+	width: 80px;
+	padding: 6px 8px;
+	border: 1px solid #d1d5db;
+	border-radius: 4px;
+	font-size: 12px;
+}
+
+.boldform-product-option__remove {
+	background: none;
+	border: none;
+	cursor: pointer;
+	color: #ef4444;
+	padding: 4px;
+	border-radius: 4px;
+	flex-shrink: 0;
+}
+
+.boldform-product-option__remove:hover {
+	background: #fee2e2;
+}
+
+/* Field search */
+.boldform-field-search {
+	padding: 0 16px 12px;
+}
+
+.boldform-field-search input {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 13px;
+	background: #f9fafb;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.boldform-field-search input:focus {
+	outline: none;
+	border-color: #2f80ed;
+	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+	background: #fff;
+}
+
+/* Row column layout presets */
+.boldform-row-layout-presets {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	margin-top: 6px;
+}
+
+.boldform-row-layout-btn {
+	display: flex;
+	gap: 3px;
+	padding: 6px 8px;
+	border: 2px solid #e5e7eb;
+	border-radius: 4px;
+	background: #f9fafb;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+	min-width: 40px;
+	height: 32px;
+	align-items: stretch;
+}
+
+.boldform-row-layout-btn span {
+	display: block;
+	background: #d1d5db;
+	border-radius: 2px;
+	min-width: 6px;
+	transition: background 0.15s;
+}
+
+.boldform-row-layout-btn:hover {
+	border-color: #2f80ed;
+}
+
+.boldform-row-layout-btn:hover span {
+	background: #93c5fd;
+}
+
+.boldform-row-layout-btn.is-active {
+	border-color: #2f80ed;
+	background: #eff6ff;
+}
+
+.boldform-row-layout-btn.is-active span {
+	background: #2f80ed;
+}
+
+/* Design Theme Cards */
+.boldform-theme-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+}
+
+.boldform-theme-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 6px 8px;
+	border: 2px solid #e5e7eb;
+	border-radius: 8px;
+	background: #fff;
+	cursor: pointer;
+	transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.boldform-theme-card:hover {
+	border-color: #93c5fd;
+}
+
+.boldform-theme-card.is-active {
+	border-color: #2f80ed;
+	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+}
+
+.boldform-theme-card__preview {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	padding: 0 4px;
+}
+
+.boldform-theme-card__input {
+	display: block;
+	height: 14px;
+	border: 2px solid;
+}
+
+.boldform-theme-card__btn {
+	display: block;
+	height: 10px;
+	font-size: 0;
+}
+
+.boldform-theme-card__name {
+	font-size: 10px;
+	color: #6b7280;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
+.boldform-theme-card.is-active .boldform-theme-card__name {
+	color: #2f80ed;
+}
+
+@media (max-width: 1200px) {
+	.boldform-theme-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+/* ============================================================
+   Canvas preview — Image Choice tiles
+   ============================================================ */
+
+.boldform-canvas-ic {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat( 3, 1fr );
+}
+.boldform-canvas-ic--2col { grid-template-columns: repeat( 2, 1fr ); }
+.boldform-canvas-ic--3col { grid-template-columns: repeat( 3, 1fr ); }
+.boldform-canvas-ic--4col { grid-template-columns: repeat( 4, 1fr ); }
+.boldform-canvas-ic--5col { grid-template-columns: repeat( 5, 1fr ); }
+.boldform-canvas-ic--6col { grid-template-columns: repeat( 6, 1fr ); }
+
+.boldform-canvas-ic__item {
+	display: flex;
+	flex-direction: column;
+	border: 1.5px solid #e2e8f0;
+	border-radius: 8px;
+	overflow: hidden;
+	background: #fff;
+	cursor: default;
+	transition: border-color 0.12s;
+}
+
+.boldform-canvas-ic__item.is-checked {
+	border-color: #0f766e;
+}
+
+/* Image area — fixed height keeps tiles compact in the narrow canvas */
+.boldform-canvas-ic__img {
+	position: relative;
+	height: 56px;
+	overflow: hidden;
+	background: linear-gradient( 135deg, #f1f5f9, #e2e8f0 );
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #94a3b8;
+}
+
+.boldform-canvas-ic__img img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.boldform-canvas-ic__img .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+}
+
+/* Check badge overlay */
+.boldform-canvas-ic__check {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: #0f766e;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.boldform-canvas-ic__lbl {
+	padding: 5px 6px;
+	font-size: 10px;
+	color: #374151;
+	font-weight: 500;
+	text-align: center;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.boldform-canvas-ic__item.is-checked .boldform-canvas-ic__lbl {
+	color: #0f766e;
+}
+
+/* ============================================================
+   Pro field settings — Image Choice option rows
+   ============================================================ */
+
+/* Column headers (repeater sub-fields only) */
+.boldform-rep-fields-header {
+	display: grid;
+	grid-template-columns: 120px 1fr auto;
+	gap: 6px;
+	padding: 0 8px 4px;
+	font-size: 10px;
+	font-weight: 600;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.boldform-ic-options-repeater {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+/* Each option row: [image picker] [label+value stack] [remove] */
+.boldform-ic-option-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 6px 8px;
+}
+
+/* Image picker button — square thumbnail */
+.boldform-ic-option__img-btn {
+	flex-shrink: 0;
+	width: 48px;
+	height: 48px;
+	border: 1.5px dashed #cbd5e1;
+	border-radius: 6px;
+	background: #f1f5f9;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	padding: 0;
+	transition: border-color 0.12s, background 0.12s;
+}
+
+.boldform-ic-option__img-btn:hover {
+	border-color: #2271b1;
+	background: #eff6ff;
+}
+
+.boldform-ic-option__img-btn img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.boldform-ic-option__img-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	color: #94a3b8;
+}
+
+/* Label + value inputs stacked vertically */
+.boldform-ic-option__fields {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.boldform-ic-option__fields input {
+	height: 28px;
+	padding: 0 8px;
+	font-size: 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 5px;
+	background: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.boldform-ic-option__fields input:focus {
+	outline: none;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 2px rgba(34,113,177,0.12);
+}
+
+.boldform-ic-option__remove {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	border: 1px solid #fecaca;
+	border-radius: 5px;
+	background: #fff;
+	color: #ef4444;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	transition: background 0.12s;
+}
+
+.boldform-ic-option__remove:hover {
+	background: #fef2f2;
+}
+
+.boldform-ic-option__remove .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	line-height: 1;
+}
+
+/* ============================================================
+   Pro field settings — Repeater sub-field rows
+   ============================================================ */
+
+.boldform-rep-fields-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.boldform-rep-field-row {
+	display: grid;
+	grid-template-columns: 120px 1fr auto;
+	gap: 6px;
+	align-items: center;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 7px;
+	padding: 6px 8px;
+}
+
+.boldform-rep-field__type {
+	height: 32px;
+	padding: 0 6px;
+	font-size: 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 5px;
+	background: #fff;
+	color: #1e293b;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 7px center;
+	padding-right: 22px;
+}
+
+.boldform-rep-field__type:focus {
+	outline: none;
+	border-color: #2271b1;
+}
+
+.boldform-rep-field__label {
+	height: 32px;
+	padding: 0 8px;
+	font-size: 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 5px;
+	background: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.boldform-rep-field__label:focus {
+	outline: none;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 2px rgba(34,113,177,0.12);
+}
+
+.boldform-rep-field__remove {
+	width: 28px;
+	height: 28px;
+	border: 1px solid #fecaca;
+	border-radius: 5px;
+	background: #fff;
+	color: #ef4444;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	padding: 0;
+	transition: background 0.12s;
+}
+
+.boldform-rep-field__remove:hover {
+	background: #fef2f2;
+}
+
+.boldform-rep-field__remove .dashicons {
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	line-height: 1;
 }
