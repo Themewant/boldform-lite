@@ -64,6 +64,11 @@ claude.md
 .claude.md
 *.plan.md
 
+# Local-only developer documentation (not shipped, not pushed to GitHub).
+# Every Markdown doc stays on the local machine only.
+*.md
+.distignore
+
 # Git
 .git/
 

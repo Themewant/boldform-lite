@@ -62,35 +62,40 @@ Tables are created automatically for each new subsite when the plugin is network
 * Email
 * Number
 * Textarea
-* Password
-* Hidden
+* Phone
+* URL
+* Numeric
 
 **Choice Fields**
 * Select (single or multi-select with custom dropdown)
+* Multi Select
 * Checkbox
 * Radio Button
+* Country
 
 **Date & Time**
 * Date picker (powered by Flatpickr)
-* Date Range picker
 * Time picker
+
+**Rating & Range**
+* Star Rating
+* Slider / Range
+
+**Input Helpers**
+* Input Mask (formatted text input)
 
 **Layout & Content**
 * Section Break (multi-step divider)
 * Paragraph / Static Text
-* HTML Block
+* HTML Editor
 * Terms & Conditions
 
 **File & Media**
 * File Upload (configurable max size, stored in WordPress uploads)
 
 **Address & Identity**
-* Name (structured first/last name)
+* Name (structured first / middle / last name)
 * Address (structured address field)
-
-**Survey & Feedback**
-* NPS (Net Promoter Score)
-* Matrix (grid questions)
 
 ---
 

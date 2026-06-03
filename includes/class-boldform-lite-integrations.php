@@ -144,10 +144,12 @@ class BoldForm_Lite_Integrations {
 
 			$map = $field_map[ $conn_id ] ?? array();
 
+			// Schedule with the connection ID only — never serialize the API key into the
+			// cron option. run_dispatch() re-fetches and re-validates the connection at run time.
 			wp_schedule_single_event(
 				time(),
 				'boldform_integration_dispatch',
-				array( $connection, $entry_data, $map, $entry_id )
+				array( (string) $conn_id, $entry_data, $map, $entry_id )
 			);
 		}
 
@@ -157,13 +159,25 @@ class BoldForm_Lite_Integrations {
 	/**
 	 * Cron handler — executes one integration dispatch.
 	 *
-	 * @param array<string, mixed> $connection Connection config from global store.
-	 * @param array<string, mixed> $entry_data Submitted field data.
-	 * @param array<string, mixed> $field_map  { email, fname, lname } field ID mapping.
-	 * @param int                  $entry_id   Entry ID.
+	 * @param string|array<string, mixed> $connection_or_id Connection ID (current) or, for
+	 *                                                       legacy in-flight events, the full config array.
+	 * @param array<string, mixed>        $entry_data       Submitted field data.
+	 * @param array<string, mixed>        $field_map        { email, fname, lname } field ID mapping.
+	 * @param int                         $entry_id         Entry ID.
 	 * @return void
 	 */
-	public function run_dispatch( array $connection, array $entry_data, array $field_map, int $entry_id ): void {
+	public function run_dispatch( $connection_or_id, array $entry_data = array(), array $field_map = array(), int $entry_id = 0 ): void {
+		// Resolve the connection from its ID and re-validate it now (it may have been
+		// deactivated or deleted since the event was scheduled). Accept a full array too
+		// so any event scheduled before this change still dispatches.
+		$connection = is_array( $connection_or_id )
+			? $connection_or_id
+			: $this->page->get_connection( (string) $connection_or_id );
+
+		if ( ! is_array( $connection ) || empty( $connection ) || 'inactive' === ( $connection['status'] ?? 'active' ) ) {
+			return;
+		}
+
 		$type = $connection['type'] ?? '';
 
 		switch ( $type ) {
@@ -208,9 +222,14 @@ class BoldForm_Lite_Integrations {
 
 		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
 
-		$dc = 'us1';
+		// The Mailchimp data center is the suffix of the API key (e.g. "-us21").
+		// Without it we cannot build a correct endpoint, so bail rather than guess.
+		$dc = '';
 		if ( preg_match( '/-([a-z0-9]+)$/', $api_key, $m ) ) {
 			$dc = $m[1];
+		}
+		if ( '' === $dc ) {
+			return;
 		}
 
 		$body = array(

@@ -66,6 +66,13 @@ class BoldForm_Lite_Admin {
 	private $reports_page_hook = '';
 
 	/**
+	 * Documentation page hook suffix.
+	 *
+	 * @var string
+	 */
+	private $docs_page_hook = '';
+
+	/**
 	 * AJAX handler.
 	 *
 	 * @var BoldForm_Lite_Ajax_Save
@@ -155,7 +162,7 @@ class BoldForm_Lite_Admin {
 		add_action( 'load-' . $this->preview_page_hook, array( $this, 'set_preview_title' ) );
 
 		// Documentation — links to static HTML docs (opens in new tab).
-		add_submenu_page(
+		$this->docs_page_hook = add_submenu_page(
 			'boldform-lite',
 			__( 'Documentation', 'boldform-lite' ),
 			__( 'Documentation', 'boldform-lite' ),
@@ -192,6 +199,12 @@ class BoldForm_Lite_Admin {
 	 * @return array<string, string>
 	 */
 	public function allow_svg_upload( $mimes ) {
+		// Only expose SVG as an allowed upload type to users who can upload files (admins).
+		// Never on the front end / for anonymous form submissions — SVGs can carry scripts
+		// and would otherwise become a stored-XSS vector through form file fields.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $mimes;
+		}
 		$mimes['svg']  = 'image/svg+xml';
 		$mimes['svgz'] = 'image/svg+xml';
 		return $mimes;
@@ -207,6 +220,11 @@ class BoldForm_Lite_Admin {
 	 * @return array<string, string|false>
 	 */
 	public function fix_svg_filetype( $data, $file, $filename, $mimes ) {
+		// Mirror allow_svg_upload(): only treat .svg as a valid type for users who can
+		// upload files, so the front-end upload path can never be tricked into accepting one.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $data;
+		}
 		if ( ! empty( $data['ext'] ) && ! empty( $data['type'] ) ) {
 			return $data;
 		}
@@ -233,6 +251,7 @@ class BoldForm_Lite_Admin {
 			$this->settings_page_hook,
 			$this->reports_page_hook,
 			$this->preview_page_hook,
+			$this->docs_page_hook,
 		);
 
 		if ( in_array( $hook_suffix, $all_pages, true ) ) {
@@ -543,7 +562,7 @@ class BoldForm_Lite_Admin {
 			);
 		}
 
-		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook );
+		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook, $this->docs_page_hook );
 
 		if ( in_array( $hook_suffix, $admin_pages, true ) ) {
 			wp_enqueue_style(
@@ -1797,7 +1816,7 @@ class BoldForm_Lite_Admin {
 											<div class="boldform-field-row">
 												<div class="boldform-field-label"><label for="boldform-smtp-password"><?php esc_html_e( 'Password', 'boldform-lite' ); ?></label></div>
 												<div class="boldform-field-control">
-													<input type="password" id="boldform-smtp-password" name="boldform_smtp_password" value="<?php echo esc_attr( $settings['smtp_password'] ); ?>" autocomplete="new-password">
+													<input type="password" id="boldform-smtp-password" name="boldform_smtp_password" value="" placeholder="<?php echo '' !== $settings['smtp_password'] ? esc_attr__( 'Saved — leave blank to keep current password', 'boldform-lite' ) : ''; ?>" autocomplete="new-password">
 												</div>
 											</div>
 										</div>
@@ -2092,13 +2111,22 @@ class BoldForm_Lite_Admin {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$to      = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
-		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
-		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+		$to = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
 
 		if ( ! is_email( $to ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please enter a valid email address.', 'boldform-lite' ) ) );
 		}
+
+		// Throttle so the endpoint can't be used to fire mail in a tight loop.
+		$throttle_key = 'boldform_test_mail_' . get_current_user_id();
+		if ( get_transient( $throttle_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please wait a few seconds before sending another test email.', 'boldform-lite' ) ) );
+		}
+		set_transient( $throttle_key, 1, 15 );
+
+		// Fixed subject/body — the endpoint only verifies delivery, it is not a general mailer.
+		$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
+		$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
 
 		$sent = wp_mail( $to, $subject, $message );
 
@@ -2746,7 +2774,16 @@ class BoldForm_Lite_Admin {
 		global $wpdb;
 
 		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
-		$entries    = $wpdb->get_results( "SELECT * FROM `{$safe_table}` ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Honor the same filters the Entries screen passes in the export link (form/status/date).
+		$filters = array(
+			'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0,
+			'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '',
+			'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
+			'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
+		);
+		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
+		$entries    = $wpdb->get_results( "SELECT * FROM `{$safe_table}` {$where} ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Collect all unique field labels across entries.
 		$columns = array();
@@ -2776,7 +2813,7 @@ class BoldForm_Lite_Admin {
 		$output = fopen( 'php://output', 'w' );
 
 		// Header row.
-		fputcsv( $output, array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) );
+		fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) ) );
 
 		foreach ( $entries as $entry ) {
 			$data = json_decode( $entry['entry_data_json'], true );
@@ -2805,11 +2842,30 @@ class BoldForm_Lite_Admin {
 				$row[] = isset( $field_map[ $col ] ) ? $field_map[ $col ] : '';
 			}
 
-			fputcsv( $output, $row );
+			fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
 		}
 
 		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- writing to php://output stream, not a filesystem file.
 		exit;
+	}
+
+	/**
+	 * Neutralizes CSV/spreadsheet formula injection in a single cell.
+	 *
+	 * Prefixes a leading =, +, -, @, tab or CR with a single quote so spreadsheet
+	 * apps treat attacker-supplied submission values as text, not formulas.
+	 *
+	 * @param mixed $value Cell value.
+	 * @return string
+	 */
+	private function csv_escape_cell( $value ) {
+		$value = (string) $value;
+
+		if ( '' !== $value && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+			$value = "'" . $value;
+		}
+
+		return $value;
 	}
 
 	/**

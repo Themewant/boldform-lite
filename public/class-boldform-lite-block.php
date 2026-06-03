@@ -126,6 +126,33 @@ class BoldForm_Lite_Block {
 			BOLDFORM_LITE_VERSION
 		);
 
+		// Load Flatpickr + frontend behaviour so date/time fields render their picker in the
+		// server-side-rendered block preview (matching the live frontend).
+		if ( ! wp_style_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_style( 'boldform-lite-flatpickr', BOLDFORM_LITE_URL . 'assets/css/flatpickr.min.css', array(), '4.6.13' );
+		}
+		if ( ! wp_script_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_script( 'boldform-lite-flatpickr', BOLDFORM_LITE_URL . 'assets/js/flatpickr.min.js', array(), '4.6.13', true );
+		}
+		if ( ! wp_script_is( 'boldform-lite-frontend', 'registered' ) ) {
+			wp_register_script( 'boldform-lite-frontend', BOLDFORM_LITE_URL . 'assets/js/frontend.js', array( 'jquery' ), BOLDFORM_LITE_VERSION, true );
+		}
+		wp_enqueue_style( 'boldform-lite-flatpickr' );
+		wp_enqueue_script( 'boldform-lite-flatpickr' );
+		wp_enqueue_script( 'boldform-lite-frontend' );
+		wp_localize_script(
+			'boldform-lite-frontend',
+			'boldformLiteFrontend',
+			array(
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'ajaxAction'     => 'boldform_lite_submit_form',
+				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
+				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
+				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
+				'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
+			)
+		);
+
 		$block_data = array(
 			'forms'        => $this->get_form_options(),
 			'placeholder'  => __( 'Select a form', 'boldform-lite' ),

@@ -456,20 +456,24 @@ class BoldForm_Lite_Form_Handler {
 			case 'email':
 				// Find the first email-type field that has a value in entry_data.
 				$email_value = '';
+				$email_fid   = '';
 				foreach ( $fields as $field ) {
 					if ( 'email' !== ( $field['type'] ?? '' ) ) {
 						continue;
 					}
-					$fid = $field['id'] ?? '';
+					$fid = sanitize_key( (string) ( $field['id'] ?? '' ) );
 					if ( isset( $entry_data[ $fid ]['value'] ) && '' !== $entry_data[ $fid ]['value'] ) {
 						$email_value = (string) $entry_data[ $fid ]['value'];
+						$email_fid   = $fid;
 						break;
 					}
 				}
 				if ( '' === $email_value ) {
 					return false; // No email field — skip.
 				}
-				return $this->duplicate_json_field_match( $table, $form_id, $email_value );
+				// Anchor the match to the email field's own JSON key so the value cannot
+				// false-positive against another field's value or a stored label.
+				return $this->duplicate_json_field_match( $table, $form_id, $email_value, $email_fid );
 
 			// ── Custom field-based ──────────────────────────────────────────────
 			case 'field':
@@ -739,6 +743,11 @@ class BoldForm_Lite_Form_Handler {
 			// Integrations — assigned connections + field mapping (saved by boldform_form_settings_extra filter).
 			'assigned_connections' => isset( $decoded['assigned_connections'] ) && is_array( $decoded['assigned_connections'] ) ? $decoded['assigned_connections'] : array(),
 			'connection_field_map' => isset( $decoded['connection_field_map'] ) && is_array( $decoded['connection_field_map'] ) ? $decoded['connection_field_map'] : array(),
+			// Duplicate-submission prevention (configured in the builder, enforced in check_duplicate_entry()).
+			'dup_enabled'  => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'   => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id' => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'  => isset( $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
 			// Pro: Scheduling.
 			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )  : '',
 			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
@@ -980,6 +989,17 @@ class BoldForm_Lite_Form_Handler {
 			$options  = isset( $field['options'] ) && is_array( $field['options'] ) ? $this->normalize_options( $field['options'] ) : array();
 			$value    = $this->sanitize_field_value( $type, $raw );
 
+			// A provided-but-malformed email would otherwise be blanked by sanitize_email()
+			// and reported as "required" (or silently saved empty). Flag it as invalid instead.
+			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw ) && ( '' === $value || ! is_email( (string) $value ) ) ) {
+				$errors[ $field_id ] = sprintf(
+					/* translators: %s: field label */
+					__( '%s must be a valid email address.', 'boldform-lite' ),
+					$label ? $label : __( 'This field', 'boldform-lite' )
+				);
+				continue;
+			}
+
 			if ( $required && $this->is_empty_value( $value ) ) {
 				$custom_error = isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '';
 				if ( $custom_error ) {
@@ -1205,6 +1225,19 @@ class BoldForm_Lite_Form_Handler {
 
 		$file = $_FILES[ $key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- handled by wp_handle_upload.
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
+
+		// Hard-block SVG/SVGZ on front-end uploads regardless of the field's allowed types.
+		// SVGs can carry executable scripts and must never be accepted from untrusted submitters.
+		$submitted_ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
+		if ( in_array( $submitted_ext, array( 'svg', 'svgz' ), true ) ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: field label */
+					__( '%s: SVG files are not allowed.', 'boldform-lite' ),
+					$label ? $label : __( 'File', 'boldform-lite' )
+				),
+			);
+		}
 
 		// Validate file size — fixed at 2 MB in Lite; Pro can override via filter.
 		/**
