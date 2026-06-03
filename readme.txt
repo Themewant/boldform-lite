@@ -2,9 +2,9 @@
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.0
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,8 @@ Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg b
 **BoldForm Lite** is a powerful yet lightweight form builder for WordPress. Build any kind of form using a visual drag-and-drop editor, embed it anywhere with a shortcode, Gutenberg block, or Elementor widget, and manage every submission right inside your WordPress dashboard.
 
 Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
+
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant)
 
 ---
 
@@ -238,11 +240,14 @@ Yes, BoldForm Pro is currently in development. It will add payments (Stripe, Pay
 
 == Screenshots ==
 
-1. Drag-and-drop form builder
-2. Frontend form display
-3. Entries management page
-4. Settings and integrations panel
-5. Elementor widget controls
+1. Add New Form
+2. Drag & Drop Builder
+3. Form Preview
+4. Form Confirmation Settings
+5. Form Global Settings
+6. Form Analytics
+7. Form Integration
+8. Form View On Page
 
 ---
 
@@ -317,6 +322,12 @@ Adds contacts to a Brevo list on form submission.
 ---
 
 == Changelog ==
+
+= 1.0.2 =
+* Update: Tested up to WordPress 7.0.
+* Add: Help & Support page with links to User Guide, Developer Guide, Support, Community, Leave a Review, and Request a Feature.
+* Fix: Admin topbar CSS now loads correctly on the Help & Support page.
+* Fix: Admin topbar layout fixed to wrap correctly when many nav items are present.
 
 = 1.0.1 =
 * Fix: Buttons now include an accessible `aria-label` so screen readers announce the button text correctly.
