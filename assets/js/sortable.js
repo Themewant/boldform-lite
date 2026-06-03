@@ -49,7 +49,14 @@
 		}
 
 		if ( activeDrag.source === sortable.el ) {
-			return true;
+			// Dropping back onto the same list (i.e. reordering within it).
+			// Reject this when internal sorting is disabled (`sort: false`) or
+			// when the list is a clone-source palette (`pull: 'clone'`), such as
+			// the field library: its items may be cloned out to the canvas but
+			// must never be reordered or dropped back into the sidebar itself.
+			var selfGroup = sortable.options.group || {};
+
+			return false !== sortable.options.sort && 'clone' !== selfGroup.pull;
 		}
 
 		sourceGroup = activeDrag.sortable.options.group || {};

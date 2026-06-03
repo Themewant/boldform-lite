@@ -3261,6 +3261,10 @@ jQuery(
 								pull: 'clone',
 								put: false
 							},
+							// Palette only: drag a copy out to the canvas, but never
+							// reorder items within the library sidebar itself. The
+							// custom sortable honours this flag in canAccept().
+							sort: false,
 							draggable: '.boldform-library-item',
 							handle: '.boldform-library-item'
 						}
