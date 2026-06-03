@@ -161,6 +161,7 @@ class BoldForm_Lite_Admin {
 
 		add_action( 'load-' . $this->preview_page_hook, array( $this, 'set_preview_title' ) );
 
+		// Help & Support — links to online documentation and support resources.
 		$this->docs_page_hook = add_submenu_page(
 			'boldform-lite',
 			__( 'Help & Support', 'boldform-lite' ),
@@ -198,6 +199,12 @@ class BoldForm_Lite_Admin {
 	 * @return array<string, string>
 	 */
 	public function allow_svg_upload( $mimes ) {
+		// Only expose SVG as an allowed upload type to users who can upload files (admins).
+		// Never on the front end / for anonymous form submissions — SVGs can carry scripts
+		// and would otherwise become a stored-XSS vector through form file fields.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $mimes;
+		}
 		$mimes['svg']  = 'image/svg+xml';
 		$mimes['svgz'] = 'image/svg+xml';
 		return $mimes;
@@ -213,6 +220,11 @@ class BoldForm_Lite_Admin {
 	 * @return array<string, string|false>
 	 */
 	public function fix_svg_filetype( $data, $file, $filename, $mimes ) {
+		// Mirror allow_svg_upload(): only treat .svg as a valid type for users who can
+		// upload files, so the front-end upload path can never be tricked into accepting one.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			return $data;
+		}
 		if ( ! empty( $data['ext'] ) && ! empty( $data['type'] ) ) {
 			return $data;
 		}
@@ -239,6 +251,7 @@ class BoldForm_Lite_Admin {
 			$this->settings_page_hook,
 			$this->reports_page_hook,
 			$this->preview_page_hook,
+			$this->docs_page_hook,
 		);
 
 		if ( in_array( $hook_suffix, $all_pages, true ) ) {
@@ -788,11 +801,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders the All Forms page.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders the shared admin topbar navigation.
 	 *
 	 * @param string $active_page Current active page slug.
@@ -953,6 +961,11 @@ class BoldForm_Lite_Admin {
 		}
 	}
 
+	/**
+	 * Renders the All Forms page.
+	 *
+	 * @return void
+	 */
 	public function render_forms_page() {
 		$current_view   = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$forms          = $this->get_forms( $current_view );
@@ -1135,11 +1148,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders the admin preview page.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders the documentation page with links to user and developer guides.
 	 *
 	 * @return void
@@ -1238,6 +1246,11 @@ class BoldForm_Lite_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders the admin preview page.
+	 *
+	 * @return void
+	 */
 	public function render_preview_page() {
 		$form_id = isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
@@ -1866,7 +1879,7 @@ class BoldForm_Lite_Admin {
 											<div class="boldform-field-row">
 												<div class="boldform-field-label"><label for="boldform-smtp-password"><?php esc_html_e( 'Password', 'boldform-lite' ); ?></label></div>
 												<div class="boldform-field-control">
-													<input type="password" id="boldform-smtp-password" name="boldform_smtp_password" value="<?php echo esc_attr( $settings['smtp_password'] ); ?>" autocomplete="new-password">
+													<input type="password" id="boldform-smtp-password" name="boldform_smtp_password" value="" placeholder="<?php echo '' !== $settings['smtp_password'] ? esc_attr__( 'Saved — leave blank to keep current password', 'boldform-lite' ) : ''; ?>" autocomplete="new-password">
 												</div>
 											</div>
 										</div>
@@ -2034,12 +2047,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Configures PHPMailer to use SMTP when enabled.
-	 *
-	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
-	 * @return void
-	 */
-	/**
 	 * Filters the From email address for all wp_mail() calls.
 	 *
 	 * Applied even when SMTP is disabled so admin/user emails don't
@@ -2092,6 +2099,12 @@ class BoldForm_Lite_Admin {
 		return $name;
 	}
 
+	/**
+	 * Configures PHPMailer to use SMTP when enabled.
+	 *
+	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
+	 * @return void
+	 */
 	public function configure_smtp( $phpmailer ) {
 		$settings = $this->get_global_settings();
 
@@ -2161,13 +2174,22 @@ class BoldForm_Lite_Admin {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$to      = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
-		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
-		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+		$to = isset( $_POST['to'] ) ? sanitize_email( wp_unslash( $_POST['to'] ) ) : '';
 
 		if ( ! is_email( $to ) ) {
 			wp_send_json_error( array( 'message' => __( 'Please enter a valid email address.', 'boldform-lite' ) ) );
 		}
+
+		// Throttle so the endpoint can't be used to fire mail in a tight loop.
+		$throttle_key = 'boldform_test_mail_' . get_current_user_id();
+		if ( get_transient( $throttle_key ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please wait a few seconds before sending another test email.', 'boldform-lite' ) ) );
+		}
+		set_transient( $throttle_key, 1, 15 );
+
+		// Fixed subject/body — the endpoint only verifies delivery, it is not a general mailer.
+		$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
+		$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
 
 		$sent = wp_mail( $to, $subject, $message );
 
@@ -2557,11 +2579,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Exports all entries as a CSV download.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders a single entry detail view.
 	 *
 	 * @param int $entry_id Entry ID.
@@ -2729,7 +2746,7 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Updates an entry status via AJAX.
+	 * Toggles a form's publish/draft status via AJAX.
 	 *
 	 * @return void
 	 */
@@ -2754,6 +2771,11 @@ class BoldForm_Lite_Admin {
 		wp_send_json_success( array( 'status' => $status ) );
 	}
 
+	/**
+	 * Updates an entry's read/unread/starred/spam status via AJAX.
+	 *
+	 * @return void
+	 */
 	public function ajax_update_entry_status() {
 		check_ajax_referer( 'boldform_lite_entry_status' );
 
@@ -2805,6 +2827,11 @@ class BoldForm_Lite_Admin {
 		exit;
 	}
 
+	/**
+	 * Exports entries as a CSV download.
+	 *
+	 * @return void
+	 */
 	private function maybe_export_csv() {
 		if ( empty( $_GET['boldform_export_csv'] ) ) {
 			return;
@@ -2815,7 +2842,16 @@ class BoldForm_Lite_Admin {
 		global $wpdb;
 
 		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
-		$entries    = $wpdb->get_results( "SELECT * FROM `{$safe_table}` ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		// Honor the same filters the Entries screen passes in the export link (form/status/date).
+		$filters = array(
+			'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0,
+			'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '',
+			'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
+			'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
+		);
+		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
+		$entries    = $wpdb->get_results( "SELECT * FROM `{$safe_table}` {$where} ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Collect all unique field labels across entries.
 		$columns = array();
@@ -2845,7 +2881,7 @@ class BoldForm_Lite_Admin {
 		$output = fopen( 'php://output', 'w' );
 
 		// Header row.
-		fputcsv( $output, array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) );
+		fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) ) );
 
 		foreach ( $entries as $entry ) {
 			$data = json_decode( $entry['entry_data_json'], true );
@@ -2874,11 +2910,30 @@ class BoldForm_Lite_Admin {
 				$row[] = isset( $field_map[ $col ] ) ? $field_map[ $col ] : '';
 			}
 
-			fputcsv( $output, $row );
+			fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
 		}
 
 		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- writing to php://output stream, not a filesystem file.
 		exit;
+	}
+
+	/**
+	 * Neutralizes CSV/spreadsheet formula injection in a single cell.
+	 *
+	 * Prefixes a leading =, +, -, @, tab or CR with a single quote so spreadsheet
+	 * apps treat attacker-supplied submission values as text, not formulas.
+	 *
+	 * @param mixed $value Cell value.
+	 * @return string
+	 */
+	private function csv_escape_cell( $value ) {
+		$value = (string) $value;
+
+		if ( '' !== $value && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+			$value = "'" . $value;
+		}
+
+		return $value;
 	}
 
 	/**
@@ -3240,11 +3295,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Returns field library definitions for the builder.
-	 *
-	 * @return array<string, array<string, string>>
-	 */
-	/**
 	 * Returns published pages for the redirect dropdown.
 	 *
 	 * @return array<int, array<string, string>>
@@ -3266,8 +3316,13 @@ class BoldForm_Lite_Admin {
 		return $result;
 	}
 
+	/**
+	 * Returns field library definitions for the builder.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
 	private function get_field_library() {
-		return array(
+		$library = array(
 			'text'     => array(
 				'label' => __( 'Text', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-textcolor',

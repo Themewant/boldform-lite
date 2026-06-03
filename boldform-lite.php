@@ -57,7 +57,11 @@ function boldform_lite_maybe_create_tables() {
 		return;
 	}
 
-	if ( get_option( 'boldform_lite_db_version' ) === BOLDFORM_LITE_DB_VERSION ) {
+	// Only act as a first-run safety net for a subsite that was never initialized
+	// (db-version option absent). Schema upgrades on an already-initialized site are
+	// handled by BoldForm_Lite::maybe_upgrade_database(), so this never runs dbDelta
+	// on every page load just because the stored version differs from the constant.
+	if ( false !== get_option( 'boldform_lite_db_version', false ) ) {
 		return;
 	}
 

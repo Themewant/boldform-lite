@@ -3,8 +3,11 @@ jQuery(
 		var fields = [];
 		var formId = 0;
 
+		// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
+		// characters, so the result is safe inside quote-delimited attribute values.
 		function escapeHtml( value ) {
-			return $( '<div />' ).text( value ).html();
+			return $( '<div />' ).text( value ).html()
+				.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 		}
 
 		function getFieldDefaults( type ) {

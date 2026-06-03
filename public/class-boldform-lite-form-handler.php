@@ -31,7 +31,8 @@ class BoldForm_Lite_Form_Handler {
 	/**
 	 * Constructor.
 	 *
-	 * @param BoldForm_Lite $plugin Main plugin instance.
+	 * @param BoldForm_Lite               $plugin        Main plugin instance.
+	 * @param BoldForm_Lite_Email_Handler $email_handler Email notifications handler.
 	 */
 	public function __construct( $plugin, $email_handler ) {
 		$this->plugin        = $plugin;
@@ -456,20 +457,24 @@ class BoldForm_Lite_Form_Handler {
 			case 'email':
 				// Find the first email-type field that has a value in entry_data.
 				$email_value = '';
+				$email_fid   = '';
 				foreach ( $fields as $field ) {
 					if ( 'email' !== ( $field['type'] ?? '' ) ) {
 						continue;
 					}
-					$fid = $field['id'] ?? '';
+					$fid = sanitize_key( (string) ( $field['id'] ?? '' ) );
 					if ( isset( $entry_data[ $fid ]['value'] ) && '' !== $entry_data[ $fid ]['value'] ) {
 						$email_value = (string) $entry_data[ $fid ]['value'];
+						$email_fid   = $fid;
 						break;
 					}
 				}
 				if ( '' === $email_value ) {
 					return false; // No email field — skip.
 				}
-				return $this->duplicate_json_field_match( $table, $form_id, $email_value );
+				// Anchor the match to the email field's own JSON key so the value cannot
+				// false-positive against another field's value or a stored label.
+				return $this->duplicate_json_field_match( $table, $form_id, $email_value, $email_fid );
 
 			// ── Custom field-based ──────────────────────────────────────────────
 			case 'field':
@@ -573,7 +578,7 @@ class BoldForm_Lite_Form_Handler {
 			case 'contains':     return false !== stripos( $raw, $cond_val );
 			case 'not_contains': return false === stripos( $raw, $cond_val );
 			case 'starts_with':  return 0 === stripos( $raw, $cond_val );
-			case 'ends_with':    return '' !== $cond_val && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
+			case 'ends_with':    return '' !== $cond_val && strlen( $raw ) >= strlen( $cond_val ) && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
 			case 'greater_than': return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw > (float) $cond_val;
 			case 'less_than':    return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw < (float) $cond_val;
 			case 'not_empty':    return '' !== $raw;
@@ -739,6 +744,11 @@ class BoldForm_Lite_Form_Handler {
 			// Integrations — assigned connections + field mapping (saved by boldform_form_settings_extra filter).
 			'assigned_connections' => isset( $decoded['assigned_connections'] ) && is_array( $decoded['assigned_connections'] ) ? $decoded['assigned_connections'] : array(),
 			'connection_field_map' => isset( $decoded['connection_field_map'] ) && is_array( $decoded['connection_field_map'] ) ? $decoded['connection_field_map'] : array(),
+			// Duplicate-submission prevention (configured in the builder, enforced in check_duplicate_entry()).
+			'dup_enabled'  => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'   => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id' => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'  => isset( $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
 			// Pro: Scheduling.
 			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )  : '',
 			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
@@ -980,6 +990,17 @@ class BoldForm_Lite_Form_Handler {
 			$options  = isset( $field['options'] ) && is_array( $field['options'] ) ? $this->normalize_options( $field['options'] ) : array();
 			$value    = $this->sanitize_field_value( $type, $raw );
 
+			// A provided-but-malformed email would otherwise be blanked by sanitize_email()
+			// and reported as "required" (or silently saved empty). Flag it as invalid instead.
+			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw ) && ( '' === $value || ! is_email( (string) $value ) ) ) {
+				$errors[ $field_id ] = sprintf(
+					/* translators: %s: field label */
+					__( '%s must be a valid email address.', 'boldform-lite' ),
+					$label ? $label : __( 'This field', 'boldform-lite' )
+				);
+				continue;
+			}
+
 			if ( $required && $this->is_empty_value( $value ) ) {
 				$custom_error = isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '';
 				if ( $custom_error ) {
@@ -1206,6 +1227,32 @@ class BoldForm_Lite_Form_Handler {
 		$file = $_FILES[ $key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- handled by wp_handle_upload.
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
+		// Reject anything that is not a genuine HTTP POST upload. This defends against
+		// $_FILES spoofing and stops arbitrary local-file references from reaching
+		// wp_handle_upload(); it also guarantees filesize() below reads real bytes.
+		if ( empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: field label */
+					__( '%s could not be uploaded. Please try again.', 'boldform-lite' ),
+					$label ? $label : __( 'File', 'boldform-lite' )
+				),
+			);
+		}
+
+		// Hard-block SVG/SVGZ on front-end uploads regardless of the field's allowed types.
+		// SVGs can carry executable scripts and must never be accepted from untrusted submitters.
+		$submitted_ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
+		if ( in_array( $submitted_ext, array( 'svg', 'svgz' ), true ) ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: field label */
+					__( '%s: SVG files are not allowed.', 'boldform-lite' ),
+					$label ? $label : __( 'File', 'boldform-lite' )
+				),
+			);
+		}
+
 		// Validate file size — fixed at 2 MB in Lite; Pro can override via filter.
 		/**
 		 * Filter the maximum file upload size in megabytes.
@@ -1216,7 +1263,8 @@ class BoldForm_Lite_Form_Handler {
 		$max_mb   = apply_filters( 'boldform_max_file_size', 2, $field );
 		$max_bytes = $max_mb * 1024 * 1024;
 
-		if ( (int) $file['size'] > $max_bytes ) {
+		// Use the real on-disk size, not the client-supplied $file['size'] (spoofable).
+		if ( (int) filesize( $file['tmp_name'] ) > $max_bytes ) {
 			return array(
 				'error' => sprintf(
 					/* translators: 1: field label, 2: max file size in MB */
@@ -1260,7 +1308,32 @@ class BoldForm_Lite_Form_Handler {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
-		$upload = wp_handle_upload( $file, array( 'test_form' => false ) );
+		// When the field restricts types, hand wp_handle_upload an explicit mimes map so
+		// WordPress verifies the real file content (via finfo) against the allowed
+		// extensions, rather than trusting the client-supplied filename alone.
+		$upload_overrides = array( 'test_form' => false );
+
+		if ( ! empty( $allowed ) ) {
+			$mimes     = array();
+			$all_mimes = wp_get_mime_types();
+
+			foreach ( $allowed as $allowed_ext ) {
+				$ext_clean = ltrim( strtolower( (string) $allowed_ext ), '.' );
+
+				foreach ( $all_mimes as $ext_pattern => $mime ) {
+					if ( in_array( $ext_clean, explode( '|', $ext_pattern ), true ) ) {
+						$mimes[ $ext_pattern ] = $mime;
+						break;
+					}
+				}
+			}
+
+			if ( ! empty( $mimes ) ) {
+				$upload_overrides['mimes'] = $mimes;
+			}
+		}
+
+		$upload = wp_handle_upload( $file, $upload_overrides );
 
 		if ( ! empty( $upload['error'] ) ) {
 			return array( 'error' => sanitize_text_field( $upload['error'] ) );
@@ -1301,9 +1374,17 @@ class BoldForm_Lite_Form_Handler {
 		$table_name = $this->plugin->get_entries_table_name();
 		$user_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_textarea_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-		$data       = array(
+
+		// Bail before insert if the payload cannot be encoded (e.g. invalid UTF-8),
+		// otherwise an empty-data entry would be saved and reported as a success.
+		$entry_data_json = wp_json_encode( $entry_data );
+		if ( false === $entry_data_json ) {
+			return 0;
+		}
+
+		$data = array(
 			'form_id'          => $form_id,
-			'entry_data_json'  => wp_json_encode( $entry_data ),
+			'entry_data_json'  => $entry_data_json,
 			'submission_key'   => wp_hash( uniqid( 'boldform_', true ) ),
 			'user_id'          => get_current_user_id(),
 			'user_ip'          => $this->sanitize_ip_address( $user_ip ),

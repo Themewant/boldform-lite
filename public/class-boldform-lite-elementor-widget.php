@@ -78,7 +78,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	public function get_style_depends() {
 		$this->register_frontend_assets();
 
-		return array( 'boldform-lite-frontend' );
+		return array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' );
 	}
 
 	/**
@@ -89,7 +89,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	public function get_script_depends() {
 		$this->register_frontend_assets();
 
-		return array( 'boldform-lite-frontend' );
+		return array( 'boldform-lite-flatpickr', 'boldform-lite-frontend' );
 	}
 
 	/**
@@ -1874,6 +1874,26 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				BOLDFORM_LITE_URL . 'assets/js/frontend.js',
 				array( 'jquery' ),
 				BOLDFORM_LITE_VERSION,
+				true
+			);
+		}
+
+		// Register Flatpickr too so date/time fields show their picker in the Elementor editor preview.
+		if ( ! wp_style_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_style(
+				'boldform-lite-flatpickr',
+				BOLDFORM_LITE_URL . 'assets/css/flatpickr.min.css',
+				array(),
+				'4.6.13'
+			);
+		}
+
+		if ( ! wp_script_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_script(
+				'boldform-lite-flatpickr',
+				BOLDFORM_LITE_URL . 'assets/js/flatpickr.min.js',
+				array(),
+				'4.6.13',
 				true
 			);
 		}

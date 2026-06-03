@@ -29,13 +29,6 @@ class BoldForm_Lite_Shortcode {
 	private $form_handler;
 
 	/**
-	 * Tracks whether frontend script data has already been localized.
-	 *
-	 * @var bool
-	 */
-	private $frontend_script_localized = false;
-
-	/**
 	 * Current form settings for the form being rendered.
 	 *
 	 * @var array<string, mixed>
@@ -43,9 +36,25 @@ class BoldForm_Lite_Shortcode {
 	private $current_form_settings = array();
 
 	/**
+	 * ID of the form currently being rendered (used to scope element ids).
+	 *
+	 * @var int
+	 */
+	private $current_form_id = 0;
+
+	/**
+	 * Per-request render count keyed by form ID, so repeated embeds of the same
+	 * form get a unique wrapper id instead of colliding.
+	 *
+	 * @var array<int, int>
+	 */
+	private static $render_counts = array();
+
+	/**
 	 * Constructor.
 	 *
-	 * @param BoldForm_Lite $plugin Main plugin instance.
+	 * @param BoldForm_Lite              $plugin       Main plugin instance.
+	 * @param BoldForm_Lite_Form_Handler $form_handler Frontend submission handler.
 	 */
 	public function __construct( $plugin, $form_handler ) {
 		$this->plugin       = $plugin;
@@ -91,6 +100,12 @@ class BoldForm_Lite_Shortcode {
 		if ( $this->has_script_translation_files() ) {
 			wp_set_script_translations( 'boldform-lite-frontend', 'boldform-lite', BOLDFORM_LITE_PATH . 'languages' );
 		}
+
+		// Attach the localized data at registration time so the `boldformLiteFrontend` object
+		// is always printed alongside the script — independent of when render() enqueues it.
+		// (Block/FSE themes can render the_content in a context where a render-time localize
+		// is dropped, leaving boldformLiteFrontend undefined and breaking AJAX submit.)
+		$this->localize_frontend_script();
 
 		/**
 		 * Fires after BoldForm Lite registers its frontend assets.
@@ -149,21 +164,22 @@ class BoldForm_Lite_Shortcode {
 			return '';
 		}
 
-		// Inactive forms should not render on the frontend.
-		if ( isset( $form_record->status ) && 'draft' === $form_record->status ) {
+		// Only published forms render on the frontend (matches the submission handler's gate;
+		// drafts and trashed forms must not appear).
+		if ( ! isset( $form_record->status ) || 'publish' !== $form_record->status ) {
 			return '';
 		}
 
 		$structure     = $this->extract_structure_from_record( $form_record );
 		$form_settings = $this->extract_settings_from_record( $form_record );
 		$this->current_form_settings = $form_settings;
+		$this->current_form_id       = $form_id;
 		if ( ! $this->structure_has_fields( $structure ) ) {
 			return '';
 		}
 
 		wp_enqueue_style( 'boldform-lite-frontend' );
 		wp_enqueue_script( 'boldform-lite-frontend' );
-		$this->localize_frontend_script();
 		$this->maybe_enqueue_captcha_assets( $structure );
 
 		// Enqueue flatpickr only when form has date or time fields.
@@ -182,7 +198,10 @@ class BoldForm_Lite_Shortcode {
 			$form_class .= ' boldform-hide-ph-yes';
 		}
 
-		$form_uid = 'boldform-' . $form_id;
+		// Keep the first embed as "boldform-{id}" (back-compat); suffix repeats so the
+		// wrapper id stays unique when the same form is placed on a page more than once.
+		self::$render_counts[ $form_id ] = ( self::$render_counts[ $form_id ] ?? 0 ) + 1;
+		$form_uid = 'boldform-' . $form_id . ( self::$render_counts[ $form_id ] > 1 ? '-' . self::$render_counts[ $form_id ] : '' );
 
 		// Output buffering keeps the template readable while still returning a shortcode string.
 		ob_start();
@@ -196,7 +215,7 @@ class BoldForm_Lite_Shortcode {
 			data-form-id="<?php echo esc_attr( $form_id ); ?>"
 			data-enable-ajax="<?php echo esc_attr( $form_settings['enable_ajax'] ? '1' : '0' ); ?>"
 			data-enable-redirect="<?php echo esc_attr( $form_settings['enable_redirect'] ? '1' : '0' ); ?>"
-			data-redirect-url="<?php echo esc_attr( $form_settings['redirect_url'] ); ?>"
+			data-redirect-url="<?php echo ! empty( $form_settings['enable_redirect'] ) ? esc_attr( $form_settings['redirect_url'] ) : ''; ?>"
 		>
 
 			<div class="boldform-lite-form__message<?php echo $status ? ' is-visible is-' . esc_attr( $status['type'] ) : ''; ?>" data-boldform-message aria-live="polite">
@@ -572,15 +591,20 @@ class BoldForm_Lite_Shortcode {
 			$challenge     = sprintf( '%d+%d', $first_number, $second_number );
 			$answer_hash   = wp_hash( $challenge . '|' . $answer );
 
+			// Scope the input id/label to the form so two captcha forms on one page don't
+			// share a DOM id. The name stays fixed — the handler reads it by name.
+			$answer_id = 'boldform_math_captcha_answer_' . (int) $this->current_form_id;
+
 			return sprintf(
-				'<div class="boldform-lite-form__captcha"><label class="boldform-lite-form__label" for="boldform_math_captcha_answer">%1$s</label><input id="boldform_math_captcha_answer" type="number" name="boldform_math_captcha_answer" inputmode="numeric" autocomplete="off" required><input type="hidden" name="boldform_math_captcha_challenge" value="%2$s"><input type="hidden" name="boldform_math_captcha_hash" value="%3$s"></div>',
+				'<div class="boldform-lite-form__captcha"><label class="boldform-lite-form__label" for="%4$s">%1$s</label><input id="%4$s" type="number" name="boldform_math_captcha_answer" inputmode="numeric" autocomplete="off" required><input type="hidden" name="boldform_math_captcha_challenge" value="%2$s"><input type="hidden" name="boldform_math_captcha_hash" value="%3$s"></div>',
 				esc_html( sprintf(
 					/* translators: %s: simple math question */
 					__( 'Solve this math question: %s', 'boldform-lite' ),
 					$challenge
 				) ),
 				esc_attr( $challenge ),
-				esc_attr( $answer_hash )
+				esc_attr( $answer_hash ),
+				esc_attr( $answer_id )
 			);
 		}
 
@@ -693,15 +717,6 @@ class BoldForm_Lite_Shortcode {
 		$field_id       = ! empty( $field['id'] ) ? sanitize_html_class( (string) $field['id'] ) : 'field_' . (int) $index;
 		$field_name     = 'boldform_' . $field_id;
 
-		if ( 'file' === $type ) {
-			$accept   = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
-			/** This filter is documented in class-boldform-lite-form-handler.php */
-			$max_size = apply_filters( 'boldform_max_file_size', 2, $field );
-			$accept_attr = $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
-			// Fall through to render as a normal field wrapper with file input.
-		}
-
-
 		if ( 'submit' === $type ) {
 			$form_settings = $this->current_form_settings ?? array();
 			$button_label  = $this->get_button_accessible_label( $form_settings );
@@ -738,48 +753,6 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'terms_conditions' === $type ) {
 			return $this->render_terms_field( $field_name, $content, $required );
-		}
-
-		if ( 'name' === $type ) {
-			$show_middle = ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] );
-			$show_last   = ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] );
-
-			ob_start();
-			?>
-			<?php $field_css_name = isset( $field['css_class'] ) && '' !== $field['css_class'] ? ' ' . sanitize_html_class( $field['css_class'] ) : ''; ?>
-			<?php $label_pos_name = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top'; ?>
-			<div class="boldform-lite-form__field boldform-lite-form__field--name boldform-lite-label-<?php echo esc_attr( $label_pos_name ); ?><?php echo esc_attr( $field_css_name ); ?>">
-				<?php if ( '' !== $label && 'hidden' !== $label_pos_name ) : ?>
-					<label class="boldform-lite-form__label">
-						<?php echo esc_html( $label ); ?>
-						<?php if ( $required ) : ?>
-							<span class="boldform-lite-form__required">*</span>
-						<?php endif; ?>
-					</label>
-				<?php endif; ?>
-				<div class="boldform-lite-form__control">
-					<div class="boldform-lite-name">
-						<div class="boldform-lite-name__field">
-							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_first" name="<?php echo esc_attr( $field_name ); ?>[first]" placeholder="<?php esc_attr_e( 'First Name', 'boldform-lite' ); ?>"<?php echo $required ? ' required' : ''; ?>>
-							<span class="boldform-lite-name__sub"><?php esc_html_e( 'First Name', 'boldform-lite' ); ?></span>
-						</div>
-						<?php if ( $show_middle ) : ?>
-						<div class="boldform-lite-name__field">
-							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_middle" name="<?php echo esc_attr( $field_name ); ?>[middle]" placeholder="<?php esc_attr_e( 'Middle Name', 'boldform-lite' ); ?>">
-							<span class="boldform-lite-name__sub"><?php esc_html_e( 'Middle Name', 'boldform-lite' ); ?></span>
-						</div>
-						<?php endif; ?>
-						<?php if ( $show_last ) : ?>
-						<div class="boldform-lite-name__field">
-							<input type="text" id="<?php echo esc_attr( $field_name ); ?>_last" name="<?php echo esc_attr( $field_name ); ?>[last]" placeholder="<?php esc_attr_e( 'Last Name', 'boldform-lite' ); ?>"<?php echo $required ? ' required' : ''; ?>>
-							<span class="boldform-lite-name__sub"><?php esc_html_e( 'Last Name', 'boldform-lite' ); ?></span>
-						</div>
-						<?php endif; ?>
-					</div>
-				</div>
-			</div>
-			<?php
-			return (string) ob_get_clean();
 		}
 
 		if ( 'captcha' === $type ) {
@@ -901,15 +874,6 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
-	 * Renders a terms and conditions field.
-	 *
-	 * @param string $field_name Field input name.
-	 * @param string $content Terms copy.
-	 * @param bool   $required Required flag.
-	 * @return string
-	 */
-
-	/**
 	 * Returns the accessible label for the submit button.
 	 * Used for aria-label when button has no visible text.
 	 *
@@ -917,8 +881,10 @@ class BoldForm_Lite_Shortcode {
 	 * @return string
 	 */
 	private function get_button_accessible_label( $settings ) {
-		$text = isset( $settings['button_text'] ) ? esc_html( $settings['button_text'] ) : '';
-		return '' !== $text ? $text : esc_html__( 'Submit', 'boldform-lite' );
+		// Return the raw (unescaped) label — call sites place it in an attribute and
+		// escape once with esc_attr(). Escaping here too would double-encode entities.
+		$text = isset( $settings['button_text'] ) ? (string) $settings['button_text'] : '';
+		return '' !== $text ? $text : __( 'Submit', 'boldform-lite' );
 	}
 
 	/**
@@ -1078,13 +1044,15 @@ class BoldForm_Lite_Shortcode {
 	 * @return void
 	 */
 	private function remove_unsafe_svg_nodes( \DOMDocument $dom ) {
-		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use' );
+		// Tags that can execute script, load remote content, navigate, or animate
+		// an attribute into a dangerous value (SMIL) — none are needed for icon SVGs.
+		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use', 'a', 'style', 'animate', 'animateTransform', 'animateMotion', 'set' );
 		foreach ( $unsafe_tags as $tag ) {
 			foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
 				$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			}
 		}
-		// Strip on* event attributes from all elements.
+		// Strip on* event attributes and any href (plain or namespaced) from all elements.
 		$xpath = new \DOMXPath( $dom );
 		foreach ( iterator_to_array( $xpath->query( '//*[@*]' ) ) as $el ) {
 			if ( ! $el instanceof \DOMElement ) {
@@ -1092,7 +1060,8 @@ class BoldForm_Lite_Shortcode {
 			}
 			$attrs_to_remove = array();
 			foreach ( $el->attributes as $attr ) {
-				if ( stripos( $attr->name, 'on' ) === 0 || stripos( $attr->name, 'xlink:href' ) === 0 ) {
+				$attr_name = strtolower( $attr->name );
+				if ( 0 === stripos( $attr_name, 'on' ) || 'href' === $attr_name || 'xlink:href' === $attr_name ) {
 					$attrs_to_remove[] = $attr->name;
 				}
 			}
@@ -1102,6 +1071,14 @@ class BoldForm_Lite_Shortcode {
 		}
 	}
 
+	/**
+	 * Renders a terms and conditions field.
+	 *
+	 * @param string $field_name Field input name.
+	 * @param string $content    Terms copy.
+	 * @param bool   $required   Required flag.
+	 * @return string
+	 */
 	private function render_terms_field( $field_name, $content, $required ) {
 		$required_attr = $required ? ' required' : '';
 		ob_start();
@@ -1121,18 +1098,6 @@ class BoldForm_Lite_Shortcode {
 		return (string) ob_get_clean();
 	}
 
-	/**
-	 * Renders the form control based on field type.
-	 *
-	 * @param string                     $type           Field type.
-	 * @param string                     $field_name     Field name and ID.
-	 * @param string                     $placeholder    Placeholder text.
-	 * @param string                     $default        Default value.
-	 * @param bool                       $required       Required state.
-	 * @param array<int, string|mixed>   $options        Choice options.
-	 * @param string                     $options_layout 'block' or 'inline'.
-	 * @return string
-	 */
 	/**
 	 * Returns the allowed HTML tags and attributes for form field output.
 	 *
@@ -1258,9 +1223,61 @@ class BoldForm_Lite_Shortcode {
 		);
 	}
 
+	/**
+	 * Renders the form control based on field type.
+	 *
+	 * @param string                   $type           Field type.
+	 * @param string                   $field_name     Field name and ID.
+	 * @param string                   $placeholder    Placeholder text.
+	 * @param string                   $default        Default value.
+	 * @param bool                     $required       Required state.
+	 * @param array<int, string|mixed> $options        Choice options.
+	 * @param string                   $options_layout 'block' or 'inline'.
+	 * @param array<string, mixed>     $field          Full field definition (for type-specific attributes).
+	 * @return string
+	 */
 	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
+
+		// Structured name field (first / middle / last). Rendered through the shared wrapper
+		// so it gets the same required-error and conditional-logic attributes as every other field.
+		if ( 'name' === $type ) {
+			$show_middle = ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] );
+			$show_last   = ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] );
+
+			$html  = '<div class="boldform-lite-name"><div class="boldform-lite-name__field">';
+			$html .= sprintf(
+				'<input type="text" id="%1$s" name="%1$s[first]" placeholder="%2$s"%3$s>',
+				esc_attr( $field_name ),
+				esc_attr__( 'First Name', 'boldform-lite' ),
+				$required_attr
+			);
+			$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'First Name', 'boldform-lite' ) . '</span></div>';
+
+			if ( $show_middle ) {
+				$html .= '<div class="boldform-lite-name__field">';
+				$html .= sprintf(
+					'<input type="text" id="%1$s_middle" name="%1$s[middle]" placeholder="%2$s">',
+					esc_attr( $field_name ),
+					esc_attr__( 'Middle Name', 'boldform-lite' )
+				);
+				$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'Middle Name', 'boldform-lite' ) . '</span></div>';
+			}
+
+			if ( $show_last ) {
+				$html .= '<div class="boldform-lite-name__field">';
+				$html .= sprintf(
+					'<input type="text" id="%1$s_last" name="%1$s[last]" placeholder="%2$s"%3$s>',
+					esc_attr( $field_name ),
+					esc_attr__( 'Last Name', 'boldform-lite' ),
+					$required_attr
+				);
+				$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'Last Name', 'boldform-lite' ) . '</span></div>';
+			}
+
+			return $html . '</div>';
+		}
 
 		// Choice-based fields need custom markup, while simple inputs can be rendered from one format string.
 		if ( 'textarea' === $type ) {
@@ -1420,7 +1437,8 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'file' === $type ) {
-			$accept_attr = isset( $accept_attr ) ? $accept_attr : '';
+			$accept      = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
+			$accept_attr = '' !== $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
 			return sprintf(
 				'<input id="%1$s" type="file" name="%1$s"%2$s%3$s>',
 				esc_attr( $field_name ),
@@ -1596,7 +1614,7 @@ class BoldForm_Lite_Shortcode {
 		if ( 'star_rating' === $type ) {
 			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
 			$def        = (int) $default;
-			$star_color = ! empty( $field['star_color'] ) ? $field['star_color'] : '#f59e0b';
+			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '#f59e0b';
 			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 28;
 			$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';--bf-star-size:' . $star_size . 'px';
 			$html = sprintf( '<input type="hidden" id="%1$s" name="%1$s" value="%2$s"%3$s>', esc_attr( $field_name ), esc_attr( $def ), $required_attr );
@@ -1614,7 +1632,7 @@ class BoldForm_Lite_Shortcode {
 			$max          = isset( $field['max_value'] ) && '' !== $field['max_value'] ? (string) $field['max_value'] : '100';
 			$step         = isset( $field['step_value'] ) && '' !== $field['step_value'] ? (string) $field['step_value'] : '1';
 			$def          = '' !== $default ? $default : $min;
-			$slider_color = ! empty( $field['slider_color'] ) ? $field['slider_color'] : '';
+			$slider_color = ! empty( $field['slider_color'] ) && sanitize_hex_color( (string) $field['slider_color'] ) ? sanitize_hex_color( (string) $field['slider_color'] ) : '';
 			$slider_h     = ! empty( $field['slider_height'] ) ? (int) $field['slider_height'] : '';
 			$sl_style     = '';
 			if ( $slider_color ) {
@@ -1698,15 +1716,15 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
-	 * Localizes shared frontend script data once per request.
+	 * Localizes shared frontend script data onto the registered handle.
+	 *
+	 * Called from register_assets() (on wp_enqueue_scripts) so the data is bound to the
+	 * script at registration and always prints with it — no dependency on render() timing,
+	 * which is unreliable in block/FSE themes that can render content more than once.
 	 *
 	 * @return void
 	 */
 	private function localize_frontend_script() {
-		if ( $this->frontend_script_localized ) {
-			return;
-		}
-
 		wp_localize_script(
 			'boldform-lite-frontend',
 			'boldformLiteFrontend',
@@ -1716,15 +1734,13 @@ class BoldForm_Lite_Shortcode {
 				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
 				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
 				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
-			'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
+				'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
 			)
 		);
-
-		$this->frontend_script_localized = true;
 	}
 
 	/**
-	 * Builds inline CSS variables for frontend form styling.
+	 * Returns the configured form style mode.
 	 *
 	 * @return string 'plugin' or 'theme'.
 	 */

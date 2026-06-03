@@ -946,9 +946,18 @@ class BoldForm_Lite_Integrations_Page {
 
 	private function fetch_mailchimp_lists( string $api_key ) {
 		$api_key = trim( $api_key );
-		$dc      = 'us1';
-		if ( preg_match( '/-([a-z0-9]+)$/', $api_key, $m ) ) {
+
+		// The data-center is the suffix after the final dash and is always letters
+		// followed by digits (e.g. us6, us21, eu2). Validate it strictly rather than
+		// interpolating an arbitrary value into the request host, and never silently
+		// fall back to a guessed data center.
+		$dc = '';
+		if ( preg_match( '/-([a-z]+\d+)$/', $api_key, $m ) ) {
 			$dc = $m[1];
+		}
+
+		if ( '' === $dc ) {
+			return new WP_Error( 'mailchimp_error', __( 'API key is missing a valid data-center suffix (for example, -us6).', 'boldform-lite' ) );
 		}
 
 		$response = wp_remote_get(

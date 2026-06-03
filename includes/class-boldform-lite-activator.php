@@ -50,6 +50,13 @@ class BoldForm_Lite_Activator {
 	 * @return void
 	 */
 	public static function on_new_site( $site ) {
+		// is_plugin_active_for_network() lives in wp-admin/includes/plugin.php, which is
+		// not loaded when a site is created outside the admin (REST, WP-CLI, programmatic
+		// wp_initialize_site). Load it on demand to avoid an undefined-function fatal.
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
 		if ( ! is_plugin_active_for_network( plugin_basename( BOLDFORM_LITE_FILE ) ) ) {
 			return;
 		}
