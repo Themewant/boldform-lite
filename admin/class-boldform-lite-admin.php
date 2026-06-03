@@ -801,11 +801,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders the All Forms page.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders the shared admin topbar navigation.
 	 *
 	 * @param string $active_page Current active page slug.
@@ -966,6 +961,11 @@ class BoldForm_Lite_Admin {
 		}
 	}
 
+	/**
+	 * Renders the All Forms page.
+	 *
+	 * @return void
+	 */
 	public function render_forms_page() {
 		$current_view   = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$forms          = $this->get_forms( $current_view );
@@ -1148,11 +1148,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders the admin preview page.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders the documentation page with links to user and developer guides.
 	 *
 	 * @return void
@@ -1251,6 +1246,11 @@ class BoldForm_Lite_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders the admin preview page.
+	 *
+	 * @return void
+	 */
 	public function render_preview_page() {
 		$form_id = isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
@@ -2047,12 +2047,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Configures PHPMailer to use SMTP when enabled.
-	 *
-	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
-	 * @return void
-	 */
-	/**
 	 * Filters the From email address for all wp_mail() calls.
 	 *
 	 * Applied even when SMTP is disabled so admin/user emails don't
@@ -2105,6 +2099,12 @@ class BoldForm_Lite_Admin {
 		return $name;
 	}
 
+	/**
+	 * Configures PHPMailer to use SMTP when enabled.
+	 *
+	 * @param \PHPMailer\PHPMailer\PHPMailer $phpmailer PHPMailer instance.
+	 * @return void
+	 */
 	public function configure_smtp( $phpmailer ) {
 		$settings = $this->get_global_settings();
 
@@ -2579,11 +2579,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Exports all entries as a CSV download.
-	 *
-	 * @return void
-	 */
-	/**
 	 * Renders a single entry detail view.
 	 *
 	 * @param int $entry_id Entry ID.
@@ -2751,7 +2746,7 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Updates an entry status via AJAX.
+	 * Toggles a form's publish/draft status via AJAX.
 	 *
 	 * @return void
 	 */
@@ -2776,6 +2771,11 @@ class BoldForm_Lite_Admin {
 		wp_send_json_success( array( 'status' => $status ) );
 	}
 
+	/**
+	 * Updates an entry's read/unread/starred/spam status via AJAX.
+	 *
+	 * @return void
+	 */
 	public function ajax_update_entry_status() {
 		check_ajax_referer( 'boldform_lite_entry_status' );
 
@@ -2827,6 +2827,11 @@ class BoldForm_Lite_Admin {
 		exit;
 	}
 
+	/**
+	 * Exports entries as a CSV download.
+	 *
+	 * @return void
+	 */
 	private function maybe_export_csv() {
 		if ( empty( $_GET['boldform_export_csv'] ) ) {
 			return;
@@ -3290,11 +3295,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Returns field library definitions for the builder.
-	 *
-	 * @return array<string, array<string, string>>
-	 */
-	/**
 	 * Returns published pages for the redirect dropdown.
 	 *
 	 * @return array<int, array<string, string>>
@@ -3316,8 +3316,13 @@ class BoldForm_Lite_Admin {
 		return $result;
 	}
 
+	/**
+	 * Returns field library definitions for the builder.
+	 *
+	 * @return array<string, array<string, string>>
+	 */
 	private function get_field_library() {
-		return array(
+		$library = array(
 			'text'     => array(
 				'label' => __( 'Text', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-textcolor',

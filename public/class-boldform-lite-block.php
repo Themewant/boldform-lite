@@ -260,7 +260,11 @@ class BoldForm_Lite_Block {
 
 		foreach ( $map as $attr => $var ) {
 			if ( ! empty( $attributes[ $attr ] ) ) {
-				$vars[] = $var . ':' . sanitize_text_field( (string) $attributes[ $attr ] );
+				// Strip characters that could terminate this declaration and inject
+				// extra CSS properties into the shared inline style attribute. Legitimate
+				// color/length values never contain ; { or }.
+				$value  = str_replace( array( ';', '{', '}' ), '', sanitize_text_field( (string) $attributes[ $attr ] ) );
+				$vars[] = $var . ':' . $value;
 			}
 		}
 

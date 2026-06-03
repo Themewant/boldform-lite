@@ -390,8 +390,22 @@ class BoldForm_Lite_Export_Import {
 			}
 
 			$imported_settings = $data['settings'];
-			// Never let an imported file carry secrets or flip the destructive uninstall flag.
-			unset( $imported_settings['smtp_password'], $imported_settings['uninstall_data'] );
+
+			// Never let an imported file carry secrets, re-route outgoing mail, or flip
+			// the destructive uninstall flag. Drop the uninstall flag, every SMTP/mail
+			// credential (smtp_*), and any credential-like key (*_key, *secret, *password)
+			// — a pattern sweep so future sensitive keys are covered automatically.
+			foreach ( array_keys( $imported_settings ) as $setting_key ) {
+				$setting_key = (string) $setting_key;
+				if (
+					'uninstall_data' === $setting_key
+					|| 0 === strpos( $setting_key, 'smtp_' )
+					|| preg_match( '/(password|secret|_key)$/i', $setting_key )
+				) {
+					unset( $imported_settings[ $setting_key ] );
+				}
+			}
+
 			// Sanitize every imported value by depth before merging into the trusted option.
 			$imported_settings = map_deep( $imported_settings, 'sanitize_text_field' );
 

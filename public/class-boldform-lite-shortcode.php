@@ -53,7 +53,8 @@ class BoldForm_Lite_Shortcode {
 	/**
 	 * Constructor.
 	 *
-	 * @param BoldForm_Lite $plugin Main plugin instance.
+	 * @param BoldForm_Lite              $plugin       Main plugin instance.
+	 * @param BoldForm_Lite_Form_Handler $form_handler Frontend submission handler.
 	 */
 	public function __construct( $plugin, $form_handler ) {
 		$this->plugin       = $plugin;
@@ -716,15 +717,6 @@ class BoldForm_Lite_Shortcode {
 		$field_id       = ! empty( $field['id'] ) ? sanitize_html_class( (string) $field['id'] ) : 'field_' . (int) $index;
 		$field_name     = 'boldform_' . $field_id;
 
-		if ( 'file' === $type ) {
-			$accept   = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
-			/** This filter is documented in class-boldform-lite-form-handler.php */
-			$max_size = apply_filters( 'boldform_max_file_size', 2, $field );
-			$accept_attr = $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
-			// Fall through to render as a normal field wrapper with file input.
-		}
-
-
 		if ( 'submit' === $type ) {
 			$form_settings = $this->current_form_settings ?? array();
 			$button_label  = $this->get_button_accessible_label( $form_settings );
@@ -880,15 +872,6 @@ class BoldForm_Lite_Shortcode {
 		<?php
 		return (string) ob_get_clean();
 	}
-
-	/**
-	 * Renders a terms and conditions field.
-	 *
-	 * @param string $field_name Field input name.
-	 * @param string $content Terms copy.
-	 * @param bool   $required Required flag.
-	 * @return string
-	 */
 
 	/**
 	 * Returns the accessible label for the submit button.
@@ -1061,13 +1044,15 @@ class BoldForm_Lite_Shortcode {
 	 * @return void
 	 */
 	private function remove_unsafe_svg_nodes( \DOMDocument $dom ) {
-		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use' );
+		// Tags that can execute script, load remote content, navigate, or animate
+		// an attribute into a dangerous value (SMIL) — none are needed for icon SVGs.
+		$unsafe_tags = array( 'script', 'foreignObject', 'iframe', 'object', 'embed', 'use', 'a', 'style', 'animate', 'animateTransform', 'animateMotion', 'set' );
 		foreach ( $unsafe_tags as $tag ) {
 			foreach ( iterator_to_array( $dom->getElementsByTagName( $tag ) ) as $node ) {
 				$node->parentNode->removeChild( $node ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			}
 		}
-		// Strip on* event attributes from all elements.
+		// Strip on* event attributes and any href (plain or namespaced) from all elements.
 		$xpath = new \DOMXPath( $dom );
 		foreach ( iterator_to_array( $xpath->query( '//*[@*]' ) ) as $el ) {
 			if ( ! $el instanceof \DOMElement ) {
@@ -1075,7 +1060,8 @@ class BoldForm_Lite_Shortcode {
 			}
 			$attrs_to_remove = array();
 			foreach ( $el->attributes as $attr ) {
-				if ( stripos( $attr->name, 'on' ) === 0 || stripos( $attr->name, 'xlink:href' ) === 0 ) {
+				$attr_name = strtolower( $attr->name );
+				if ( 0 === stripos( $attr_name, 'on' ) || 'href' === $attr_name || 'xlink:href' === $attr_name ) {
 					$attrs_to_remove[] = $attr->name;
 				}
 			}
@@ -1085,6 +1071,14 @@ class BoldForm_Lite_Shortcode {
 		}
 	}
 
+	/**
+	 * Renders a terms and conditions field.
+	 *
+	 * @param string $field_name Field input name.
+	 * @param string $content    Terms copy.
+	 * @param bool   $required   Required flag.
+	 * @return string
+	 */
 	private function render_terms_field( $field_name, $content, $required ) {
 		$required_attr = $required ? ' required' : '';
 		ob_start();
@@ -1104,18 +1098,6 @@ class BoldForm_Lite_Shortcode {
 		return (string) ob_get_clean();
 	}
 
-	/**
-	 * Renders the form control based on field type.
-	 *
-	 * @param string                     $type           Field type.
-	 * @param string                     $field_name     Field name and ID.
-	 * @param string                     $placeholder    Placeholder text.
-	 * @param string                     $default        Default value.
-	 * @param bool                       $required       Required state.
-	 * @param array<int, string|mixed>   $options        Choice options.
-	 * @param string                     $options_layout 'block' or 'inline'.
-	 * @return string
-	 */
 	/**
 	 * Returns the allowed HTML tags and attributes for form field output.
 	 *
@@ -1241,6 +1223,19 @@ class BoldForm_Lite_Shortcode {
 		);
 	}
 
+	/**
+	 * Renders the form control based on field type.
+	 *
+	 * @param string                   $type           Field type.
+	 * @param string                   $field_name     Field name and ID.
+	 * @param string                   $placeholder    Placeholder text.
+	 * @param string                   $default        Default value.
+	 * @param bool                     $required       Required state.
+	 * @param array<int, string|mixed> $options        Choice options.
+	 * @param string                   $options_layout 'block' or 'inline'.
+	 * @param array<string, mixed>     $field          Full field definition (for type-specific attributes).
+	 * @return string
+	 */
 	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
@@ -1442,7 +1437,8 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'file' === $type ) {
-			$accept_attr = isset( $accept_attr ) ? $accept_attr : '';
+			$accept      = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
+			$accept_attr = '' !== $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
 			return sprintf(
 				'<input id="%1$s" type="file" name="%1$s"%2$s%3$s>',
 				esc_attr( $field_name ),
@@ -1744,7 +1740,7 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
-	 * Builds inline CSS variables for frontend form styling.
+	 * Returns the configured form style mode.
 	 *
 	 * @return string 'plugin' or 'theme'.
 	 */

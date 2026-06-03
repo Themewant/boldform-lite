@@ -25,8 +25,11 @@
 	// Helpers
 	// =====================================================================
 
+	// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
+	// characters, so the result is safe inside quote-delimited attribute values.
 	function escHtml( s ) {
-		return $( '<div>' ).text( String( s || '' ) ).html();
+		return $( '<div>' ).text( String( s || '' ) ).html()
+			.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 	}
 
 	function typeDefBySlug( type ) {

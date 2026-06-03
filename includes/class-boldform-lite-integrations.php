@@ -138,7 +138,8 @@ class BoldForm_Lite_Integrations {
 		foreach ( $assigned as $conn_id ) {
 			$connection = $this->page->get_connection( $conn_id );
 
-			if ( ! $connection || 'inactive' === ( $connection['status'] ?? 'active' ) ) {
+			// Fail closed: only dispatch to a connection that is explicitly active.
+			if ( ! $connection || 'active' !== ( $connection['status'] ?? 'inactive' ) ) {
 				continue;
 			}
 
@@ -174,7 +175,8 @@ class BoldForm_Lite_Integrations {
 			? $connection_or_id
 			: $this->page->get_connection( (string) $connection_or_id );
 
-		if ( ! is_array( $connection ) || empty( $connection ) || 'inactive' === ( $connection['status'] ?? 'active' ) ) {
+		// Fail closed: a connection with no explicit 'active' status is treated as inactive.
+		if ( ! is_array( $connection ) || empty( $connection ) || 'active' !== ( $connection['status'] ?? 'inactive' ) ) {
 			return;
 		}
 

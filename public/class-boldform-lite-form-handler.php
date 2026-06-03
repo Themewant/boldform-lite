@@ -31,7 +31,8 @@ class BoldForm_Lite_Form_Handler {
 	/**
 	 * Constructor.
 	 *
-	 * @param BoldForm_Lite $plugin Main plugin instance.
+	 * @param BoldForm_Lite               $plugin        Main plugin instance.
+	 * @param BoldForm_Lite_Email_Handler $email_handler Email notifications handler.
 	 */
 	public function __construct( $plugin, $email_handler ) {
 		$this->plugin        = $plugin;
@@ -577,7 +578,7 @@ class BoldForm_Lite_Form_Handler {
 			case 'contains':     return false !== stripos( $raw, $cond_val );
 			case 'not_contains': return false === stripos( $raw, $cond_val );
 			case 'starts_with':  return 0 === stripos( $raw, $cond_val );
-			case 'ends_with':    return '' !== $cond_val && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
+			case 'ends_with':    return '' !== $cond_val && strlen( $raw ) >= strlen( $cond_val ) && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
 			case 'greater_than': return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw > (float) $cond_val;
 			case 'less_than':    return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw < (float) $cond_val;
 			case 'not_empty':    return '' !== $raw;
@@ -1226,6 +1227,19 @@ class BoldForm_Lite_Form_Handler {
 		$file = $_FILES[ $key ]; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- handled by wp_handle_upload.
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
+		// Reject anything that is not a genuine HTTP POST upload. This defends against
+		// $_FILES spoofing and stops arbitrary local-file references from reaching
+		// wp_handle_upload(); it also guarantees filesize() below reads real bytes.
+		if ( empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
+			return array(
+				'error' => sprintf(
+					/* translators: %s: field label */
+					__( '%s could not be uploaded. Please try again.', 'boldform-lite' ),
+					$label ? $label : __( 'File', 'boldform-lite' )
+				),
+			);
+		}
+
 		// Hard-block SVG/SVGZ on front-end uploads regardless of the field's allowed types.
 		// SVGs can carry executable scripts and must never be accepted from untrusted submitters.
 		$submitted_ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
@@ -1249,7 +1263,8 @@ class BoldForm_Lite_Form_Handler {
 		$max_mb   = apply_filters( 'boldform_max_file_size', 2, $field );
 		$max_bytes = $max_mb * 1024 * 1024;
 
-		if ( (int) $file['size'] > $max_bytes ) {
+		// Use the real on-disk size, not the client-supplied $file['size'] (spoofable).
+		if ( (int) filesize( $file['tmp_name'] ) > $max_bytes ) {
 			return array(
 				'error' => sprintf(
 					/* translators: 1: field label, 2: max file size in MB */
@@ -1293,7 +1308,32 @@ class BoldForm_Lite_Form_Handler {
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 		}
 
-		$upload = wp_handle_upload( $file, array( 'test_form' => false ) );
+		// When the field restricts types, hand wp_handle_upload an explicit mimes map so
+		// WordPress verifies the real file content (via finfo) against the allowed
+		// extensions, rather than trusting the client-supplied filename alone.
+		$upload_overrides = array( 'test_form' => false );
+
+		if ( ! empty( $allowed ) ) {
+			$mimes     = array();
+			$all_mimes = wp_get_mime_types();
+
+			foreach ( $allowed as $allowed_ext ) {
+				$ext_clean = ltrim( strtolower( (string) $allowed_ext ), '.' );
+
+				foreach ( $all_mimes as $ext_pattern => $mime ) {
+					if ( in_array( $ext_clean, explode( '|', $ext_pattern ), true ) ) {
+						$mimes[ $ext_pattern ] = $mime;
+						break;
+					}
+				}
+			}
+
+			if ( ! empty( $mimes ) ) {
+				$upload_overrides['mimes'] = $mimes;
+			}
+		}
+
+		$upload = wp_handle_upload( $file, $upload_overrides );
 
 		if ( ! empty( $upload['error'] ) ) {
 			return array( 'error' => sanitize_text_field( $upload['error'] ) );
@@ -1334,9 +1374,17 @@ class BoldForm_Lite_Form_Handler {
 		$table_name = $this->plugin->get_entries_table_name();
 		$user_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_textarea_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
-		$data       = array(
+
+		// Bail before insert if the payload cannot be encoded (e.g. invalid UTF-8),
+		// otherwise an empty-data entry would be saved and reported as a success.
+		$entry_data_json = wp_json_encode( $entry_data );
+		if ( false === $entry_data_json ) {
+			return 0;
+		}
+
+		$data = array(
 			'form_id'          => $form_id,
-			'entry_data_json'  => wp_json_encode( $entry_data ),
+			'entry_data_json'  => $entry_data_json,
 			'submission_key'   => wp_hash( uniqid( 'boldform_', true ) ),
 			'user_id'          => get_current_user_id(),
 			'user_ip'          => $this->sanitize_ip_address( $user_ip ),

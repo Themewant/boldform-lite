@@ -17,8 +17,12 @@ jQuery(
 			selectedTemplate: 'contact'
 		};
 
+		// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
+		// characters, so the result is safe to interpolate inside quote-delimited
+		// attribute values. In text context the extra quote-encoding renders identically.
 		function escapeHtml( value ) {
-			return $( '<div />' ).text( value || '' ).html();
+			return $( '<div />' ).text( value || '' ).html()
+				.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 		}
 
 		function generateId() {
