@@ -91,7 +91,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		<div class="boldform-builder-actions">
 			<button type="button" class="boldform-builder-shortcode<?php echo $form_data['id'] > 0 ? ' is-visible' : ''; ?>" id="boldform-builder-shortcode"<?php echo $form_data['id'] > 0 ? '' : ' hidden'; ?>>
 				<span class="boldform-builder-shortcode__label"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></span>
-				<code class="boldform-builder-shortcode__code" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</code>
+				<code class="boldform-builder-shortcode__code"><span class="boldform-builder-shortcode__text" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</span><span class="dashicons dashicons-admin-page boldform-builder-shortcode__copy" aria-hidden="true"></span></code>
 			</button>
 			<a href="<?php echo $form_data['id'] > 0 ? esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . absint( $form_data['id'] ) ) ) : '#'; ?>" class="button boldform-preview-btn" id="boldform-preview-form"<?php echo $form_data['id'] > 0 ? '' : ' style="display:none"'; ?>>
 				<span class="dashicons dashicons-visibility"></span>
@@ -223,12 +223,21 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 	</div>
 
 	<section class="boldform-editor-view" id="boldform-editor-view-style" data-editor-view="style" hidden>
-		<div class="boldform-panel boldform-global-settings-panel">
-			<div class="boldform-panel-head">
-				<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
-				<p><?php esc_html_e( 'Customize field, label, button, and multi-step styles. Changes preview instantly.', 'boldform-lite' ); ?></p>
+		<div class="boldform-style-shell">
+			<div class="boldform-panel boldform-style-controls">
+				<div class="boldform-panel-head">
+					<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
+					<p><?php esc_html_e( 'Customize field, label, button, and multi-step styles. Changes preview instantly.', 'boldform-lite' ); ?></p>
+				</div>
+				<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
 			</div>
-			<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
+			<aside class="boldform-panel boldform-style-preview" aria-label="<?php esc_attr_e( 'Form preview', 'boldform-lite' ); ?>">
+				<div class="boldform-panel-head">
+					<h2><?php esc_html_e( 'Live Preview', 'boldform-lite' ); ?></h2>
+					<p><?php esc_html_e( 'See your styling applied to the form in real time.', 'boldform-lite' ); ?></p>
+				</div>
+				<div class="boldform-canvas boldform-style-preview-canvas" id="boldform-style-preview-canvas"></div>
+			</aside>
 		</div>
 	</section>
 

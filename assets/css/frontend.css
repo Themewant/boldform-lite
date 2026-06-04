@@ -702,7 +702,7 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-star {
-	font-size: var(--bf-star-size, 28px);
+	font-size: var(--bf-star-size, 16px);
 	line-height: 1;
 	color: #d1d5db;
 	cursor: pointer;
@@ -730,9 +730,12 @@ input[data-boldform-picker] {
 	padding: 4px 0;
 }
 
-.boldform-lite-slider input[type="range"] {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"] {
 	width: 100%;
 	height: var(--bf-slider-height, 8px);
+	padding: 0;
+	border: 0;
+	box-shadow: none;
 	-webkit-appearance: none;
 	appearance: none;
 	background: #e5e7eb;
@@ -741,7 +744,7 @@ input[data-boldform-picker] {
 	cursor: pointer;
 }
 
-.boldform-lite-slider input[type="range"]::-webkit-slider-thumb {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 22px;
 	height: 22px;
@@ -753,11 +756,11 @@ input[data-boldform-picker] {
 	transition: box-shadow 0.14s ease;
 }
 
-.boldform-lite-slider input[type="range"]::-webkit-slider-thumb:hover {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb:hover {
 	box-shadow: 0 0 0 6px color-mix(in srgb, var(--bf-slider-color, var(--bf-focus-color, #0f766e)) 12%, transparent), 0 1px 6px rgba(0, 0, 0, 0.18);
 }
 
-.boldform-lite-slider input[type="range"]::-moz-range-thumb {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-thumb {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
@@ -767,7 +770,7 @@ input[data-boldform-picker] {
 	cursor: pointer;
 }
 
-.boldform-lite-slider input[type="range"]::-moz-range-track {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-track {
 	height: var(--bf-slider-height, 8px);
 	background: #e5e7eb;
 	border-radius: 999px;
@@ -784,6 +787,70 @@ input[data-boldform-picker] {
 	font-weight: 700;
 	color: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
 	font-size: 15px;
+}
+
+/* Dual-handle slider: two range inputs overlaid on a shared track + fill. */
+.boldform-lite-slider--dual .boldform-lite-slider__track {
+	position: relative;
+	height: var(--bf-slider-height, 8px);
+	margin: 9px 0;
+	background: #e5e7eb;
+	border-radius: 999px;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__fill {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	border-radius: 999px;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 100%;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	-webkit-appearance: none;
+	appearance: none;
+	pointer-events: none;
+	outline: none;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-webkit-slider-runnable-track,
+.boldform-lite-slider--dual .boldform-lite-slider__input::-moz-range-track {
+	background: none;
+	border: none;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	pointer-events: auto;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	border: 3px solid #fff;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+	cursor: pointer;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-moz-range-thumb {
+	pointer-events: auto;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	border: 3px solid #fff;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+	cursor: pointer;
 }
 
 /* ── HTML Content Display ── */
