@@ -489,8 +489,11 @@
 	color: #64748b;
 }
 
+/* Settings view: full-width card (the inner left-nav + content layout fills
+   the row; nav width and content padding handle the proportions). */
 .boldform-global-settings-panel {
-	max-width: 960px;
+	width: 100%;
+	max-width: none;
 }
 
 /* Style tab: styling controls on the left, live form preview on the right. */
@@ -2073,7 +2076,7 @@
 
 /* ── Left nav ────────────────────────────────────────────────────────────── */
 .bfs-stab-nav {
-	width: 220px;
+	width: 300px;
 	flex-shrink: 0;
 	border-right: 1px solid rgba(226, 232, 240, 0.8);
 	padding: 14px 10px;
@@ -2277,6 +2280,16 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media ( max-width: 1024px ) {
+	.bfs-stab-nav {
+		width: 240px;
+	}
+
+	.bfs-stab-pane {
+		padding: 20px 22px;
+	}
+}
+
 @media ( max-width: 860px ) {
 	.bfs-stab-layout {
 		flex-direction: column;
