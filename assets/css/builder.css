@@ -858,9 +858,9 @@
 	justify-content: center;
 	gap: 8px;
 	padding: 24px 16px;
-	border: 2px dashed #d1d5db;
+	border: 2px dashed var(--bf-field-border, #d1d5db);
 	border-radius: 12px;
-	background: #f9fafb;
+	background: var(--bf-field-bg, #f9fafb);
 	color: #6b7280;
 	font-size: 14px;
 }
@@ -1387,9 +1387,9 @@
 	align-items: center;
 	gap: 8px;
 	padding: 14px 16px;
-	border: 1px dashed #cbd5e1;
+	border: 1px dashed var(--bf-field-border, #cbd5e1);
 	border-radius: 10px;
-	background: #f8fafc;
+	background: var(--bf-field-bg, #f8fafc);
 	color: #64748b;
 	font-size: 13px;
 }
@@ -1499,12 +1499,15 @@
 .boldform-canvas-star {
 	font-size: var(--star-size, 24px);
 	line-height: 1;
-	color: #cbd5e1;
+	color: #cbd5e1; /* fallback where color-mix is unsupported */
+	/* Empty stars: a light tint of the theme accent so the field reads as
+	   theme-aware even at a 0 rating. Filled stars use the full accent. */
+	color: color-mix(in srgb, var(--star-color, var(--bf-button-bg, #f59e0b)) 30%, #cbd5e1);
 	cursor: default;
 }
 
 .boldform-canvas-star.is-active {
-	color: var(--star-color, #f59e0b);
+	color: var(--star-color, var(--bf-button-bg, #f59e0b));
 }
 
 .boldform-canvas-slider {
@@ -1515,9 +1518,15 @@
 .boldform-canvas-slider:not( .boldform-canvas-slider--dual ) input[type="range"] {
 	width: 100%;
 	height: var(--slider-height, 6px);
+	/* Reset the field padding/border that the generic input rule leaks onto the
+	   range input, so the track height honours --slider-height. */
+	padding: 0;
+	border: 0;
+	box-sizing: border-box;
 	-webkit-appearance: none;
 	appearance: none;
-	background: #e2e8f0;
+	background: #e2e8f0; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e2e8f0);
 	border-radius: 999px;
 	outline: none;
 	pointer-events: none;
@@ -1528,7 +1537,7 @@
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
-	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 2px solid #fff;
 	box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
@@ -1542,7 +1551,7 @@
 
 .boldform-canvas-slider__labels span:nth-child(2) {
 	font-weight: 600;
-	color: var(--bf-focus-color, #0f766e);
+	color: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 }
 
 /* Dual-handle slider preview (static: two thumbs over a full-range fill). */
@@ -1550,7 +1559,8 @@
 	position: relative;
 	height: var(--slider-height, 6px);
 	margin: 11px 0;
-	background: #e2e8f0;
+	background: #e2e8f0; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e2e8f0);
 	border-radius: 999px;
 }
 
@@ -1561,7 +1571,7 @@
 	bottom: 0;
 	left: 25%;
 	right: 25%;
-	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border-radius: 999px;
 }
 
@@ -1572,7 +1582,7 @@
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
-	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 2px solid #fff;
 	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
@@ -1670,8 +1680,8 @@
 .boldform-canvas-calc-input {
 	width: 100%;
 	box-sizing: border-box;
-	background: #f0f4f8;
-	border: 1px dashed #cbd5e1;
+	background: var(--bf-field-bg, #f0f4f8);
+	border: 1px dashed var(--bf-field-border, #cbd5e1);
 	color: #475569;
 	font-style: italic;
 	cursor: default;
@@ -2625,6 +2635,65 @@
 .boldform-color-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 .boldform-color-wrap input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
 .boldform-color-wrap input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
+
+/* Reset-to-theme icon for a field-setting color picker. The wrapper IS the
+   bordered field box: the color swatch fills it, then a thin divider, then a
+   borderless reset icon — all inside the same border. */
+.bf-color-reset-wrap {
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+	max-width: 100%;
+	border: 1px solid #cbd5e1;
+	border-radius: 10px;
+	background: #fff;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.bf-color-reset-wrap input[type="color"] {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	height: 34px;
+	margin: 0;
+	padding: 4px 6px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	cursor: pointer;
+}
+
+.bf-color-reset-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.bf-color-reset-wrap input[type="color"]::-webkit-color-swatch { border: 1px solid #e2e8f0; border-radius: 5px; }
+.bf-color-reset-wrap input[type="color"]::-moz-color-swatch { border: 1px solid #e2e8f0; border-radius: 5px; }
+
+.bf-color-reset {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	padding: 0;
+	border: 0;
+	border-left: 1px solid #e2e8f0;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	transition: color 0.14s ease;
+}
+
+.bf-color-reset:hover {
+	background: transparent;
+	color: #0f172a;
+}
+
+.bf-color-reset .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
 
 .boldform-svg-preview {
 	display: flex;
