@@ -599,6 +599,10 @@ class BoldForm_Lite_Admin {
 						$("#boldform-select-all").on("change",function(){
 							$("input[name=\'boldform_form_ids[]\']").prop("checked",this.checked);
 						});
+						$(document).on("change","input[name=\'boldform_form_ids[]\']",function(){
+							var $boxes=$("input[name=\'boldform_form_ids[]\']");
+							$("#boldform-select-all").prop("checked",$boxes.length>0&&$boxes.filter(":checked").length===$boxes.length);
+						});
 						$(".boldform-copy-shortcode").on("click",function(e){
 							e.preventDefault();
 							var sc=$(this).data("shortcode");
@@ -974,13 +978,36 @@ class BoldForm_Lite_Admin {
 	 */
 	public function render_forms_page() {
 		$current_view   = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$is_trash       = 'trash' === $current_view;
 		$forms          = $this->get_forms( $current_view );
 		$all_count      = $this->get_forms_count();
 		$trash_count    = $this->get_forms_count( 'trash' );
 		$entry_counts   = $this->get_entry_counts_by_form();
 		$notice         = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$is_trash       = 'trash' === $current_view;
 		$form_action_url = $is_trash ? admin_url( 'admin.php?page=boldform-lite&form_status=trash' ) : admin_url( 'admin.php?page=boldform-lite' );
+
+		// Status filter (Active/Inactive) — applies to the non-trash view only.
+		$status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( wp_unslash( $_GET['status_filter'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $status_filter, array( 'active', 'inactive' ), true ) ) {
+			$status_filter = '';
+		}
+		if ( '' !== $status_filter && ! $is_trash ) {
+			$forms = $this->filter_forms_by_status( $forms, $status_filter );
+		}
+
+		// Sorting (server-side, WP-style): allowlisted column + direction.
+		$allowed_orderby = array( 'title', 'entries', 'updated' );
+		$orderby         = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = '';
+		}
+		$order = ( isset( $_GET['order'] ) && 'asc' === strtolower( sanitize_key( wp_unslash( $_GET['order'] ) ) ) ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( '' !== $orderby ) {
+			$forms = $this->sort_forms_list( $forms, $orderby, $order, $entry_counts );
+		}
+
+		// Sort links must preserve the active status filter in the URL.
+		$sort_base_url = ( '' !== $status_filter ) ? add_query_arg( 'status_filter', $status_filter, $form_action_url ) : $form_action_url;
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite' ); ?>
 		<div class="wrap">
@@ -1004,35 +1031,48 @@ class BoldForm_Lite_Admin {
 				</a>
 			</div>
 
-			<form method="post" action="<?php echo esc_url( $form_action_url ); ?>">
-				<?php wp_nonce_field( 'boldform_lite_bulk_action', 'boldform_bulk_nonce' ); ?>
-
-				<div class="boldform-table-card">
-					<div class="boldform-bulk-bar">
-						<input type="checkbox" id="boldform-select-all" class="boldform-bulk-check">
-						<div class="boldform-bulk-action-wrap">
-							<select name="boldform_bulk_action" id="boldform-bulk-action">
-								<option value=""><?php esc_html_e( 'Bulk Actions', 'boldform-lite' ); ?></option>
-								<?php if ( $is_trash ) : ?>
-									<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
-									<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
-								<?php else : ?>
-									<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
-								<?php endif; ?>
-							</select>
-							<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
-						</div>
+			<div class="boldform-table-card">
+				<div class="boldform-bulk-bar">
+					<div class="boldform-bulk-action-wrap">
+						<select name="boldform_bulk_action" id="boldform-bulk-action" form="boldform-bulk-form">
+							<option value=""><?php esc_html_e( 'Bulk Actions', 'boldform-lite' ); ?></option>
+							<?php if ( $is_trash ) : ?>
+								<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
+								<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
+							<?php else : ?>
+								<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+							<?php endif; ?>
+						</select>
+						<button type="submit" class="boldform-bulk-apply" form="boldform-bulk-form"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
 					</div>
+					<?php if ( ! $is_trash ) : ?>
+						<form method="get" class="boldform-filter-form" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+							<input type="hidden" name="page" value="boldform-lite">
+							<?php if ( '' !== $orderby ) : ?>
+								<input type="hidden" name="orderby" value="<?php echo esc_attr( $orderby ); ?>">
+								<input type="hidden" name="order" value="<?php echo esc_attr( $order ); ?>">
+							<?php endif; ?>
+							<select name="status_filter" id="boldform-status-filter">
+								<option value=""><?php esc_html_e( 'All Status', 'boldform-lite' ); ?></option>
+								<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'boldform-lite' ); ?></option>
+								<option value="inactive" <?php selected( $status_filter, 'inactive' ); ?>><?php esc_html_e( 'Inactive', 'boldform-lite' ); ?></option>
+							</select>
+							<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Filter', 'boldform-lite' ); ?></button>
+						</form>
+					<?php endif; ?>
+				</div>
 
+				<form method="post" id="boldform-bulk-form" action="<?php echo esc_url( $form_action_url ); ?>">
+					<?php wp_nonce_field( 'boldform_lite_bulk_action', 'boldform_bulk_nonce' ); ?>
 					<table class="boldform-forms-table">
 						<thead>
 							<tr>
-								<th class="boldform-col-cb"></th>
-								<th class="boldform-col-title"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
+								<th class="boldform-col-cb"><input type="checkbox" id="boldform-select-all"></th>
+								<?php $this->render_sortable_th( 'title', 'boldform-col-title', __( 'Form', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
 								<th class="boldform-col-shortcode"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></th>
-								<th class="boldform-col-entries"><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></th>
+								<?php $this->render_sortable_th( 'entries', 'boldform-col-entries', __( 'Entries', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
 								<th class="boldform-col-status"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
-								<th class="boldform-col-date"><?php esc_html_e( 'Updated', 'boldform-lite' ); ?></th>
+								<?php $this->render_sortable_th( 'updated', 'boldform-col-date', __( 'Updated', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
 								<th class="boldform-col-actions"></th>
 							</tr>
 						</thead>
@@ -1133,8 +1173,8 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</tbody>
 					</table>
-				</div>
-			</form>
+				</form>
+			</div>
 
 		</div>
 		<?php
@@ -2338,6 +2378,111 @@ class BoldForm_Lite_Admin {
 		}
 
 		return $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, fields_json, updated_at FROM `{$safe_table}` WHERE status != %s ORDER BY id DESC", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+	}
+
+	/**
+	 * Filters the forms list by active/inactive status (PHP-side; the list is
+	 * not paginated). 'active' means published; anything else counts as inactive.
+	 *
+	 * @param array<int, object> $forms         Forms to filter.
+	 * @param string             $status_filter 'active' or 'inactive'.
+	 * @return array<int, object>
+	 */
+	private function filter_forms_by_status( $forms, $status_filter ) {
+		return array_values(
+			array_filter(
+				$forms,
+				function ( $form ) use ( $status_filter ) {
+					$is_active = 'publish' === ( $form->status ?? 'publish' );
+					return ( 'active' === $status_filter ) ? $is_active : ! $is_active;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Sorts the forms list in PHP (the list is not paginated) by an allowlisted
+	 * column. Entry counts are not a forms-table column, so they are compared
+	 * via the pre-fetched counts map rather than in SQL.
+	 *
+	 * @param array<int, object> $forms        Forms to sort.
+	 * @param string             $orderby      One of 'title', 'entries', 'updated'.
+	 * @param string             $order        'asc' or 'desc'.
+	 * @param array<int, int>    $entry_counts Entry counts keyed by form ID.
+	 * @return array<int, object>
+	 */
+	private function sort_forms_list( $forms, $orderby, $order, $entry_counts ) {
+		$dir = ( 'asc' === $order ) ? 1 : -1;
+
+		usort(
+			$forms,
+			function ( $a, $b ) use ( $orderby, $entry_counts, $dir ) {
+				if ( 'title' === $orderby ) {
+					$cmp = strcasecmp( (string) $a->title, (string) $b->title );
+				} elseif ( 'entries' === $orderby ) {
+					$count_a = (int) ( $entry_counts[ (int) $a->id ] ?? 0 );
+					$count_b = (int) ( $entry_counts[ (int) $b->id ] ?? 0 );
+					$cmp     = $count_a <=> $count_b;
+				} else {
+					$time_a = isset( $a->updated_at ) ? (int) strtotime( (string) $a->updated_at ) : 0;
+					$time_b = isset( $b->updated_at ) ? (int) strtotime( (string) $b->updated_at ) : 0;
+					$cmp    = $time_a <=> $time_b;
+				}
+
+				// Stable tiebreaker so equal values keep a deterministic order.
+				if ( 0 === $cmp ) {
+					$cmp = (int) $a->id <=> (int) $b->id;
+				}
+
+				return $cmp * $dir;
+			}
+		);
+
+		return $forms;
+	}
+
+	/**
+	 * Echoes a sortable column header (<th>) for the forms list, mirroring the
+	 * native WordPress list-table behaviour: a link that toggles asc/desc with
+	 * the active direction reflected in the markup (and aria-sort).
+	 *
+	 * @param string $key             Sort key ('title', 'entries', 'updated').
+	 * @param string $col_class       The column's CSS class (e.g. 'boldform-col-title').
+	 * @param string $label           Visible header label.
+	 * @param string $current_orderby The active orderby, if any.
+	 * @param string $current_order   The active order ('asc'|'desc').
+	 * @param string $base_url        Page URL to build the sort link from.
+	 * @return void
+	 */
+	private function render_sortable_th( $key, $col_class, $label, $current_orderby, $current_order, $base_url ) {
+		$is_sorted = ( $current_orderby === $key );
+
+		// Title reads naturally A→Z first; counts/dates are more useful high→low first.
+		$default_dir = ( 'title' === $key ) ? 'asc' : 'desc';
+		$next_order  = $is_sorted ? ( 'asc' === $current_order ? 'desc' : 'asc' ) : $default_dir;
+
+		$th_class = $col_class . ' boldform-sortable';
+		$aria     = 'none';
+		if ( $is_sorted ) {
+			$th_class .= ' is-sorted is-sorted-' . ( 'asc' === $current_order ? 'asc' : 'desc' );
+			$aria      = ( 'asc' === $current_order ) ? 'ascending' : 'descending';
+		}
+
+		$url = add_query_arg(
+			array(
+				'orderby' => $key,
+				'order'   => $next_order,
+			),
+			$base_url
+		);
+
+		printf(
+			'<th class="%1$s" aria-sort="%2$s"><a href="%3$s" class="boldform-sort-link"><span class="boldform-sort-label">%4$s</span><span class="boldform-sort-indicators" aria-hidden="true"><span class="boldform-sort-indicator boldform-sort-asc"></span><span class="boldform-sort-indicator boldform-sort-desc"></span></span></a></th>',
+			esc_attr( $th_class ),
+			esc_attr( $aria ),
+			esc_url( $url ),
+			esc_html( $label )
+		);
 	}
 
 	/**

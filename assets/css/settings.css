@@ -760,14 +760,9 @@
 	border-bottom: 1px solid #e2e4e7;
 }
 
-.boldform-table-card .boldform-bulk-bar select {
-	padding: 4px 8px;
-	border: 1px solid #d0d5dd;
-	border-radius: 4px;
-	font-size: 13px;
-	line-height: 1;
-	background: #fff;
-}
+/* Selects in the bulk bar are styled by the unified WP-native rule below
+   (.boldform-bulk-action-wrap select, .boldform-filter-form select).
+   A generic select rule here would out-specify and break that caret. */
 
 .boldform-table-card .boldform-bulk-bar .button {
 	padding: 4px 14px;
@@ -861,39 +856,68 @@
 	gap: 8px;
 }
 
-.boldform-bulk-action-wrap select {
+.boldform-filter-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.boldform-bulk-action-wrap select,
+.boldform-filter-form select {
 	height: 36px;
 	min-height: 36px;
-	padding: 0 32px 0 12px;
-	border: 1px solid #d0d5dd;
+	padding: 0 30px 0 12px;
+	border: 1px solid #8c8f94;
 	border-radius: 8px;
 	background: #fff;
 	font-size: 13px;
-	color: #344054;
+	color: #2c3338;
 	-webkit-appearance: none;
 	appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	/* The SVG is arrow-down-alt2 from Dashicons — the WordPress-native select caret. */
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%2350575e%22%2F%3E%3C%2Fsvg%3E");
 	background-repeat: no-repeat;
-	background-position: right 10px center;
+	background-position: right 8px center;
+	background-size: 16px 16px;
 	cursor: pointer;
+}
+
+.boldform-bulk-action-wrap select:hover,
+.boldform-filter-form select:hover {
+	border-color: #1e1e1e;
+}
+
+.boldform-bulk-action-wrap select:focus,
+.boldform-filter-form select:focus {
+	outline: 2px solid transparent;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
 }
 
 .boldform-bulk-apply {
 	height: 36px;
 	padding: 0 16px;
-	border: 1px solid #d0d5dd;
+	border: 1px solid #2271b1;
 	border-radius: 8px;
-	background: #fff;
-	color: #344054;
+	background: #f6f7f7;
+	color: #2271b1;
 	font-size: 13px;
 	font-weight: 600;
+	line-height: 1;
 	cursor: pointer;
 	transition: all 0.14s ease;
 }
 
 .boldform-bulk-apply:hover {
-	background: #f0f0f1;
-	border-color: #98a2b3;
+	background: #f0f6fc;
+	border-color: #0a4b78;
+	color: #0a4b78;
+}
+
+.boldform-bulk-apply:focus {
+	outline: 2px solid transparent;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
 }
 
 /* ── Forms table ── */
@@ -914,6 +938,69 @@
 	text-align: left;
 }
 
+/* Sortable column headers (WordPress-style click-to-sort) */
+.boldform-forms-table thead th.boldform-sortable {
+	padding: 0;
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 10px 14px;
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-link:hover,
+.boldform-forms-table thead th.boldform-sortable.is-sorted .boldform-sort-link {
+	color: #1d2939;
+}
+
+/* Stacked up/down sort arrows — copied from WordPress core (Dashicons \f142/\f140). */
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-indicators {
+	display: grid;
+	flex: 0 0 auto;
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-indicator {
+	display: block;
+	width: 10px;
+	height: 4px;
+	margin-top: 4px;
+	margin-left: 4px;
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-indicator:before {
+	font: normal 20px/0.5 dashicons;
+	display: inline-block;
+	padding: 0;
+	position: relative;
+	top: -4px;
+	left: -8px;
+	vertical-align: top;
+	color: #a7aaad;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-asc:before {
+	content: "\f142";
+}
+
+.boldform-forms-table thead th.boldform-sortable .boldform-sort-desc:before {
+	content: "\f140";
+}
+
+.boldform-forms-table thead th.boldform-sortable.is-sorted-asc .boldform-sort-asc:before,
+.boldform-forms-table thead th.boldform-sortable.is-sorted-desc .boldform-sort-desc:before {
+	color: #1d2327;
+}
+
 .boldform-forms-table tbody td {
 	padding: 14px;
 	border-bottom: 1px solid #f0f0f1;
@@ -930,7 +1017,7 @@
 	background: #f9fafb;
 }
 
-.boldform-col-cb { width: 14px; }
+.boldform-col-cb { width: 32px; }
 .boldform-col-shortcode { width: 210px; }
 .boldform-col-entries { width: 80px; text-align: center; }
 .boldform-col-status { width: 120px; }
@@ -942,14 +1029,15 @@
 	height: 16px;
 	margin: 0;
 	accent-color: #2271b1;
-	vertical-align: top;
+	vertical-align: middle;
 	cursor: pointer;
 }
 
 .boldform-forms-table thead .boldform-col-cb,
 .boldform-forms-table tbody .boldform-col-cb {
-	padding-left: 16px;
-	vertical-align: top;
+	padding-left: 14px;
+	padding-right: 0;
+	vertical-align: baseline;
 }
 
 /* Title */
