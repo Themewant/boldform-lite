@@ -704,7 +704,10 @@ input[data-boldform-picker] {
 .boldform-lite-star {
 	font-size: var(--bf-star-size, 16px);
 	line-height: 1;
-	color: #d1d5db;
+	color: #d1d5db; /* fallback where color-mix is unsupported */
+	/* Empty stars: a light tint of the theme accent so the field reads as
+	   theme-aware even before it is rated. Filled stars use the full accent. */
+	color: color-mix(in srgb, var(--bf-star-color, var(--bf-button-bg, #f59e0b)) 30%, #d1d5db);
 	cursor: pointer;
 	transition: color 0.12s ease, transform 0.12s ease;
 	-webkit-user-select: none;
@@ -716,11 +719,11 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-star.is-active {
-	color: var(--bf-star-color, #f59e0b);
+	color: var(--bf-star-color, var(--bf-button-bg, #f59e0b));
 }
 
 .boldform-lite-star.is-hover {
-	color: var(--bf-star-color, #f59e0b);
+	color: var(--bf-star-color, var(--bf-button-bg, #f59e0b));
 }
 
 /* ── Slider Range ── */
@@ -738,7 +741,8 @@ input[data-boldform-picker] {
 	box-shadow: none;
 	-webkit-appearance: none;
 	appearance: none;
-	background: #e5e7eb;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
 	border-radius: 999px;
 	outline: none;
 	cursor: pointer;
@@ -749,7 +753,7 @@ input[data-boldform-picker] {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
@@ -757,14 +761,14 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb:hover {
-	box-shadow: 0 0 0 6px color-mix(in srgb, var(--bf-slider-color, var(--bf-focus-color, #0f766e)) 12%, transparent), 0 1px 6px rgba(0, 0, 0, 0.18);
+	box-shadow: 0 0 0 6px color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 12%, transparent), 0 1px 6px rgba(0, 0, 0, 0.18);
 }
 
 .boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-thumb {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
@@ -772,7 +776,8 @@ input[data-boldform-picker] {
 
 .boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-track {
 	height: var(--bf-slider-height, 8px);
-	background: #e5e7eb;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
 	border-radius: 999px;
 }
 
@@ -785,7 +790,7 @@ input[data-boldform-picker] {
 
 .boldform-lite-slider__value {
 	font-weight: 700;
-	color: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	color: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	font-size: 15px;
 }
 
@@ -794,7 +799,8 @@ input[data-boldform-picker] {
 	position: relative;
 	height: var(--bf-slider-height, 8px);
 	margin: 9px 0;
-	background: #e5e7eb;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
 	border-radius: 999px;
 }
 
@@ -802,7 +808,7 @@ input[data-boldform-picker] {
 	position: absolute;
 	top: 0;
 	height: 100%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border-radius: 999px;
 }
 
@@ -836,7 +842,7 @@ input[data-boldform-picker] {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
@@ -847,7 +853,7 @@ input[data-boldform-picker] {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;

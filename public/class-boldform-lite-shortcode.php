@@ -1614,9 +1614,14 @@ class BoldForm_Lite_Shortcode {
 		if ( 'star_rating' === $type ) {
 			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
 			$def        = (int) $default;
-			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '#f59e0b';
+			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
 			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
-			$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';--bf-star-size:' . $star_size . 'px';
+			// Emit --bf-star-color only for a custom color; otherwise the CSS falls
+			// back to the theme accent (--bf-button-bg).
+			$star_style = '--bf-star-size:' . $star_size . 'px';
+			if ( '' !== $star_color ) {
+				$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';' . $star_style;
+			}
 			$html = sprintf( '<input type="hidden" id="%1$s" name="%1$s" value="%2$s"%3$s>', esc_attr( $field_name ), esc_attr( $def ), $required_attr );
 			$html .= '<div class="boldform-lite-star-rating" data-max="' . $max . '" data-field="' . esc_attr( $field_name ) . '" style="' . $star_style . '">';
 			for ( $i = 1; $i <= $max; $i++ ) {

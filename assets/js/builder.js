@@ -131,7 +131,7 @@ jQuery(
 				max_value: '',
 				step_value: '',
 				max_stars: 5,
-				star_color: '#f59e0b',
+				star_color: '',
 				star_size: '20',
 				slider_color: '',
 				slider_height: '',
@@ -210,7 +210,9 @@ jQuery(
 			normalized.max_value = field && typeof field.max_value !== 'undefined' ? field.max_value : '';
 			normalized.step_value = field && typeof field.step_value !== 'undefined' ? field.step_value : '';
 			normalized.max_stars = field && field.max_stars ? Number( field.max_stars ) : 5;
-			normalized.star_color = field && field.star_color ? field.star_color : '#f59e0b';
+			// Treat the legacy forced default (#f59e0b) as "unset" so existing star
+			// fields follow the theme accent; a deliberate custom color is kept.
+			normalized.star_color = field && field.star_color && '#f59e0b' !== field.star_color ? field.star_color : '';
 			normalized.star_size = field && field.star_size ? field.star_size : '20';
 			normalized.slider_color = field && field.slider_color ? field.slider_color : '';
 			normalized.slider_height = field && field.slider_height ? field.slider_height : '';
@@ -1141,9 +1143,14 @@ jQuery(
 			} else if ( field.type === 'star_rating' ) {
 				var maxStars = field.max_stars || 5;
 				var defRating = Number( field.default_value ) || 0;
-				var starColor = field.star_color || '#f59e0b';
 				var starSize = field.star_size || '20';
-				html = '<div class="boldform-canvas-stars" style="--star-color:' + escapeHtml( starColor ) + ';--star-size:' + escapeHtml( starSize ) + 'px">';
+				// Emit --star-color only when the field has a custom color; otherwise
+				// let the CSS fall back to the theme accent (--bf-button-bg).
+				var starStyle = '--star-size:' + escapeHtml( starSize ) + 'px';
+				if ( field.star_color ) {
+					starStyle = '--star-color:' + escapeHtml( field.star_color ) + ';' + starStyle;
+				}
+				html = '<div class="boldform-canvas-stars" style="' + starStyle + '">';
 				for ( var si = 1; si <= maxStars; si++ ) {
 					html += '<span class="boldform-canvas-star' + ( si <= defRating ? ' is-active' : '' ) + '">&#9733;</span>';
 				}
@@ -1924,7 +1931,10 @@ jQuery(
 					'<div class="boldform-setting-row">' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-slider-color">' + escapeHtml( boldformLiteBuilder.labels.sliderColor || 'Track Color' ) + '</label>' +
-							'<input type="color" id="boldform-setting-slider-color" value="' + escapeHtml( selected.field.slider_color || '#0f766e' ) + '">' +
+							'<div class="bf-color-reset-wrap">' +
+								'<input type="color" id="boldform-setting-slider-color" value="' + escapeHtml( selected.field.slider_color || state.formSettings.button_background_color || '#0f766e' ) + '">' +
+								'<button type="button" class="bf-color-reset" data-color-reset="slider_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+							'</div>' +
 						'</div>' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-slider-height">' + escapeHtml( boldformLiteBuilder.labels.sliderHeight || 'Track Height (px)' ) + '</label>' +
@@ -1943,7 +1953,10 @@ jQuery(
 					'<div class="boldform-setting-row">' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-star-color">' + escapeHtml( boldformLiteBuilder.labels.starColor || 'Star Color' ) + '</label>' +
-							'<input type="color" id="boldform-setting-star-color" value="' + escapeHtml( selected.field.star_color || '#f59e0b' ) + '">' +
+							'<div class="bf-color-reset-wrap">' +
+								'<input type="color" id="boldform-setting-star-color" value="' + escapeHtml( selected.field.star_color || state.formSettings.button_background_color || '#f59e0b' ) + '">' +
+								'<button type="button" class="bf-color-reset" data-color-reset="star_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+							'</div>' +
 						'</div>' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-star-size">' + escapeHtml( boldformLiteBuilder.labels.starSize || 'Star Size (px)' ) + '</label>' +
@@ -2836,11 +2849,11 @@ jQuery(
 		}
 
 		var designThemes = {
-			'default-blue':   { label: 'Default Blue',   primary: '#2f80ed', focus: '#2f80ed', btnBg: '#2f80ed', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 16 },
-			'ocean-teal':     { label: 'Ocean Teal',     primary: '#0f766e', focus: '#0f766e', btnBg: '#0f766e', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 16 },
-			'forest-green':   { label: 'Forest Green',   primary: '#16a34a', focus: '#16a34a', btnBg: '#16a34a', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 12 },
-			'sunset-orange':  { label: 'Sunset Orange',  primary: '#ea580c', focus: '#ea580c', btnBg: '#ea580c', btnText: '#fff', fieldBorder: '#e5e7eb', fieldBg: '#fff', fieldRadius: 8 },
-			'royal-purple':   { label: 'Royal Purple',   primary: '#7c3aed', focus: '#7c3aed', btnBg: '#7c3aed', btnText: '#fff', fieldBorder: '#d1d5db', fieldBg: '#fff', fieldRadius: 12 },
+			'default-blue':   { label: 'Default Blue',   primary: '#2f80ed', focus: '#2f80ed', btnBg: '#2f80ed', btnText: '#fff', fieldBorder: '#bfdbfe', fieldBg: '#eff6ff', fieldRadius: 16 },
+			'ocean-teal':     { label: 'Ocean Teal',     primary: '#0f766e', focus: '#0f766e', btnBg: '#0f766e', btnText: '#fff', fieldBorder: '#99f6e4', fieldBg: '#f0fdfa', fieldRadius: 16 },
+			'forest-green':   { label: 'Forest Green',   primary: '#16a34a', focus: '#16a34a', btnBg: '#16a34a', btnText: '#fff', fieldBorder: '#bbf7d0', fieldBg: '#f0fdf4', fieldRadius: 12 },
+			'sunset-orange':  { label: 'Sunset Orange',  primary: '#ea580c', focus: '#ea580c', btnBg: '#ea580c', btnText: '#fff', fieldBorder: '#fed7aa', fieldBg: '#fff7ed', fieldRadius: 8 },
+			'royal-purple':   { label: 'Royal Purple',   primary: '#7c3aed', focus: '#7c3aed', btnBg: '#7c3aed', btnText: '#fff', fieldBorder: '#ddd6fe', fieldBg: '#f5f3ff', fieldRadius: 12 },
 			'midnight-dark':  { label: 'Midnight Dark',  primary: '#1e293b', focus: '#334155', btnBg: '#1e293b', btnText: '#fff', fieldBorder: '#475569', fieldBg: '#f8fafc', fieldRadius: 8 },
 			'minimal-gray':   { label: 'Minimal Gray',   primary: '#6b7280', focus: '#6b7280', btnBg: '#374151', btnText: '#fff', fieldBorder: '#e5e7eb', fieldBg: '#f9fafb', fieldRadius: 4 },
 			'rose-pink':      { label: 'Rose Pink',      primary: '#e11d48', focus: '#e11d48', btnBg: '#e11d48', btnText: '#fff', fieldBorder: '#fecdd3', fieldBg: '#fff1f2', fieldRadius: 16 }
@@ -3534,6 +3547,20 @@ jQuery(
 			$accordion.siblings( '.boldform-field-accordion' ).removeClass( 'is-open' );
 			$accordion.toggleClass( 'is-open', ! isOpen );
 			state.activeSettingsAccordion = ! isOpen ? ( $accordion.data( 'accordion' ) || 'settings' ) : 'settings';
+		} );
+
+		// Reset a field-setting color picker (slider track / star) back to its
+		// theme-following default by clearing the stored color.
+		$( document ).on( 'click', '.bf-color-reset', function () {
+			var prop = $( this ).data( 'color-reset' );
+			var selected = getSelectedFieldLocation();
+
+			if ( ! selected || ! prop ) {
+				return;
+			}
+
+			selected.field[ prop ] = '';
+			renderAll();
 		} );
 
 		// Conditional logic — enable/disable toggle.
