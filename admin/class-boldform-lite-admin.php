@@ -431,6 +431,7 @@ class BoldForm_Lite_Admin {
 						'fieldStyles' => __( 'Field Styles', 'boldform-lite' ),
 						'labelStyles' => __( 'Label Styles', 'boldform-lite' ),
 						'buttonStyles' => __( 'Button Styles', 'boldform-lite' ),
+						'stylePreviewEmpty' => __( 'Add fields in the Builder tab to preview your styling here.', 'boldform-lite' ),
 						'size' => __( 'Size', 'boldform-lite' ),
 						'border' => __( 'Border', 'boldform-lite' ),
 						'borderSize' => __( 'Border Size', 'boldform-lite' ),

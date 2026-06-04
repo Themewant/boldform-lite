@@ -2943,6 +2943,74 @@ jQuery(
 			);
 		}
 
+		// Render a live, read-only mirror of the form on the Style tab so styling
+		// changes preview instantly. Reuses the canvas field structure
+		// (.boldform-canvas ancestor + .boldform-canvas-field > -field-body) so the
+		// same --bf-* variable styling applies, minus the editing chrome.
+		function renderStylePreview() {
+			var $canvas = $( '#boldform-style-preview-canvas' );
+
+			if ( ! $canvas.length ) {
+				return;
+			}
+
+			var rows = getAllRows();
+
+			// Reflect the live style variables on the preview wrapper.
+			$canvas.attr( 'style', getFormStyleVariables() );
+
+			if ( ! rows.length ) {
+				$canvas.html(
+					'<div class="boldform-style-preview-empty">' +
+						escapeHtml( boldformLiteBuilder.labels.stylePreviewEmpty || 'Add fields in the Builder tab to preview your styling here.' ) +
+					'</div>'
+				);
+				return;
+			}
+
+			var markup = '';
+
+			rows.forEach(
+				function ( row ) {
+					markup += '<div class="boldform-style-preview-row">';
+
+					row.columns.forEach(
+						function ( column ) {
+							markup += '<div class="boldform-style-preview-column" style="width:' + escapeHtml( column.width ) + ';">';
+
+							column.fields.forEach(
+								function ( field ) {
+									var fieldClasses = 'boldform-canvas-field';
+									var fieldLabelPos = field.label_placement || 'top';
+
+									if ( 'top' !== fieldLabelPos ) {
+										fieldClasses += ' is-label-' + fieldLabelPos;
+									}
+
+									markup += '<div class="' + fieldClasses + '">' +
+										'<div class="boldform-canvas-field-body">' + renderInputPreview( field ) + '</div>' +
+									'</div>';
+								}
+							);
+
+							markup += '</div>';
+						}
+					);
+
+					markup += '</div>';
+				}
+			);
+
+			// Mirror the canvas: append a submit button only when the structure has none.
+			if ( ! hasSubmitField() ) {
+				markup += '<div class="boldform-canvas-submit is-align-' + escapeHtml( state.formSettings.button_alignment || 'left' ) + '">' +
+					'<button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button>' +
+				'</div>';
+			}
+
+			$canvas.html( markup );
+		}
+
 		function switchEditorView( view ) {
 			state.activeEditorView = view;
 
@@ -2965,6 +3033,12 @@ jQuery(
 						.prop( 'hidden', ! isActive );
 				}
 			);
+
+			// Refresh the live preview when entering the Style tab so any
+			// structure changes made on the Builder tab are reflected.
+			if ( 'style' === view ) {
+				renderStylePreview();
+			}
 		}
 
 		function renderRowPresets() {
@@ -3017,6 +3091,7 @@ jQuery(
 			renderSettingsPanel();
 			renderFormSettings();
 			renderStylingSettings();
+			renderStylePreview();
 			renderRowPresets();
 			switchSidebarTab( state.activeSidebarTab );
 			switchEditorView( state.activeEditorView );
@@ -4465,6 +4540,7 @@ jQuery(
 				}
 
 				renderCanvas();
+				renderStylePreview();
 
 				if ( needsRerender ) {
 					renderFormSettings();

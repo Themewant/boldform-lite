@@ -493,6 +493,90 @@
 	max-width: 960px;
 }
 
+/* Style tab: styling controls on the left, live form preview on the right. */
+.boldform-style-shell {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+}
+
+.boldform-style-controls {
+	min-width: 0;
+}
+
+/* Pin the preview to the viewport and let it scroll internally (mirrors the
+   Builder field-library sidebar) so a tall form never scrolls the whole page. */
+.boldform-style-preview {
+	min-width: 0;
+	position: sticky;
+	top: 20px;
+	align-self: start;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 20px);
+	overflow: hidden;
+}
+
+.boldform-style-preview .boldform-panel-head {
+	flex: 0 0 auto;
+}
+
+/* Inherits padding:18px from .boldform-canvas; framed as an inset preview stage
+   that takes the remaining height and scrolls its own overflow. */
+.boldform-style-preview-canvas {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	margin: 18px;
+	border: 1px solid #d9e0ea;
+	border-radius: 16px;
+	background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+}
+
+.boldform-style-preview-canvas::-webkit-scrollbar {
+	width: 6px;
+}
+
+.boldform-style-preview-canvas::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 999px;
+}
+
+.boldform-style-preview-row {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0 -8px;
+}
+
+.boldform-style-preview-column {
+	min-width: 0;
+	padding: 0 8px;
+	box-sizing: border-box;
+}
+
+.boldform-style-preview-canvas .boldform-canvas-field {
+	margin-bottom: 16px;
+}
+
+/* Read-only preview: no hover affordance and no pointer interactions. */
+.boldform-style-preview-canvas .boldform-canvas-field:hover {
+	background: transparent;
+}
+
+.boldform-style-preview-canvas input,
+.boldform-style-preview-canvas textarea,
+.boldform-style-preview-canvas select,
+.boldform-style-preview-canvas .boldform-canvas-submit__button {
+	pointer-events: none;
+}
+
+.boldform-style-preview-empty {
+	padding: 48px 20px;
+	text-align: center;
+	color: #64748b;
+}
+
 .boldform-field-library {
 	padding: 14px 18px 18px;
 }
@@ -992,12 +1076,35 @@
 	transition: box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.boldform-canvas-field:hover {
-	background: rgba(248, 250, 252, 0.78);
+/* Hover / selected highlight drawn as an overlay that extends slightly beyond
+   the field content, so it reads as a padded, bordered card without shifting
+   the grid layout (the field itself keeps padding: 0). */
+.boldform-canvas-field::before {
+	content: "";
+	position: absolute;
+	inset: -8px -10px;
+	border: 1px solid transparent;
+	border-radius: 12px;
+	transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.boldform-canvas-field:hover::before {
+	background: #f8fafc;
+	border-color: #e2e8f0;
+}
+
+.boldform-canvas-field.is-selected::before {
+	background: #f6fafe;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
 }
 
 
 .boldform-canvas-field-body {
+	position: relative;
+	z-index: 1;
 	display: grid;
 	gap: 8px;
 	padding: 0;
@@ -2269,23 +2376,33 @@
 }
 
 .boldform-style-section {
-	padding: 16px 18px;
 	border: 1px solid #e2e8f0;
 	border-radius: 12px;
 	background: #fff;
+	overflow: hidden;
 }
 
+/* Padding lives on the head (not the section) so the whole header band is
+   clickable, not just the title text. */
 .boldform-style-section__head {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	padding: 16px 18px;
 	cursor: pointer;
 	-webkit-user-select: none;
 	user-select: none;
+	transition: background 0.12s ease;
 }
 
+.boldform-style-section__head:hover {
+	background: #f8fafc;
+}
+
+/* When open, divide the header from the body so each is its own evenly
+   padded zone (the hover highlight no longer bleeds into the body). */
 .boldform-style-section.is-open .boldform-style-section__head {
-	margin-bottom: 16px;
+	border-bottom: 1px solid #e2e8f0;
 }
 
 .boldform-style-section__head h3 {
@@ -2310,6 +2427,7 @@
 
 .boldform-style-section__body {
 	display: none;
+	padding: 16px 18px;
 }
 
 .boldform-style-section.is-open .boldform-style-section__body {
@@ -2337,6 +2455,14 @@
 	margin-top: 14px;
 	padding-top: 14px;
 	border-top: 1px solid #f1f5f9;
+}
+
+/* In Label Styles the color grid is the body's only child, so its divider has
+   nothing above it — drop the top border/spacing to avoid a stray line + gap. */
+.boldform-style-section__body > .boldform-style-color-grid:first-child {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
 }
 
 .boldform-style-color-grid .boldform-setting-group {
@@ -2616,6 +2742,7 @@
 	background: #f8fafc;
 	color: #1e293b;
 	font-size: 13px;
+	line-height: 1;
 	transition: border-color 0.15s, box-shadow 0.15s;
 	box-shadow: none;
 }
@@ -3431,6 +3558,25 @@
 @media screen and (max-width: 1200px) {
 	.boldform-builder-shell {
 		grid-template-columns: 35% 65%;
+	}
+}
+
+/* Style tab: stack controls above the preview once the columns get cramped.
+   Stacked, the preview flows naturally (no viewport cap / internal scroll). */
+@media screen and (max-width: 1024px) {
+	.boldform-style-shell {
+		grid-template-columns: 1fr;
+	}
+
+	.boldform-style-preview {
+		position: static;
+		top: auto;
+		max-height: none;
+		overflow: visible;
+	}
+
+	.boldform-style-preview-canvas {
+		overflow-y: visible;
 	}
 }
 
