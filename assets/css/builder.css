@@ -1882,13 +1882,13 @@
    Class prefix: bfsп- (boldform settings-panel)
    ══════════════════════════════════════════════════════════════════════════ */
 
-.bfsп-stab-layout {
+.bfs-stab-layout {
 	display: flex;
 	min-height: 480px;
 }
 
 /* ── Left nav ────────────────────────────────────────────────────────────── */
-.bfsп-stab-nav {
+.bfs-stab-nav {
 	width: 220px;
 	flex-shrink: 0;
 	border-right: 1px solid rgba(226, 232, 240, 0.8);
@@ -1900,7 +1900,7 @@
 	border-radius: 0 0 0 20px;
 }
 
-.bfsп-stab-nav-item {
+.bfs-stab-nav-item {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -1916,18 +1916,18 @@
 	position: relative;
 }
 
-.bfsп-stab-nav-item:hover {
+.bfs-stab-nav-item:hover {
 	background: #f1f5f9;
 	color: #0f172a;
 }
 
-.bfsп-stab-nav-item.is-active {
+.bfs-stab-nav-item.is-active {
 	background: #fff;
 	color: #0f172a;
 	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
-.bfsп-stab-nav-icon {
+.bfs-stab-nav-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1941,12 +1941,12 @@
 	color: #475569;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-icon {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-icon {
 	background: #2271b1;
 	color: #fff;
 }
 
-.bfsп-stab-nav-text {
+.bfs-stab-nav-text {
 	flex: 1;
 	min-width: 0;
 	display: flex;
@@ -1954,7 +1954,7 @@
 	gap: 1px;
 }
 
-.bfsп-stab-nav-label {
+.bfs-stab-nav-label {
 	font-size: 13px;
 	font-weight: 600;
 	line-height: 1.3;
@@ -1963,7 +1963,7 @@
 	text-overflow: ellipsis;
 }
 
-.bfsп-stab-nav-desc {
+.bfs-stab-nav-desc {
 	font-size: 11px;
 	color: #94a3b8;
 	line-height: 1.3;
@@ -1972,33 +1972,33 @@
 	text-overflow: ellipsis;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-desc {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-desc {
 	color: #64748b;
 }
 
-.bfsп-stab-nav-arrow {
+.bfs-stab-nav-arrow {
 	font-size: 16px;
 	color: #cbd5e1;
 	flex-shrink: 0;
 	transition: color 0.13s ease;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-arrow {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-arrow {
 	color: #94a3b8;
 }
 
 /* Pro-slots area (spacer + separator before Pro tabs) */
-.bfsп-stab-nav-pro-slots {
+.bfs-stab-nav-pro-slots {
 	display: contents;
 }
 
-.bfsп-stab-nav-divider {
+.bfs-stab-nav-divider {
 	margin: 8px 4px;
 	border: none;
 	border-top: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.bfsп-stab-nav-pro-label {
+.bfs-stab-nav-pro-label {
 	padding: 4px 12px 2px;
 	font-size: 10px;
 	font-weight: 700;
@@ -2008,36 +2008,36 @@
 }
 
 /* ── Right content area ──────────────────────────────────────────────────── */
-.bfsп-stab-content {
+.bfs-stab-content {
 	flex: 1;
 	min-width: 0;
 	overflow-y: auto;
 }
 
-.bfsп-stab-pane {
+.bfs-stab-pane {
 	display: none;
 	padding: 24px 28px;
 }
 
-.bfsп-stab-pane.is-active {
+.bfs-stab-pane.is-active {
 	display: block;
 }
 
 /* Pane header */
-.bfsп-stab-pane-head {
+.bfs-stab-pane-head {
 	margin-bottom: 20px;
 	padding-bottom: 16px;
 	border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 
-.bfsп-stab-pane-head h3 {
+.bfs-stab-pane-head h3 {
 	margin: 0 0 4px;
 	font-size: 15px;
 	font-weight: 700;
 	color: #0f172a;
 }
 
-.bfsп-stab-pane-head p {
+.bfs-stab-pane-head p {
 	margin: 0;
 	font-size: 13px;
 	color: #64748b;
@@ -2094,11 +2094,11 @@
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media ( max-width: 860px ) {
-	.bfsп-stab-layout {
+	.bfs-stab-layout {
 		flex-direction: column;
 	}
 
-	.bfsп-stab-nav {
+	.bfs-stab-nav {
 		width: auto;
 		flex-direction: row;
 		flex-wrap: wrap;
@@ -2109,17 +2109,17 @@
 		gap: 4px;
 	}
 
-	.bfsп-stab-nav-desc,
-	.bfsп-stab-nav-arrow {
+	.bfs-stab-nav-desc,
+	.bfs-stab-nav-arrow {
 		display: none;
 	}
 
-	.bfsп-stab-nav-item {
+	.bfs-stab-nav-item {
 		flex: 0 0 auto;
 		padding: 7px 12px;
 	}
 
-	.bfsп-stab-pane {
+	.bfs-stab-pane {
 		padding: 18px;
 	}
 }

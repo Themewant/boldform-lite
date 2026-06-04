@@ -2577,7 +2577,7 @@ jQuery(
 
 			// ── Confirmation pane ────────────────────────────────────────────────
 			var confirmationPane =
-				'<div class="bfsп-stab-pane-head">' +
+				'<div class="bfs-stab-pane-head">' +
 					'<h3>' + escapeHtml( boldformLiteBuilder.labels.submitBehavior ) + '</h3>' +
 					'<p>' + escapeHtml( boldformLiteBuilder.labels.submitBehaviorDesc || 'Choose what happens after a visitor submits this form.' ) + '</p>' +
 				'</div>' +
@@ -2599,14 +2599,14 @@ jQuery(
 					'</label>' +
 				'</div>' +
 				( 'ajax' === submitMode
-					? '<div class="boldform-setting-group bfsп-stab-field">' +
+					? '<div class="boldform-setting-group bfs-stab-field">' +
 						'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
 						'<textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
 					'</div>'
 					: ''
 				) +
 				( 'page' === submitMode
-					? '<div class="boldform-setting-group bfsп-stab-field">' +
+					? '<div class="boldform-setting-group bfs-stab-field">' +
 						'<label>' + escapeHtml( boldformLiteBuilder.labels.toAPage || 'Redirect to Page' ) + '</label>' +
 						'<select id="boldform-redirect-url"><option value="">' + escapeHtml( '— Select a page —' ) + '</option>' +
 						(function () {
@@ -2621,7 +2621,7 @@ jQuery(
 					: ''
 				) +
 				( 'custom_url' === submitMode
-					? '<div class="boldform-setting-group bfsп-stab-field">' +
+					? '<div class="boldform-setting-group bfs-stab-field">' +
 						'<label>' + escapeHtml( boldformLiteBuilder.labels.customUrl || 'Custom URL' ) + '</label>' +
 						'<input type="url" id="boldform-redirect-custom-url" value="' + escapeHtml( state.formSettings.redirect_url || '' ) + '" placeholder="https://example.com/thank-you">' +
 					'</div>'
@@ -2630,7 +2630,7 @@ jQuery(
 
 			// ── Email Notification pane ──────────────────────────────────────────
 			var emailPane =
-				'<div class="bfsп-stab-pane-head">' +
+				'<div class="bfs-stab-pane-head">' +
 					'<h3>' + escapeHtml( boldformLiteBuilder.labels.adminNotifications ) + '</h3>' +
 					'<p>' + escapeHtml( boldformLiteBuilder.labels.adminNotificationsDesc || 'Send an email to yourself or a custom address every time this form is submitted.' ) + '</p>' +
 				'</div>' +
@@ -2693,7 +2693,7 @@ jQuery(
 			} );
 
 			var securityPane =
-				'<div class="bfsп-stab-pane-head">' +
+				'<div class="bfs-stab-pane-head">' +
 					'<h3>Duplicate Prevention</h3>' +
 					'<p>Block the same person from submitting this form more than once.</p>' +
 				'</div>' +
@@ -2751,26 +2751,26 @@ jQuery(
 			var navHtml = '';
 			tabs.forEach( function ( t ) {
 				navHtml +=
-					'<button type="button" class="bfsп-stab-nav-item" data-stab="' + t.id + '">' +
-						'<span class="bfsп-stab-nav-icon">' + t.icon + '</span>' +
-						'<span class="bfsп-stab-nav-text">' +
-							'<span class="bfsп-stab-nav-label">' + t.label + '</span>' +
-							'<span class="bfsп-stab-nav-desc">' + t.desc + '</span>' +
+					'<button type="button" class="bfs-stab-nav-item" data-stab="' + t.id + '">' +
+						'<span class="bfs-stab-nav-icon">' + t.icon + '</span>' +
+						'<span class="bfs-stab-nav-text">' +
+							'<span class="bfs-stab-nav-label">' + t.label + '</span>' +
+							'<span class="bfs-stab-nav-desc">' + t.desc + '</span>' +
 						'</span>' +
-						'<span class="bfsп-stab-nav-arrow">&#8250;</span>' +
+						'<span class="bfs-stab-nav-arrow">&#8250;</span>' +
 					'</button>';
 			} );
 
 			// Placeholder for Pro tabs (injected via boldform:form_settings_rendered).
-			navHtml += '<div class="bfsп-stab-nav-pro-slots"></div>';
+			navHtml += '<div class="bfs-stab-nav-pro-slots"></div>';
 
 			var html =
-				'<div class="bfsп-stab-layout">' +
-					'<nav class="bfsп-stab-nav">' + navHtml + '</nav>' +
-					'<div class="bfsп-stab-content">' +
-						'<div class="bfsп-stab-pane" data-pane="confirmation">' + confirmationPane + '</div>' +
-						'<div class="bfsп-stab-pane" data-pane="email">' + emailPane + '</div>' +
-						'<div class="bfsп-stab-pane" data-pane="security">' + securityPane + '</div>' +
+				'<div class="bfs-stab-layout">' +
+					'<nav class="bfs-stab-nav">' + navHtml + '</nav>' +
+					'<div class="bfs-stab-content">' +
+						'<div class="bfs-stab-pane" data-pane="confirmation">' + confirmationPane + '</div>' +
+						'<div class="bfs-stab-pane" data-pane="email">' + emailPane + '</div>' +
+						'<div class="bfs-stab-pane" data-pane="security">' + securityPane + '</div>' +
 					'</div>' +
 				'</div>';
 
@@ -2779,20 +2779,20 @@ jQuery(
 			// ── Tab switching ────────────────────────────────────────────────────
 			var $panel = $( '#boldform-form-settings-panel' );
 
-			$panel.off( 'click.bfstab', '.bfsп-stab-nav-item' )
-				.on( 'click.bfstab', '.bfsп-stab-nav-item', function () {
+			$panel.off( 'click.bfstab', '.bfs-stab-nav-item' )
+				.on( 'click.bfstab', '.bfs-stab-nav-item', function () {
 					var tab = $( this ).data( 'stab' );
 					activeSettingsTab = tab;
-					$panel.find( '.bfsп-stab-nav-item' ).removeClass( 'is-active' );
+					$panel.find( '.bfs-stab-nav-item' ).removeClass( 'is-active' );
 					$( this ).addClass( 'is-active' );
-					$panel.find( '.bfsп-stab-pane' ).removeClass( 'is-active' );
-					$panel.find( '.bfsп-stab-pane[data-pane="' + tab + '"]' ).addClass( 'is-active' );
+					$panel.find( '.bfs-stab-pane' ).removeClass( 'is-active' );
+					$panel.find( '.bfs-stab-pane[data-pane="' + tab + '"]' ).addClass( 'is-active' );
 				} );
 
 			/**
 			 * Fired after the core form settings panel is rendered.
-			 * Pro modules append nav items to .bfsп-stab-nav-pro-slots and
-			 * panes to .bfsп-stab-content.
+			 * Pro modules append nav items to .bfs-stab-nav-pro-slots and
+			 * panes to .bfs-stab-content.
 			 *
 			 * @event boldform:form_settings_rendered
 			 * @param {object} formSettings Current state.formSettings snapshot.
@@ -2800,14 +2800,14 @@ jQuery(
 			$( document ).trigger( 'boldform:form_settings_rendered', [ state.formSettings ] );
 
 			// Restore the previously active tab (Pro panes are now injected above).
-			var $restore = $panel.find( '.bfsп-stab-nav-item[data-stab="' + activeSettingsTab + '"]' );
+			var $restore = $panel.find( '.bfs-stab-nav-item[data-stab="' + activeSettingsTab + '"]' );
 			if ( ! $restore.length ) {
 				// Fallback to first tab if the stored tab no longer exists.
-				$restore = $panel.find( '.bfsп-stab-nav-item' ).first();
+				$restore = $panel.find( '.bfs-stab-nav-item' ).first();
 				activeSettingsTab = $restore.data( 'stab' ) || 'confirmation';
 			}
 			$restore.addClass( 'is-active' );
-			$panel.find( '.bfsп-stab-pane[data-pane="' + activeSettingsTab + '"]' ).addClass( 'is-active' );
+			$panel.find( '.bfs-stab-pane[data-pane="' + activeSettingsTab + '"]' ).addClass( 'is-active' );
 		}
 
 		var designThemes = {
