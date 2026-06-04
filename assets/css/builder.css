@@ -3593,6 +3593,23 @@
 	}
 }
 
+/* Topbar: wrap to two rows (title + tabs, then actions) before the title,
+   tabs, shortcode and action buttons run out of room and overlap. It fully
+   stacks at <= 782px below. */
+@media screen and (max-width: 1180px) {
+	.boldform-builder-topbar {
+		flex-wrap: wrap;
+	}
+
+	.boldform-builder-title-wrap {
+		flex: 1 1 100%;
+	}
+
+	.boldform-builder-actions {
+		flex: 1 1 100%;
+	}
+}
+
 @media screen and (max-width: 782px) {
 	.boldform-builder-topbar {
 		align-items: stretch;
