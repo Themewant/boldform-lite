@@ -1,6 +1,8 @@
 .boldform-builder-page {
-	margin: 20px 20px 0 0;
-	padding-bottom: 24px;
+	/* Full-bleed: offset WP's #wpcontent left padding (20px) and the default
+	   .wrap right margin so the builder spans the whole admin content area. */
+	margin: 0 0 0 -20px;
+	padding: 20px 20px 24px;
 	background:
 		radial-gradient(circle at top left, rgba(191, 219, 254, 0.22), transparent 24%),
 		linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -188,6 +190,8 @@
 .boldform-builder-title .dashicons {
 	width: 42px;
 	height: 42px;
+	min-width: 42px;
+	min-height: 42px;
 	line-height: 42px;
 	border-radius: 12px;
 	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
@@ -240,6 +244,15 @@
 .boldform-builder-actions .button-primary:hover {
 	background: #135e96;
 	border-color: #135e96;
+}
+
+.boldform-builder-actions .boldform-builder-status {
+	flex: 0 0 100%;
+    text-align: end;
+}
+
+.boldform-builder-actions .boldform-builder-status:empty {
+	display: none;
 }
 
 .boldform-preview-btn {
@@ -298,12 +311,30 @@
 }
 
 .boldform-builder-shortcode__code {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
 	max-width: 280px;
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 	font-size: 12px;
+}
+
+.boldform-builder-shortcode__copy {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #98a2b3;
+	flex-shrink: 0;
+}
+
+.boldform-builder-shortcode:hover .boldform-builder-shortcode__copy {
+	color: #0f766e;
+}
+
+.boldform-builder-shortcode.is-copied .boldform-builder-shortcode__copy {
+	color: #16a34a;
 }
 
 .boldform-builder-status {
@@ -372,13 +403,13 @@
 	background: rgba(255, 255, 255, 0.86);
 	display: flex;
 	flex-direction: column;
-	max-height: calc(100vh - 100px);
+	max-height: calc(100vh - 22px);
 }
 
 .boldform-sidebar-tabs {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	padding: 12px 12px 0;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	padding: 12px 12px 18px;
 	gap: 8px;
 	border-bottom: 0;
 	background: transparent;
@@ -424,6 +455,10 @@
 	display: block;
 }
 
+.boldform-sidebar-view.is-active .boldform-panel-head {
+	padding-top: 0;
+}
+
 .boldform-panel {
 	background: rgba(255, 255, 255, 0.86);
 	border: 1px solid rgba(226, 232, 240, 0.9);
@@ -433,7 +468,7 @@
 }
 
 .boldform-panel-head {
-	padding: 18px 20px 14px;
+	padding: 18px 18px 14px;
 	border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 
@@ -838,6 +873,8 @@
 
 .boldform-row__actions,
 .boldform-canvas-field-actions {
+	position: relative;
+	z-index: 2;
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -1365,7 +1402,7 @@
 	gap: 6px;
 }
 
-.boldform-canvas-slider input[type="range"] {
+.boldform-canvas-slider:not( .boldform-canvas-slider--dual ) input[type="range"] {
 	width: 100%;
 	height: var(--slider-height, 6px);
 	-webkit-appearance: none;
@@ -1376,7 +1413,7 @@
 	pointer-events: none;
 }
 
-.boldform-canvas-slider input[type="range"]::-webkit-slider-thumb {
+.boldform-canvas-slider:not( .boldform-canvas-slider--dual ) input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 18px;
 	height: 18px;
@@ -1396,6 +1433,46 @@
 .boldform-canvas-slider__labels span:nth-child(2) {
 	font-weight: 600;
 	color: var(--bf-focus-color, #0f766e);
+}
+
+/* Dual-handle slider preview (static: two thumbs over a full-range fill). */
+.boldform-canvas-slider--dual .boldform-canvas-slider__track {
+	position: relative;
+	height: var(--slider-height, 6px);
+	margin: 11px 0;
+	background: #e2e8f0;
+	border-radius: 999px;
+}
+
+/* Static preview: teal fill between the two thumb positions (matches the rendered form). */
+.boldform-canvas-slider--dual .boldform-canvas-slider__fill {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 25%;
+	right: 25%;
+	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	border-radius: 999px;
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb {
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	border: 2px solid #fff;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb--min {
+	left: 25%;
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb--max {
+	left: 75%;
 }
 
 .boldform-canvas-multiselect {
@@ -3251,7 +3328,7 @@
 	max-width: 100%;
 }
 
-.boldform-preview-viewport .boldform-lite-form input,
+.boldform-preview-viewport .boldform-lite-form input:not([type="range"]):not([type="hidden"]),
 .boldform-preview-viewport .boldform-lite-form select,
 .boldform-preview-viewport .boldform-lite-form textarea {
 	width: 100%;
@@ -3711,11 +3788,12 @@
 
 /* Field search */
 .boldform-field-search {
-	padding: 0 16px 12px;
+	padding: 14px 18px;
 }
 
 .boldform-field-search input {
 	width: 100%;
+	margin: 0;
 	padding: 8px 12px;
 	border: 1px solid #d1d5db;
 	border-radius: 6px;

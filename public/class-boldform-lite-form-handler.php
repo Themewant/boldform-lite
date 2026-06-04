@@ -1133,6 +1133,14 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		if ( 'slider_range' === $type || 'numeric' === $type ) {
+			// Dual-handle slider submits "lo - hi"; keep both numeric parts.
+			if ( 'slider_range' === $type && false !== strpos( $raw, ' - ' ) ) {
+				$pair = array_map( 'trim', explode( ' - ', $raw, 2 ) );
+				if ( 2 === count( $pair ) && is_numeric( $pair[0] ) && is_numeric( $pair[1] ) ) {
+					return $pair[0] . ' - ' . $pair[1];
+				}
+				return '';
+			}
 			return is_numeric( $raw ) ? (string) $raw : '';
 		}
 
@@ -1185,6 +1193,10 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		if ( ( 'numeric' === $type || 'slider_range' === $type ) && '' !== $value ) {
+			// Accept the dual-handle "lo - hi" format as well as a single number.
+			if ( 'slider_range' === $type && false !== strpos( $value, ' - ' ) ) {
+				return (bool) preg_match( '/^-?\d+(?:\.\d+)?\s-\s-?\d+(?:\.\d+)?$/', $value );
+			}
 			return is_numeric( $value );
 		}
 

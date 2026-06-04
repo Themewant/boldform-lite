@@ -132,9 +132,10 @@ jQuery(
 				step_value: '',
 				max_stars: 5,
 				star_color: '#f59e0b',
-				star_size: '28',
+				star_size: '20',
 				slider_color: '',
 				slider_height: '',
+				dual_handle: false,
 				step_title: '',
 				next_text: '',
 				prev_text: '',
@@ -210,9 +211,10 @@ jQuery(
 			normalized.step_value = field && typeof field.step_value !== 'undefined' ? field.step_value : '';
 			normalized.max_stars = field && field.max_stars ? Number( field.max_stars ) : 5;
 			normalized.star_color = field && field.star_color ? field.star_color : '#f59e0b';
-			normalized.star_size = field && field.star_size ? field.star_size : '28';
+			normalized.star_size = field && field.star_size ? field.star_size : '20';
 			normalized.slider_color = field && field.slider_color ? field.slider_color : '';
 			normalized.slider_height = field && field.slider_height ? field.slider_height : '';
+			normalized.dual_handle = !! ( field && field.dual_handle );
 			normalized.step_title = field && typeof field.step_title !== 'undefined' ? field.step_title : '';
 			normalized.next_text = field && typeof field.next_text !== 'undefined' ? field.next_text : 'Next';
 			normalized.prev_text = field && typeof field.prev_text !== 'undefined' ? field.prev_text : 'Previous';
@@ -1140,7 +1142,7 @@ jQuery(
 				var maxStars = field.max_stars || 5;
 				var defRating = Number( field.default_value ) || 0;
 				var starColor = field.star_color || '#f59e0b';
-				var starSize = field.star_size || '28';
+				var starSize = field.star_size || '20';
 				html = '<div class="boldform-canvas-stars" style="--star-color:' + escapeHtml( starColor ) + ';--star-size:' + escapeHtml( starSize ) + 'px">';
 				for ( var si = 1; si <= maxStars; si++ ) {
 					html += '<span class="boldform-canvas-star' + ( si <= defRating ? ' is-active' : '' ) + '">&#9733;</span>';
@@ -1155,10 +1157,26 @@ jQuery(
 				var slStyle = '';
 				if ( slColor ) slStyle += '--slider-color:' + escapeHtml( slColor ) + ';';
 				if ( slHeight ) slStyle += '--slider-height:' + escapeHtml( slHeight ) + 'px;';
-				html = '<div class="boldform-canvas-slider"' + ( slStyle ? ' style="' + slStyle + '"' : '' ) + '>';
-				html += '<input type="range" min="' + escapeHtml( slMin ) + '" max="' + escapeHtml( slMax ) + '" value="' + escapeHtml( slVal ) + '" disabled>';
-				html += '<div class="boldform-canvas-slider__labels"><span>' + escapeHtml( slMin ) + '</span><span>' + escapeHtml( slVal ) + '</span><span>' + escapeHtml( slMax ) + '</span></div>';
-				html += '</div>';
+				if ( field.dual_handle ) {
+					// Preview thumbs sit at 25% / 75% of the track (see CSS); show the
+					// matching values so the label reflects the handle positions.
+					var slSpan = Number( slMax ) - Number( slMin );
+					var slLo   = Math.round( Number( slMin ) + ( slSpan * 0.25 ) );
+					var slHi   = Math.round( Number( slMin ) + ( slSpan * 0.75 ) );
+					html = '<div class="boldform-canvas-slider boldform-canvas-slider--dual"' + ( slStyle ? ' style="' + slStyle + '"' : '' ) + '>';
+					html += '<div class="boldform-canvas-slider__track">';
+					html += '<div class="boldform-canvas-slider__fill"></div>';
+					html += '<span class="boldform-canvas-slider__thumb boldform-canvas-slider__thumb--min"></span>';
+					html += '<span class="boldform-canvas-slider__thumb boldform-canvas-slider__thumb--max"></span>';
+					html += '</div>';
+					html += '<div class="boldform-canvas-slider__labels"><span>' + escapeHtml( slMin ) + '</span><span>' + escapeHtml( String( slLo ) ) + ' – ' + escapeHtml( String( slHi ) ) + '</span><span>' + escapeHtml( slMax ) + '</span></div>';
+					html += '</div>';
+				} else {
+					html = '<div class="boldform-canvas-slider"' + ( slStyle ? ' style="' + slStyle + '"' : '' ) + '>';
+					html += '<input type="range" min="' + escapeHtml( slMin ) + '" max="' + escapeHtml( slMax ) + '" value="' + escapeHtml( slVal ) + '" disabled>';
+					html += '<div class="boldform-canvas-slider__labels"><span>' + escapeHtml( slMin ) + '</span><span>' + escapeHtml( slVal ) + '</span><span>' + escapeHtml( slMax ) + '</span></div>';
+					html += '</div>';
+				}
 			} else if ( field.type === 'calculation' ) {
 				var calcDecimals = (typeof field.calc_decimals === 'number') ? field.calc_decimals : 2;
 				var calcPrefix   = field.calc_prefix || '';
@@ -1896,6 +1914,13 @@ jQuery(
 
 			if ( selected.field.type === 'slider_range' ) {
 				optionsMarkup +=
+					'<div class="boldform-switch-item">' +
+						'<label class="boldform-switch__row">' +
+							'<span class="boldform-switch__text">' + escapeHtml( boldformLiteBuilder.labels.dualHandle || 'Dual range (min–max)' ) + '</span>' +
+							'<input type="checkbox" id="boldform-setting-dual-handle"' + ( selected.field.dual_handle ? ' checked' : '' ) + '>' +
+							'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+						'</label>' +
+					'</div>' +
 					'<div class="boldform-setting-row">' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-slider-color">' + escapeHtml( boldformLiteBuilder.labels.sliderColor || 'Track Color' ) + '</label>' +
@@ -1922,7 +1947,7 @@ jQuery(
 						'</div>' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-star-size">' + escapeHtml( boldformLiteBuilder.labels.starSize || 'Star Size (px)' ) + '</label>' +
-							'<input type="number" id="boldform-setting-star-size" value="' + escapeHtml( selected.field.star_size || '28' ) + '" min="16" max="60" placeholder="28">' +
+							'<input type="number" id="boldform-setting-star-size" value="' + escapeHtml( selected.field.star_size || '20' ) + '" min="16" max="60" placeholder="20">' +
 						'</div>' +
 					'</div>';
 			}
@@ -3139,16 +3164,44 @@ jQuery(
 
 			shortcode = '[boldform id="' + state.formId + '"]';
 
+			// Brief "copied" feedback: swap the copy icon to a checkmark, then revert.
+			var flashCopied = function () {
+				var $btn  = $( '#boldform-builder-shortcode' );
+				var $icon = $btn.find( '.boldform-builder-shortcode__copy' );
+				$btn.addClass( 'is-copied' );
+				$icon.removeClass( 'dashicons-admin-page' ).addClass( 'dashicons-yes-alt' );
+				clearTimeout( $btn.data( 'copiedTimer' ) );
+				$btn.data( 'copiedTimer', setTimeout( function () {
+					$btn.removeClass( 'is-copied' );
+					$icon.removeClass( 'dashicons-yes-alt' ).addClass( 'dashicons-admin-page' );
+				}, 1500 ) );
+			};
+
+			// Legacy copy for non-secure contexts (e.g. plain-HTTP local sites)
+			// where navigator.clipboard is unavailable.
+			var legacyCopy = function () {
+				var $temp = $( '<textarea>' ).val( shortcode ).css( {
+					position: 'fixed',
+					top: '-9999px',
+					opacity: 0
+				} ).appendTo( 'body' );
+				$temp[0].select();
+				try {
+					document.execCommand( 'copy' );
+				} catch ( e ) {}
+				$temp.remove();
+			};
+
 			if ( navigator.clipboard && navigator.clipboard.writeText ) {
-				navigator.clipboard.writeText( shortcode ).then(
-					function () {
-						$( '#boldform-builder-status' ).text( 'Shortcode copied to clipboard.' );
-					}
-				);
+				navigator.clipboard.writeText( shortcode ).then( flashCopied, function () {
+					legacyCopy();
+					flashCopied();
+				} );
 				return;
 			}
 
-			$( '#boldform-builder-status' ).text( shortcode );
+			legacyCopy();
+			flashCopied();
 		}
 
 		function saveForm() {
@@ -3180,7 +3233,11 @@ jQuery(
 			};
 
 			$save.prop( 'disabled', true ).text( boldformLiteBuilder.savingText );
-			$( '#boldform-builder-status' ).text( '' );
+
+			// Reset the status line: cancel any pending auto-dismiss and restore visibility.
+			var $status = $( '#boldform-builder-status' );
+			clearTimeout( $status.data( 'dismissTimer' ) );
+			$status.stop( true, true ).css( { display: '', opacity: 1 } ).text( '' );
 
 			$.post( boldformLiteBuilder.ajaxUrl, payload )
 				.done(
@@ -3189,6 +3246,13 @@ jQuery(
 							state.formId = response.data.formId;
 							updateShortcodeDisplay();
 							$( '#boldform-builder-status' ).text( response.data.message );
+
+							// Auto-dismiss the success message after a few seconds (errors stay).
+							$status.data( 'dismissTimer', setTimeout( function () {
+								$status.fadeOut( 300, function () {
+									$( this ).text( '' ).css( { display: '', opacity: 1 } );
+								} );
+							}, 4000 ) );
 
 							// Keep form_id in the URL so a page refresh stays on the builder.
 							if ( state.formId && window.history && window.history.replaceState ) {
@@ -4095,7 +4159,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -4194,6 +4258,11 @@ jQuery(
 				// Geo store format.
 				if ( $( '#boldform-setting-geo-store-format' ).length ) {
 					selected.field.geo_store_format = $( '#boldform-setting-geo-store-format' ).val();
+				}
+
+				// Slider dual-handle toggle.
+				if ( $( '#boldform-setting-dual-handle' ).length ) {
+					selected.field.dual_handle = $( '#boldform-setting-dual-handle' ).is( ':checked' );
 				}
 
 				renderAll();

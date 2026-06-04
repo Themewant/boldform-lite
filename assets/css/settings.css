@@ -765,6 +765,7 @@
 	border: 1px solid #d0d5dd;
 	border-radius: 4px;
 	font-size: 13px;
+	line-height: 1;
 	background: #fff;
 }
 
@@ -862,6 +863,7 @@
 
 .boldform-bulk-action-wrap select {
 	height: 36px;
+	min-height: 36px;
 	padding: 0 32px 0 12px;
 	border: 1px solid #d0d5dd;
 	border-radius: 8px;

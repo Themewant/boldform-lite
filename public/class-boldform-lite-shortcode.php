@@ -1615,7 +1615,7 @@ class BoldForm_Lite_Shortcode {
 			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
 			$def        = (int) $default;
 			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '#f59e0b';
-			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 28;
+			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
 			$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';--bf-star-size:' . $star_size . 'px';
 			$html = sprintf( '<input type="hidden" id="%1$s" name="%1$s" value="%2$s"%3$s>', esc_attr( $field_name ), esc_attr( $def ), $required_attr );
 			$html .= '<div class="boldform-lite-star-rating" data-max="' . $max . '" data-field="' . esc_attr( $field_name ) . '" style="' . $star_style . '">';
@@ -1631,7 +1631,6 @@ class BoldForm_Lite_Shortcode {
 			$min          = isset( $field['min_value'] ) && '' !== $field['min_value'] ? (string) $field['min_value'] : '0';
 			$max          = isset( $field['max_value'] ) && '' !== $field['max_value'] ? (string) $field['max_value'] : '100';
 			$step         = isset( $field['step_value'] ) && '' !== $field['step_value'] ? (string) $field['step_value'] : '1';
-			$def          = '' !== $default ? $default : $min;
 			$slider_color = ! empty( $field['slider_color'] ) && sanitize_hex_color( (string) $field['slider_color'] ) ? sanitize_hex_color( (string) $field['slider_color'] ) : '';
 			$slider_h     = ! empty( $field['slider_height'] ) ? (int) $field['slider_height'] : '';
 			$sl_style     = '';
@@ -1641,7 +1640,52 @@ class BoldForm_Lite_Shortcode {
 			if ( $slider_h ) {
 				$sl_style .= '--bf-slider-height:' . $slider_h . 'px;';
 			}
-			$html = '<div class="boldform-lite-slider"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
+
+			// Dual-handle: two thumbs (min + max). The submitted value lives in a
+			// hidden input as "lo - hi"; the range inputs are UI only and combined
+			// by the frontend JS. Single-handle keeps the original markup below.
+			if ( ! empty( $field['dual_handle'] ) ) {
+				$span = (float) $max - (float) $min;
+				// With no explicit default, start the handles at a representative
+				// sub-range (25%–75%) so the slider reads as a range instead of a
+				// fully-filled "everything selected" track. This also makes the
+				// static preview in the block/Elementor editors look correct
+				// without the frontend JS running. A "lo - hi" default overrides it.
+				$lo = $span > 0 ? (string) round( (float) $min + ( $span * 0.25 ) ) : $min;
+				$hi = $span > 0 ? (string) round( (float) $min + ( $span * 0.75 ) ) : $max;
+				if ( '' !== $default && false !== strpos( $default, ' - ' ) ) {
+					$pair = array_map( 'trim', explode( ' - ', $default, 2 ) );
+					if ( is_numeric( $pair[0] ) && isset( $pair[1] ) && is_numeric( $pair[1] ) ) {
+						$lo = $pair[0];
+						$hi = $pair[1];
+					}
+				}
+				$fill_left = $span > 0 ? ( ( (float) $lo - (float) $min ) / $span * 100 ) : 0;
+				$fill_w    = $span > 0 ? ( ( (float) $hi - (float) $lo ) / $span * 100 ) : 0;
+
+				$html  = '<div class="boldform-lite-slider boldform-lite-slider--dual"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
+				$html .= '<div class="boldform-lite-slider__track">';
+				$html .= '<div class="boldform-lite-slider__fill" style="left:' . esc_attr( (string) $fill_left ) . '%;width:' . esc_attr( (string) $fill_w ) . '%"></div>';
+				$html .= sprintf(
+					'<input type="range" class="boldform-lite-slider__input boldform-lite-slider__input--min" min="%1$s" max="%2$s" step="%3$s" value="%4$s" aria-label="%5$s">',
+					esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $lo ), esc_attr__( 'Minimum', 'boldform-lite' )
+				);
+				$html .= sprintf(
+					'<input type="range" class="boldform-lite-slider__input boldform-lite-slider__input--max" min="%1$s" max="%2$s" step="%3$s" value="%4$s" aria-label="%5$s">',
+					esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $hi ), esc_attr__( 'Maximum', 'boldform-lite' )
+				);
+				$html .= '</div>';
+				$html .= sprintf(
+					'<input type="hidden" id="%1$s" name="%1$s" value="%2$s">',
+					esc_attr( $field_name ), esc_attr( $lo . ' - ' . $hi )
+				);
+				$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $lo . ' – ' . $hi ) . '</span><span>' . esc_html( $max ) . '</span></div>';
+				$html .= '</div>';
+				return $html;
+			}
+
+			$def   = '' !== $default ? $default : $min;
+			$html  = '<div class="boldform-lite-slider"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
 			$html .= sprintf(
 				'<input type="range" id="%1$s" name="%1$s" min="%2$s" max="%3$s" step="%4$s" value="%5$s"%6$s>',
 				esc_attr( $field_name ), esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $def ), $required_attr
@@ -1850,9 +1894,12 @@ class BoldForm_Lite_Shortcode {
 	/**
 	 * Returns an associative array of ISO country codes to country names.
 	 *
+	 * Public static so the admin (e.g. entry detail) can map a stored ISO code
+	 * back to its country name without duplicating the list.
+	 *
 	 * @return array<string, string>
 	 */
-	private function get_country_list() {
+	public static function get_country_list() {
 		return array(
 			'AF' => __( 'Afghanistan', 'boldform-lite' ),
 			'AL' => __( 'Albania', 'boldform-lite' ),

@@ -331,10 +331,102 @@ jQuery(
 			} );
 		} );
 
-		// Slider Range value display.
-		$( '.boldform-lite-slider input[type="range"]' ).on( 'input', function () {
+		// Slider Range value display (single handle).
+		$( '.boldform-lite-slider:not(.boldform-lite-slider--dual) input[type="range"]' ).on( 'input', function () {
 			$( this ).closest( '.boldform-lite-slider' ).find( '.boldform-lite-slider__value' ).text( $( this ).val() );
 		} );
+
+		// Slider Range — dual handle (min + max).
+		function initDualSlider( el ) {
+			var $w = $( el );
+			if ( $w.data( 'bfDualReady' ) ) {
+				return;
+			}
+			var $min    = $w.find( '.boldform-lite-slider__input--min' );
+			var $max    = $w.find( '.boldform-lite-slider__input--max' );
+			var $fill   = $w.find( '.boldform-lite-slider__fill' );
+			var $val    = $w.find( '.boldform-lite-slider__value' );
+			var $hidden = $w.find( 'input[type="hidden"]' );
+			var $track  = $w.find( '.boldform-lite-slider__track' );
+			if ( ! $min.length || ! $max.length ) {
+				return;
+			}
+			$w.data( 'bfDualReady', true );
+
+			var rMin = parseFloat( $min.attr( 'min' ) );
+			var rMax = parseFloat( $min.attr( 'max' ) );
+			var span = ( rMax - rMin ) || 1;
+
+			function update() {
+				var lo = parseFloat( $min.val() );
+				var hi = parseFloat( $max.val() );
+				if ( lo > hi ) {
+					var t = lo; lo = hi; hi = t;
+				}
+				$fill.css( { left: ( ( lo - rMin ) / span * 100 ) + '%', width: ( ( hi - lo ) / span * 100 ) + '%' } );
+				$val.text( lo + ' – ' + hi );
+				$hidden.val( lo + ' - ' + hi );
+			}
+
+			// Keep the thumbs from crossing.
+			$min.on( 'input', function () {
+				if ( parseFloat( $min.val() ) > parseFloat( $max.val() ) ) {
+					$min.val( $max.val() );
+				}
+				update();
+			} );
+			$max.on( 'input', function () {
+				if ( parseFloat( $max.val() ) < parseFloat( $min.val() ) ) {
+					$max.val( $min.val() );
+				}
+				update();
+			} );
+
+			// Raise whichever thumb is nearest the pointer so overlapping thumbs stay grabbable.
+			$track.on( 'pointerdown', function ( e ) {
+				var rect  = this.getBoundingClientRect();
+				var pct   = ( e.clientX - rect.left ) / rect.width * 100;
+				var loPct = ( parseFloat( $min.val() ) - rMin ) / span * 100;
+				var hiPct = ( parseFloat( $max.val() ) - rMin ) / span * 100;
+				var minOnTop = Math.abs( pct - loPct ) <= Math.abs( pct - hiPct );
+				$min.css( 'z-index', minOnTop ? 5 : 4 );
+				$max.css( 'z-index', minOnTop ? 4 : 5 );
+			} );
+
+			update();
+		}
+
+		$( '.boldform-lite-slider--dual' ).each( function () {
+			initDualSlider( this );
+		} );
+
+		// The block (ServerSideRender) and Elementor editors — plus popups/AJAX —
+		// inject the slider markup after load, so DOM-ready init misses it. Watch
+		// for sliders added later and initialise them so the fill tracks the handles
+		// there too (otherwise the server-rendered fill never updates on drag).
+		if ( window.MutationObserver ) {
+			var dualObserver = new MutationObserver( function ( mutations ) {
+				for ( var i = 0; i < mutations.length; i++ ) {
+					var added = mutations[ i ].addedNodes;
+					for ( var j = 0; j < added.length; j++ ) {
+						var node = added[ j ];
+						if ( 1 !== node.nodeType ) {
+							continue;
+						}
+						if ( node.classList && node.classList.contains( 'boldform-lite-slider--dual' ) ) {
+							initDualSlider( node );
+						}
+						if ( node.querySelectorAll ) {
+							var nested = node.querySelectorAll( '.boldform-lite-slider--dual' );
+							for ( var k = 0; k < nested.length; k++ ) {
+								initDualSlider( nested[ k ] );
+							}
+						}
+					}
+				}
+			} );
+			dualObserver.observe( document.body, { childList: true, subtree: true } );
+		}
 
 		// Input Mask.
 		$( 'input[data-mask]' ).each( function () {

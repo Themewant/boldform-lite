@@ -91,7 +91,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		<div class="boldform-builder-actions">
 			<button type="button" class="boldform-builder-shortcode<?php echo $form_data['id'] > 0 ? ' is-visible' : ''; ?>" id="boldform-builder-shortcode"<?php echo $form_data['id'] > 0 ? '' : ' hidden'; ?>>
 				<span class="boldform-builder-shortcode__label"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></span>
-				<code class="boldform-builder-shortcode__code" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</code>
+				<code class="boldform-builder-shortcode__code"><span class="boldform-builder-shortcode__text" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</span><span class="dashicons dashicons-admin-page boldform-builder-shortcode__copy" aria-hidden="true"></span></code>
 			</button>
 			<a href="<?php echo $form_data['id'] > 0 ? esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . absint( $form_data['id'] ) ) ) : '#'; ?>" class="button boldform-preview-btn" id="boldform-preview-form"<?php echo $form_data['id'] > 0 ? '' : ' style="display:none"'; ?>>
 				<span class="dashicons dashicons-visibility"></span>

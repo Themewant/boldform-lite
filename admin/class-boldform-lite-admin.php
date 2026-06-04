@@ -602,11 +602,17 @@ class BoldForm_Lite_Admin {
 						$(".boldform-copy-shortcode").on("click",function(e){
 							e.preventDefault();
 							var sc=$(this).data("shortcode");
-							if(navigator.clipboard){navigator.clipboard.writeText(sc);}
-							else{var $t=$("<textarea>").val(sc).appendTo("body").select();document.execCommand("copy");$t.remove();}
+							if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(sc);}
+							else{var $t=$("<textarea>").val(sc).appendTo("body");$t[0].select();try{document.execCommand("copy");}catch(err){}$t.remove();}
 							var $btn=$(this);
+							var $icon=$btn.find(".dashicons");
 							$btn.addClass("is-copied");
-							setTimeout(function(){$btn.removeClass("is-copied");},1500);
+							$icon.removeClass("dashicons-admin-page").addClass("dashicons-yes-alt");
+							clearTimeout($btn.data("copiedTimer"));
+							$btn.data("copiedTimer",setTimeout(function(){
+								$btn.removeClass("is-copied");
+								$icon.removeClass("dashicons-yes-alt").addClass("dashicons-admin-page");
+							},1500));
 						});
 						$(".boldform-form-actions-btn").on("click",function(e){
 							e.stopPropagation();
@@ -2651,11 +2657,33 @@ class BoldForm_Lite_Admin {
 							<?php foreach ( $decoded as $idx => $field ) : ?>
 								<?php
 								$label   = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : __( 'Field', 'boldform-lite' );
+								$type    = isset( $field['type'] ) ? (string) $field['type'] : '';
 								$value   = isset( $field['value'] ) ? $field['value'] : '';
-								$is_file = isset( $field['type'] ) && 'file' === $field['type'];
+								$is_file = 'file' === $type;
 
+								// Present each value human-readably by field type.
 								if ( is_array( $value ) ) {
-									$value = implode( ', ', array_map( 'sanitize_text_field', $value ) );
+									// Drop empty parts (e.g. a blank middle name) before joining, so a name
+									// reads "First Last" instead of "First, , Last". Names join with spaces;
+									// everything else (address, multi-select) joins with commas.
+									$parts = array_filter(
+										array_map( 'sanitize_text_field', $value ),
+										static function ( $part ) {
+											return '' !== trim( (string) $part );
+										}
+									);
+									$value = implode( 'name' === $type ? ' ' : ', ', $parts );
+								} else {
+									$value = (string) $value;
+								}
+
+								if ( 'country' === $type && '' !== $value ) {
+									// Show the country name instead of the raw ISO code.
+									$countries = BoldForm_Lite_Shortcode::get_country_list();
+									$value     = isset( $countries[ $value ] ) ? $countries[ $value ] : $value;
+								} elseif ( 'terms_conditions' === $type ) {
+									// Stored as "1" when agreed — show a readable label.
+									$value = ( '' !== $value && '0' !== $value ) ? __( 'Accepted', 'boldform-lite' ) : __( 'Not accepted', 'boldform-lite' );
 								}
 								?>
 								<div class="boldform-entry-field">
