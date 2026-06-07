@@ -120,6 +120,15 @@ jQuery(
 			'.boldform-lite-form',
 			function ( event ) {
 				var $form = $( this );
+
+				// Inside a builder editor preview (Gutenberg/Elementor) the form is
+				// shown live for styling only — never submit it, which would create a
+				// real entry straight from the editor.
+				if ( $form.is( '[data-boldform-preview]' ) ) {
+					event.preventDefault();
+					return;
+				}
+
 				var $message = $form.find( '[data-boldform-message]' );
 				var $submit = $form.find( '.boldform-lite-form__submit' );
 				var submitText = $submit.text();

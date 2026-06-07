@@ -198,6 +198,10 @@ class BoldForm_Lite_Shortcode {
 			$form_class .= ' boldform-hide-ph-yes';
 		}
 
+		// In a builder editor preview the form is shown live for styling but must
+		// not submit (that would create real entries); flag it for the frontend JS.
+		$is_preview = $this->is_editor_preview();
+
 		// Keep the first embed as "boldform-{id}" (back-compat); suffix repeats so the
 		// wrapper id stays unique when the same form is placed on a page more than once.
 		self::$render_counts[ $form_id ] = ( self::$render_counts[ $form_id ] ?? 0 ) + 1;
@@ -212,7 +216,7 @@ class BoldForm_Lite_Shortcode {
 			style="<?php echo esc_attr( $this->build_form_style_variables( $form_settings ) ); ?>"
 			method="post"
 			enctype="multipart/form-data"
-			data-form-id="<?php echo esc_attr( $form_id ); ?>"
+			data-form-id="<?php echo esc_attr( $form_id ); ?>"<?php echo $is_preview ? ' data-boldform-preview="1"' : ''; ?>
 			data-enable-ajax="<?php echo esc_attr( $form_settings['enable_ajax'] ? '1' : '0' ); ?>"
 			data-enable-redirect="<?php echo esc_attr( $form_settings['enable_redirect'] ? '1' : '0' ); ?>"
 			data-redirect-url="<?php echo ! empty( $form_settings['enable_redirect'] ) ? esc_attr( $form_settings['redirect_url'] ) : ''; ?>"
@@ -252,7 +256,7 @@ class BoldForm_Lite_Shortcode {
 				$button_label = $this->get_button_accessible_label( $form_settings );
 				$aria_label   = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
 				?>
-				<button type="submit" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+				<button type="<?php echo $is_preview ? 'button' : 'submit'; ?>" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 					<?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?>
 				</button>
 			</div>
@@ -723,7 +727,8 @@ class BoldForm_Lite_Shortcode {
 			$form_settings = $this->current_form_settings ?? array();
 			$button_label  = $this->get_button_accessible_label( $form_settings );
 			$aria_label    = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
-			return '<div class="boldform-lite-form__actions"><button type="submit" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
+			$button_type   = $this->is_editor_preview() ? 'button' : 'submit';
+			return '<div class="boldform-lite-form__actions"><button type="' . $button_type . '" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
 		}
 
 		/**
@@ -1813,6 +1818,49 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		return 'plugin';
+	}
+
+	/**
+	 * Determines whether the form is being rendered inside a page-builder editor
+	 * preview (Gutenberg block ServerSideRender or the Elementor editor/preview),
+	 * as opposed to a real frontend request.
+	 *
+	 * The preview renders the live markup so the user can see styling, but it must
+	 * not actually accept submissions — those would create real entries and fire
+	 * notifications/integrations from inside the editor.
+	 *
+	 * @return bool
+	 */
+	private function is_editor_preview() {
+		// Gutenberg blocks render their preview through the REST block-renderer;
+		// genuine frontend submissions go through admin-ajax, never REST.
+		if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+			return true;
+		}
+
+		// Elementor editor canvas / preview iframe.
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$elementor = \Elementor\Plugin::instance();
+
+			if ( ! empty( $elementor->preview ) && method_exists( $elementor->preview, 'is_preview_mode' ) && $elementor->preview->is_preview_mode() ) {
+				return true;
+			}
+
+			if ( ! empty( $elementor->editor ) && method_exists( $elementor->editor, 'is_edit_mode' ) && $elementor->editor->is_edit_mode() ) {
+				return true;
+			}
+		}
+
+		// BoldForm's own "Preview Form" admin screen (admin.php?page=boldform-lite-preview).
+		if ( is_admin() ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- reading the current admin page slug for context detection only; nothing is processed or changed.
+			$admin_page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+			if ( 'boldform-lite-preview' === $admin_page ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
