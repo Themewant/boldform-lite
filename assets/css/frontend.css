@@ -554,6 +554,17 @@ input[data-boldform-picker] {
 }
 
 /* ── Gutenberg block style overrides via CSS custom properties ── */
+
+/* The block wrapper carries inline --bfb-* custom properties only for the
+   controls the user actually changed in the block inspector. Each consuming
+   declaration therefore falls back — first to the matching form-level --bf-*
+   var (set on the inner <form> by the per-form Style tab), then to the plugin
+   default — so an unset control inherits the form's own styling instead of
+   collapsing to CSS initial values (which would render fields as 3px black,
+   square, padding-less boxes whenever the wrapper is present, e.g. when "Hide
+   Labels"/"Hide Placeholders" is on). The fallback lives on each property, not
+   centrally on the wrapper, because --bf-* are set on the inner form and only
+   resolve correctly at the field/button/label element itself. */
 .boldform-block-wrap .boldform-lite-form {
 	max-width: var(--bfb-form-max-width, 100%);
 	padding: var(--bfb-form-padding, 0);
@@ -577,68 +588,68 @@ input[data-boldform-picker] {
 }
 
 .boldform-block-wrap .boldform-lite-form__label {
-	color: var(--bfb-label-color);
-	font-size: var(--bfb-label-font-size);
+	color: var(--bfb-label-color, var(--bf-label-color, #4b5563));
+	font-size: var(--bfb-label-font-size, var(--bf-label-font-size, 17px));
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field select,
 .boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
-	height: var(--bfb-field-height);
-	min-height: var(--bfb-field-height);
+	height: var(--bfb-field-height, auto);
+	min-height: var(--bfb-field-height, auto);
 }
 
 .boldform-block-wrap .boldform-lite-form__field textarea {
-	height: var(--bfb-textarea-height);
+	height: var(--bfb-textarea-height, auto);
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field textarea,
 .boldform-block-wrap .boldform-lite-form__field select,
 .boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
-	padding: var(--bfb-field-padding);
-	background-color: var(--bfb-field-bg);
-	color: var(--bfb-field-text);
-	border-width: var(--bfb-field-border-width);
-	border-color: var(--bfb-field-border-color);
-	border-radius: var(--bfb-field-radius);
+	padding: var(--bfb-field-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px));
+	background-color: var(--bfb-field-bg, var(--bf-field-bg, #fff));
+	color: var(--bfb-field-text, var(--bf-field-text, #111827));
+	border-width: var(--bfb-field-border-width, var(--bf-field-border-width, 1.5px));
+	border-color: var(--bfb-field-border-color, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bfb-field-radius, var(--bf-field-radius, 8px));
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:focus,
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 .boldform-block-wrap .boldform-lite-form__field textarea:focus,
 .boldform-block-wrap .boldform-lite-form__field select:focus,
 .boldform-block-wrap .boldform-lite-form__field .bf-select.is-open .bf-select__trigger {
-	border-color: var(--bfb-focus-color);
-	box-shadow: 0 0 0 1px var(--bfb-focus-color);
-	background-color: var(--bfb-focus-bg);
+	border-color: var(--bfb-focus-color, var(--bf-focus-color, #0f766e));
+	box-shadow: 0 0 0 1px var(--bfb-focus-color, var(--bf-focus-color, #0f766e));
+	background-color: var(--bfb-focus-bg, var(--bf-field-bg, #fff));
 }
 
 .boldform-block-wrap .boldform-lite-form__submit {
-	padding: var(--bfb-btn-padding);
-	background: var(--bfb-btn-bg);
-	color: var(--bfb-btn-text);
-	border-radius: var(--bfb-btn-radius);
-	font-size: var(--bfb-btn-font-size);
+	padding: var(--bfb-btn-padding, var(--bf-button-padding-y, 10px) var(--bf-button-padding-x, 24px));
+	background: var(--bfb-btn-bg, var(--bf-button-bg, #2f80ed));
+	color: var(--bfb-btn-text, var(--bf-button-text, #fff));
+	border-radius: var(--bfb-btn-radius, var(--bf-button-radius, 6px));
+	font-size: var(--bfb-btn-font-size, var(--bf-button-font-size, 14px));
 	width: var(--bfb-btn-width, auto);
 }
 
 .boldform-block-wrap .boldform-lite-form__submit:hover {
-	background: var(--bfb-btn-hover-bg);
+	background: var(--bfb-btn-hover-bg, var(--bf-button-bg, #2f80ed));
 }
 
 .boldform-block-wrap .boldform-lite-form__field-error {
-	color: var(--bfb-error-color);
+	color: var(--bfb-error-color, var(--bf-error-color, #dc2626));
 }
 
 .boldform-block-wrap .boldform-lite-form__required {
-	color: var(--bfb-required-color, var(--bfb-error-color));
+	color: var(--bfb-required-color, var(--bfb-error-color, var(--bf-error-color, #dc2626)));
 }
 
-.boldform-block-wrap .boldform-lite-form__field.is-invalid input,
+.boldform-block-wrap .boldform-lite-form__field.is-invalid input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field.is-invalid textarea,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid select,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid .bf-select__trigger {
-	border-color: var(--bfb-error-color);
+	border-color: var(--bfb-error-color, var(--bf-error-color, #dc2626));
 }
 
 /* ── Name ── */
