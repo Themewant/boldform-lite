@@ -917,6 +917,24 @@ class BoldForm_Lite_Integrations_Page {
 				);
 			}
 
+			// Likewise refuse to activate when the type requires a list/audience that has
+			// not been chosen yet — same silent-no-op failure mode as a missing API key.
+			$def = $this->get_type_defs()[ $type ] ?? array();
+			foreach ( ( $def['fields'] ?? array() ) as $def_field ) {
+				if ( 'list_select' !== ( $def_field['type'] ?? '' ) || empty( $def_field['required'] ) ) {
+					continue;
+				}
+				$field_key = (string) ( $def_field['key'] ?? '' );
+				if ( '' !== $field_key && empty( $found[ $field_key ] ) ) {
+					wp_send_json_error(
+						array(
+							'message' => __( 'Choose a list before enabling this integration.', 'boldform-lite' ),
+							'code'    => 'needs_setup',
+						)
+					);
+				}
+			}
+
 			// Activate the existing, configured connection.
 			$found['status'] = 'active';
 			$id   = $this->upsert_connection( $found );

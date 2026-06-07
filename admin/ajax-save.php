@@ -112,9 +112,8 @@ class BoldForm_Lite_Ajax_Save {
 		if ( $form_id > 0 ) {
 			// Guard against a phantom "saved" success for a non-existent form id
 			// ($wpdb->update returns 0 — not false — when no row matches).
-			$exists = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$wpdb->prepare( "SELECT COUNT(*) FROM `{$table_name}` WHERE id = %d", $form_id )
-			);
+			// Table name is from esc_sql( get_forms_table_name() ); the id is bound via %d.
+			$exists = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table_name}` WHERE id = %d", $form_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			if ( ! $exists ) {
 				wp_send_json_error(

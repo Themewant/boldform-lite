@@ -225,11 +225,13 @@ class BoldForm_Lite_Shortcode {
 			<?php $has_submit_field = $this->structure_contains_field_type( $structure, 'submit' ); ?>
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
+					<?php if ( ! is_array( $row ) || empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) { continue; } ?>
 					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; ?>
 					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
+							<?php if ( ! is_array( $column ) ) { continue; } ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
-								<?php foreach ( $column['fields'] as $field_index => $field ) : ?>
+								<?php foreach ( ( ! empty( $column['fields'] ) && is_array( $column['fields'] ) ? $column['fields'] : array() ) as $field_index => $field ) : ?>
 									<?php echo wp_kses( $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ), $this->get_field_kses_allowed() ); ?>
 								<?php endforeach; ?>
 							</div>
@@ -1109,17 +1111,27 @@ class BoldForm_Lite_Shortcode {
 	 */
 	private function get_field_kses_allowed() {
 		$global_attrs = array(
-			'id'            => true,
-			'class'         => true,
-			'style'         => true,
-			'data-*'        => true,
-			'aria-*'        => true,
-			'role'          => true,
-			'tabindex'      => true,
-			'hidden'        => true,
-			'title'         => true,
-			'lang'          => true,
-			'dir'           => true,
+			'id'               => true,
+			'class'            => true,
+			'style'            => true,
+			'data-*'           => true,
+			// wp_kses() supports a `data-*` wildcard but NOT `aria-*`; each ARIA
+			// attribute must be listed explicitly or it is silently stripped on render.
+			'aria-label'       => true,
+			'aria-hidden'      => true,
+			'aria-expanded'    => true,
+			'aria-haspopup'    => true,
+			'aria-controls'    => true,
+			'aria-selected'    => true,
+			'aria-describedby' => true,
+			'aria-required'    => true,
+			'aria-live'        => true,
+			'role'             => true,
+			'tabindex'         => true,
+			'hidden'           => true,
+			'title'            => true,
+			'lang'             => true,
+			'dir'              => true,
 		);
 
 		return array(

@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       BoldForm Lite
+ * Plugin Name:       BoldForm Lite – Drag & Drop Form Builder
  * Description:       Lightweight drag and drop form builder for WordPress.
  * Version:           1.0.2
  * Requires at least: 6.0
