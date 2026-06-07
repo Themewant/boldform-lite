@@ -1790,6 +1790,7 @@
 
 .bfcl-condition-row {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px;
 	padding: 8px 12px;
@@ -1810,8 +1811,6 @@
 
 .bfcl-condition-row select,
 .bfcl-condition-row input[type="text"] {
-	flex: 1;
-	min-width: 0;
 	padding: 7px 10px;
 	border: 1px solid #e2e8f0;
 	border-radius: 8px;
@@ -1827,6 +1826,27 @@
 	border-color: #2271b1;
 	background: #fff;
 	box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Controls grow to fill the row (flex-basis 0, so the operands share the line
+   equally) but each keeps a usable minimum width. Because the wrap point is
+   driven by these minimums — not the basis — the row stays on one line while
+   the panel is wide and only wraps the value onto a new line, instead of
+   crushing it to nothing, once the 30–35% sidebar gets narrow at mid-size
+   viewports. */
+.bfcl-cond-field {
+	flex: 1 1 0;
+	min-width: 90px;
+}
+
+.bfcl-cond-op {
+	flex: 1 1 0;
+	min-width: 66px;
+}
+
+.bfcl-cond-value {
+	flex: 1 1 0;
+	min-width: 78px;
 }
 
 .bfcl-remove-cond {
@@ -1857,9 +1877,13 @@
 	width: 20px;
 }
 
+.bfcl-remove-placeholder:empty {
+	display: none;
+}
+
 .bfcl-no-value {
-	flex: 1;
-	min-width: 0;
+	flex: 1 1 0;
+	min-width: 78px;
 }
 
 /* Add condition button */
