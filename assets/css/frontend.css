@@ -349,14 +349,17 @@ input[data-boldform-picker] {
 	border-radius: 50%;
 }
 
-/* Checked state */
+/* Checked state — follow the design-theme accent (--bf-button-bg), falling back to
+   the field focus colour and then the default teal. --bf-focus-color is a limited
+   enum (blue/green/dark/teal) and cannot represent arbitrary theme colours, so the
+   checked fill keys off the same accent the stars and slider already use. */
 .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
-	background: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
+	background: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
 .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 	background: #fff;
 }
 
@@ -378,18 +381,18 @@ input[data-boldform-picker] {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var(--bf-focus-color, #0f766e);
+	background: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
-/* Focus ring */
+/* Focus ring — tint with the same accent so the whole control stays coherent. */
 .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-control {
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--bf-focus-color, #0f766e) 18%, transparent);
-	border-color: var(--bf-focus-color, #0f766e);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--bf-button-bg, var(--bf-focus-color, #0f766e)) 18%, transparent);
+	border-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
 /* Hover */
 .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
 /* Choice label text */
@@ -1159,8 +1162,8 @@ input[data-boldform-picker] {
 }
 
 .bf-select__option.is-active .bf-select__check {
-	border-color: var(--bf-focus-color, #0f766e);
-	background: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
+	background: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 	color: #fff;
 }
 

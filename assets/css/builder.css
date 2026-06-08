@@ -1230,9 +1230,21 @@
 	appearance: auto;
 }
 
+.boldform-canvas .boldform-choice input[type="checkbox"]:checked::before {
+	display: none;
+}
+
 .boldform-canvas .boldform-choice input[type="radio"],
 .boldform-template-preview__canvas .boldform-choice input[type="radio"] {
 	border-radius: 50%;
+}
+
+/* Native choice inputs (builder canvas, template preview and the Style-tab live
+   preview all render .boldform-choice) follow the design-theme accent when checked,
+   matching the frontend, which themes its custom control via the same accent. */
+.boldform-choice input[type="checkbox"],
+.boldform-choice input[type="radio"] {
+	accent-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
 .boldform-canvas .boldform-canvas-field-body select,
@@ -2935,6 +2947,7 @@
 	height: 18px;
 	border: 2px solid #cbd5e1;
 	background: #fff;
+	box-sizing: border-box;
 	transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
@@ -2965,7 +2978,7 @@
 .boldform-options-repeater__default.is-checked .boldform-options-repeater__checkbox::after {
 	content: '';
 	position: absolute;
-	top: 2px;
+	top: 1px;
 	left: 5px;
 	width: 4px;
 	height: 8px;
