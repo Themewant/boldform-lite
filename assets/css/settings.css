@@ -1328,7 +1328,8 @@
 	color: #667085;
 }
 
-.boldform-forms-empty .dashicons {
+.boldform-forms-empty .dashicons,
+.boldform-forms-empty__badge {
 	display: flex;
 	align-items: center;
 	justify-content: center;

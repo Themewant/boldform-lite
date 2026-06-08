@@ -197,16 +197,18 @@
 	min-width: 0;
 }
 
-.boldform-builder-title .dashicons {
+.boldform-builder-title .dashicons,
+.boldform-builder-title__badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 42px;
 	height: 42px;
 	min-width: 42px;
 	min-height: 42px;
-	line-height: 42px;
 	border-radius: 12px;
 	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
 	color: #fff;
-	text-align: center;
 }
 
 .boldform-builder-title input {

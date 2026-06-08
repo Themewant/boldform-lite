@@ -101,7 +101,7 @@ class BoldForm_Lite_Admin {
 			'manage_options',
 			'boldform-lite',
 			array( $this, 'render_forms_page' ),
-			'dashicons-feedback',
+			$this->get_menu_icon_data_uri(),
 			56
 		);
 
@@ -179,6 +179,54 @@ class BoldForm_Lite_Admin {
 		 * @param BoldForm_Lite_Admin $admin The admin instance.
 		 */
 		do_action( 'boldform_admin_menu', $this );
+	}
+
+	/**
+	 * Returns the brand mark as a base64 data-URI for use as the admin-menu icon.
+	 *
+	 * Rendered as a white silhouette so the raw data-URI still degrades to a visible
+	 * icon if the mask CSS in print_menu_icon_styles() is unavailable; once masked,
+	 * only the shape's alpha matters and the colour follows the admin colour scheme.
+	 *
+	 * @return string
+	 */
+	private function get_menu_icon_data_uri() {
+		$svg = boldform_lite_get_brand_icon(
+			array(
+				'class' => '',
+				'size'  => 32,
+				'fill'  => '#fff',
+			)
+		);
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Inlining a static brand SVG as a menu icon; not obfuscation.
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+	}
+
+	/**
+	 * Prints scoped CSS that renders the BoldForm menu icon as a colour-aware mask.
+	 *
+	 * A plain SVG background image cannot be recoloured, so it would ignore the admin
+	 * colour scheme and the hover/current states. Painting the mask with currentColor
+	 * lets WordPress's own .wp-menu-image:before colour rules drive it, so the logo
+	 * dims, brightens on hover, and turns white when active in step with the native
+	 * icons. The data-URI passed to add_menu_page() remains the no-CSS fallback.
+	 *
+	 * @return void
+	 */
+	public function print_menu_icon_styles() {
+		$icon = $this->get_menu_icon_data_uri();
+		$css  = '#toplevel_page_boldform-lite .wp-menu-image{position:relative;background-image:none!important;}'
+			. '#toplevel_page_boldform-lite .wp-menu-image::before{'
+			. 'content:"";position:absolute;top:0;right:0;bottom:0;left:0;'
+			. 'background-color:currentColor;'
+			. '-webkit-mask:url("' . $icon . '") center/20px auto no-repeat;'
+			. 'mask:url("' . $icon . '") center/20px auto no-repeat;'
+			. '}';
+
+		// $css is fully static, developer-authored CSS; the only interpolated value is
+		// a base64 data-URI of our own SVG (base64 alphabet only — no markup-breaking chars).
+		echo '<style id="boldform-lite-menu-icon">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 
 	/**
@@ -823,6 +871,7 @@ class BoldForm_Lite_Admin {
 				'slug'  => 'boldform-lite',
 				'label' => __( 'Forms', 'boldform-lite' ),
 				'icon'  => 'dashicons-feedback',
+				'brand' => true,
 				'url'   => admin_url( 'admin.php?page=boldform-lite' ),
 			),
 			array(
@@ -876,7 +925,7 @@ class BoldForm_Lite_Admin {
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
-				<span class="dashicons dashicons-feedback"></span>
+				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
 				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
@@ -884,7 +933,11 @@ class BoldForm_Lite_Admin {
 				<?php foreach ( $nav_items as $item ) : ?>
 					<?php $is_active = $item['slug'] === $active_page; ?>
 					<a href="<?php echo esc_url( $item['url'] ); ?>" class="boldform-admin-topbar__link<?php echo $is_active ? ' is-active' : ''; ?>">
-						<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php if ( ! empty( $item['brand'] ) ) : ?>
+							<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+						<?php else : ?>
+							<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php endif; ?>
 						<?php echo esc_html( $item['label'] ); ?>
 					</a>
 				<?php endforeach; ?>
@@ -1086,7 +1139,7 @@ class BoldForm_Lite_Admin {
 											<span class="dashicons dashicons-trash"></span>
 											<p><?php esc_html_e( 'Trash is empty.', 'boldform-lite' ); ?></p>
 										<?php else : ?>
-											<span class="dashicons dashicons-feedback"></span>
+											<span class="boldform-forms-empty__badge"><?php boldform_lite_brand_icon( array( 'size' => 30 ) ); ?></span>
 											<p><?php esc_html_e( 'No forms yet. Create your first form!', 'boldform-lite' ); ?></p>
 											<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder' ) ); ?>" class="boldform-btn-add"><?php esc_html_e( 'Add New Form', 'boldform-lite' ); ?></a>
 										<?php endif; ?>
@@ -2873,7 +2926,7 @@ class BoldForm_Lite_Admin {
 							</div>
 							<?php if ( $form_title ) : ?>
 								<div class="boldform-entry-meta-item">
-									<span class="boldform-entry-meta-item__icon dashicons dashicons-feedback"></span>
+									<?php boldform_lite_brand_icon( array( 'class' => 'boldform-entry-meta-item__icon dashicons boldform-brand-icon' ) ); ?>
 									<div>
 										<span class="boldform-entry-meta-item__label"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></span>
 										<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . absint( $entry->form_id ) ) ); ?>" class="boldform-entry-meta-item__value boldform-entry-meta-item__link"><?php echo esc_html( $form_title ); ?></a>
@@ -3745,7 +3798,7 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-reports-stats">
 				<div class="boldform-stat-card">
 					<div class="boldform-stat-card__icon boldform-stat-card__icon--forms">
-						<span class="dashicons dashicons-feedback"></span>
+						<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
 					</div>
 					<div class="boldform-stat-card__body">
 						<span class="boldform-stat-card__value"><?php echo absint( $total_forms ); ?></span>

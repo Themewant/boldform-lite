@@ -332,6 +332,7 @@ Adds contacts to a Brevo list on form submission.
 * Security: Integrations dispatch only to explicitly active connections, and a connection with no API key can no longer be enabled.
 * New: Dual-handle range slider — an opt-in "Dual range (min–max)" mode renders two handles with a filled track and validates the selected range on submit.
 * New: Live form preview on the builder's Style tab — field, label, and submit-button styling now update instantly beside the controls.
+* New: The BoldForm logo now appears throughout the admin — the sidebar menu icon adapts to your admin colour scheme, and the mark replaces the generic placeholder icon in the topbar, form builder, Reports, and the empty Forms state.
 * Improve: The forms list now matches WordPress-native list tables, with sortable column headers, a synced select-all checkbox, and native-styled bulk and filter controls.
 * Improve: Builder canvas polish — clearer field hover and selected states, a full-width Settings tab, a topbar that reflows before overlapping on narrow screens, and an improved shortcode copy button.
 * Improve: Conditional Logic condition rows wrap cleanly on narrow builder panels and small screens.
