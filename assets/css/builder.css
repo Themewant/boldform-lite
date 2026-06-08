@@ -5,6 +5,14 @@
 	padding-left: 0;
 }
 
+/* The Preview Form page loads builder.css too but uses a normal .wrap, so it
+   needs WP's standard left gutter back — without it the page sits flush-left and
+   the reclaimed width pushes a horizontal scrollbar. Scoped to the preview
+   screen's body class (added in PHP) so the builder stays full-bleed. */
+.boldform-preview-screen #wpcontent {
+	padding-left: 20px;
+}
+
 .boldform-builder-page {
 	/* Full-bleed: #wpcontent's left padding is removed above and the default
 	   .wrap margins are reset so the builder spans the whole admin content area. */
@@ -3313,6 +3321,18 @@
 	line-height: 20px;
 }
 
+/* The restored gutter (.boldform-preview-screen #wpcontent above) supplies the
+   20px left gap; drop .wrap's default 2px left margin so the left gap matches
+   WP's 20px right margin exactly. */
+.boldform-preview-wrap {
+	margin-left: 0;
+}
+
+/* Breathing room between the page title and the preview toolbar. */
+.boldform-preview-wrap .boldform-preview-shell {
+	margin-top: 16px;
+}
+
 .boldform-preview-shell {
 	display: grid;
 	gap: 20px;
@@ -3586,7 +3606,7 @@
 	max-width: 100%;
 }
 
-.boldform-preview-viewport .boldform-lite-form input:not([type="range"]):not([type="hidden"]),
+.boldform-preview-viewport .boldform-lite-form input:not([type="range"]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
 .boldform-preview-viewport .boldform-lite-form select,
 .boldform-preview-viewport .boldform-lite-form textarea {
 	width: 100%;

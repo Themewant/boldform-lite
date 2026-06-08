@@ -174,6 +174,7 @@ final class BoldForm_Lite {
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
+		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
 		$this->loader->add_action( 'admin_bar_menu', $this->admin, 'register_admin_bar', 100 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_assets' );
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );

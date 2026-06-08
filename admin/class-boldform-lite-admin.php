@@ -241,6 +241,25 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Tags the hidden Preview Form screen with a body class.
+	 *
+	 * The form builder's full-bleed layout removes #wpcontent's left gutter
+	 * globally (in builder.css, which the preview page also loads). The preview
+	 * page uses a normal .wrap and needs that gutter, so this class lets its CSS
+	 * restore it — keeping the page symmetric and free of horizontal overflow.
+	 *
+	 * @param string $classes Space-separated admin body classes.
+	 * @return string
+	 */
+	public function add_admin_body_class( $classes ) {
+		$screen = get_current_screen();
+		if ( $screen && $this->preview_page_hook === $screen->id ) {
+			$classes .= ' boldform-preview-screen';
+		}
+		return $classes;
+	}
+
+	/**
 	 * Allow SVG uploads in the media library.
 	 *
 	 * @param array<string, string> $mimes Allowed mime types.
@@ -1356,7 +1375,7 @@ class BoldForm_Lite_Admin {
 		$form_id = isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
 		?>
-		<div class="wrap">
+		<div class="wrap boldform-preview-wrap">
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'Preview Form', 'boldform-lite' ); ?></h1>
 			<?php if ( $form ) : ?>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id ) ); ?>" class="page-title-action">
