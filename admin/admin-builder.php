@@ -198,17 +198,25 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 
 				<div class="boldform-canvas-empty" id="boldform-canvas-empty">
 					<div class="boldform-empty-state">
-						<span class="dashicons dashicons-layout"></span>
+						<span class="boldform-empty-state__icon dashicons dashicons-layout" aria-hidden="true"></span>
 						<h3><?php esc_html_e( 'Start building your form', 'boldform-lite' ); ?></h3>
 						<p><?php esc_html_e( 'Start from a blank canvas or open the built-in template gallery.', 'boldform-lite' ); ?></p>
 						<div class="boldform-start-grid">
 							<button type="button" class="boldform-start-card" data-template="blank">
-								<strong><?php esc_html_e( 'Blank Form', 'boldform-lite' ); ?></strong>
-								<span><?php esc_html_e( 'Choose your layout and build the form from scratch.', 'boldform-lite' ); ?></span>
+								<span class="boldform-start-card__icon"><span class="dashicons dashicons-welcome-add-page" aria-hidden="true"></span></span>
+								<span class="boldform-start-card__body">
+									<strong><?php esc_html_e( 'Blank Form', 'boldform-lite' ); ?></strong>
+									<span><?php esc_html_e( 'Choose your layout and build the form from scratch.', 'boldform-lite' ); ?></span>
+								</span>
+								<span class="boldform-start-card__arrow dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 							</button>
 							<button type="button" class="boldform-start-card" id="boldform-open-template-modal">
-								<strong><?php esc_html_e( 'Use a Template', 'boldform-lite' ); ?></strong>
-								<span><?php esc_html_e( 'Browse starter templates, preview them, and import in one click.', 'boldform-lite' ); ?></span>
+								<span class="boldform-start-card__icon"><span class="dashicons dashicons-layout" aria-hidden="true"></span></span>
+								<span class="boldform-start-card__body">
+									<strong><?php esc_html_e( 'Use a Template', 'boldform-lite' ); ?></strong>
+									<span><?php esc_html_e( 'Browse starter templates, preview them, and import in one click.', 'boldform-lite' ); ?></span>
+								</span>
+								<span class="boldform-start-card__arrow dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 							</button>
 						</div>
 					</div>

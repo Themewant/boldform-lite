@@ -716,7 +716,6 @@
 	padding: 18px;
 }
 
-.boldform-canvas-empty,
 .boldform-settings-empty {
 	margin: 18px;
 	padding: 28px;
@@ -726,43 +725,163 @@
 	color: #64748b;
 }
 
+.boldform-canvas-empty {
+	margin: 18px;
+	padding: 48px 32px;
+	border: 1px solid #e4ebf3;
+	border-radius: 20px;
+	background:
+		radial-gradient(130% 120% at 50% -10%, #eef6ff 0%, rgba(238, 246, 255, 0) 55%),
+		linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	color: #475569;
+}
+
 .boldform-empty-state {
-	max-width: 520px;
+	max-width: 560px;
 	margin: 0 auto;
 	display: grid;
-	gap: 12px;
+	gap: 10px;
 	text-align: center;
 }
 
-.boldform-empty-state .dashicons {
-	width: 56px;
-	height: 56px;
-	line-height: 56px;
-	margin: 0 auto;
-	border-radius: 16px;
-	background: #e0f2fe;
-	color: #155e75;
-	font-size: 28px;
+.boldform-empty-state__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 6px;
+	border-radius: 18px;
+	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
+	color: #fff;
+	font-size: 32px;
+	box-shadow: 0 12px 26px rgba(15, 118, 110, 0.28);
+}
+
+.boldform-empty-state__icon.dashicons {
+	width: 64px;
+	height: 64px;
+	line-height: 1;
+}
+
+.boldform-empty-state__icon::before {
+	width: 32px;
+	height: 32px;
 }
 
 .boldform-empty-state h3 {
 	margin: 0;
-	font-size: 24px;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
 	color: #0f172a;
 }
 
 .boldform-empty-state p {
-	margin: 0;
+	margin: 0 auto;
+	max-width: 420px;
+	font-size: 14px;
+	line-height: 1.55;
+	color: #64748b;
 }
 
 .boldform-start-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
-	margin-top: 8px;
+	gap: 14px;
+	margin-top: 18px;
+	text-align: left;
 }
 
-.boldform-start-card,
+.boldform-start-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	width: 100%;
+	padding: 18px;
+	border: 1px solid #e4ebf3;
+	border-radius: 16px;
+	background: #fff;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-start-card__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 42px;
+	height: 42px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+	color: #0f766e;
+	transition: background 0.16s ease, color 0.16s ease;
+}
+
+.boldform-start-card__icon .dashicons {
+	width: 22px;
+	height: 22px;
+	font-size: 22px;
+	line-height: 22px;
+}
+
+.boldform-start-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-start-card__body strong {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: #0f172a;
+}
+
+.boldform-start-card__body span {
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: #64748b;
+}
+
+.boldform-start-card__arrow.dashicons {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin-top: 2px;
+	font-size: 18px;
+	line-height: 18px;
+	color: #cbd5e1;
+	transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-start-card:hover {
+	border-color: #0f766e;
+	box-shadow: 0 14px 30px rgba(15, 118, 110, 0.14);
+	transform: translateY(-2px);
+}
+
+.boldform-start-card:hover .boldform-start-card__icon {
+	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
+	color: #fff;
+}
+
+.boldform-start-card:hover .boldform-start-card__arrow.dashicons {
+	color: #0f766e;
+	transform: translateX(3px);
+}
+
+.boldform-start-card:focus-visible {
+	outline: 2px solid #0f766e;
+	outline-offset: 2px;
+}
+
 .boldform-template-card,
 .boldform-template-option {
 	display: block;
@@ -807,20 +926,17 @@
 	min-width: 0;
 }
 
-.boldform-start-card strong,
 .boldform-template-card strong {
 	font-size: 14px;
 	color: #0f172a;
 }
 
-.boldform-start-card span,
 .boldform-template-card span {
 	font-size: 13px;
 	line-height: 1.5;
 	color: #64748b;
 }
 
-.boldform-start-card:hover,
 .boldform-template-card:hover {
 	border-color: #cbd5e1;
 	background: #fff;
