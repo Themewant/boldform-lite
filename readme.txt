@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -323,11 +323,34 @@ Adds contacts to a Brevo list on form submission.
 
 == Changelog ==
 
-= 1.0.2 =
+= 1.1.0 =
+* Security: Integration API keys (Mailchimp, Brevo) are never written into page HTML; the builder receives only the connection id, name, type, and status, and the stored key is preserved when the field is left blank.
+* Security: File uploads are re-validated on the server — SVG/SVGZ files are rejected, the size cap is enforced against the real on-disk bytes, and an explicit MIME allowlist is verified instead of trusting the filename.
+* Security: Stronger SVG sanitization now strips `<a>`, `<style>`, SMIL animation tags, and namespaced `href` attributes.
+* Security: Settings import drops uninstall flags, all SMTP fields, and any key, secret, or password values before merging an uploaded file.
+* Security: Form save sanitizes every field and option by type, de-duplicates field IDs, and caps the number of rows, columns, fields, and options.
+* Security: Integrations dispatch only to explicitly active connections, and a connection with no API key can no longer be enabled.
+* New: Dual-handle range slider — an opt-in "Dual range (min–max)" mode renders two handles with a filled track and validates the selected range on submit.
+* New: Live form preview on the builder's Style tab — field, label, and submit-button styling now update instantly beside the controls.
+* Improve: The forms list now matches WordPress-native list tables, with sortable column headers, a synced select-all checkbox, and native-styled bulk and filter controls.
+* Improve: Builder canvas polish — clearer field hover and selected states, a full-width Settings tab, a topbar that reflows before overlapping on narrow screens, and an improved shortcode copy button.
+* Improve: Conditional Logic condition rows wrap cleanly on narrow builder panels and small screens.
+* Improve: The field library is drag-only — fields clone onto the canvas and the palette is never a drop target.
+* Improve: Slider, star-rating, and field styling now follow the form's design theme; star rating defaults to a consistent 20px.
+* Improve: Refreshed the Forms admin screen — the action notice ("Form moved to trash", etc.) is now a modern alert in the page header, the empty state has a styled "Add New Form" button, the top spacing is tightened, and the form builder sits flush with no left gap.
+* Fix: Checkbox, radio, and dropdown selected states now follow the form's design-theme colour instead of always showing the default teal.
+* Fix: Mailchimp contacts are upserted (PUT) instead of POSTed, resolving the "Member Exists" error on repeat submissions.
+* Fix: Removed the non-functional Brevo "Tags" field and pre-select the form's email field when a connection is assigned.
+* Fix: Restored the `boldform_field_library` filter so add-ons can register custom field types again.
+* Fix: Email fields are validated with `is_email()`, and duplicate-entry detection honors each field's own ID.
+* Fix: The BoldForm block inspector now shows only Form Settings; the duplicate Container, Layout, Labels, Input, Button, and Error style panels (already covered by the builder's Style tab) were removed.
+* Fix: The BoldForm block form preview keeps its styling when Hide Labels or Hide Placeholders is enabled.
+* Fix: Forms are no longer submitted for real when rendered in an editor or preview — the Gutenberg block preview, the Elementor editor, and the admin Preview Form screen.
 * Update: Tested up to WordPress 7.0.
 * Add: Help & Support page with links to User Guide, Developer Guide, Support, Community, Leave a Review, and Request a Feature.
 * Fix: Admin topbar CSS now loads correctly on the Help & Support page.
 * Fix: Admin topbar layout fixed to wrap correctly when many nav items are present.
+* Dev: New `boldform_integration_dispatched` action fires after each integration dispatch with the integration type, connection ID, the API response (array or WP_Error), and the entry ID.
 
 = 1.0.1 =
 * Fix: Buttons now include an accessible `aria-label` so screen readers announce the button text correctly.
