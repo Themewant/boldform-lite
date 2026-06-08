@@ -228,10 +228,10 @@ class BoldForm_Lite_Export_Import {
 				$data['entries'] = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$entries_table}` WHERE form_id = %d ORDER BY id ASC", $form_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
 		} elseif ( 'settings_only' === $scope ) {
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
 		} else {
 			$data['forms'] = $wpdb->get_results( "SELECT * FROM `{$forms_table}` WHERE status != 'trash' ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -240,7 +240,7 @@ class BoldForm_Lite_Export_Import {
 				$data['entries'] = $wpdb->get_results( "SELECT * FROM `{$entries_table}` ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 		}
 
 		$filename = 'boldform-export-' . gmdate( 'Y-m-d' ) . '.json';
@@ -252,6 +252,33 @@ class BoldForm_Lite_Export_Import {
 
 		echo wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
 		exit;
+	}
+
+	/**
+	 * Removes credential/secret and destructive keys from a settings array so they
+	 * never leave the site in an export file, nor are trusted from an import file.
+	 * Drops the uninstall flag, every SMTP/mail credential (smtp_*), and any
+	 * credential-like key (*password, *secret, *_key) via a pattern sweep so future
+	 * sensitive keys are covered automatically.
+	 *
+	 * @param mixed $settings Raw settings array.
+	 * @return array<string, mixed> Settings with sensitive keys removed.
+	 */
+	private function scrub_sensitive_settings( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return array();
+		}
+		foreach ( array_keys( $settings ) as $setting_key ) {
+			$setting_key = (string) $setting_key;
+			if (
+				'uninstall_data' === $setting_key
+				|| 0 === strpos( $setting_key, 'smtp_' )
+				|| preg_match( '/(password|secret|_key)$/i', $setting_key )
+			) {
+				unset( $settings[ $setting_key ] );
+			}
+		}
+		return $settings;
 	}
 
 	/**
@@ -395,16 +422,7 @@ class BoldForm_Lite_Export_Import {
 			// the destructive uninstall flag. Drop the uninstall flag, every SMTP/mail
 			// credential (smtp_*), and any credential-like key (*_key, *secret, *password)
 			// — a pattern sweep so future sensitive keys are covered automatically.
-			foreach ( array_keys( $imported_settings ) as $setting_key ) {
-				$setting_key = (string) $setting_key;
-				if (
-					'uninstall_data' === $setting_key
-					|| 0 === strpos( $setting_key, 'smtp_' )
-					|| preg_match( '/(password|secret|_key)$/i', $setting_key )
-				) {
-					unset( $imported_settings[ $setting_key ] );
-				}
-			}
+			$imported_settings = $this->scrub_sensitive_settings( $imported_settings );
 
 			// Sanitize every imported value by depth before merging into the trusted option.
 			$imported_settings = map_deep( $imported_settings, 'sanitize_text_field' );

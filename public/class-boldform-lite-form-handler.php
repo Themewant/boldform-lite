@@ -1365,7 +1365,19 @@ class BoldForm_Lite_Form_Handler {
 	 */
 	private function is_empty_value( $value ) {
 		if ( is_array( $value ) ) {
-			return empty( $value );
+			// Structured fields (name, address) always submit their sub-keys, so an
+			// array of blank sub-values is NOT empty under empty(); treat the field as
+			// filled only when at least one (possibly nested) sub-value is non-empty.
+			foreach ( $value as $sub_value ) {
+				if ( is_array( $sub_value ) ) {
+					if ( ! $this->is_empty_value( $sub_value ) ) {
+						return false;
+					}
+				} elseif ( '' !== trim( (string) $sub_value ) ) {
+					return false;
+				}
+			}
+			return true;
 		}
 
 		return '' === trim( (string) $value );

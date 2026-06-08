@@ -1,4 +1,4 @@
-=== BoldForm – Drag & Drop Form Builder ===
+=== BoldForm Lite – Drag & Drop Form Builder ===
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.0
