@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.0
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -323,7 +323,7 @@ Adds contacts to a Brevo list on form submission.
 
 == Changelog ==
 
-= 1.0.2 =
+= 1.1.0 =
 * Security: Integration API keys (Mailchimp, Brevo) are never written into page HTML; the builder receives only the connection id, name, type, and status, and the stored key is preserved when the field is left blank.
 * Security: File uploads are re-validated on the server — SVG/SVGZ files are rejected, the size cap is enforced against the real on-disk bytes, and an explicit MIME allowlist is verified instead of trusting the filename.
 * Security: Stronger SVG sanitization now strips `<a>`, `<style>`, SMIL animation tags, and namespaced `href` attributes.
@@ -337,6 +337,8 @@ Adds contacts to a Brevo list on form submission.
 * Improve: Conditional Logic condition rows wrap cleanly on narrow builder panels and small screens.
 * Improve: The field library is drag-only — fields clone onto the canvas and the palette is never a drop target.
 * Improve: Slider, star-rating, and field styling now follow the form's design theme; star rating defaults to a consistent 20px.
+* Improve: Refreshed the Forms admin screen — the action notice ("Form moved to trash", etc.) is now a modern alert in the page header, the empty state has a styled "Add New Form" button, the top spacing is tightened, and the form builder sits flush with no left gap.
+* Fix: Checkbox, radio, and dropdown selected states now follow the form's design-theme colour instead of always showing the default teal.
 * Fix: Mailchimp contacts are upserted (PUT) instead of POSTed, resolving the "Member Exists" error on repeat submissions.
 * Fix: Removed the non-functional Brevo "Tags" field and pre-select the form's email field when a connection is assigned.
 * Fix: Restored the `boldform_field_library` filter so add-ons can register custom field types again.

@@ -1020,8 +1020,9 @@ class BoldForm_Lite_Admin {
 						<?php esc_html_e( 'Add New', 'boldform-lite' ); ?>
 					</a>
 				<?php endif; ?>
+				<?php // Notice carries the `inline` class so WordPress does not relocate it; it sits in the header row, after the Add New button. ?>
+				<?php $this->render_admin_notice( $notice ); ?>
 			</div>
-			<?php $this->render_admin_notice( $notice ); ?>
 
 			<div class="boldform-forms-tabs">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>" class="boldform-forms-tab<?php echo ! $is_trash ? ' is-active' : ''; ?>">
@@ -2595,8 +2596,14 @@ class BoldForm_Lite_Admin {
 		}
 
 		list( $type, $message ) = $messages[ $notice ];
+		$icon = ( 'error' === $type ) ? 'dashicons-warning' : 'dashicons-yes-alt';
+		// Keep `notice is-dismissible` so WordPress still wires up the dismiss (×)
+		// button; the boldform-admin-notice classes restyle it into a modern alert.
 		?>
-		<div class="notice notice-<?php echo esc_attr( $type ); ?> is-dismissible"><p><?php echo esc_html( $message ); ?></p></div>
+		<div class="notice inline is-dismissible boldform-admin-notice boldform-admin-notice--<?php echo esc_attr( $type ); ?>">
+			<span class="dashicons <?php echo esc_attr( $icon ); ?>" aria-hidden="true"></span>
+			<p><?php echo esc_html( $message ); ?></p>
+		</div>
 		<?php
 	}
 

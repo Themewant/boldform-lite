@@ -1,7 +1,14 @@
+/* Drop WP's left gutter so the builder is flush-left, matching the other admin
+   pages (settings.css does the same). This replaces the old negative-margin hack,
+   which only partly cancelled the gutter and left a gap on the left. */
+#wpcontent {
+	padding-left: 0;
+}
+
 .boldform-builder-page {
-	/* Full-bleed: offset WP's #wpcontent left padding (20px) and the default
-	   .wrap right margin so the builder spans the whole admin content area. */
-	margin: 0 0 0 -20px;
+	/* Full-bleed: #wpcontent's left padding is removed above and the default
+	   .wrap margins are reset so the builder spans the whole admin content area. */
+	margin: 0;
 	padding: 20px 20px 24px;
 	background:
 		radial-gradient(circle at top left, rgba(191, 219, 254, 0.22), transparent 24%),
@@ -12,7 +19,10 @@
 .boldform-setup-screen {
 	min-height: 100vh;
 	background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-	margin: -20px -20px 0 0;
+	/* Full-bleed: negative margins cancel .boldform-builder-page's 20px padding on
+	   top, right AND left so the setup screen (dark header + gradient) reaches every
+	   edge. Left was previously 0, which left a 20px gap showing the parent gradient. */
+	margin: -20px -20px 0 -20px;
 	padding-bottom: 40px;
 }
 

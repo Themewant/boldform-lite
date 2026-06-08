@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       BoldForm Lite – Drag & Drop Form Builder
  * Description:       Lightweight drag and drop form builder for WordPress.
- * Version:           1.0.2
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Tested up to:      7.0
  * Requires PHP:      7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BOLDFORM_LITE_VERSION', '1.0.2' );
+define( 'BOLDFORM_LITE_VERSION', '1.1.0' );
 define( 'BOLDFORM_LITE_DB_VERSION', '1.0.0' );
 define( 'BOLDFORM_LITE_FILE', __FILE__ );
 define( 'BOLDFORM_LITE_PATH', plugin_dir_path( __FILE__ ) );

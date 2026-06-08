@@ -4,14 +4,16 @@
 }
 
 .wrap {
-	padding:20px;
+	margin-top: 0;
+	padding: 20px;
 }
+
 .boldform-admin-topbar {
 	display: flex;
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 8px 20px;
-	margin: -1px 0px 24px;
+	margin: -1px 0 0;
 	padding: 0 24px;
 	background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 	min-height: 56px;
@@ -1322,23 +1324,51 @@
 /* Empty state */
 .boldform-forms-empty {
 	text-align: center;
-	padding: 48px 20px;
+	padding: 56px 20px !important;
 	color: #667085;
 }
 
 .boldform-forms-empty .dashicons {
-	display: block;
-	margin: 0 auto 12px;
-	width: 40px;
-	height: 40px;
-	font-size: 40px;
-	line-height: 40px;
-	color: #d0d5dd;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 18px;
+	width: 64px;
+	height: 64px;
+	font-size: 30px;
+	line-height: 1;
+	border-radius: 50%;
+	background: #eaf2fb;
+	color: #2271b1;
 }
 
 .boldform-forms-empty p {
-	margin: 0 0 16px;
+	margin: 0 0 20px;
 	font-size: 15px;
+	font-weight: 500;
+	color: #344054;
+}
+
+.boldform-forms-empty .boldform-btn-add {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 9px 20px;
+	background: #2271b1;
+	color: #fff;
+	border: none;
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+
+.boldform-forms-empty .boldform-btn-add:hover,
+.boldform-forms-empty .boldform-btn-add:focus {
+	background: #135e96;
+	color: #fff;
 }
 
 /* ── Legacy empty state ── */
@@ -1406,24 +1436,74 @@
 	color: #1d2327;
 }
 
-/* ── Admin notice styling ── */
-.boldform-notice {
-	margin: 0 0 16px;
-	padding: 12px 16px;
-	border-radius: 6px;
+/* ── List-page action notice (modern alert) ──
+   Rendered with `notice is-dismissible` so WordPress keeps wiring the dismiss (×)
+   button; these rules override the default WP notice chrome into a soft pill. */
+.boldform-admin-notice.notice {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 7px 36px 7px 12px;
+	border: 1px solid transparent;
+	border-left-width: 1px;
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+	background: #fff;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.boldform-admin-notice .dashicons {
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	font-size: 20px;
+	line-height: 20px;
+}
+
+.boldform-admin-notice p {
+	margin: 0;
+	padding: 0;
 	font-size: 13px;
 }
 
-.boldform-notice--success {
+.boldform-admin-notice--success.notice {
 	background: #ecfdf3;
-	border: 1px solid #a3e4b8;
+	border-color: #a3e4b8;
 	color: #166534;
 }
 
-.boldform-notice--error {
+.boldform-admin-notice--success .dashicons {
+	color: #16a34a;
+}
+
+.boldform-admin-notice--error.notice {
 	background: #fef2f2;
-	border: 1px solid #fca5a5;
+	border-color: #fca5a5;
 	color: #991b1b;
+}
+
+.boldform-admin-notice--error .dashicons {
+	color: #dc2626;
+}
+
+/* Keep WordPress's injected dismiss button centred in the taller pill. */
+.boldform-admin-notice .notice-dismiss {
+	top: 50%;
+	right: 6px;
+	padding: 0;
+	transform: translateY(-50%);
+}
+
+.boldform-admin-notice .notice-dismiss::before {
+	color: currentColor;
+	opacity: 0.55;
+}
+
+.boldform-admin-notice .notice-dismiss:hover::before,
+.boldform-admin-notice .notice-dismiss:focus::before {
+	opacity: 1;
 }
 
 /* ── Entries filters ── */
