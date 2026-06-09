@@ -211,9 +211,9 @@ class BoldForm_Lite_Shortcode {
 		ob_start();
 		?>
 		<div id="<?php echo esc_attr( $form_uid ); ?>" class="boldform-wrap">
+		<?php echo $this->build_form_style_block( $form_settings, $form_uid ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS is reconstructed from sanitized primitives and charset-filtered in build_form_style_block(); the scope id is sanitized there too. ?>
 		<form
 			class="<?php echo esc_attr( $form_class ); ?>"
-			style="<?php echo esc_attr( $this->build_form_style_variables( $form_settings ) ); ?>"
 			method="post"
 			enctype="multipart/form-data"
 			data-form-id="<?php echo esc_attr( $form_id ); ?>"<?php echo $is_preview ? ' data-boldform-preview="1"' : ''; ?>
@@ -480,7 +480,72 @@ class BoldForm_Lite_Shortcode {
 			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )            : '',
 			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )            : '',
 			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
+			// ── Advanced (responsive) per-control style overrides → --bf-* CSS vars ──
+			'style'                   => isset( $decoded['style'] ) ? $this->sanitize_render_style_settings( $decoded['style'] ) : array(),
 		);
+	}
+
+	/**
+	 * Sanitize the advanced per-device style overrides for front-end output.
+	 *
+	 * Defense-in-depth mirror of the admin save-side validation: only the
+	 * desktop|tablet|mobile legs, only `--bf-…` custom-property names, and scalar
+	 * values constrained to a strict CSS charset with url()/expression()/@import
+	 * and comment vectors rejected outright.
+	 *
+	 * @param mixed $style Decoded style settings from the stored JSON.
+	 * @return array<string, array<string, string>> Sanitized {device: {var: value}}.
+	 */
+	private function sanitize_render_style_settings( $style ) {
+		$out = array();
+
+		if ( ! is_array( $style ) ) {
+			return $out;
+		}
+
+		foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
+			if ( empty( $style[ $device ] ) || ! is_array( $style[ $device ] ) ) {
+				continue;
+			}
+
+			$layer = array();
+
+			foreach ( $style[ $device ] as $css_var => $value ) {
+				if ( ! is_string( $css_var ) || ! preg_match( '/^--bf-[a-z0-9-]+$/', $css_var ) ) {
+					continue;
+				}
+				if ( ! is_scalar( $value ) ) {
+					continue;
+				}
+
+				$value = trim( (string) $value );
+
+				if ( '' === $value || strlen( $value ) > 200 ) {
+					continue;
+				}
+				// Strict charset: letters, digits and the punctuation our composite values
+				// need (#, %, parens/commas/dots for gradients & calc, spaces for dimensions).
+				if ( preg_match( '/[^a-zA-Z0-9#%().,\s_-]/', $value ) ) {
+					continue;
+				}
+
+				$lower = strtolower( $value );
+				if ( false !== strpos( $lower, 'url(' )
+					|| false !== strpos( $lower, 'expression' )
+					|| false !== strpos( $lower, 'import' )
+					|| false !== strpos( $lower, '/*' ) ) {
+					continue;
+				}
+
+				$layer[ $css_var ] = $value;
+			}
+
+			if ( ! empty( $layer ) ) {
+				$out[ $device ] = $layer;
+			}
+		}
+
+		return $out;
 	}
 
 	/**
@@ -1257,6 +1322,15 @@ class BoldForm_Lite_Shortcode {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
 
+		// When no custom placeholder is set, fall back to the field label so simple
+		// inputs (text/email/tel/url/number/textarea) show guidance text instead of a
+		// bare box — mirroring the built-in placeholders on name/address/select fields.
+		// Only the free-text branches below use $label_ph; select/country/date keep
+		// their own contextual defaults from the raw $placeholder.
+		$label_ph = ( '' !== $placeholder )
+			? $placeholder
+			: ( isset( $field['label'] ) ? (string) $field['label'] : '' );
+
 		// Structured name field (first / middle / last). Rendered through the shared wrapper
 		// so it gets the same required-error and conditional-logic attributes as every other field.
 		if ( 'name' === $type ) {
@@ -1301,7 +1375,7 @@ class BoldForm_Lite_Shortcode {
 			return sprintf(
 				'<textarea id="%1$s" name="%1$s" placeholder="%2$s"%3$s>%4$s</textarea>',
 				esc_attr( $field_name ),
-				esc_attr( $placeholder ),
+				esc_attr( $label_ph ),
 				$required_attr,
 				esc_textarea( $default )
 			);
@@ -1481,10 +1555,12 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'input_mask' === $type ) {
 			$mask = isset( $field['mask_pattern'] ) ? (string) $field['mask_pattern'] : '';
+			// Placeholder > mask pattern > field label, so the field is never bare.
+			$mask_ph = ( '' !== $placeholder ) ? $placeholder : ( '' !== $mask ? $mask : $label_ph );
 			return sprintf(
 				'<input type="text" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s data-mask="%5$s">',
 				esc_attr( $field_name ),
-				esc_attr( $placeholder ),
+				esc_attr( $mask_ph ),
 				esc_attr( $default ),
 				$required_attr,
 				esc_attr( $mask )
@@ -1492,13 +1568,25 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'numeric' === $type ) {
-			$min = isset( $field['min_value'] ) && '' !== $field['min_value'] ? ' min="' . esc_attr( $field['min_value'] ) . '"' : '';
-			$max = isset( $field['max_value'] ) && '' !== $field['max_value'] ? ' max="' . esc_attr( $field['max_value'] ) . '"' : '';
+			$minv = isset( $field['min_value'] ) ? (string) $field['min_value'] : '';
+			$maxv = isset( $field['max_value'] ) ? (string) $field['max_value'] : '';
+			$min  = '' !== $minv ? ' min="' . esc_attr( $minv ) . '"' : '';
+			$max  = '' !== $maxv ? ' max="' . esc_attr( $maxv ) . '"' : '';
 			$step = isset( $field['step_value'] ) && '' !== $field['step_value'] ? ' step="' . esc_attr( $field['step_value'] ) . '"' : '';
+
+			// Placeholder > "min - max" range hint (when bounded) > field label.
+			$num_ph = $placeholder;
+			if ( '' === $num_ph && ( '' !== $minv || '' !== $maxv ) ) {
+				$num_ph = ( '' !== $minv ? $minv : '0' ) . ' - ' . ( '' !== $maxv ? $maxv : '...' );
+			}
+			if ( '' === $num_ph ) {
+				$num_ph = $label_ph;
+			}
+
 			return sprintf(
 				'<input type="number" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s%5$s%6$s%7$s>',
 				esc_attr( $field_name ),
-				esc_attr( $placeholder ),
+				esc_attr( $num_ph ),
 				esc_attr( $default ),
 				$required_attr,
 				$min,
@@ -1730,7 +1818,7 @@ class BoldForm_Lite_Shortcode {
 			'<input id="%1$s" type="%2$s" name="%1$s" placeholder="%3$s" value="%4$s"%5$s>',
 			esc_attr( $field_name ),
 			esc_attr( $input_type ),
-			esc_attr( $placeholder ),
+			esc_attr( $label_ph ),
 			esc_attr( $default ),
 			$required_attr
 		);
@@ -1954,6 +2042,94 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		return empty( $variables ) ? '' : implode( ';', $variables ) . ';';
+	}
+
+	/**
+	 * Builds a per-form scoped <style> block carrying the CSS custom properties.
+	 *
+	 * Replaces the legacy inline style="" attribute so that responsive
+	 * (tablet/mobile) overrides can be expressed with media queries — inline
+	 * styles cannot. Anchored on the unique wrapper id so repeat embeds of the
+	 * same form on one page never bleed into each other.
+	 *
+	 * @param array<string, mixed> $settings Resolved form settings.
+	 * @param string               $scope_id Unique wrapper id (e.g. "boldform-3").
+	 * @return string A <style>…</style> string, or '' when there is nothing to emit.
+	 */
+	private function build_form_style_block( $settings, $scope_id ) {
+		$scope = '#' . sanitize_html_class( (string) $scope_id );
+
+		// Desktop layer: legacy flat-key vars (back-compat) + advanced desktop vars.
+		$desktop = $this->build_form_style_variables( $settings ) . $this->build_responsive_style_vars( $settings, 'desktop' );
+		$tablet  = $this->build_responsive_style_vars( $settings, 'tablet' );
+		$mobile  = $this->build_responsive_style_vars( $settings, 'mobile' );
+
+		$css = '';
+
+		if ( '' !== $desktop ) {
+			$css .= $scope . '{' . $desktop . '}';
+		}
+		if ( '' !== $tablet ) {
+			$css .= '@media (max-width:1024px){' . $scope . '{' . $tablet . '}}';
+		}
+		if ( '' !== $mobile ) {
+			$css .= '@media (max-width:767px){' . $scope . '{' . $mobile . '}}';
+		}
+
+		if ( '' === $css ) {
+			return '';
+		}
+
+		return '<style>' . $this->sanitize_style_css( $css ) . '</style>';
+	}
+
+	/**
+	 * Compiles the advanced per-device style vars (and scoped state rules).
+	 *
+	 * Reads the nested `style` settings array written by the builder's Style tab.
+	 * Phase 1 is infrastructure only — the advanced control set is added in later
+	 * phases, so this currently returns an empty string until those keys exist.
+	 *
+	 * @param array<string, mixed> $settings Resolved form settings.
+	 * @param string               $device   One of 'desktop', 'tablet', 'mobile'.
+	 * @return string A ';'-terminated var string, or '' when nothing is set.
+	 */
+	private function build_responsive_style_vars( $settings, $device ) {
+		if ( empty( $settings['style'] ) || ! is_array( $settings['style'] ) ) {
+			return '';
+		}
+		if ( empty( $settings['style'][ $device ] ) || ! is_array( $settings['style'][ $device ] ) ) {
+			return '';
+		}
+
+		$vars = array();
+		foreach ( $settings['style'][ $device ] as $css_var => $value ) {
+			// Keys are stored as the literal custom-property name (e.g. "--bf-form-bg").
+			if ( ! is_string( $css_var ) || 0 !== strpos( $css_var, '--bf-' ) ) {
+				continue;
+			}
+			if ( '' === $value || ! is_scalar( $value ) ) {
+				continue;
+			}
+			$vars[] = $css_var . ':' . (string) $value;
+		}
+
+		return empty( $vars ) ? '' : implode( ';', $vars ) . ';';
+	}
+
+	/**
+	 * Defense-in-depth charset filter for the generated style block.
+	 *
+	 * Every value emitted is already reconstructed from sanitized primitives, but
+	 * this strips any character that has no business in our generated CSS — most
+	 * importantly `<`/`>` so a malformed value can never break out of the <style>
+	 * element (e.g. "</style><script>" collapses to harmless text).
+	 *
+	 * @param string $css Assembled CSS.
+	 * @return string Filtered CSS.
+	 */
+	private function sanitize_style_css( $css ) {
+		return (string) preg_replace( '/[^a-zA-Z0-9#%().,:;{}@\/\s_\-\'"]/', '', (string) $css );
 	}
 
 	/**

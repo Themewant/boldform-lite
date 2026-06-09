@@ -304,6 +304,23 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Cache-busting version string for a plugin asset.
+	 *
+	 * Uses the file's modification time so edits to the (hand-maintained) builder
+	 * assets are picked up on a normal page load instead of being masked by the
+	 * browser cache until the plugin version constant changes. Falls back to the
+	 * plugin version if the file is unreadable.
+	 *
+	 * @param string $relative_path Asset path relative to the plugin root, e.g. 'assets/css/builder.css'.
+	 * @return string Version string for wp_enqueue_*().
+	 */
+	private function asset_version( $relative_path ) {
+		$absolute = BOLDFORM_LITE_PATH . ltrim( $relative_path, '/' );
+		$mtime    = file_exists( $absolute ) ? filemtime( $absolute ) : false;
+		return ( false !== $mtime ) ? (string) $mtime : BOLDFORM_LITE_VERSION;
+	}
+
+	/**
 	 * Enqueues admin assets.
 	 *
 	 * @param string $hook_suffix Current admin page hook.
@@ -336,7 +353,7 @@ class BoldForm_Lite_Admin {
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/css/builder.css',
 				array(),
-				BOLDFORM_LITE_VERSION
+				$this->asset_version( 'assets/css/builder.css' )
 			);
 
 			wp_enqueue_script(
@@ -353,7 +370,7 @@ class BoldForm_Lite_Admin {
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
 				array( 'jquery', 'boldform-lite-sortable' ),
-				BOLDFORM_LITE_VERSION,
+				$this->asset_version( 'assets/js/builder.js' ),
 				true
 			);
 
@@ -523,6 +540,133 @@ class BoldForm_Lite_Admin {
 						'red' => __( 'Red', 'boldform-lite' ),
 						'dark' => __( 'Dark', 'boldform-lite' ),
 					),
+					// Labels for the advanced (full-parity) Style-tab controls.
+					'advStyle'           => array(
+						'secContainer'    => __( 'Form Container', 'boldform-lite' ),
+						'secLayout'       => __( 'Layout & Spacing', 'boldform-lite' ),
+						'secLabels'       => __( 'Labels', 'boldform-lite' ),
+						'secInputs'       => __( 'Input Fields', 'boldform-lite' ),
+						'secPlaceholder'  => __( 'Placeholder', 'boldform-lite' ),
+						'secChoice'       => __( 'Checkbox & Radio', 'boldform-lite' ),
+						'secSelect'       => __( 'Select Dropdown', 'boldform-lite' ),
+						'secTerms'        => __( 'Terms & Conditions', 'boldform-lite' ),
+						'secStar'         => __( 'Star Rating', 'boldform-lite' ),
+						'secFile'         => __( 'File Upload', 'boldform-lite' ),
+						'secSection'      => __( 'Section Break', 'boldform-lite' ),
+						'secButton'       => __( 'Submit Button', 'boldform-lite' ),
+						'secError'        => __( 'Error Messages', 'boldform-lite' ),
+						'secSuccess'      => __( 'Success Message', 'boldform-lite' ),
+						'maxWidth'        => __( 'Max Width', 'boldform-lite' ),
+						'padding'         => __( 'Padding', 'boldform-lite' ),
+						'margin'          => __( 'Margin', 'boldform-lite' ),
+						'borderColor'     => __( 'Border Color', 'boldform-lite' ),
+						'boxShadow'       => __( 'Box Shadow', 'boldform-lite' ),
+						'hoverShadow'     => __( 'Box Shadow (Hover)', 'boldform-lite' ),
+						'focusShadow'     => __( 'Box Shadow (Focus)', 'boldform-lite' ),
+						'stateNormal'     => __( 'Normal', 'boldform-lite' ),
+						'stateHover'      => __( 'Hover', 'boldform-lite' ),
+						'stateFocus'      => __( 'Focus', 'boldform-lite' ),
+						'rowGap'          => __( 'Row Gap', 'boldform-lite' ),
+						'columnGap'       => __( 'Column Gap', 'boldform-lite' ),
+						'fieldMargin'     => __( 'Field Margin', 'boldform-lite' ),
+						'inputMargin'     => __( 'Input Margin', 'boldform-lite' ),
+						'typography'      => __( 'Typography', 'boldform-lite' ),
+						'requiredColor'   => __( 'Required Mark Color', 'boldform-lite' ),
+						'height'          => __( 'Height', 'boldform-lite' ),
+						'textareaHeight'  => __( 'Textarea Height', 'boldform-lite' ),
+						'textColor'       => __( 'Text Color', 'boldform-lite' ),
+						'placeholderColor'=> __( 'Placeholder Color', 'boldform-lite' ),
+						'focusBorderColor'=> __( 'Focus Border Color', 'boldform-lite' ),
+						'focusBgColor'    => __( 'Focus Background', 'boldform-lite' ),
+						'accentColor'     => __( 'Accent Color', 'boldform-lite' ),
+						'labelColor'      => __( 'Label Color', 'boldform-lite' ),
+						'linkColor'       => __( 'Link Color', 'boldform-lite' ),
+						'spacing'         => __( 'Spacing', 'boldform-lite' ),
+						'gap'             => __( 'Gap', 'boldform-lite' ),
+						'checkedColor'    => __( 'Checked Color', 'boldform-lite' ),
+						'arrowColor'      => __( 'Arrow Color', 'boldform-lite' ),
+						'panelBg'         => __( 'Panel Background', 'boldform-lite' ),
+						'panelBorder'     => __( 'Panel Border Color', 'boldform-lite' ),
+						'optionBg'        => __( 'Option Background', 'boldform-lite' ),
+						'optionText'      => __( 'Option Text', 'boldform-lite' ),
+						'optionHoverBg'   => __( 'Option Hover Background', 'boldform-lite' ),
+						'optionHoverText' => __( 'Option Hover Text Color', 'boldform-lite' ),
+						'optionActiveBg'  => __( 'Selected Option Background', 'boldform-lite' ),
+						'searchBox'       => __( 'Search Box', 'boldform-lite' ),
+						'searchBg'        => __( 'Search Background', 'boldform-lite' ),
+						'searchText'      => __( 'Search Text Color', 'boldform-lite' ),
+						'searchPh'        => __( 'Search Placeholder Color', 'boldform-lite' ),
+						'copyText'        => __( 'Copy Text', 'boldform-lite' ),
+						'borderWidth'     => __( 'Border Width', 'boldform-lite' ),
+						'starColor'       => __( 'Star Color', 'boldform-lite' ),
+						'starInactive'    => __( 'Inactive Star Color', 'boldform-lite' ),
+						'starSize'        => __( 'Star Size', 'boldform-lite' ),
+						'btnBg'           => __( 'Button Background', 'boldform-lite' ),
+						'btnText'         => __( 'Button Text Color', 'boldform-lite' ),
+						'titleColor'      => __( 'Title Color', 'boldform-lite' ),
+						'descColor'       => __( 'Description Color', 'boldform-lite' ),
+						'noticeBg'        => __( 'Notice Background', 'boldform-lite' ),
+						'noticeText'      => __( 'Notice Text Color', 'boldform-lite' ),
+						'fullWidth'       => __( 'Full Width', 'boldform-lite' ),
+						'iconColor'       => __( 'Icon Color', 'boldform-lite' ),
+						'hoverTextColor'  => __( 'Hover Text Color', 'boldform-lite' ),
+						'hoverBg'         => __( 'Hover Background', 'boldform-lite' ),
+						'hoverBorderColor'=> __( 'Hover Border Color', 'boldform-lite' ),
+						'hover'           => __( 'Hover', 'boldform-lite' ),
+						'focus'           => __( 'Focus', 'boldform-lite' ),
+						'focusRing'       => __( 'Focus Ring Color', 'boldform-lite' ),
+						'ringColor'       => __( 'Ring Color', 'boldform-lite' ),
+						'hoverColor'      => __( 'Hover Color', 'boldform-lite' ),
+						'linkHoverColor'  => __( 'Link Hover Color', 'boldform-lite' ),
+						'focusLabelColor' => __( 'Focused Label Color', 'boldform-lite' ),
+						'colors'          => __( 'Colors', 'boldform-lite' ),
+						'buttonMargin'    => __( 'Button Margin', 'boldform-lite' ),
+						'containerMargin' => __( 'Container Margin', 'boldform-lite' ),
+						'fontFamily'      => __( 'Font Family', 'boldform-lite' ),
+						'fontSize'        => __( 'Font Size', 'boldform-lite' ),
+						'fontWeight'      => __( 'Weight', 'boldform-lite' ),
+						'lineHeight'      => __( 'Line Height', 'boldform-lite' ),
+						'letterSpacing'   => __( 'Letter Spacing', 'boldform-lite' ),
+						'textTransform'   => __( 'Transform', 'boldform-lite' ),
+						'shadowX'         => __( 'X Offset', 'boldform-lite' ),
+						'shadowY'         => __( 'Y Offset', 'boldform-lite' ),
+						'shadowBlur'      => __( 'Blur', 'boldform-lite' ),
+						'shadowSpread'    => __( 'Spread', 'boldform-lite' ),
+						'inset'           => __( 'Inset', 'boldform-lite' ),
+						'gradient'        => __( 'Gradient', 'boldform-lite' ),
+						'solidFill'       => __( 'Solid', 'boldform-lite' ),
+						'angle'           => __( 'Angle', 'boldform-lite' ),
+						'colorStop1'      => __( 'Color 1', 'boldform-lite' ),
+						'colorStop2'      => __( 'Color 2', 'boldform-lite' ),
+						'styleLabel'      => __( 'Style', 'boldform-lite' ),
+						'widthLabel'      => __( 'Width', 'boldform-lite' ),
+						'radiusLabel'     => __( 'Radius', 'boldform-lite' ),
+						'linkSides'       => __( 'Link sides', 'boldform-lite' ),
+						'sideTop'         => __( 'Top', 'boldform-lite' ),
+						'sideRight'       => __( 'Right', 'boldform-lite' ),
+						'sideBottom'      => __( 'Bottom', 'boldform-lite' ),
+						'sideLeft'        => __( 'Left', 'boldform-lite' ),
+						'inheritDefault'  => __( 'Default', 'boldform-lite' ),
+						'opacity'         => __( 'Opacity (%)', 'boldform-lite' ),
+						'reset'           => __( 'Reset color', 'boldform-lite' ),
+						'resetSection'    => __( 'Reset this section', 'boldform-lite' ),
+						'previewStates'   => __( 'Preview states — messages, open dropdown & file button', 'boldform-lite' ),
+						'sampleSuccess'   => __( 'Your form has been submitted successfully.', 'boldform-lite' ),
+						'sampleError'     => __( 'Please correct the highlighted fields below.', 'boldform-lite' ),
+						'sampleFieldLabel' => __( 'Field with an error', 'boldform-lite' ),
+						'sampleValue'     => __( 'Invalid value', 'boldform-lite' ),
+						'sampleRequired'  => __( 'This field is required.', 'boldform-lite' ),
+						'sampleDropdown'  => __( 'Dropdown (open)', 'boldform-lite' ),
+						'sampleSearch'    => __( 'Search…', 'boldform-lite' ),
+						'optionSelected'  => __( 'Selected option', 'boldform-lite' ),
+						'optionAnother'   => __( 'Another option', 'boldform-lite' ),
+						'sampleFile'      => __( 'File upload', 'boldform-lite' ),
+						'themeFont'       => __( 'Theme Default', 'boldform-lite' ),
+						'uppercase'       => __( 'UPPERCASE', 'boldform-lite' ),
+						'lowercase'       => __( 'lowercase', 'boldform-lite' ),
+						'capitalize'      => __( 'Capitalize', 'boldform-lite' ),
+						'dotted'          => __( 'Dotted', 'boldform-lite' ),
+					),
 					'messages'           => array(
 						'emptyFields' => __( 'Add at least one field before saving.', 'boldform-lite' ),
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
@@ -579,7 +723,7 @@ class BoldForm_Lite_Admin {
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/css/builder.css',
 				array(),
-				BOLDFORM_LITE_VERSION
+				$this->asset_version( 'assets/css/builder.css' )
 			);
 
 			wp_enqueue_style(
@@ -3365,7 +3509,67 @@ class BoldForm_Lite_Admin {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'style'               => $this->extract_style_from_record_settings( $decoded ),
 		);
+	}
+
+	/**
+	 * Validates the nested per-device advanced style map from a decoded settings blob.
+	 *
+	 * Mirrors normalize_style_settings() in ajax-save.php: only BoldForm-namespaced
+	 * custom properties (`--bf-*`) carrying values from the safe CSS grammar survive.
+	 * The value was already sanitized on save; re-validating on the way back out means
+	 * a hand-edited or legacy settings_json can never feed unsafe tokens into the
+	 * builder preview or the localized payload. Without this the Style tab would boot
+	 * to its defaults on every reload because the allowlist above drops the key.
+	 *
+	 * @param array<string, mixed> $decoded Decoded settings_json.
+	 * @return array<string, array<string, string>> Per-device { '--bf-*' => value } map.
+	 */
+	private function extract_style_from_record_settings( $decoded ) {
+		$out = array(
+			'desktop' => array(),
+			'tablet'  => array(),
+			'mobile'  => array(),
+		);
+
+		if ( empty( $decoded['style'] ) || ! is_array( $decoded['style'] ) ) {
+			return $out;
+		}
+
+		foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
+			if ( empty( $decoded['style'][ $device ] ) || ! is_array( $decoded['style'][ $device ] ) ) {
+				continue;
+			}
+
+			foreach ( $decoded['style'][ $device ] as $css_var => $value ) {
+				if ( ! is_string( $css_var ) || ! preg_match( '/^--bf-[a-z0-9-]+$/', $css_var ) || ! is_string( $value ) ) {
+					continue;
+				}
+
+				$value = trim( $value );
+				if ( '' === $value || strlen( $value ) > 200 ) {
+					continue;
+				}
+				// Same hard charset gate as the save-side sanitizer: no `:;{}<>@"'` or backslash.
+				if ( preg_match( '/[^a-zA-Z0-9#%().,\s_\-]/', $value ) ) {
+					continue;
+				}
+				$lower = strtolower( $value );
+				if (
+					false !== strpos( $lower, 'url(' ) ||
+					false !== strpos( $lower, 'expression' ) ||
+					false !== strpos( $lower, 'import' ) ||
+					false !== strpos( $lower, '/*' )
+				) {
+					continue;
+				}
+
+				$out[ $device ][ $css_var ] = $value;
+			}
+		}
+
+		return $out;
 	}
 
 	/**

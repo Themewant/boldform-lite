@@ -240,9 +240,16 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 				<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
 			</div>
 			<aside class="boldform-panel boldform-style-preview" aria-label="<?php esc_attr_e( 'Form preview', 'boldform-lite' ); ?>">
-				<div class="boldform-panel-head">
-					<h2><?php esc_html_e( 'Live Preview', 'boldform-lite' ); ?></h2>
-					<p><?php esc_html_e( 'See your styling applied to the form in real time.', 'boldform-lite' ); ?></p>
+				<div class="boldform-panel-head boldform-style-preview__head">
+					<div>
+						<h2><?php esc_html_e( 'Live Preview', 'boldform-lite' ); ?></h2>
+						<p><?php esc_html_e( 'See your styling applied to the form in real time.', 'boldform-lite' ); ?></p>
+					</div>
+					<div class="boldform-device-toggle" role="group" aria-label="<?php esc_attr_e( 'Preview device', 'boldform-lite' ); ?>">
+						<button type="button" class="boldform-device-btn is-active" data-device="desktop" aria-pressed="true" title="<?php esc_attr_e( 'Desktop', 'boldform-lite' ); ?>"><span class="dashicons dashicons-desktop" aria-hidden="true"></span></button>
+						<button type="button" class="boldform-device-btn" data-device="tablet" aria-pressed="false" title="<?php esc_attr_e( 'Tablet', 'boldform-lite' ); ?>"><span class="dashicons dashicons-tablet" aria-hidden="true"></span></button>
+						<button type="button" class="boldform-device-btn" data-device="mobile" aria-pressed="false" title="<?php esc_attr_e( 'Mobile', 'boldform-lite' ); ?>"><span class="dashicons dashicons-smartphone" aria-hidden="true"></span></button>
+					</div>
 				</div>
 				<div class="boldform-canvas boldform-style-preview-canvas" id="boldform-style-preview-canvas"></div>
 			</aside>

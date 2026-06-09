@@ -450,6 +450,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_background_color' => '',
 			'button_border_color' => '',
 			'button_text_color' => '',
+			'style'             => array(),
 			'admin_email_type'  => 'site_admin',
 			'enable_admin_email'=> true,
 			'enable_user_email' => true,
@@ -509,6 +510,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_background_color' => isset( $settings_payload['button_background_color'] ) && sanitize_hex_color( $settings_payload['button_background_color'] ) ? sanitize_hex_color( $settings_payload['button_background_color'] ) : '',
 			'button_border_color' => isset( $settings_payload['button_border_color'] ) && sanitize_hex_color( $settings_payload['button_border_color'] ) ? sanitize_hex_color( $settings_payload['button_border_color'] ) : '',
 			'button_text_color' => isset( $settings_payload['button_text_color'] ) && sanitize_hex_color( $settings_payload['button_text_color'] ) ? sanitize_hex_color( $settings_payload['button_text_color'] ) : '',
+			'style'             => self::normalize_style_settings( isset( $settings_payload['style'] ) ? $settings_payload['style'] : array() ),
 			'admin_email_type'  => $admin_email_type,
 			'enable_admin_email'=> isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
@@ -544,5 +546,103 @@ class BoldForm_Lite_Ajax_Save {
 		$extra = (array) apply_filters( 'boldform_form_settings_extra', array(), $settings_payload );
 
 		return array_merge( $normalized, $extra );
+	}
+
+	/**
+	 * Normalizes the advanced (responsive) style settings written by the Style tab.
+	 *
+	 * Shape: { desktop: { "--bf-*": value, … }, tablet: {…}, mobile: {…} }. Each
+	 * device map holds finished CSS custom-property values keyed by the literal
+	 * property name. Every value is validated against a strict safe grammar
+	 * (see sanitize_css_value()); anything unrecognised is dropped. Var names must
+	 * match the BoldForm namespace, so a hostile key can never set arbitrary
+	 * properties. This keeps the per-form <style> block injection-safe even though
+	 * the plugin ships to WordPress.org.
+	 *
+	 * @param mixed $payload Raw style payload.
+	 * @return array<string, array<string, string>> Sanitized { device => { var => value } }.
+	 */
+	private static function normalize_style_settings( $payload ) {
+		$out = array(
+			'desktop' => array(),
+			'tablet'  => array(),
+			'mobile'  => array(),
+		);
+
+		if ( ! is_array( $payload ) ) {
+			return $out;
+		}
+
+		foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
+			if ( empty( $payload[ $device ] ) || ! is_array( $payload[ $device ] ) ) {
+				continue;
+			}
+
+			foreach ( $payload[ $device ] as $css_var => $value ) {
+				if ( ! is_string( $css_var ) || ! preg_match( '/^--bf-[a-z0-9-]+$/', $css_var ) ) {
+					continue;
+				}
+
+				$clean = self::sanitize_css_value( $value );
+				if ( '' !== $clean ) {
+					$out[ $device ][ $css_var ] = $clean;
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Validates a single CSS custom-property value against a strict safe grammar.
+	 *
+	 * Accepts only the character set that legitimately appears in our generated
+	 * values — letters, digits, whitespace and `#%().,-_`. Crucially this excludes
+	 * `:;{}<>@"'` and `\`, so a value can neither terminate its declaration, close
+	 * the rule/`<style>` element, nor smuggle a CSS escape. `url()`, `expression()`,
+	 * comments and any non-allowlisted CSS function are rejected outright. This
+	 * lets the builder send finished tokens (lengths, hex/rgba colours, 1–4 length
+	 * lists, box-shadow strings, linear/radial gradients) while staying safe.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string The value if it passes, otherwise ''.
+	 */
+	private static function sanitize_css_value( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$value = trim( (string) $value );
+
+		if ( '' === $value || strlen( $value ) > 200 ) {
+			return '';
+		}
+
+		// Hard charset gate: no `:;{}<>@"'` or backslash can appear in a value.
+		if ( preg_match( '/[^a-zA-Z0-9#%().,\s_\-]/', $value ) ) {
+			return '';
+		}
+
+		$lower = strtolower( $value );
+		if (
+			false !== strpos( $lower, 'url(' ) ||
+			false !== strpos( $lower, 'expression' ) ||
+			false !== strpos( $lower, 'import' ) ||
+			false !== strpos( $lower, '/*' )
+		) {
+			return '';
+		}
+
+		// Only a curated set of CSS functions may appear.
+		if ( preg_match_all( '/([a-zA-Z][a-zA-Z-]*)\s*\(/', $value, $matches ) ) {
+			$allowed = array( 'rgb', 'rgba', 'hsl', 'hsla', 'linear-gradient', 'radial-gradient', 'calc', 'var', 'color-mix' );
+			foreach ( $matches[1] as $fn ) {
+				if ( ! in_array( strtolower( $fn ), $allowed, true ) ) {
+					return '';
+				}
+			}
+		}
+
+		return $value;
 	}
 }
