@@ -2961,7 +2961,14 @@ jQuery(
 			Object.keys( designThemes ).forEach( function ( key ) {
 				var t = designThemes[ key ];
 				var isActive = state.formSettings.design_theme === key;
-				themeCardsHtml += '<button type="button" class="boldform-theme-card' + ( isActive ? ' is-active' : '' ) + '" data-theme="' + escapeHtml( key ) + '">' +
+				// Per-theme accent so the card's hover/active border + shadow match the
+				// theme's own colour (not a fixed blue). Emit the hex + an RGB triplet
+				// for the soft tints used by the CSS rgba() rules.
+				var accent = t.primary || '#2f80ed';
+				var hx = accent.replace( '#', '' );
+				if ( 3 === hx.length ) { hx = hx.replace( /(.)/g, '$1$1' ); }
+				var accentRgb = parseInt( hx.substr( 0, 2 ), 16 ) + ',' + parseInt( hx.substr( 2, 2 ), 16 ) + ',' + parseInt( hx.substr( 4, 2 ), 16 );
+				themeCardsHtml += '<button type="button" class="boldform-theme-card' + ( isActive ? ' is-active' : '' ) + '" data-theme="' + escapeHtml( key ) + '" style="--bf-theme-accent:' + escapeHtml( accent ) + ';--bf-theme-accent-rgb:' + accentRgb + '">' +
 					'<span class="boldform-theme-card__preview">' +
 						'<span class="boldform-theme-card__input" style="border-color:' + escapeHtml( t.fieldBorder ) + ';background:' + escapeHtml( t.fieldBg ) + ';border-radius:' + t.fieldRadius + 'px"></span>' +
 						'<span class="boldform-theme-card__btn" style="background:' + escapeHtml( t.btnBg ) + ';color:' + escapeHtml( t.btnText ) + ';border-radius:' + Math.min( t.fieldRadius, 8 ) + 'px"></span>' +
@@ -2971,13 +2978,22 @@ jQuery(
 			} );
 			themeCardsHtml += '</div>';
 
+			var themeResetSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+			var themeResetLabel = escapeHtml( advLabel( 'resetSection' ) );
 			$( '#boldform-form-styling-panel' ).html(
 				'<div class="boldform-style-section is-open">' +
-					'<div class="boldform-style-section__head"><h3>Design Theme</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+					'<div class="boldform-style-section__head"><h3>Design Theme</h3>' +
+						'<div class="boldform-style-section__head-actions">' +
+							'<button type="button" class="boldform-style-section__reset boldform-theme-reset" title="' + themeResetLabel + '" aria-label="' + themeResetLabel + '">' + themeResetSvg + '</button>' +
+							'<span class="dashicons dashicons-arrow-down-alt2"></span>' +
+						'</div>' +
+					'</div>' +
 					'<div class="boldform-style-section__body">' + themeCardsHtml + '</div>' +
 				'</div>' +
 				renderAdvancedStyleSections()
 			);
+			bfSyncFormMaxWidthState();
+			bfRefreshResetStates();
 		}
 
 		// ====================================================================
@@ -3033,6 +3049,7 @@ jQuery(
 				else { layer[ k ] = String( v ); }
 			} );
 			applyPreviewStyleBlock();
+			bfRefreshResetStates();
 		}
 
 		var BF_HEX6 = /^#[0-9a-fA-F]{6}$/;
@@ -3398,6 +3415,40 @@ jQuery(
 			'</div>';
 		}
 
+		// Icon-segmented horizontal alignment (left / center / right / full width) for
+		// the form container. Stores the keyword in `cssVar` so the active button
+		// restores on reload; recomputeAdvField derives the margin/width vars the CSS uses.
+		function advAlign( cssVar, label ) {
+			var cur = advStyleGet( cssVar ) || 'left';
+			var svg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">';
+			var icons = {
+				left:    svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="14" y2="12"></line><line x1="3" y1="18" x2="18" y2="18"></line></svg>',
+				center:  svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="5" y1="18" x2="19" y2="18"></line></svg>',
+				right:   svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="6" y1="18" x2="21" y2="18"></line></svg>',
+				justify: svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>'
+			};
+			var btns = [ 'left', 'center', 'right', 'justify' ].map( function ( k ) {
+				var t = escapeHtml( advLabel( 'align' + k.charAt( 0 ).toUpperCase() + k.slice( 1 ) ) );
+				return '<button type="button" class="bf-adv-align-btn' + ( k === cur ? ' is-active' : '' ) + '" data-align="' + k + '" title="' + t + '" aria-label="' + t + '">' + icons[ k ] + '</button>';
+			} ).join( '' );
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="align" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="bf-adv-align">' + btns + '</div>' +
+			'</div>';
+		}
+
+		// Max Width and the "Full Width" (justify) alignment are mutually exclusive:
+		// full width forces 100% and ignores any max-width. When justify is active,
+		// disable the Max Width control so the relationship is clear; re-enable it
+		// for left/center/right. Runs on render and after every alignment change.
+		function bfSyncFormMaxWidthState() {
+			var av = $( '[data-var="--bf-form-align"] .bf-adv-align-btn.is-active' ).data( 'align' ) || '';
+			var disabled = ( 'justify' === av );
+			var $mw = $( '[data-var="--bf-form-max-width"]' );
+			$mw.toggleClass( 'is-disabled', disabled );
+			$mw.find( 'input, select' ).prop( 'disabled', disabled );
+		}
+
 		function advControl( c ) {
 			switch ( c.type ) {
 				case 'color':      return advColor( c.var, advLabel( c.label ) );
@@ -3409,6 +3460,7 @@ jQuery(
 				case 'background': return advBackground( c.var, advLabel( c.label ) );
 				case 'select':     return advSelectCtl( c.var, advLabel( c.label ), c.options );
 				case 'switch':     return advSwitch( c.var, advLabel( c.label ), c.on );
+				case 'align':      return advAlign( c.var, advLabel( c.label ) );
 				case 'stateTabs':  return advStateTabs( c );
 				case 'heading':    return '<div class="boldform-adv-subhead">' + escapeHtml( advLabel( c.label ) ) + '</div>';
 			}
@@ -3426,6 +3478,7 @@ jQuery(
 			var bfSections = [
 				{ id: 'container', title: advLabel( 'secContainer' ), controls: [
 					{ type: 'slider', var: '--bf-form-max-width', label: 'maxWidth', min: 0, max: 1400, units: [ 'px', '%' ] },
+						{ type: 'align', var: '--bf-form-align', label: 'alignment' },
 					{ type: 'dimension', var: '--bf-form-padding', label: 'padding' },
 					{ type: 'background', var: '--bf-form-bg', label: 'background' },
 					{ type: 'border', var: '--bf-form-border', label: 'border' },
@@ -3695,12 +3748,43 @@ jQuery(
 					[ '-ff', '-fs', '-fw', '-lh', '-ls', '-tt' ].forEach( function ( sfx ) { vars.push( c.var + sfx ); } );
 				} else if ( 'shadow' === c.type && c.states && c.states.length ) {
 					c.states.forEach( function ( st ) { vars.push( st[0] ); } );
+				} else if ( 'align' === c.type ) {
+					// The align control also derives margin-left/right + a max-width override.
+					var ab = c.var.replace( /-align$/, '' );
+					vars.push( c.var, ab + '-ml', ab + '-mr', ab + '-mw' );
 				} else {
 					vars.push( c.var );
 				}
 			}
 			( sec.controls || [] ).forEach( expand );
 			return vars;
+		}
+
+		// True when the active device layer holds any non-empty value for this
+		// section's vars — i.e. there is something for its reset button to clear.
+		function bfSectionHasValues( sec ) {
+			var layer = ( state.formSettings.style && state.formSettings.style[ state.activeDevice ] ) || {};
+			return bfSectionVars( sec ).some( function ( v ) {
+				return typeof layer[ v ] === 'string' && '' !== layer[ v ];
+			} );
+		}
+
+		// Enable a section's reset button only when it has something to reset;
+		// otherwise show it greyed + non-clickable. Covers every schema section plus
+		// the Design Theme card (changed = a theme other than the default is active).
+		function bfRefreshResetStates() {
+			bfStyleSchema().forEach( function ( sec ) {
+				var has = bfSectionHasValues( sec );
+				$( '.boldform-style-section__reset[data-reset-section="' + sec.id + '"]' )
+					.toggleClass( 'is-disabled', ! has )
+					.prop( 'disabled', ! has )
+					.attr( 'aria-disabled', has ? 'false' : 'true' );
+			} );
+			var themeChanged = !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme;
+			$( '.boldform-theme-reset' )
+				.toggleClass( 'is-disabled', ! themeChanged )
+				.prop( 'disabled', ! themeChanged )
+				.attr( 'aria-disabled', themeChanged ? 'false' : 'true' );
 		}
 
 		// Within each heading-delimited segment of a section, render the non-state
@@ -4373,10 +4457,20 @@ jQuery(
 
 		// Reset a whole section: clear every var its controls write (active device), then
 		// rebuild the section body so all controls fall back to their default.
+		// Design Theme reset — revert to the default theme (no schema section, so it
+		// needs its own handler; the generic one below no-ops on this button).
+		$( document ).on( 'click', '.boldform-theme-reset', function ( e ) {
+			e.preventDefault();
+			e.stopPropagation();
+			if ( $( this ).is( '.is-disabled, :disabled' ) ) { return; }
+			applyDesignTheme( 'default-blue' );
+		} );
+
 		$( document ).on( 'click', '.boldform-style-section__reset', function ( e ) {
 			e.preventDefault();
 			e.stopPropagation();
 			var $btn = $( this ), secId = $btn.attr( 'data-reset-section' ), sec = null;
+			if ( $btn.is( '.is-disabled, :disabled' ) ) { return; }
 			bfStyleSchema().forEach( function ( s ) { if ( s.id === secId ) { sec = s; } } );
 			if ( ! sec ) { return; }
 			var layer = state.formSettings.style && state.formSettings.style[ state.activeDevice || 'desktop' ];
@@ -4385,6 +4479,8 @@ jQuery(
 			bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
 			$btn.closest( '.boldform-style-section' ).find( '.boldform-adv-grid' ).html( body );
 			applyPreviewStyleBlock();
+			bfRefreshResetStates();
+			bfSyncFormMaxWidthState();
 		} );
 
 		// Live-preview device switcher. Sets the active breakpoint, frames the preview
@@ -4474,10 +4570,30 @@ jQuery(
 				out[ cssVar ] = $field.find( '.bf-adv-select' ).val() || '';
 			} else if ( 'switch' === type ) {
 				out[ cssVar ] = $field.find( '.bf-adv-toggle' ).prop( 'checked' ) ? ( String( $field.data( 'on' ) ) || '1' ) : '';
+			} else if ( 'align' === type ) {
+				// Keep the keyword (for state restore) + derive margin-left/right and a
+				// max-width override (full width = "justify") onto <base>-ml/-mr/-mw.
+				var av = $field.find( '.bf-adv-align-btn.is-active' ).data( 'align' ) || '';
+				var base = cssVar.replace( /-align$/, '' );
+				var amap = { left: [ '0', 'auto', '' ], center: [ 'auto', 'auto', '' ], right: [ 'auto', '0', '' ], justify: [ '0', '0', '100%' ] };
+				var a = amap[ av ] || [ '', '', '' ];
+				out[ cssVar ] = av;
+				out[ base + '-ml' ] = a[0];
+				out[ base + '-mr' ] = a[1];
+				out[ base + '-mw' ] = a[2];
 			}
 
 			advStyleSetVars( out );
 		}
+
+		// Alignment segmented control → activate the clicked button, recompute.
+		$( document ).on( 'click', '.bf-adv-align-btn', function () {
+			var $btn = $( this );
+			$btn.closest( '.bf-adv-align' ).find( '.bf-adv-align-btn' ).removeClass( 'is-active' );
+			$btn.addClass( 'is-active' );
+			recomputeAdvField( $btn.closest( '.boldform-adv-field' ) );
+			bfSyncFormMaxWidthState();
+		} );
 
 		// Color picker → sync hex text + swatch, then recompute owning field.
 		$( document ).on( 'input', '.boldform-adv-field .bf-adv-colorpick', function () {

@@ -1,5 +1,7 @@
 .boldform-lite-form {
-	max-width: var(--bf-form-max-width, 100%);
+	max-width: var(--bf-form-mw, var(--bf-form-max-width, 100%));
+	margin-left: var(--bf-form-ml, 0);
+	margin-right: var(--bf-form-mr, 0);
 	padding: var(--bf-form-padding, 0);
 	border-width: var(--bf-form-border-width, 0);
 	border-style: var(--bf-form-border-style, solid);

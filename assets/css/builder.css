@@ -798,6 +798,49 @@
 	color: #0f766e;
 }
 
+/* Icon-segmented alignment switch (left / center / right / full width). */
+.bf-adv-align {
+	display: flex;
+	gap: 6px;
+}
+
+.bf-adv-align-btn {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 38px;
+	padding: 0;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	color: #64748b;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.bf-adv-align-btn:hover {
+	border-color: #cbd5e1;
+	color: #475569;
+}
+
+.bf-adv-align-btn.is-active {
+	border-color: #0f766e;
+	background: #ecfdf5;
+	color: #0f766e;
+}
+
+/* Max Width is meaningless under "Full Width" alignment — dim + lock it. */
+.boldform-adv-field.is-disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.boldform-adv-field.is-disabled input,
+.boldform-adv-field.is-disabled select {
+	cursor: not-allowed;
+}
+
 .boldform-adv-border {
 	display: flex;
 	align-items: flex-start;
@@ -1022,7 +1065,9 @@
    (max-width, padding, background, border, radius, shadow) preview live. Kept
    byte-for-byte in sync with frontend.css .boldform-lite-form. */
 .boldform-style-preview-form {
-	max-width: var(--bf-form-max-width, 100%);
+	max-width: var(--bf-form-mw, var(--bf-form-max-width, 100%));
+	margin-left: var(--bf-form-ml, 0);
+	margin-right: var(--bf-form-mr, 0);
 	padding: var(--bf-form-padding, 0);
 	border-width: var(--bf-form-border-width, 0);
 	border-style: var(--bf-form-border-style, solid);
@@ -3155,12 +3200,26 @@
 	transition: background 0.12s ease, color 0.12s ease;
 }
 
-.boldform-style-section__reset:hover {
+/* Disabled — the group has no changes, so there is nothing to reset. */
+.boldform-style-section__reset.is-disabled {
+	color: #cbd5e1;
+	opacity: 0.5;
+	cursor: default;
+	pointer-events: none;
+}
+
+/* Active — the group has changed values, so the reset is actionable (accent). */
+.boldform-style-section__reset:not(.is-disabled) {
+	color: #0f766e;
+}
+
+/* Hover (only when actionable) → destructive-red affordance; beats the accent. */
+.boldform-style-section__reset:not(.is-disabled):hover {
 	background: #fee2e2;
 	color: #ef4444;
 }
 
-.boldform-style-section__reset:active {
+.boldform-style-section__reset:not(.is-disabled):active {
 	transform: scale(0.92);
 }
 
@@ -3178,8 +3237,12 @@
 	color: #475569;
 }
 
-.boldform-style-section.is-open .boldform-style-section__head .boldform-style-section__reset {
-	color: #64748b;
+.boldform-style-section.is-open .boldform-style-section__head .boldform-style-section__reset:not(.is-disabled) {
+	color: #0f766e;
+}
+
+.boldform-style-section.is-open .boldform-style-section__head .boldform-style-section__reset:not(.is-disabled):hover {
+	color: #ef4444;
 }
 
 .boldform-style-section__body {
@@ -5060,12 +5123,12 @@
 }
 
 .boldform-theme-card:hover {
-	border-color: #93c5fd;
+	border-color: rgba(var(--bf-theme-accent-rgb, 47, 128, 237), 0.5);
 }
 
 .boldform-theme-card.is-active {
-	border-color: #2f80ed;
-	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+	border-color: var(--bf-theme-accent, #2f80ed);
+	box-shadow: 0 0 0 2px rgba(var(--bf-theme-accent-rgb, 47, 128, 237), 0.15);
 }
 
 .boldform-theme-card__preview {
@@ -5099,7 +5162,7 @@
 }
 
 .boldform-theme-card.is-active .boldform-theme-card__name {
-	color: #2f80ed;
+	color: var(--bf-theme-accent, #2f80ed);
 }
 
 /* ============================================================
