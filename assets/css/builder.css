@@ -620,7 +620,7 @@
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 14px;
-	align-items: end;
+	align-items: start;
 }
 
 /* The row gap owns all vertical rhythm inside the grid — clear each control's
@@ -805,11 +805,11 @@
 	margin-bottom: 8px;
 }
 
-/* Width + Style sit in labelled cells (caption below) so the narrow Width box
-   shows a "0" default instead of a clipped "Wid…" placeholder. */
+/* Width + Style sit in labelled cells (caption on top, left-aligned) so the
+   narrow Width box shows a "0" default instead of a clipped "Wid…" placeholder. */
 .bf-adv-bd-cell {
 	display: flex;
-	flex-direction: column;
+	flex-direction: column-reverse;
 	gap: 4px;
 }
 
@@ -834,9 +834,28 @@
 	gap: 6px;
 }
 
-.boldform-adv-typo-grid .bf-adv-ff,
-.boldform-adv-typo-grid .bf-adv-tt {
+/* Each typography / box-shadow control shows a persistent caption (font size,
+   blur, etc.) on top, left-aligned — like a normal field label — so the field
+   name stays visible after a value is typed. column-reverse puts the caption
+   (last DOM child) above its input. */
+.bf-adv-typo-cell,
+.bf-adv-shadow-cell {
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 4px;
+	min-width: 0;
+}
+
+.boldform-adv-typo-grid .bf-adv-typo-cell--full {
 	grid-column: 1 / -1;
+}
+
+/* Captions in these labelled cells read top-left (overrides the centered
+   .bf-adv-dim-cap default, which still suits the compact 4-side dimension grid). */
+.bf-adv-bd-cell .bf-adv-dim-cap,
+.bf-adv-typo-cell .bf-adv-dim-cap,
+.bf-adv-shadow-cell .bf-adv-dim-cap {
+	text-align: left;
 }
 
 .boldform-adv-shadow-foot {
@@ -1020,9 +1039,9 @@
 	box-sizing: border-box;
 }
 
-.boldform-style-preview-canvas .boldform-canvas-field {
-	margin-bottom: 16px;
-}
+/* Field margin and the 16px within-column gap come from the Layout & Spacing
+   controls (see "Layout & spacing (Style preview)" further down), wired to
+   mirror the front-end box model. */
 
 /* Read-only preview: no hover affordance and no pointer interactions. */
 .boldform-style-preview-canvas .boldform-canvas-field:hover {
@@ -1438,19 +1457,30 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	padding: 24px 16px;
+	/* Respond to Height (floor) and the Padding control, like the front-end file
+	   input; defaults keep the roomy drop-zone look when neither is set. */
+	min-height: var(--bf-field-height, auto);
+	padding: var(--bf-field-padding, 24px 16px);
 	border: 2px dashed var(--bf-field-border, #d1d5db);
-	border-radius: 12px;
+	border-radius: var(--bf-field-radius, 12px);
 	background: var(--bf-field-bg, #f9fafb);
-	color: #6b7280;
+	color: var(--bf-file-btn-text, var(--bf-field-text, #6b7280));
 	font-size: 14px;
 }
 
+/* Icon chip — mirrors the front-end drop-zone; driven by the File Upload
+   section's Background / Text controls so the preview reflects them. */
 .boldform-canvas-file-preview .dashicons {
-	font-size: 20px;
-	width: 20px;
-	height: 20px;
-	color: #9ca3af;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	font-size: 18px;
+	line-height: 1;
+	background: var(--bf-file-btn-bg, #e2e8f0);
+	color: var(--bf-file-btn-text, #334155);
 }
 
 /* Button icon in canvas */
@@ -1637,17 +1667,29 @@
 	min-height: 90px;
 }
 
-.boldform-column__empty {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 76px;
+/* Empty drop zone — the dashed frame lives on the field container itself rather
+   than on a child box. When SortableJS drops a field's ghost into an empty
+   column it becomes a child of .boldform-column-fields; anchoring the frame here
+   means the incoming ghost lands *inside* the dashed area instead of stacking
+   below it (which read as "dropping outside the box"). */
+.boldform-column-fields.is-empty {
+	align-content: center;
 	padding: 12px;
 	border: 1px dashed #dbe4ee;
 	border-radius: 14px;
 	background: rgba(255, 255, 255, 0.7);
+}
+
+.boldform-column__empty {
 	color: #94a3b8;
 	text-align: center;
+}
+
+/* While a field is dragged into the empty column, hide the prompt so only the
+   incoming field shows, centered inside the frame. Browsers without :has()
+   simply keep the prompt above the ghost — still inside the frame. */
+.boldform-column-fields.is-empty:has( .sortable-ghost ) .boldform-column__empty {
+	display: none;
 }
 
 .boldform-canvas-field {
@@ -1672,6 +1714,7 @@
 	transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 	pointer-events: none;
 	z-index: 0;
+	display: none;
 }
 
 .boldform-canvas-field:hover::before {
@@ -1962,7 +2005,7 @@
 /* Name field canvas preview */
 .boldform-canvas-name {
 	display: flex;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-name__field {
@@ -1973,9 +2016,17 @@
 }
 
 .boldform-canvas-name__sub {
-	font-size: 11px;
-	color: #94a3b8;
-	font-weight: 500;
+	font-family: var(--bf-sublabel-ff, inherit);
+	font-size: var(--bf-sublabel-fs, 11px);
+	font-weight: var(--bf-sublabel-fw, 500);
+	line-height: var(--bf-sublabel-lh, normal);
+	letter-spacing: var(--bf-sublabel-ls, normal);
+	text-transform: var(--bf-sublabel-tt, none);
+	color: var(--bf-sublabel-color, #94a3b8);
+}
+
+.boldform-canvas-name__field:focus-within .boldform-canvas-name__sub {
+	color: var(--bf-sublabel-focus-color, var(--bf-sublabel-color, #94a3b8));
 }
 
 /* New field canvas previews */
@@ -2008,13 +2059,13 @@
 
 .boldform-canvas-address {
 	display: grid;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-address__row {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-address__row--half {
@@ -5403,6 +5454,8 @@
 .boldform-canvas .boldform-canvas-field-body select:hover {
 	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
 	background: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-hover-shadow, var(--bf-field-shadow, none));
 }
 
 /* Focus state. */
@@ -5411,6 +5464,7 @@
 .boldform-canvas .boldform-canvas-field-body select:focus {
 	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
 	background: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
 	box-shadow: var(--bf-field-focus-shadow, 0 0 0 3px rgba(15, 118, 110, 0.12));
 }
 
@@ -5472,9 +5526,19 @@
 	margin: var(--bf-actions-margin, 0);
 }
 
-/* ---- Choice (checkbox / radio) ---- */
-.boldform-canvas .boldform-choice,
-.boldform-canvas .boldform-lite-form__choice {
+/* ---- Choice (checkbox / radio) — custom shell ----
+   Mirrors the front-end custom control so every control previews accurately
+   (Normal border/bg, Checked accent, Hover border, Size, icon↔label gap). The
+   choice rows ARE <label> elements, so the colour/typography rule is qualified
+   (0,3,1) to beat the generic `.boldform-canvas-field-body label` (0,2,1) rule.
+   The shell rules are scoped to .boldform-canvas-field-choices (the checkbox/
+   radio wrapper) so product/terms/template choice previews keep their own look. */
+.boldform-canvas .boldform-canvas-field-body label.boldform-choice,
+.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice {
+	display: flex;
+	align-items: center;
+	gap: var(--bf-choice-gap, 10px);
+	margin: 0;
 	color: var(--bf-choice-color, var(--bf-field-text, #111827));
 	font-family: var(--bf-choice-ff, inherit);
 	font-size: var(--bf-choice-fs, var(--bf-field-font-size, 15px));
@@ -5482,15 +5546,81 @@
 	line-height: var(--bf-choice-lh, normal);
 	letter-spacing: var(--bf-choice-ls, normal);
 	text-transform: var(--bf-choice-tt, none);
-	margin-bottom: var(--bf-choice-gap, 10px);
 }
 
-.boldform-canvas .boldform-choice input[type="checkbox"],
-.boldform-canvas .boldform-choice input[type="radio"] {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
+	--bf-choice-accent-r: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	cursor: default;
+}
+
+/* Native input hidden; the shell span is the visible control. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	margin: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	width: var(--bf-choice-size, 18px);
 	height: var(--bf-choice-size, 18px);
 	min-width: var(--bf-choice-size, 18px);
-	accent-color: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border: 2px solid var(--bf-choice-border, var(--bf-field-border, #cbd5e1));
+	border-radius: 5px;
+	background: var(--bf-choice-bg, var(--bf-field-bg, #fff));
+	flex-shrink: 0;
+	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
+	border-radius: 50%;
+}
+
+/* Checked = the Accent colour. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: var(--bf-choice-accent-r);
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: #fff;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 9px;
+	border-right: 2px solid var(--bf-choice-icon, #fff);
+	border-bottom: 2px solid var(--bf-choice-icon, #fff);
+	transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--bf-choice-icon, var(--bf-choice-accent-r));
+}
+
+/* Hover = the Hover border + background colours (fall back to normal). */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
+	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
+	flex: 1;
+	min-width: 0;
 }
 
 /* ---- Terms & Conditions ---- */
@@ -5500,16 +5630,53 @@
 	color: var(--bf-terms-color, inherit);
 }
 
+/* Terms checkbox uses the same custom shell as the choice fields (mirrors the
+   front-end) so Border/Background/Hover/Checked/Icon all preview. Native input
+   hidden; the .boldform-lite-form__choice-control span is the visible box. */
 .boldform-canvas .boldform-canvas-terms input[type="checkbox"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	margin: 0;
+}
+
+.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
+	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 2px;
 	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
-	min-height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
-	border-color: var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1));
-	border-width: var(--bf-terms-box-border-width, 2px);
+	border: var(--bf-terms-box-border-width, 2px) solid var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1));
 	border-radius: var(--bf-terms-box-radius, 5px);
 	background: var(--bf-terms-box-bg, var(--bf-field-bg, #fff));
-	accent-color: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
+	flex-shrink: 0;
+	transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: var(--bf-choice-accent-r);
+}
+
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 9px;
+	border-right: 2px solid var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	border-bottom: 2px solid var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
+	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
 }
 
 .boldform-canvas .boldform-canvas-terms__copy {
@@ -5532,10 +5699,12 @@
 
 /* ---- Select dropdown trigger ---- */
 .boldform-canvas .boldform-canvas-field-body .bf-select__trigger {
-	padding: var(--bf-select-padding, var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px));
+	min-height: var(--bf-field-height, auto);
+	height: var(--bf-field-height, auto);
+	padding: var(--bf-select-padding, var(--bf-field-padding, var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px)));
 	border: var(--bf-select-border-width, var(--bf-field-border-width, 1px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
 	border-radius: var(--bf-select-radius, var(--bf-field-radius, 16px));
-	background-color: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-select-text, var(--bf-field-text, #111827));
 	box-shadow: var(--bf-select-shadow, none);
 	font-family: var(--bf-select-ff, inherit);
@@ -5605,17 +5774,42 @@
 	color: var(--bf-star-hover, var(--bf-star-color, var(--star-color, var(--bf-button-bg, #f59e0b))));
 }
 
-/* ---- Layout & spacing (Style preview) ---- */
-.boldform-style-preview-canvas .boldform-canvas-field {
-	margin: var(--bf-field-margin, 0 0 var(--bf-row-gap, 16px));
+/* ---- Layout & spacing (Style preview) ----
+   Mirror the front-end box model (frontend.css) so the four Layout controls
+   read identically in the preview and on the front end, and stay independent
+   of one another:
+     • Row gap     → gap between rows (the form wraps rows like __fields).
+     • Column gap  → row negative-margin gutter + column horizontal padding.
+     • Field margin→ margin on each field box (default 0).
+     • Input margin→ margin on the control inside the field (default 0).
+   The earlier hack folded row gap into the field's bottom-margin, so setting
+   Field Margin silently discarded Row Gap. Keeping them on separate boxes (form
+   gap vs field margin) fixes that. Defaults match frontend.css: row 24px,
+   column 10px, margins 0. */
+.boldform-style-preview-form {
+	display: grid;
+	gap: var(--bf-row-gap, 24px);
 }
 
 .boldform-style-preview-form .boldform-style-preview-row {
-	margin: 0 calc(var(--bf-col-gap, 8px) * -1);
+	margin: 0 calc(var(--bf-col-gap, 10px) * -1);
 }
 
 .boldform-style-preview-form .boldform-style-preview-column {
-	padding: 0 var(--bf-col-gap, 8px);
+	display: grid;
+	gap: 16px;
+	align-content: start;
+	padding: 0 var(--bf-col-gap, 10px);
+}
+
+.boldform-style-preview-canvas .boldform-canvas-field {
+	margin: var(--bf-field-margin, 0);
+}
+
+.boldform-style-preview-canvas .boldform-canvas-field-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.boldform-style-preview-canvas .boldform-canvas-field-body textarea,
+.boldform-style-preview-canvas .boldform-canvas-field-body select {
+	margin: var(--bf-input-margin, 0);
 }
 
 
@@ -5733,7 +5927,7 @@
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	background-color: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
 	border: var(--bf-select-border-width, var(--bf-field-border-width, 1px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
 	border-radius: var(--bf-select-radius, var(--bf-field-radius, 10px));
 	color: var(--bf-select-text, var(--bf-field-text, #111827));
@@ -5744,7 +5938,7 @@
 /* The open dropdown also previews the select focus state. */
 .boldform-preview-states .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bf-select-focus-border, var(--bf-focus-color, #0f766e));
-	background-color: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
+	background: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
 	box-shadow: 0 0 0 3px var(--bf-select-focus-ring, transparent);
 }
 

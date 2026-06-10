@@ -291,6 +291,8 @@ input[data-boldform-picker] {
 .boldform-lite-form textarea:hover {
 	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
 	background-color: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-hover-shadow, var(--bf-field-shadow, none));
 }
 
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
@@ -298,8 +300,23 @@ input[data-boldform-picker] {
 .boldform-lite-form textarea:focus {
 	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
 	background-color: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
 	box-shadow: var(--bf-field-focus-shadow, var(--bf-field-shadow, none));
 	outline: none;
+}
+
+/* Gradient-capable hover/focus background for text inputs & textareas. The
+   combined rules above keep `background-color` so the native <select> arrow
+   (a background-image) survives; here the `background` shorthand lets a
+   --bf-field-*-bg that holds a linear-gradient render on inputs/textareas. */
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.boldform-lite-form textarea:hover {
+	background: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+}
+
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.boldform-lite-form textarea:focus {
+	background: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
 }
 
 .boldform-lite-form textarea {
@@ -339,56 +356,73 @@ input[data-boldform-picker] {
 	justify-content: flex-end;
 }
 
-/* File upload field */
-.boldform-lite-form__field--file input[type="file"] {
-	width: 100%;
-	padding: 12px;
+/* File upload — styled drop-zone matching the builder Live Preview. The native
+   <input> is hidden but stretched over the whole zone, so the click target and
+   native drag-and-drop keep working; frontend.js reflects the chosen filename. */
+.boldform-lite-form__file {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: var(--bf-field-height, auto);
+	padding: var(--bf-field-padding, 24px 16px);
 	border: 2px dashed var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 12px);
-	background: #f9fafb;
-	cursor: pointer;
+	background: var(--bf-field-bg, #f9fafb);
+	color: var(--bf-file-btn-text, var(--bf-field-text, #6b7280));
 	font-size: 14px;
-	color: #6b7280;
+	text-align: center;
+	cursor: pointer;
+	box-sizing: border-box;
+	transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-.boldform-lite-form__field--file input[type="file"]:hover {
+.boldform-lite-form__file:hover,
+.boldform-lite-form__file.is-dragover {
 	border-color: var(--bf-focus-color, #0f766e);
-	background: #f0fdfa;
 }
 
-.boldform-lite-form__field--file input[type="file"]::-webkit-file-upload-button {
-	margin-right: 12px;
-	padding: 8px 14px;
-	border: 0;
-	border-radius: 8px;
-	background: var(--bf-file-btn-bg, #e2e8f0);
-	color: var(--bf-file-btn-text, #334155);
-	font-size: 13px;
-	font-weight: 600;
+/* The real input: invisible but covers the zone (click + native file drop). */
+.boldform-lite-form__file-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	opacity: 0;
 	cursor: pointer;
 }
 
-.boldform-lite-form__field--file input[type="file"]::file-selector-button {
-	margin-right: 12px;
-	padding: 8px 14px;
-	border: 0;
-	border-radius: 8px;
+/* Icon "chip" — driven by the File Upload section's Background / Text controls. */
+.boldform-lite-form__file-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
 	background: var(--bf-file-btn-bg, #e2e8f0);
 	color: var(--bf-file-btn-text, #334155);
-	font-size: 13px;
-	font-weight: 600;
-	cursor: pointer;
 }
 
-/* File button hover — fall back to the normal button colours so unset = no change. */
-.boldform-lite-form__field--file input[type="file"]::-webkit-file-upload-button:hover {
+.boldform-lite-form__file:hover .boldform-lite-form__file-icon,
+.boldform-lite-form__file.is-dragover .boldform-lite-form__file-icon {
 	background: var(--bf-file-btn-hover-bg, var(--bf-file-btn-bg, #e2e8f0));
 	color: var(--bf-file-btn-hover-text, var(--bf-file-btn-text, #334155));
 }
 
-.boldform-lite-form__field--file input[type="file"]::file-selector-button:hover {
-	background: var(--bf-file-btn-hover-bg, var(--bf-file-btn-bg, #e2e8f0));
-	color: var(--bf-file-btn-hover-text, var(--bf-file-btn-text, #334155));
+.boldform-lite-form__file-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.boldform-lite-form__file.has-file .boldform-lite-form__file-text {
+	font-weight: 600;
 }
 
 /* Section break */
@@ -438,8 +472,9 @@ input[data-boldform-picker] {
 .boldform-lite-form__choice {
 	display: flex;
 	align-items: center;
-	gap: 10px;
-	margin-bottom: var(--bf-choice-gap, 0);
+	/* Spacing control = the gap between the box/circle and its label. Row spacing
+	   between options comes from .boldform-lite-form__choices' own gap. */
+	gap: var(--bf-choice-gap, 10px);
 	padding: 0;
 	border: 0;
 	border-radius: 0;
@@ -477,9 +512,9 @@ input[data-boldform-picker] {
 	width: var(--bf-choice-size, 18px);
 	height: var(--bf-choice-size, 18px);
 	min-width: var(--bf-choice-size, 18px);
-	border: 2px solid var(--bf-field-border, #cbd5e1);
+	border: 2px solid var(--bf-choice-border, var(--bf-field-border, #cbd5e1));
 	border-radius: 5px;
-	background: var(--bf-field-bg, #fff);
+	background: var(--bf-choice-bg, var(--bf-field-bg, #fff));
 	flex-shrink: 0;
 	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
@@ -508,8 +543,8 @@ input[data-boldform-picker] {
 	display: block;
 	width: 5px;
 	height: 9px;
-	border-right: 2px solid #fff;
-	border-bottom: 2px solid #fff;
+	border-right: 2px solid var(--bf-choice-icon, #fff);
+	border-bottom: 2px solid var(--bf-choice-icon, #fff);
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
@@ -520,7 +555,7 @@ input[data-boldform-picker] {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var(--bf-choice-accent-r);
+	background: var(--bf-choice-icon, var(--bf-choice-accent-r));
 }
 
 /* Focus ring — tint with the same accent so the whole control stays coherent.
@@ -533,6 +568,7 @@ input[data-boldform-picker] {
 /* Hover */
 .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
+	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
 }
 
 /* Choice label text */
@@ -562,6 +598,18 @@ input[data-boldform-picker] {
 	border-width: var(--bf-terms-box-border-width, 2px);
 	border-radius: var(--bf-terms-box-radius, 5px);
 	background: var(--bf-terms-box-bg, var(--bf-field-bg, #fff));
+}
+
+/* Terms-specific Hover + Checked-icon colours. Declared after the shared choice
+   :hover / checkmark rules (equal specificity), so they win for the terms box. */
+.boldform-lite-form__terms:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
+	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
+}
+
+.boldform-lite-form__terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	border-right-color: var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	border-bottom-color: var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
 }
 
 .boldform-lite-form__terms-copy {
@@ -835,7 +883,7 @@ input[data-boldform-picker] {
 /* ── Name ── */
 .boldform-lite-name {
 	display: flex;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-name__field {
@@ -846,9 +894,19 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-name__sub {
-	font-size: 12px;
-	color: #6b7280;
-	font-weight: 500;
+	font-family: var(--bf-sublabel-ff, inherit);
+	font-size: var(--bf-sublabel-fs, 12px);
+	font-weight: var(--bf-sublabel-fw, 500);
+	line-height: var(--bf-sublabel-lh, normal);
+	letter-spacing: var(--bf-sublabel-ls, normal);
+	text-transform: var(--bf-sublabel-tt, none);
+	color: var(--bf-sublabel-color, #6b7280);
+}
+
+/* Sub-label highlights while its part input is focused — parity with the main
+   label's focus colour. Falls back to the normal sub-label colour = no change. */
+.boldform-lite-name__field:focus-within .boldform-lite-name__sub {
+	color: var(--bf-sublabel-focus-color, var(--bf-sublabel-color, #6b7280));
 }
 
 @media screen and (max-width: 480px) {
@@ -868,12 +926,12 @@ input[data-boldform-picker] {
 /* ── Address ── */
 .boldform-lite-address {
 	display: grid;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-address__row {
 	display: grid;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-address__row--half {
@@ -1136,11 +1194,16 @@ input[data-boldform-picker] {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	min-height: calc(1.5em + var(--bf-field-padding-y, 10px) * 2 + var(--bf-field-border-width, 1.5px) * 2);
-	padding: var(--bf-select-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px));
+	/* Height: when set it pins the trigger to that exact height (content centred via
+	   flex, matching a plain input); when unset it falls back to the natural calc. */
+	min-height: var(--bf-field-height, calc(1.5em + var(--bf-field-padding-y, 10px) * 2 + var(--bf-field-border-width, 1.5px) * 2));
+	height: var(--bf-field-height, auto);
+	/* Honour the field Padding control (which writes the --bf-field-padding shorthand)
+	   so reducing padding actually shrinks the select, not just plain inputs. */
+	padding: var(--bf-select-padding, var(--bf-field-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px)));
 	border: var(--bf-select-border-width, var(--bf-field-border-width, 1.5px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
 	border-radius: var(--bf-select-radius, var(--bf-field-radius, 8px));
-	background-color: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-select-text, var(--bf-field-text, #111827));
 	font-family: var(--bf-select-ff, inherit);
 	font-size: var(--bf-select-fs, var(--bf-field-font-size, 14px));
@@ -1160,7 +1223,7 @@ input[data-boldform-picker] {
 
 .bf-select.is-open .bf-select__trigger {
 	border-color: var(--bf-select-focus-border, var(--bf-focus-color, #0f766e));
-	background-color: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
+	background: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
 	box-shadow: 0 0 0 3px var(--bf-select-focus-ring, transparent);
 }
 

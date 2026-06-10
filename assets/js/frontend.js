@@ -74,6 +74,30 @@ jQuery(
 		// Disable native browser validation only when JS is loaded — keeps HTML5 required as fallback.
 		$( '.boldform-lite-form' ).attr( 'novalidate', 'novalidate' );
 
+		// ── File upload drop-zone ──
+		// The native <input type="file"> is hidden but stretched over the zone, so its
+		// click target and native drag-and-drop already work; here we just reflect the
+		// chosen filename in the label and toggle the drag-over highlight.
+		$( document ).on( 'change', '.boldform-lite-form__file-input', function () {
+			var $zone = $( this ).closest( '.boldform-lite-form__file' );
+			var $text = $zone.find( '.boldform-lite-form__file-text' );
+			var files = this.files;
+			if ( files && files.length ) {
+				$text.text( files[0].name + ( files.length > 1 ? ' (+' + ( files.length - 1 ) + ')' : '' ) );
+				$zone.addClass( 'has-file' );
+			} else {
+				$text.text( $text.data( 'placeholder' ) || '' );
+				$zone.removeClass( 'has-file' );
+			}
+		} );
+		$( document ).on( 'dragover dragenter', '.boldform-lite-form__file', function ( e ) {
+			e.preventDefault();
+			$( this ).addClass( 'is-dragover' );
+		} );
+		$( document ).on( 'dragleave dragend drop', '.boldform-lite-form__file', function () {
+			$( this ).removeClass( 'is-dragover' );
+		} );
+
 		// ── Live email validation ──
 		$( document ).on( 'blur', '.boldform-lite-form input[type="email"]', function () {
 			var $input   = $( this );

@@ -1061,7 +1061,7 @@ jQuery(
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
-				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
+				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
 			} else if ( field.type === 'captcha' ) {
 				html = '<div class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</div>';
 			} else if ( field.type === 'textarea' ) {
@@ -1104,7 +1104,7 @@ jQuery(
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
-						html += '<label class="boldform-choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '> ' + escapeHtml( option ) + '</label>';
+						html += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( option ) + '</span></label>';
 					}
 				);
 				html += '</div>';
@@ -1591,7 +1591,8 @@ jQuery(
 
 							markup += '<div class="' + columnClasses + '" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '" style="width:' + escapeHtml( column.width ) + ';">';
 							markup += '<div class="boldform-column__head"><span>' + escapeHtml( column.width ) + '</span><span>' + column.fields.length + ' ' + escapeHtml( boldformLiteBuilder.labels.fields ) + '</span></div>';
-							markup += '<div class="boldform-column-fields" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '">';
+							var fieldsClasses = 'boldform-column-fields' + ( column.fields.length ? '' : ' is-empty' );
+							markup += '<div class="' + fieldsClasses + '" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '">';
 
 							if ( ! column.fields.length ) {
 								markup += '<div class="boldform-column__empty">' + escapeHtml( boldformLiteBuilder.labels.dropHere ) + '</div>';
@@ -3218,12 +3219,15 @@ jQuery(
 					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
 				'</div>';
 			}
-			return '<div class="boldform-setting-group boldform-adv-field" data-type="dimension" data-var="' + cssVar + '">' +
+			// Linked when all four sides are equal (or a single shorthand value) — restores
+			// the link toggle's active state on reload instead of resetting it each render.
+			var linked = '' !== nums[0] && nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
+			return '<div class="boldform-setting-group boldform-adv-field' + ( linked ? ' is-linked' : '' ) + '" data-type="dimension" data-var="' + cssVar + '">' +
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-dim">' +
 					dimInp( 0, advLabel( 'sideTop' ) ) + dimInp( 1, advLabel( 'sideRight' ) ) + dimInp( 2, advLabel( 'sideBottom' ) ) + dimInp( 3, advLabel( 'sideLeft' ) ) +
 					'<select class="bf-adv-input bf-adv-dim-unit">' + unitOpts + '</select>' +
-					'<button type="button" class="bf-adv-dim-link" title="' + escapeHtml( advLabel( 'linkSides' ) ) + '"><span class="dashicons dashicons-admin-links"></span></button>' +
+					'<button type="button" class="bf-adv-dim-link' + ( linked ? ' is-active' : '' ) + '" title="' + escapeHtml( advLabel( 'linkSides' ) ) + '"><span class="dashicons dashicons-admin-links"></span></button>' +
 				'</div>' +
 			'</div>';
 		}
@@ -3273,12 +3277,12 @@ jQuery(
 			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-typo" data-type="typography" data-var="' + baseVar + '">' +
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-typo-grid">' +
-					'<select class="bf-adv-input bf-adv-ff" title="' + escapeHtml( advLabel( 'fontFamily' ) ) + '">' + ffOpts + '</select>' +
-					'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="' + escapeHtml( advLabel( 'fontSize' ) ) + '" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div>' +
-					'<select class="bf-adv-input bf-adv-fw" title="' + escapeHtml( advLabel( 'fontWeight' ) ) + '">' + fwOpts + '</select>' +
-					'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="' + escapeHtml( advLabel( 'lineHeight' ) ) + '" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div>' +
-					'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="' + escapeHtml( advLabel( 'letterSpacing' ) ) + '" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div>' +
-					'<select class="bf-adv-input bf-adv-tt" title="' + escapeHtml( advLabel( 'textTransform' ) ) + '">' + ttOpts + '</select>' +
+					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-ff">' + ffOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontFamily' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><select class="bf-adv-input bf-adv-fw">' + fwOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontWeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-tt">' + ttOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'textTransform' ) ) + '</span></div>' +
 				'</div>' +
 			'</div>';
 		}
@@ -3287,9 +3291,19 @@ jQuery(
 			var raw = advStyleGet( cssVar );
 			var inset = /(^|\s)inset(\s|$)/.test( raw );
 			var nums = ( raw.replace( 'inset', '' ).match( /-?\d+(\.\d+)?px/g ) || [] ).map( parseFloat );
-			var colMatch = raw.match( /#[0-9a-fA-F]{6}/ );
+			// Colour may be hex (#rrggbb / #rrggbbaa) or rgb()/rgba() — bfComposeColor emits
+			// rgba() whenever opacity < 100%, so parse every form back (not just hex),
+			// otherwise a translucent shadow colour is lost on reload.
+			var colMatch = raw.match( /#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|rgba?\([^)]*\)/i );
 			var col = colMatch ? colMatch[0] : '';
-			function sInp( cls, ph, v ) { return '<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input ' + cls + '" placeholder="' + ph + '" value="' + ( isNaN( v ) || v == null ? '' : v ) + '"><span>px</span></div>'; }
+			function sInp( cls, cap, v ) {
+				// Caption (not placeholder) so the field name stays visible once a value is
+				// entered — a bare placeholder vanishes and leaves four anonymous px boxes.
+				return '<div class="bf-adv-shadow-cell">' +
+					'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input ' + cls + '" placeholder="0" value="' + ( isNaN( v ) || v == null ? '' : v ) + '"><span>px</span></div>' +
+					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
+				'</div>';
+			}
 			return '<div class="boldform-adv-shadow-grid">' +
 				sInp( 'bf-adv-sx', advLabel( 'shadowX' ), nums[0] ) +
 				sInp( 'bf-adv-sy', advLabel( 'shadowY' ), nums[1] ) +
@@ -3297,7 +3311,7 @@ jQuery(
 				sInp( 'bf-adv-sspread', advLabel( 'shadowSpread' ), nums[3] ) +
 			'</div>' +
 			'<div class="boldform-adv-shadow-foot">' +
-				'<div class="bf-adv-sc-row" data-type="color">' + advColorFieldMarkup( 'bf-adv-sc', col, advLabel( 'textColor' ) ) + '</div>' +
+				'<div class="bf-adv-sc-row" data-type="color">' + advColorFieldMarkup( 'bf-adv-sc', col, advLabel( 'shadowColor' ) ) + '</div>' +
 				'<label class="bf-adv-inset-lbl"><input type="checkbox" class="bf-adv-input bf-adv-inset"' + ( inset ? ' checked' : '' ) + '> ' + escapeHtml( advLabel( 'inset' ) ) + '</label>' +
 			'</div>';
 		}
@@ -3323,11 +3337,14 @@ jQuery(
 			var isGrad = /gradient/i.test( raw );
 			var c1 = '', c2 = '', angle = 135, solid = '';
 			if ( isGrad ) {
-				var cols = raw.match( /#[0-9a-fA-F]{6}/g ) || [];
+				// Match hex8/hex6/rgba so opacity-bearing gradient stops restore on reload.
+				var cols = raw.match( /#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|rgba?\([^)]*\)/gi ) || [];
 				c1 = cols[0] || ''; c2 = cols[1] || '';
 				var am = raw.match( /(-?\d+)deg/ ); if ( am ) { angle = parseInt( am[1], 10 ); }
 			} else {
-				solid = BF_HEX6.test( raw ) ? raw : '';
+				// Pass the raw colour (hex/hex8/rgba); advColorFieldMarkup parses opacity,
+				// so a solid background set with <100% alpha survives a reload too.
+				solid = raw;
 			}
 			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-bg" data-type="background" data-var="' + cssVar + '">' +
 				'<label>' + escapeHtml( label ) + '</label>' +
@@ -3414,20 +3431,25 @@ jQuery(
 					{ type: 'slider', var: '--bf-row-gap', label: 'rowGap', min: 0, max: 100, units: [ 'px', 'em' ] },
 					{ type: 'slider', var: '--bf-col-gap', label: 'columnGap', min: 0, max: 80, units: [ 'px' ] },
 					{ type: 'dimension', var: '--bf-field-margin', label: 'fieldMargin' },
-					{ type: 'dimension', var: '--bf-input-margin', label: 'inputMargin' }
+					{ type: 'dimension', var: '--bf-input-margin', label: 'inputMargin' },
+						{ type: 'slider', var: '--bf-subfield-gap', label: 'subfieldGap', min: 0, max: 60, units: [ 'px', 'em' ] }
 				] },
 				{ id: 'labels', title: advLabel( 'secLabels' ), controls: [
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'color', var: '--bf-label-color', label: 'labelColor' }
+							{ type: 'color', var: '--bf-label-color', label: 'labelColor' },
+							{ type: 'color', var: '--bf-sublabel-color', label: 'subLabelColor' }
 						] },
 						{ key: 'focus', label: 'stateFocus', controls: [
-							{ type: 'color', var: '--bf-label-focus-color', label: 'labelColor' }
+							{ type: 'color', var: '--bf-label-focus-color', label: 'labelColor' },
+							{ type: 'color', var: '--bf-sublabel-focus-color', label: 'subLabelColor' }
 						] }
 					] },
 					{ type: 'typography', var: '--bf-label', label: 'typography' },
 					{ type: 'dimension', var: '--bf-label-margin', label: 'margin' },
-					{ type: 'color', var: '--bf-required-color', label: 'requiredColor' }
+					{ type: 'color', var: '--bf-required-color', label: 'requiredColor' },
+					{ type: 'heading', label: 'subLabel' },
+					{ type: 'typography', var: '--bf-sublabel', label: 'typography' }
 				] },
 				{ id: 'inputs', title: advLabel( 'secInputs' ), controls: [
 					{ type: 'slider', var: '--bf-field-height', label: 'height', min: 24, max: 90, units: [ 'px' ] },
@@ -3435,7 +3457,7 @@ jQuery(
 					{ type: 'dimension', var: '--bf-field-padding', label: 'padding' },
 					{ type: 'color', var: '--bf-ph-color', label: 'placeholderColor' },
 					{ type: 'typography', var: '--bf-field', label: 'typography' },
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
 							{ type: 'background', var: '--bf-field-bg', label: 'background' },
 							{ type: 'color', var: '--bf-field-text', label: 'textColor' },
@@ -3444,11 +3466,14 @@ jQuery(
 						] },
 						{ key: 'hover', label: 'stateHover', controls: [
 							{ type: 'color', var: '--bf-field-hover-border', label: 'borderColor' },
-							{ type: 'color', var: '--bf-field-hover-bg', label: 'background' }
+							{ type: 'background', var: '--bf-field-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-field-hover-text', label: 'textColor' },
+							{ type: 'shadow', var: '--bf-field-hover-shadow', label: 'boxShadow' }
 						] },
 						{ key: 'focus', label: 'stateFocus', controls: [
 							{ type: 'color', var: '--bf-field-focus-border', label: 'borderColor' },
-							{ type: 'color', var: '--bf-field-focus-bg', label: 'background' },
+							{ type: 'background', var: '--bf-field-focus-bg', label: 'background' },
+							{ type: 'color', var: '--bf-field-focus-text', label: 'textColor' },
 							{ type: 'shadow', var: '--bf-field-focus-shadow', label: 'boxShadow' }
 						] }
 					] },
@@ -3458,7 +3483,7 @@ jQuery(
 					{ type: 'switch', var: '--bf-btn-width', label: 'fullWidth', on: '100%' },
 					{ type: 'dimension', var: '--bf-button-padding', label: 'padding' },
 					{ type: 'typography', var: '--bf-btn', label: 'typography' },
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
 							{ type: 'background', var: '--bf-button-bg', label: 'background' },
 							{ type: 'color', var: '--bf-button-text', label: 'textColor' },
@@ -3470,9 +3495,6 @@ jQuery(
 							{ type: 'color', var: '--bf-btn-hover-text', label: 'textColor' },
 							{ type: 'color', var: '--bf-btn-hover-border', label: 'borderColor' },
 							{ type: 'shadow', var: '--bf-button-hover-shadow', label: 'boxShadow' }
-						] },
-						{ key: 'focus', label: 'stateFocus', controls: [
-							{ type: 'color', var: '--bf-button-focus-ring', label: 'ringColor' }
 						] }
 					] },
 					{ type: 'dimension', var: '--bf-button-radius', label: 'borderRadius', units: [ 'px', '%' ] },
@@ -3485,15 +3507,18 @@ jQuery(
 					{ type: 'color', var: '--bf-choice-color', label: 'labelColor' },
 					{ type: 'typography', var: '--bf-choice', label: 'typography' },
 					{ type: 'slider', var: '--bf-choice-gap', label: 'spacing', min: 0, max: 32, units: [ 'px' ] },
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'color', var: '--bf-choice-accent', label: 'accentColor' }
+							{ type: 'color', var: '--bf-choice-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-bg', label: 'background' }
 						] },
 						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'color', var: '--bf-choice-hover-border', label: 'borderColor' }
+							{ type: 'color', var: '--bf-choice-hover-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-hover-bg', label: 'background' }
 						] },
-						{ key: 'focus', label: 'stateFocus', controls: [
-							{ type: 'color', var: '--bf-choice-focus-ring', label: 'ringColor' }
+						{ key: 'checked', label: 'stateChecked', controls: [
+							{ type: 'color', var: '--bf-choice-accent', label: 'accentColor' },
+							{ type: 'color', var: '--bf-choice-icon', label: 'iconColor' }
 						] }
 					] }
 				] },
@@ -3511,16 +3536,27 @@ jQuery(
 					{ type: 'typography', var: '--bf-terms-copy', label: 'copyText' },
 					{ type: 'heading', label: 'secChoice' },
 					{ type: 'slider', var: '--bf-terms-box-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
-					{ type: 'color', var: '--bf-terms-box-border', label: 'borderColor' },
-					{ type: 'color', var: '--bf-terms-box-bg', label: 'background' },
-					{ type: 'color', var: '--bf-terms-box-checked', label: 'checkedColor' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-terms-box-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-terms-box-bg', label: 'background' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-terms-box-hover-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-terms-box-hover-bg', label: 'background' }
+						] },
+						{ key: 'checked', label: 'stateChecked', controls: [
+							{ type: 'color', var: '--bf-terms-box-checked', label: 'checkedColor' },
+							{ type: 'color', var: '--bf-terms-box-icon', label: 'iconColor' }
+						] }
+					] },
 					{ type: 'slider', var: '--bf-terms-box-border-width', label: 'borderWidth', min: 1, max: 5, units: [ 'px' ] },
 					{ type: 'slider', var: '--bf-terms-box-radius', label: 'borderRadius', min: 0, max: 12, units: [ 'px' ] },
 					{ type: 'slider', var: '--bf-terms-gap', label: 'gap', min: 0, max: 30, units: [ 'px' ] },
 					{ type: 'dimension', var: '--bf-terms-margin', label: 'margin' }
 				] },
 				{ id: 'star', title: advLabel( 'secStar' ), controls: [
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
 							{ type: 'color', var: '--bf-star-color', label: 'starColor' }
 						] },
@@ -3532,13 +3568,13 @@ jQuery(
 					{ type: 'slider', var: '--bf-star-size', label: 'starSize', min: 14, max: 60, units: [ 'px' ] }
 				] },
 				{ id: 'file', title: advLabel( 'secFile' ), controls: [
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'color', var: '--bf-file-btn-bg', label: 'background' },
+							{ type: 'background', var: '--bf-file-btn-bg', label: 'background' },
 							{ type: 'color', var: '--bf-file-btn-text', label: 'textColor' }
 						] },
 						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'color', var: '--bf-file-btn-hover-bg', label: 'background' },
+							{ type: 'background', var: '--bf-file-btn-hover-bg', label: 'background' },
 							{ type: 'color', var: '--bf-file-btn-hover-text', label: 'textColor' }
 						] }
 					] }
@@ -3563,7 +3599,7 @@ jQuery(
 					{ type: 'typography', var: '--bf-select', label: 'typography' },
 					{ type: 'dimension', var: '--bf-select-radius', label: 'borderRadius', units: [ 'px', '%' ] },
 					{ type: 'dimension', var: '--bf-select-padding', label: 'padding' },
-					{ type: 'stateTabs', label: 'colors', states: [
+					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
 							{ type: 'background', var: '--bf-select-bg', label: 'background' },
 							{ type: 'color', var: '--bf-select-text', label: 'textColor' },
@@ -3575,7 +3611,7 @@ jQuery(
 						] },
 						{ key: 'focus', label: 'stateFocus', controls: [
 							{ type: 'color', var: '--bf-select-focus-border', label: 'borderColor' },
-							{ type: 'color', var: '--bf-select-focus-bg', label: 'background' },
+							{ type: 'background', var: '--bf-select-focus-bg', label: 'background' },
 							{ type: 'color', var: '--bf-select-focus-ring', label: 'ringColor' }
 						] }
 					] },
@@ -3589,14 +3625,22 @@ jQuery(
 					{ type: 'color', var: '--bf-select-search-text', label: 'searchText' },
 					{ type: 'color', var: '--bf-select-search-ph', label: 'searchPh' },
 					{ type: 'heading', label: 'optionText' },
-					{ type: 'color', var: '--bf-select-opt-bg', label: 'optionBg' },
-					{ type: 'color', var: '--bf-select-opt-color', label: 'optionText' },
 					{ type: 'typography', var: '--bf-select-opt', label: 'typography' },
-					{ type: 'color', var: '--bf-select-opt-hover-bg', label: 'optionHoverBg' },
-					{ type: 'color', var: '--bf-select-opt-hover-color', label: 'optionHoverText' },
-					{ type: 'color', var: '--bf-select-opt-active-bg', label: 'optionActiveBg' },
-					{ type: 'color', var: '--bf-select-opt-active-color', label: 'checkedColor' },
-					{ type: 'color', var: '--bf-select-check', label: 'accentColor' }
+					{ type: 'color', var: '--bf-select-check', label: 'accentColor' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-select-opt-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-color', label: 'textColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-select-opt-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-hover-color', label: 'textColor' }
+						] },
+						{ key: 'selected', label: 'stateSelected', controls: [
+							{ type: 'color', var: '--bf-select-opt-active-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-active-color', label: 'textColor' }
+						] }
+					] }
 				] },
 				{ id: 'placeholder', title: advLabel( 'secPlaceholder' ), controls: [
 					{ type: 'color', var: '--bf-ph-color', label: 'placeholderColor' },
@@ -3649,12 +3693,34 @@ jQuery(
 			return vars;
 		}
 
+		// Within each heading-delimited segment of a section, render the non-state
+		// controls first and the Normal/Hover/… state-tab groups last, so the tabs
+		// never sit above unrelated non-state controls (which made those read as
+		// state-specific and confused users). Headings start a new segment, so
+		// sub-grouped sections (Select's panel/options groups, Terms' link vs
+		// checkbox groups) keep their internal structure.
+		function bfOrderControls( controls ) {
+			var out = [], seg = [];
+			function flush() {
+				var rest = [], tabs = [];
+				seg.forEach( function ( c ) { ( 'stateTabs' === c.type ? tabs : rest ).push( c ); } );
+				out = out.concat( rest, tabs );
+				seg = [];
+			}
+			( controls || [] ).forEach( function ( c ) {
+				if ( 'heading' === c.type ) { flush(); }
+				seg.push( c );
+			} );
+			flush();
+			return out;
+		}
+
 		function renderAdvancedStyleSections() {
 			var html = '';
 			var resetSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
 			bfStyleSchema().forEach( function ( sec ) {
 				var body = '';
-				sec.controls.forEach( function ( c ) { body += advControl( c ); } );
+				bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
 				var rLabel = escapeHtml( advLabel( 'resetSection' ) );
 				html += '<div class="boldform-style-section" data-adv-section="' + sec.id + '">' +
 					'<div class="boldform-style-section__head"><h3>' + escapeHtml( sec.title ) + '</h3>' +
@@ -4306,7 +4372,7 @@ jQuery(
 			var layer = state.formSettings.style && state.formSettings.style[ state.activeDevice || 'desktop' ];
 			if ( layer ) { bfSectionVars( sec ).forEach( function ( v ) { delete layer[ v ]; } ); }
 			var body = '';
-			sec.controls.forEach( function ( c ) { body += advControl( c ); } );
+			bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
 			$btn.closest( '.boldform-style-section' ).find( '.boldform-adv-grid' ).html( body );
 			applyPreviewStyleBlock();
 		} );

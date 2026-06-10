@@ -1530,11 +1530,17 @@ class BoldForm_Lite_Shortcode {
 		if ( 'file' === $type ) {
 			$accept      = isset( $field['allowed_types'] ) && '' !== $field['allowed_types'] ? (string) $field['allowed_types'] : '';
 			$accept_attr = '' !== $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
+			$file_hint   = __( 'Choose file or drag & drop', 'boldform-lite' );
+			// Static inline SVG (no dashicons dependency on the front-end).
+			$file_icon   = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
 			return sprintf(
-				'<input id="%1$s" type="file" name="%1$s"%2$s%3$s>',
+				'<div class="boldform-lite-form__file"><input id="%1$s" type="file" name="%1$s" class="boldform-lite-form__file-input"%2$s%3$s><span class="boldform-lite-form__file-icon">%4$s</span><span class="boldform-lite-form__file-text" data-placeholder="%5$s">%6$s</span></div>',
 				esc_attr( $field_name ),
 				$accept_attr,
-				$required_attr
+				$required_attr,
+				$file_icon,
+				esc_attr( $file_hint ),
+				esc_html( $file_hint )
 			);
 		}
 
