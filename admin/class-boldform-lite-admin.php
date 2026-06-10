@@ -606,6 +606,7 @@ class BoldForm_Lite_Admin {
 						'searchPh'        => __( 'Search Placeholder Color', 'boldform-lite' ),
 						'copyText'        => __( 'Copy Text', 'boldform-lite' ),
 						'borderWidth'     => __( 'Border Width', 'boldform-lite' ),
+						'borderStyle'     => __( 'Border Style', 'boldform-lite' ),
 						'starColor'       => __( 'Star Color', 'boldform-lite' ),
 						'starInactive'    => __( 'Inactive Star Color', 'boldform-lite' ),
 						'starSize'        => __( 'Star Size', 'boldform-lite' ),

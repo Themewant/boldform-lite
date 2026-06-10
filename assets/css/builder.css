@@ -5524,6 +5524,8 @@
 .boldform-canvas .boldform-canvas-field-body input:hover,
 .boldform-canvas .boldform-canvas-field-body textarea:hover,
 .boldform-canvas .boldform-canvas-field-body select:hover {
+	border-width: var(--bf-field-hover-border-width, var(--bf-field-border-width, 1px));
+	border-style: var(--bf-field-hover-border-style, var(--bf-field-border-style, solid));
 	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
 	background: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
@@ -5534,6 +5536,8 @@
 .boldform-canvas .boldform-canvas-field-body input:focus,
 .boldform-canvas .boldform-canvas-field-body textarea:focus,
 .boldform-canvas .boldform-canvas-field-body select:focus {
+	border-width: var(--bf-field-focus-border-width, var(--bf-field-border-width, 1px));
+	border-style: var(--bf-field-focus-border-style, var(--bf-field-border-style, solid));
 	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
 	background: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
@@ -5579,6 +5583,8 @@
 .boldform-canvas .boldform-canvas-submit__button:hover {
 	background: var(--bf-btn-hover-bg, var(--bf-button-bg, #2f80ed));
 	color: var(--bf-btn-hover-text, var(--bf-button-text, #fff));
+	border-width: var(--bf-btn-hover-border-width, var(--bf-button-border-width, 0));
+	border-style: var(--bf-btn-hover-border-style, var(--bf-button-border-style, none));
 	border-color: var(--bf-btn-hover-border, var(--bf-button-border, transparent));
 	box-shadow: var(--bf-button-hover-shadow, var(--bf-button-shadow, none));
 }

@@ -293,6 +293,8 @@ input[data-boldform-picker] {
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
 .boldform-lite-form select:hover,
 .boldform-lite-form textarea:hover {
+	border-width: var(--bf-field-hover-border-width, var(--bf-field-border-width, 1.5px));
+	border-style: var(--bf-field-hover-border-style, var(--bf-field-border-style, solid));
 	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
 	background-color: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
@@ -302,6 +304,8 @@ input[data-boldform-picker] {
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 .boldform-lite-form select:focus,
 .boldform-lite-form textarea:focus {
+	border-width: var(--bf-field-focus-border-width, var(--bf-field-border-width, 1.5px));
+	border-style: var(--bf-field-focus-border-style, var(--bf-field-border-style, solid));
 	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
 	background-color: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
 	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
@@ -657,6 +661,8 @@ input[data-boldform-picker] {
 	transform: translateY(-1px);
 	color: var(--bf-btn-hover-text, var(--bf-button-text, #fff));
 	background: var(--bf-btn-hover-bg, var(--bf-button-bg, #2f80ed));
+	border-width: var(--bf-btn-hover-border-width, var(--bf-button-border-width, 0));
+	border-style: var(--bf-btn-hover-border-style, var(--bf-button-border-style, none));
 	border-color: var(--bf-btn-hover-border, var(--bf-button-border, transparent));
 	box-shadow: var(--bf-button-hover-shadow, var(--bf-button-shadow, none));
 }

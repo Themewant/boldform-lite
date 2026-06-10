@@ -3522,15 +3522,15 @@ jQuery(
 							{ type: 'shadow', var: '--bf-field-shadow', label: 'boxShadow' }
 						] },
 						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'color', var: '--bf-field-hover-border', label: 'borderColor' },
 							{ type: 'background', var: '--bf-field-hover-bg', label: 'background' },
 							{ type: 'color', var: '--bf-field-hover-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-field-hover-border', colorVar: '--bf-field-hover-border', label: 'border' },
 							{ type: 'shadow', var: '--bf-field-hover-shadow', label: 'boxShadow' }
 						] },
 						{ key: 'focus', label: 'stateFocus', controls: [
-							{ type: 'color', var: '--bf-field-focus-border', label: 'borderColor' },
 							{ type: 'background', var: '--bf-field-focus-bg', label: 'background' },
 							{ type: 'color', var: '--bf-field-focus-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-field-focus-border', colorVar: '--bf-field-focus-border', label: 'border' },
 							{ type: 'shadow', var: '--bf-field-focus-shadow', label: 'boxShadow' }
 						] }
 					] },
@@ -3550,7 +3550,7 @@ jQuery(
 						{ key: 'hover', label: 'stateHover', controls: [
 							{ type: 'background', var: '--bf-btn-hover-bg', label: 'background' },
 							{ type: 'color', var: '--bf-btn-hover-text', label: 'textColor' },
-							{ type: 'color', var: '--bf-btn-hover-border', label: 'borderColor' },
+							{ type: 'border', var: '--bf-btn-hover-border', colorVar: '--bf-btn-hover-border', label: 'border' },
 							{ type: 'shadow', var: '--bf-button-hover-shadow', label: 'boxShadow' }
 						] }
 					] },
