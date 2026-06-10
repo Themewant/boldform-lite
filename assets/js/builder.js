@@ -3252,7 +3252,7 @@ jQuery(
 						'<span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'styleLabel' ) ) + '</span>' +
 					'</div>' +
 				'</div>' +
-				'<div class="bf-adv-bc-row" data-type="color">' + advColorFieldMarkup( 'bf-adv-bc', c, advLabel( 'borderColor' ), colorVar ) + '</div>' +
+				'<div class="bf-adv-bc-row" data-type="color"><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'colorLabel' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-bc', c, advLabel( 'borderColor' ), colorVar ) + '</div>' +
 			'</div>';
 		}
 
@@ -3311,7 +3311,7 @@ jQuery(
 				sInp( 'bf-adv-sspread', advLabel( 'shadowSpread' ), nums[3] ) +
 			'</div>' +
 			'<div class="boldform-adv-shadow-foot">' +
-				'<div class="bf-adv-sc-row" data-type="color">' + advColorFieldMarkup( 'bf-adv-sc', col, advLabel( 'shadowColor' ) ) + '</div>' +
+				'<div class="bf-adv-sc-row" data-type="color"><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'colorLabel' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-sc', col, advLabel( 'shadowColor' ) ) + '</div>' +
 				'<label class="bf-adv-inset-lbl"><input type="checkbox" class="bf-adv-input bf-adv-inset"' + ( inset ? ' checked' : '' ) + '> ' + escapeHtml( advLabel( 'inset' ) ) + '</label>' +
 			'</div>';
 		}
@@ -3418,7 +3418,12 @@ jQuery(
 		// The full control catalog. Sections are appended after the legacy
 		// Design Theme / Field / Label / Button sections. Phases add sections here.
 		function bfStyleSchema() {
-			return [
+			// Display order of the Style-tab sections: foundation (container, layout)
+			// → field anatomy (labels, inputs, placeholder) → field types (select,
+			// choice, star, file, terms) → structure (section break) → action (submit)
+			// → messages. Reorder by editing this id list; the definitions stay put.
+			var bfSectionOrder = [ 'container', 'layout', 'labels', 'placeholder', 'inputs', 'select', 'choice', 'star', 'file', 'terms', 'section', 'button', 'error', 'success' ];
+			var bfSections = [
 				{ id: 'container', title: advLabel( 'secContainer' ), controls: [
 					{ type: 'slider', var: '--bf-form-max-width', label: 'maxWidth', min: 0, max: 1400, units: [ 'px', '%' ] },
 					{ type: 'dimension', var: '--bf-form-padding', label: 'padding' },
@@ -3455,7 +3460,6 @@ jQuery(
 					{ type: 'slider', var: '--bf-field-height', label: 'height', min: 24, max: 90, units: [ 'px' ] },
 					{ type: 'slider', var: '--bf-textarea-height', label: 'textareaHeight', min: 40, max: 400, units: [ 'px' ] },
 					{ type: 'dimension', var: '--bf-field-padding', label: 'padding' },
-					{ type: 'color', var: '--bf-ph-color', label: 'placeholderColor' },
 					{ type: 'typography', var: '--bf-field', label: 'typography' },
 					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
@@ -3653,6 +3657,7 @@ jQuery(
 					{ type: 'background', var: '--bf-msg-error-bg', label: 'noticeBg' },
 					{ type: 'color', var: '--bf-msg-error-text', label: 'noticeText' },
 					{ type: 'dimension', var: '--bf-msg-error-padding', label: 'padding' },
+						{ type: 'dimension', var: '--bf-msg-error-margin', label: 'margin' },
 					{ type: 'border', var: '--bf-msg-error-border', label: 'border' },
 					{ type: 'dimension', var: '--bf-msg-error-radius', label: 'borderRadius', units: [ 'px', '%' ] }
 				] },
@@ -3661,11 +3666,16 @@ jQuery(
 					{ type: 'color', var: '--bf-msg-success-text', label: 'noticeText' },
 					{ type: 'typography', var: '--bf-msg-success', label: 'typography' },
 					{ type: 'dimension', var: '--bf-msg-success-padding', label: 'padding' },
+						{ type: 'dimension', var: '--bf-msg-success-margin', label: 'margin' },
 					{ type: 'border', var: '--bf-msg-success-border', label: 'border' },
 					{ type: 'dimension', var: '--bf-msg-success-radius', label: 'borderRadius', units: [ 'px', '%' ] },
 					{ type: 'shadow', var: '--bf-msg-success-shadow', label: 'boxShadow' }
 				] }
 			];
+			bfSections.sort( function ( a, b ) {
+				return bfSectionOrder.indexOf( a.id ) - bfSectionOrder.indexOf( b.id );
+			} );
+			return bfSections;
 		}
 
 		// Every --bf-* var a section's controls write, expanded across composite types

@@ -860,12 +860,12 @@
 
 .boldform-adv-shadow-foot {
 	display: flex;
-	align-items: center;
+	align-items: flex-end;
 	gap: 12px;
 	margin-top: 6px;
 }
 
-.boldform-adv-shadow-foot .boldform-color-field {
+.boldform-adv-shadow-foot .bf-adv-sc-row {
 	flex: 1;
 }
 
@@ -991,7 +991,16 @@
 
 .bf-adv-bc-row,
 .bf-adv-sc-row {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 	margin-top: 2px;
+}
+
+/* "Color" caption sits top-left above the picker, matching Width/Style/X Offset. */
+.bf-adv-bc-row .bf-adv-dim-cap,
+.bf-adv-sc-row .bf-adv-dim-cap {
+	text-align: left;
 }
 
 /* Inherits padding:18px from .boldform-canvas; framed as an inset preview stage
@@ -5875,6 +5884,7 @@
 }
 
 .boldform-preview-states .boldform-lite-form__message.is-success {
+	margin: var(--bf-msg-success-margin, 0 0 12px);
 	padding: var(--bf-msg-success-padding, 12px 14px);
 	background: var(--bf-msg-success-bg, #ecfdf5);
 	color: var(--bf-msg-success-text, #166534);
@@ -5892,6 +5902,7 @@
 }
 
 .boldform-preview-states .boldform-lite-form__message.is-error {
+	margin: var(--bf-msg-error-margin, 0 0 12px);
 	padding: var(--bf-msg-error-padding, 12px 14px);
 	background: var(--bf-msg-error-bg, #fef2f2);
 	color: var(--bf-msg-error-text, #b91c1c);

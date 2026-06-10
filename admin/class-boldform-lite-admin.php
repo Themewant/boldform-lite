@@ -560,6 +560,7 @@ class BoldForm_Lite_Admin {
 						'padding'         => __( 'Padding', 'boldform-lite' ),
 						'margin'          => __( 'Margin', 'boldform-lite' ),
 						'borderColor'     => __( 'Border Color', 'boldform-lite' ),
+						'colorLabel'      => __( 'Color', 'boldform-lite' ),
 						'boxShadow'       => __( 'Box Shadow', 'boldform-lite' ),
 						'hoverShadow'     => __( 'Box Shadow (Hover)', 'boldform-lite' ),
 						'focusShadow'     => __( 'Box Shadow (Focus)', 'boldform-lite' ),
