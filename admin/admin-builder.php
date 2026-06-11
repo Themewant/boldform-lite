@@ -197,9 +197,6 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 						<h2><?php esc_html_e( 'Form Canvas', 'boldform-lite' ); ?></h2>
 						<p><?php esc_html_e( 'Build layouts with rows and columns, then drop fields into each column.', 'boldform-lite' ); ?></p>
 					</div>
-					<button type="button" class="button button-primary" id="boldform-add-row-inline">
-						<?php esc_html_e( 'Add Row', 'boldform-lite' ); ?>
-					</button>
 				</div>
 
 				<div class="boldform-canvas-empty" id="boldform-canvas-empty">

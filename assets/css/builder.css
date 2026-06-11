@@ -6350,26 +6350,4 @@
 	min-width: 0;
 }
 
-/* File upload button. */
-.boldform-preview-states .bf-state-file {
-	font-size: 13px;
-	color: #6b7280;
-}
-
-.boldform-preview-states .bf-state-file::file-selector-button {
-	margin-right: 12px;
-	padding: 8px 14px;
-	border: 0;
-	border-radius: 8px;
-	background: var(--bf-file-btn-bg, #e2e8f0);
-	color: var(--bf-file-btn-text, #334155);
-	font-size: 13px;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-/* Hover the sample file button to preview the hover colours. */
-.boldform-preview-states .bf-state-file::file-selector-button:hover {
-	background: var(--bf-file-btn-hover-bg, var(--bf-file-btn-bg, #e2e8f0));
-	color: var(--bf-file-btn-hover-text, var(--bf-file-btn-text, #334155));
-}
+/* File upload sample removed from preview states (native button is not styled). */

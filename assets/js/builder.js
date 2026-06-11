@@ -3883,10 +3883,6 @@ jQuery(
 						'</div>' +
 					'</div>' +
 				'</div>' +
-				'<div class="boldform-preview-states__field">' +
-					'<label>' + escapeHtml( advLabel( 'sampleFile' ) ) + '</label>' +
-					'<input type="file" class="bf-state-file">' +
-				'</div>' +
 			'</div>';
 		}
 
@@ -5877,14 +5873,6 @@ jQuery(
 			'click',
 			function () {
 				copyShortcode();
-			}
-		);
-
-		$( '#boldform-add-row, #boldform-add-row-inline, #boldform-empty-add-row' ).on(
-			'click',
-			function () {
-				switchEditorView( 'builder' );
-				openRowModal();
 			}
 		);
 
