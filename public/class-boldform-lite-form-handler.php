@@ -1017,7 +1017,7 @@ class BoldForm_Lite_Form_Handler {
 				continue;
 			}
 
-			if ( ! $this->validate_field_value( $type, $value, $options ) ) {
+			if ( ! $this->validate_field_value( $type, $value, $options, $field ) ) {
 				$errors[ $field_id ] = sprintf(
 					/* translators: %s: field label */
 					__( '%s contains an invalid value.', 'boldform-lite' ),
@@ -1154,17 +1154,19 @@ class BoldForm_Lite_Form_Handler {
 	/**
 	 * Validates a sanitized field value.
 	 *
-	 * @param string                   $type  Field type.
-	 * @param string|array<int, string> $value Sanitized value.
+	 * @param string                    $type    Field type.
+	 * @param string|array<int, string> $value   Sanitized value.
+	 * @param array<int, string>        $options Allowed option values.
+	 * @param array<string, mixed>      $field   Field definition (for min/max/step bounds).
 	 * @return bool
 	 */
-	private function validate_field_value( $type, $value, $options = array() ) {
+	private function validate_field_value( $type, $value, $options = array(), $field = array() ) {
 		if ( 'email' === $type && '' !== $value ) {
 			return false !== is_email( (string) $value );
 		}
 
 		if ( 'number' === $type && '' !== $value ) {
-			return is_numeric( $value );
+			return is_numeric( $value ) && $this->is_within_numeric_bounds( (float) $value, $field );
 		}
 
 		if ( in_array( $type, array( 'select', 'radio' ), true ) && is_array( $value ) ) {
@@ -1195,13 +1197,61 @@ class BoldForm_Lite_Form_Handler {
 		if ( ( 'numeric' === $type || 'slider_range' === $type ) && '' !== $value ) {
 			// Accept the dual-handle "lo - hi" format as well as a single number.
 			if ( 'slider_range' === $type && false !== strpos( $value, ' - ' ) ) {
-				return (bool) preg_match( '/^-?\d+(?:\.\d+)?\s-\s-?\d+(?:\.\d+)?$/', $value );
+				if ( ! preg_match( '/^(-?\d+(?:\.\d+)?)\s-\s(-?\d+(?:\.\d+)?)$/', $value, $matches ) ) {
+					return false;
+				}
+				$lo = (float) $matches[1];
+				$hi = (float) $matches[2];
+				return $lo <= $hi
+					&& $this->is_within_numeric_bounds( $lo, $field )
+					&& $this->is_within_numeric_bounds( $hi, $field );
 			}
-			return is_numeric( $value );
+			return is_numeric( $value ) && $this->is_within_numeric_bounds( (float) $value, $field );
 		}
 
 		if ( 'country' === $type && '' !== $value ) {
 			return is_string( $value ) && '' !== $value;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks a numeric value against a field's configured min/max/step bounds.
+	 *
+	 * Mirrors the browser's native min/max/step enforcement so a crafted POST
+	 * that bypasses the client-side constraints cannot store an out-of-range
+	 * value. Returns true when the field configures no bounds.
+	 *
+	 * @param float                $num   Numeric value to test.
+	 * @param array<string, mixed> $field Field definition.
+	 * @return bool
+	 */
+	private function is_within_numeric_bounds( $num, $field ) {
+		if ( ! is_array( $field ) ) {
+			return true;
+		}
+
+		$has_min  = isset( $field['min_value'] ) && '' !== (string) $field['min_value'] && is_numeric( $field['min_value'] );
+		$has_max  = isset( $field['max_value'] ) && '' !== (string) $field['max_value'] && is_numeric( $field['max_value'] );
+		$has_step = isset( $field['step_value'] ) && '' !== (string) $field['step_value'] && is_numeric( $field['step_value'] ) && (float) $field['step_value'] > 0;
+
+		if ( $has_min && $num < (float) $field['min_value'] ) {
+			return false;
+		}
+
+		if ( $has_max && $num > (float) $field['max_value'] ) {
+			return false;
+		}
+
+		if ( $has_step ) {
+			$step  = (float) $field['step_value'];
+			$base  = $has_min ? (float) $field['min_value'] : 0.0;
+			$steps = ( $num - $base ) / $step;
+			// Allow a small tolerance so fractional steps (e.g. 0.1) are not rejected by float error.
+			if ( abs( $steps - round( $steps ) ) > 0.0001 ) {
+				return false;
+			}
 		}
 
 		return true;
@@ -1252,31 +1302,43 @@ class BoldForm_Lite_Form_Handler {
 			);
 		}
 
-		// Hard-block SVG/SVGZ on front-end uploads regardless of the field's allowed types.
-		// SVGs can carry executable scripts and must never be accepted from untrusted submitters.
-		$submitted_ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
-		if ( in_array( $submitted_ext, array( 'svg', 'svgz' ), true ) ) {
+		// Hard-block SVG/SVGZ and inline-renderable HTML/script types on front-end uploads
+		// regardless of the field's allowed types. SVGs can carry executable scripts and
+		// HTML/PHP files can host stored XSS or code when served inline, so they must never
+		// be accepted from untrusted submitters.
+		$submitted_ext   = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
+		$blocked_exts    = array( 'svg', 'svgz', 'htm', 'html', 'xhtml', 'shtml', 'xht', 'phtml', 'php', 'php3', 'php4', 'php5', 'phps' );
+		if ( in_array( $submitted_ext, $blocked_exts, true ) ) {
 			return array(
 				'error' => sprintf(
-					/* translators: %s: field label */
-					__( '%s: SVG files are not allowed.', 'boldform-lite' ),
-					$label ? $label : __( 'File', 'boldform-lite' )
+					/* translators: 1: field label, 2: blocked file extension */
+					__( '%1$s: .%2$s files are not allowed.', 'boldform-lite' ),
+					$label ? $label : __( 'File', 'boldform-lite' ),
+					$submitted_ext
 				),
 			);
 		}
 
-		// Validate file size — fixed at 2 MB in Lite; Pro can override via filter.
+		// Validate file size. Use the field's configured "Max file size (MB)" when set
+		// (stored as an integer MB in the builder), otherwise fall back to 2 MB. Pro can
+		// still override via the filter.
+		$default_max_mb = ( isset( $field['max_file_size'] ) && (int) $field['max_file_size'] > 0 )
+			? (int) $field['max_file_size']
+			: 2;
 		/**
 		 * Filter the maximum file upload size in megabytes.
 		 *
-		 * @param int                  $max_mb Max upload size in MB (default 2).
+		 * @param int                  $max_mb Max upload size in MB (per-field value, default 2).
 		 * @param array<string, mixed> $field  Field definition.
 		 */
-		$max_mb   = apply_filters( 'boldform_max_file_size', 2, $field );
+		$max_mb    = apply_filters( 'boldform_max_file_size', $default_max_mb, $field );
 		$max_bytes = $max_mb * 1024 * 1024;
 
 		// Use the real on-disk size, not the client-supplied $file['size'] (spoofable).
-		if ( (int) filesize( $file['tmp_name'] ) > $max_bytes ) {
+		// Fail closed if the size cannot be read (filesize() returns false) rather than
+		// casting false to 0 and silently passing the check.
+		$real_size = filesize( $file['tmp_name'] );
+		if ( false === $real_size || $real_size > $max_bytes ) {
 			return array(
 				'error' => sprintf(
 					/* translators: 1: field label, 2: max file size in MB */

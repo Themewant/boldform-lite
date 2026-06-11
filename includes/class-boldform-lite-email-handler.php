@@ -93,8 +93,10 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Sends admin notification email.
 	 *
-	 * @param object                           $form_record Form record.
-	 * @param array<string, array<string,mixed>> $entry_data Entry data.
+	 * @param object                             $form_record Form record.
+	 * @param array<string, mixed>               $settings    Form settings.
+	 * @param array<string, array<string,mixed>> $entry_data  Entry data.
+	 * @param array<int, string>                 $attachments File paths to attach.
 	 * @return void
 	 */
 	private function send_admin_email( $form_record, $settings, $entry_data, $attachments = array() ) {

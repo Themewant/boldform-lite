@@ -135,7 +135,9 @@ class BoldForm_Lite_Ajax_Save {
 			if ( false === $updated ) {
 				$message = __( 'Unable to update the form.', 'boldform-lite' );
 
-				if ( ! empty( $wpdb->last_error ) ) {
+				// Only expose the raw DB error while debugging — never leak schema/SQL
+				// internals to the browser in production.
+				if ( ! empty( $wpdb->last_error ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					$message = sprintf(
 						/* translators: %s: database error message */
 						__( 'Unable to update the form. Database error: %s', 'boldform-lite' ),
@@ -159,7 +161,9 @@ class BoldForm_Lite_Ajax_Save {
 			if ( false === $inserted ) {
 				$message = __( 'Unable to save the form.', 'boldform-lite' );
 
-				if ( ! empty( $wpdb->last_error ) ) {
+				// Only expose the raw DB error while debugging — never leak schema/SQL
+				// internals to the browser in production.
+				if ( ! empty( $wpdb->last_error ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					$message = sprintf(
 						/* translators: %s: database error message */
 						__( 'Unable to save the form. Database error: %s', 'boldform-lite' ),

@@ -1831,6 +1831,18 @@
 	color: #b45309;
 }
 
+.boldform-status--spam {
+	background: #fee2e2;
+	color: #b91c1c;
+}
+
+/* Active "Mark as Spam" toggle on the entry detail header. */
+.boldform-entry-action-btn.is-spam {
+	color: #b91c1c;
+	border-color: #fca5a5;
+	background: #fef2f2;
+}
+
 /* ── Entry detail meta sidebar ── */
 /* ── Entry detail page ── */
 .boldform-entry-detail-wrap {

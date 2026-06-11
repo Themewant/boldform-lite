@@ -51,6 +51,17 @@ class BoldForm_Lite_Shortcode {
 	private static $render_counts = array();
 
 	/**
+	 * Suffix appended to element IDs (not name attributes) for the form instance
+	 * currently being rendered. Empty for the first embed of a form on the page;
+	 * '-2', '-3', … for repeats, so a form embedded multiple times does not emit
+	 * duplicate element IDs / `for` targets while submission name attributes stay
+	 * stable.
+	 *
+	 * @var string
+	 */
+	private $current_instance = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param BoldForm_Lite              $plugin       Main plugin instance.
@@ -205,7 +216,12 @@ class BoldForm_Lite_Shortcode {
 		// Keep the first embed as "boldform-{id}" (back-compat); suffix repeats so the
 		// wrapper id stays unique when the same form is placed on a page more than once.
 		self::$render_counts[ $form_id ] = ( self::$render_counts[ $form_id ] ?? 0 ) + 1;
-		$form_uid = 'boldform-' . $form_id . ( self::$render_counts[ $form_id ] > 1 ? '-' . self::$render_counts[ $form_id ] : '' );
+		$instance_n = self::$render_counts[ $form_id ];
+		$form_uid = 'boldform-' . $form_id . ( $instance_n > 1 ? '-' . $instance_n : '' );
+
+		// Mirror the wrapper's instance suffix onto element IDs so a form embedded
+		// more than once on a page does not emit duplicate IDs / `for` targets.
+		$this->current_instance = $instance_n > 1 ? '-' . $instance_n : '';
 
 		// Output buffering keeps the template readable while still returning a shortcode string.
 		ob_start();
@@ -236,7 +252,19 @@ class BoldForm_Lite_Shortcode {
 							<?php if ( ! is_array( $column ) ) { continue; } ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
 								<?php foreach ( ( ! empty( $column['fields'] ) && is_array( $column['fields'] ) ? $column['fields'] : array() ) as $field_index => $field ) : ?>
-									<?php echo wp_kses( $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index ), $this->get_field_kses_allowed() ); ?>
+									<?php
+									$field_type = isset( $field['type'] ) ? (string) $field['type'] : '';
+									$field_html = $this->render_field( $field, ( $row_index * 100 ) + ( $column_index * 10 ) + $field_index );
+									// Rich-content fields are authored in wp-admin (manage_options) and saved with
+									// wp_kses_post(); filter them the same way on output. Re-running them through the
+									// narrower form-field allowlist would strip legitimate block markup (tables,
+									// blockquotes, code, etc.). Every other field uses the strict field allowlist.
+									if ( in_array( $field_type, array( 'paragraph', 'html_editor' ), true ) ) {
+										echo wp_kses_post( $field_html );
+									} else {
+										echo wp_kses( $field_html, $this->get_field_kses_allowed() );
+									}
+									?>
 								<?php endforeach; ?>
 							</div>
 						<?php endforeach; ?>
@@ -664,7 +692,7 @@ class BoldForm_Lite_Shortcode {
 
 			// Scope the input id/label to the form so two captcha forms on one page don't
 			// share a DOM id. The name stays fixed — the handler reads it by name.
-			$answer_id = 'boldform_math_captcha_answer_' . (int) $this->current_form_id;
+			$answer_id = 'boldform_math_captcha_answer_' . (int) $this->current_form_id . $this->current_instance;
 
 			return sprintf(
 				'<div class="boldform-lite-form__captcha"><label class="boldform-lite-form__label" for="%4$s">%1$s</label><input id="%4$s" type="number" name="boldform_math_captcha_answer" inputmode="numeric" autocomplete="off" required><input type="hidden" name="boldform_math_captcha_challenge" value="%2$s"><input type="hidden" name="boldform_math_captcha_hash" value="%3$s"></div>',
@@ -885,14 +913,29 @@ class BoldForm_Lite_Shortcode {
 		 * @param string               $cond_attrs Pre-built attribute string (already escaped).
 		 * @param array<string, mixed> $field       Field definition.
 		 */
-		$cond_attrs = apply_filters( 'boldform_field_conditional_attrs', $cond_attrs, $field );
+		$cond_attrs_base = $cond_attrs; // Lite's own attributes — built entirely from esc_attr() values.
+		$cond_attrs      = apply_filters( 'boldform_field_conditional_attrs', $cond_attrs, $field );
 		// After the filter, strip any HTML tags to prevent injection; attribute values were
 		// already individually escaped with esc_attr() before the filter was applied.
 		$cond_attrs = wp_strip_all_tags( (string) $cond_attrs );
+		// Defense-in-depth against a careless filter (e.g. from Pro) that returns an
+		// UNescaped value: wp_strip_all_tags() removes <tags> but not a stray quote that
+		// could break out of the wrapper element and inject new attributes. Require the
+		// result to be a well-formed run of quoted attribute pairs with no on*= event
+		// handler; otherwise discard the filtered value and fall back to Lite's own
+		// known-safe attributes. Lite's own output always passes this check, so the
+		// default (no-filter) behaviour is unchanged.
+		if ( '' !== $cond_attrs ) {
+			$is_safe_attrs = (bool) preg_match( '/^(?:\s+[a-zA-Z0-9_:-]+=(?:"[^"<>]*"|\'[^\'<>]*\'))*\s*$/', $cond_attrs )
+				&& ! preg_match( '/\son\w+\s*=/i', $cond_attrs );
+			if ( ! $is_safe_attrs ) {
+				$cond_attrs = $cond_attrs_base;
+			}
+		}
 		?>
 		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
-				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name ); ?>">
+				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
 					<?php if ( $required ) : ?>
 						<span class="boldform-lite-form__required">*</span>
@@ -1322,6 +1365,12 @@ class BoldForm_Lite_Shortcode {
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
 
+		// Element ID base: the submission name plus the per-instance suffix, so a
+		// form embedded more than once per page stays collision-free. The `name`
+		// attribute keeps using $field_name (no suffix) so the server still reads
+		// the same POST key regardless of which embed was submitted.
+		$field_id_attr = $field_name . $this->current_instance;
+
 		// When no custom placeholder is set, fall back to the field label so simple
 		// inputs (text/email/tel/url/number/textarea) show guidance text instead of a
 		// bare box — mirroring the built-in placeholders on name/address/select fields.
@@ -1339,7 +1388,8 @@ class BoldForm_Lite_Shortcode {
 
 			$html  = '<div class="boldform-lite-name"><div class="boldform-lite-name__field">';
 			$html .= sprintf(
-				'<input type="text" id="%1$s" name="%1$s[first]" placeholder="%2$s"%3$s>',
+				'<input type="text" id="%1$s" name="%2$s[first]" placeholder="%3$s"%4$s>',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr__( 'First Name', 'boldform-lite' ),
 				$required_attr
@@ -1349,7 +1399,8 @@ class BoldForm_Lite_Shortcode {
 			if ( $show_middle ) {
 				$html .= '<div class="boldform-lite-name__field">';
 				$html .= sprintf(
-					'<input type="text" id="%1$s_middle" name="%1$s[middle]" placeholder="%2$s">',
+					'<input type="text" id="%1$s_middle" name="%2$s[middle]" placeholder="%3$s">',
+					esc_attr( $field_id_attr ),
 					esc_attr( $field_name ),
 					esc_attr__( 'Middle Name', 'boldform-lite' )
 				);
@@ -1359,7 +1410,8 @@ class BoldForm_Lite_Shortcode {
 			if ( $show_last ) {
 				$html .= '<div class="boldform-lite-name__field">';
 				$html .= sprintf(
-					'<input type="text" id="%1$s_last" name="%1$s[last]" placeholder="%2$s"%3$s>',
+					'<input type="text" id="%1$s_last" name="%2$s[last]" placeholder="%3$s"%4$s>',
+					esc_attr( $field_id_attr ),
 					esc_attr( $field_name ),
 					esc_attr__( 'Last Name', 'boldform-lite' ),
 					$required_attr
@@ -1373,7 +1425,8 @@ class BoldForm_Lite_Shortcode {
 		// Choice-based fields need custom markup, while simple inputs can be rendered from one format string.
 		if ( 'textarea' === $type ) {
 			return sprintf(
-				'<textarea id="%1$s" name="%1$s" placeholder="%2$s"%3$s>%4$s</textarea>',
+				'<textarea id="%1$s" name="%2$s" placeholder="%3$s"%4$s>%5$s</textarea>',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr( $label_ph ),
 				$required_attr,
@@ -1395,16 +1448,24 @@ class BoldForm_Lite_Shortcode {
 				$extra_attrs .= ' data-searchable="1"';
 			}
 
-			// Hidden native <select> for form submission.
+			// Hidden native <select> for form submission. The `required` attribute is
+			// intentionally omitted: the element is display:none, and a `required`
+			// control that cannot be focused makes browsers abort submit with no
+			// visible message. Required-ness is conveyed via aria-required on the
+			// visible trigger and enforced server-side in the form handler.
 			$html = sprintf(
-				'<select id="%1$s" name="%2$s"%3$s%4$s style="display:none">',
-				esc_attr( $field_name ),
+				'<select id="%1$s" name="%2$s"%3$s style="display:none">',
+				esc_attr( $field_id_attr ),
 				esc_attr( $select_name ),
-				$required_attr,
 				$extra_attrs
 			);
 
-			if ( '' !== $placeholder && ! $is_multiple ) {
+			// Always emit an empty option for single selects (even with no placeholder)
+			// so the hidden native <select> defaults to an empty value instead of
+			// auto-selecting option #1. This keeps the submitted value in sync with the
+			// visible custom trigger (which shows "Select…" when nothing is chosen) and
+			// makes server-side "required" enforce on a genuinely empty submission.
+			if ( ! $is_multiple ) {
 				$html .= sprintf(
 					'<option value="">%1$s</option>',
 					esc_html( $placeholder )
@@ -1435,7 +1496,7 @@ class BoldForm_Lite_Shortcode {
 				$data_attrs .= ' data-searchable="1"';
 			}
 
-			$listbox_id = $field_name . '_listbox';
+			$listbox_id = $field_id_attr . '_listbox';
 			$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
 
 			// Trigger.
@@ -1446,6 +1507,9 @@ class BoldForm_Lite_Shortcode {
 			$field_label = isset( $field['label'] ) ? (string) $field['label'] : '';
 			$trigger_aria_label = $field_label && '' !== $field_label ? esc_attr( $field_label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
 			$trigger_aria_attrs = ' aria-label="' . $trigger_aria_label . '" aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
+			if ( $required ) {
+				$trigger_aria_attrs .= ' aria-required="true"';
+			}
 
 			if ( $is_multiple ) {
 				$selected_opts = array_filter( $default_values, function ( $v ) use ( $normalized_options ) {
@@ -1506,7 +1570,7 @@ class BoldForm_Lite_Shortcode {
 			$default_values = 'checkbox' === $type ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
 
 			foreach ( $this->normalize_options( $options ) as $option_index => $option ) {
-				$choice_id = $field_name . '_' . $option_index;
+				$choice_id = $field_id_attr . '_' . $option_index;
 				$name_attr = 'checkbox' === $type ? $field_name . '[]' : $field_name;
 				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
 
@@ -1534,7 +1598,8 @@ class BoldForm_Lite_Shortcode {
 			// Static inline SVG (no dashicons dependency on the front-end).
 			$file_icon   = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
 			return sprintf(
-				'<div class="boldform-lite-form__file"><input id="%1$s" type="file" name="%1$s" class="boldform-lite-form__file-input"%2$s%3$s><span class="boldform-lite-form__file-icon">%4$s</span><span class="boldform-lite-form__file-text" data-placeholder="%5$s">%6$s</span></div>',
+				'<div class="boldform-lite-form__file"><input id="%1$s" type="file" name="%2$s" class="boldform-lite-form__file-input"%3$s%4$s><span class="boldform-lite-form__file-icon">%5$s</span><span class="boldform-lite-form__file-text" data-placeholder="%6$s">%7$s</span></div>',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				$accept_attr,
 				$required_attr,
@@ -1549,7 +1614,8 @@ class BoldForm_Lite_Shortcode {
 			$placeholder = $placeholder ? $placeholder : ( 'date' === $type ? __( 'Select date', 'boldform-lite' ) : __( 'Select time', 'boldform-lite' ) );
 
 			return sprintf(
-				'<input id="%1$s" type="text" name="%1$s" placeholder="%2$s" value="%3$s" data-boldform-picker="%4$s" readonly%5$s>',
+				'<input id="%1$s" type="text" name="%2$s" placeholder="%3$s" value="%4$s" data-boldform-picker="%5$s" readonly%6$s>',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr( $placeholder ),
 				esc_attr( $default ),
@@ -1564,7 +1630,8 @@ class BoldForm_Lite_Shortcode {
 			// Placeholder > mask pattern > field label, so the field is never bare.
 			$mask_ph = ( '' !== $placeholder ) ? $placeholder : ( '' !== $mask ? $mask : $label_ph );
 			return sprintf(
-				'<input type="text" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s data-mask="%5$s">',
+				'<input type="text" id="%1$s" name="%2$s" placeholder="%3$s" value="%4$s"%5$s data-mask="%6$s">',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr( $mask_ph ),
 				esc_attr( $default ),
@@ -1590,7 +1657,8 @@ class BoldForm_Lite_Shortcode {
 			}
 
 			return sprintf(
-				'<input type="number" id="%1$s" name="%1$s" placeholder="%2$s" value="%3$s"%4$s%5$s%6$s%7$s>',
+				'<input type="number" id="%1$s" name="%2$s" placeholder="%3$s" value="%4$s"%5$s%6$s%7$s%8$s>',
+				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr( $num_ph ),
 				esc_attr( $default ),
@@ -1631,15 +1699,16 @@ class BoldForm_Lite_Shortcode {
 						$row_class = count( $pair_buffer ) === 2 ? ' boldform-lite-address__row--half' : '';
 						$html .= '<div class="boldform-lite-address__row' . $row_class . '">';
 						foreach ( $pair_buffer as $pk ) {
-							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s">', esc_attr( $field_id_attr ), esc_attr( $pk ), esc_attr( $field_name ), esc_attr( $addr_labels[ $pk ] ) );
 						}
 						$html .= '</div>';
 						$pair_buffer = array();
 					}
 					$html .= sprintf(
-						'<div class="boldform-lite-address__row"><input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s"%4$s></div>',
-						esc_attr( $field_name ),
+						'<div class="boldform-lite-address__row"><input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s"%5$s></div>',
+						esc_attr( $field_id_attr ),
 						esc_attr( $key ),
+						esc_attr( $field_name ),
 						esc_attr( $addr_labels[ $key ] ),
 						$required_attr
 					);
@@ -1648,7 +1717,7 @@ class BoldForm_Lite_Shortcode {
 					if ( count( $pair_buffer ) === 2 ) {
 						$html .= '<div class="boldform-lite-address__row boldform-lite-address__row--half">';
 						foreach ( $pair_buffer as $pk ) {
-							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s">', esc_attr( $field_id_attr ), esc_attr( $pk ), esc_attr( $field_name ), esc_attr( $addr_labels[ $pk ] ) );
 						}
 						$html .= '</div>';
 						$pair_buffer = array();
@@ -1659,7 +1728,7 @@ class BoldForm_Lite_Shortcode {
 			if ( ! empty( $pair_buffer ) ) {
 				$html .= '<div class="boldform-lite-address__row">';
 				foreach ( $pair_buffer as $pk ) {
-					$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%1$s[%2$s]" placeholder="%3$s">', esc_attr( $field_name ), esc_attr( $pk ), esc_attr( $addr_labels[ $pk ] ) );
+					$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s">', esc_attr( $field_id_attr ), esc_attr( $pk ), esc_attr( $field_name ), esc_attr( $addr_labels[ $pk ] ) );
 				}
 				$html .= '</div>';
 			}
@@ -1672,11 +1741,14 @@ class BoldForm_Lite_Shortcode {
 			$countries       = $this->get_country_list();
 			$placeholder_text = $placeholder ? $placeholder : __( 'Select a country', 'boldform-lite' );
 
-			// Hidden native <select> for form submission.
+			// Hidden native <select> for form submission. `required` is intentionally
+			// omitted (see the select branch above): a display:none required control
+			// makes browsers abort submit silently. Required-ness is conveyed via
+			// aria-required on the visible trigger and enforced server-side.
 			$html = sprintf(
-				'<select id="%1$s" name="%1$s"%2$s data-boldform-select="1" data-searchable="1" style="display:none">',
-				esc_attr( $field_name ),
-				$required_attr
+				'<select id="%1$s" name="%2$s" data-boldform-select="1" data-searchable="1" style="display:none">',
+				esc_attr( $field_id_attr ),
+				esc_attr( $field_name )
 			);
 			$html .= sprintf( '<option value="">%s</option>', esc_html( $placeholder_text ) );
 			foreach ( $countries as $code => $name ) {
@@ -1695,11 +1767,12 @@ class BoldForm_Lite_Shortcode {
 				$selected_name = $countries[ $default ];
 			}
 
+			$country_required_attr = $required ? ' aria-required="true"' : '';
 			$html .= '<div class="bf-select" data-boldform-custom-select="1" data-searchable="1">';
 			if ( $selected_name ) {
-				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__value">' . esc_html( $selected_name ) . '</span>' . $arrow . '</div>';
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $country_required_attr . '><span class="bf-select__value">' . esc_html( $selected_name ) . '</span>' . $arrow . '</div>';
 			} else {
-				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $country_required_attr . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
 			}
 
 			$html .= '<div class="bf-select__panel">';
@@ -1733,11 +1806,26 @@ class BoldForm_Lite_Shortcode {
 			if ( '' !== $star_color ) {
 				$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';' . $star_style;
 			}
-			$html = sprintf( '<input type="hidden" id="%1$s" name="%1$s" value="%2$s"%3$s>', esc_attr( $field_name ), esc_attr( $def ), $required_attr );
-			$html .= '<div class="boldform-lite-star-rating" data-max="' . $max . '" data-field="' . esc_attr( $field_name ) . '" style="' . $star_style . '">';
+			// `required` is intentionally omitted from this hidden input: a hidden
+			// control with `required` is invalid HTML and makes browsers abort submit
+			// with a non-focusable-control error. Required-ness is conveyed via
+			// aria-required on the visible widget and enforced server-side. data-field
+			// targets the hidden input by its (instance-unique) ID, which the rating
+			// JS uses to write the selected value back.
+			$html = sprintf( '<input type="hidden" id="%1$s" name="%2$s" value="%3$s">', esc_attr( $field_id_attr ), esc_attr( $field_name ), esc_attr( $def ) );
+			// Expose the widget as an ARIA radiogroup so it is keyboard- and
+			// screen-reader-operable (Arrow/Home/End/Space handled in frontend.js).
+			$star_field_label = isset( $field['label'] ) && '' !== (string) $field['label'] ? (string) $field['label'] : __( 'Rating', 'boldform-lite' );
+			$html .= '<div class="boldform-lite-star-rating" role="radiogroup" aria-label="' . esc_attr( $star_field_label ) . '"' . ( $required ? ' aria-required="true"' : '' ) . ' data-max="' . $max . '" data-field="' . esc_attr( $field_id_attr ) . '" style="' . $star_style . '">';
 			for ( $i = 1; $i <= $max; $i++ ) {
-				$active = $i <= $def ? ' is-active' : '';
-				$html .= '<span class="boldform-lite-star' . $active . '" data-value="' . $i . '">&#9733;</span>';
+				$active     = $i <= $def ? ' is-active' : '';
+				$is_checked = ( $i === $def );
+				// Roving tabindex: only one star is in the tab order — the selected one,
+				// or the first star when nothing is selected yet.
+				$tabindex = ( $is_checked || ( 0 === $def && 1 === $i ) ) ? '0' : '-1';
+				$html    .= '<span class="boldform-lite-star' . $active . '" role="radio" aria-checked="' . ( $is_checked ? 'true' : 'false' ) . '" tabindex="' . $tabindex . '"'
+					. ' aria-label="' . esc_attr( sprintf( /* translators: %d: star rating value */ _n( '%d star', '%d stars', $i, 'boldform-lite' ), $i ) ) . '"'
+					. ' data-value="' . $i . '">&#9733;</span>';
 			}
 			$html .= '</div>';
 			return $html;
@@ -1792,8 +1880,8 @@ class BoldForm_Lite_Shortcode {
 				);
 				$html .= '</div>';
 				$html .= sprintf(
-					'<input type="hidden" id="%1$s" name="%1$s" value="%2$s">',
-					esc_attr( $field_name ), esc_attr( $lo . ' - ' . $hi )
+					'<input type="hidden" id="%1$s" name="%2$s" value="%3$s">',
+					esc_attr( $field_id_attr ), esc_attr( $field_name ), esc_attr( $lo . ' - ' . $hi )
 				);
 				$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $lo . ' – ' . $hi ) . '</span><span>' . esc_html( $max ) . '</span></div>';
 				$html .= '</div>';
@@ -1803,8 +1891,8 @@ class BoldForm_Lite_Shortcode {
 			$def   = '' !== $default ? $default : $min;
 			$html  = '<div class="boldform-lite-slider"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
 			$html .= sprintf(
-				'<input type="range" id="%1$s" name="%1$s" min="%2$s" max="%3$s" step="%4$s" value="%5$s"%6$s>',
-				esc_attr( $field_name ), esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $def ), $required_attr
+				'<input type="range" id="%1$s" name="%2$s" min="%3$s" max="%4$s" step="%5$s" value="%6$s"%7$s>',
+				esc_attr( $field_id_attr ), esc_attr( $field_name ), esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $def ), $required_attr
 			);
 			$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $def ) . '</span><span>' . esc_html( $max ) . '</span></div>';
 			$html .= '</div>';
@@ -1821,9 +1909,10 @@ class BoldForm_Lite_Shortcode {
 		$input_type = $type;
 
 		return sprintf(
-			'<input id="%1$s" type="%2$s" name="%1$s" placeholder="%3$s" value="%4$s"%5$s>',
-			esc_attr( $field_name ),
+			'<input id="%1$s" type="%2$s" name="%3$s" placeholder="%4$s" value="%5$s"%6$s>',
+			esc_attr( $field_id_attr ),
 			esc_attr( $input_type ),
+			esc_attr( $field_name ),
 			esc_attr( $label_ph ),
 			esc_attr( $default ),
 			$required_attr

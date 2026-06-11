@@ -27,6 +27,15 @@ jQuery(
 			);
 		}
 
+		/**
+		 * Runs the client-side pre-submit validation pass over a form.
+		 *
+		 * This is a UX enhancement only — the server (form handler) remains the
+		 * authoritative validation gate. Marks invalid fields and returns the result.
+		 *
+		 * @param {jQuery} $form The form element.
+		 * @return {boolean} True when every checked field is valid.
+		 */
 		function validateClientSide( $form ) {
 			var valid = true;
 
@@ -170,7 +179,6 @@ jQuery(
 				}
 
 				event.preventDefault();
-				clearFieldErrors( $form );
 
 				if ( ! validateClientSide( $form ) ) {
 					$message
@@ -259,7 +267,20 @@ jQuery(
 			}
 
 			/**
-			 * Test one condition against the current form state.
+			 * Mirrors PHP is_numeric() closely enough for conditional-logic parity: a
+			 * non-empty string that coerces to a finite number. Rejects values like
+			 * "12abc" that parseFloat() alone would accept as 12.
+			 *
+			 * @param {string} s
+			 * @return {boolean}
+			 */
+			function bfIsNumeric( s ) {
+				return '' !== s && ! isNaN( s ) && ! isNaN( parseFloat( s ) );
+			}
+
+			/**
+			 * Test one condition against the current form state. Operator semantics are
+			 * kept byte-for-byte in sync with the PHP evaluate_condition() server gate.
 			 *
 			 * @param {jQuery} $form
 			 * @param {{field_id:string, operator:string, value:string}} cond
@@ -274,9 +295,12 @@ jQuery(
 					case 'contains':     return raw.toLowerCase().indexOf( cv.toLowerCase() ) !== -1;
 					case 'not_contains': return raw.toLowerCase().indexOf( cv.toLowerCase() ) === -1;
 					case 'starts_with':  return raw.toLowerCase().indexOf( cv.toLowerCase() ) === 0;
-					case 'ends_with':    return raw.toLowerCase().slice( -cv.length ) === cv.toLowerCase();
-					case 'greater_than': return parseFloat( raw ) > parseFloat( cv );
-					case 'less_than':    return parseFloat( raw ) < parseFloat( cv );
+					// Match PHP: empty needle is never an "ends_with" match, and require
+					// raw to be at least as long as the value before comparing the tail.
+					case 'ends_with':    return '' !== cv && raw.length >= cv.length && raw.toLowerCase().slice( -cv.length ) === cv.toLowerCase();
+					// Match PHP: both sides must be numeric (is_numeric), else false.
+					case 'greater_than': return bfIsNumeric( raw ) && bfIsNumeric( cv ) && parseFloat( raw ) > parseFloat( cv );
+					case 'less_than':    return bfIsNumeric( raw ) && bfIsNumeric( cv ) && parseFloat( raw ) < parseFloat( cv );
 					case 'not_empty':    return raw.length > 0;
 					case 'empty':        return raw.length === 0;
 					default:             return false;
@@ -343,6 +367,28 @@ jQuery(
 			var $rating = $( this );
 			var $field = $( '#' + $rating.data( 'field' ) );
 			var $stars = $rating.find( '.boldform-lite-star' );
+			var maxStars = $stars.length;
+
+			// Paint the cumulative fill for a given value.
+			function paintStars( val ) {
+				$stars.each( function () {
+					$( this ).toggleClass( 'is-active', $( this ).data( 'value' ) <= val );
+				} );
+			}
+
+			// Commit a rating: update the hidden field + visuals + ARIA/roving state.
+			// Shared by mouse and keyboard so both paths behave identically.
+			function selectStar( val ) {
+				val = Math.max( 0, Math.min( maxStars, parseInt( val, 10 ) || 0 ) );
+				$field.val( val ).trigger( 'change' );
+				paintStars( val );
+				$stars.each( function () {
+					var v = $( this ).data( 'value' );
+					$( this ).attr( 'aria-checked', v === val ? 'true' : 'false' );
+					// Roving tabindex: keep exactly one star in the tab order.
+					$( this ).attr( 'tabindex', ( v === val || ( 0 === val && 1 === v ) ) ? '0' : '-1' );
+				} );
+			}
 
 			$stars.on( 'mouseenter', function () {
 				var val = $( this ).data( 'value' );
@@ -356,11 +402,45 @@ jQuery(
 			} );
 
 			$stars.on( 'click', function () {
-				var val = $( this ).data( 'value' );
-				$field.val( val ).trigger( 'change' );
-				$stars.each( function () {
-					$( this ).toggleClass( 'is-active', $( this ).data( 'value' ) <= val );
-				} );
+				selectStar( $( this ).data( 'value' ) );
+				this.focus();
+			} );
+
+			// Keyboard support (WCAG 2.1.1): Arrow keys move & select, Home/End jump,
+			// Space/Enter select the focused star.
+			$stars.on( 'keydown', function ( e ) {
+				var current = parseInt( $field.val(), 10 ) || 0;
+				var next;
+				switch ( e.key ) {
+					case 'ArrowRight':
+					case 'ArrowUp':
+						next = Math.min( maxStars, current + 1 );
+						break;
+					case 'ArrowLeft':
+					case 'ArrowDown':
+						next = Math.max( 0, current - 1 );
+						break;
+					case 'Home':
+						next = 1;
+						break;
+					case 'End':
+						next = maxStars;
+						break;
+					case ' ':
+					case 'Spacebar':
+					case 'Enter':
+						next = $( this ).data( 'value' );
+						break;
+					default:
+						return;
+				}
+				e.preventDefault();
+				selectStar( next );
+				// Focus the star that is now tab-focusable.
+				var focusVal = next > 0 ? next : 1;
+				$stars.filter( function () {
+					return $( this ).data( 'value' ) === focusVal;
+				} ).trigger( 'focus' );
 			} );
 		} );
 
@@ -370,6 +450,14 @@ jQuery(
 		} );
 
 		// Slider Range — dual handle (min + max).
+		/**
+		 * Wires up a dual-handle (min/max) range slider: keeps the two thumbs from
+		 * crossing, updates the visible value label, and writes the combined
+		 * "lo - hi" value into the field's hidden input on change.
+		 *
+		 * @param {HTMLElement} el The slider container element.
+		 * @return {void}
+		 */
 		function initDualSlider( el ) {
 			var $w = $( el );
 			if ( $w.data( 'bfDualReady' ) ) {
@@ -438,25 +526,21 @@ jQuery(
 		// for sliders added later and initialise them so the fill tracks the handles
 		// there too (otherwise the server-rendered fill never updates on drag).
 		if ( window.MutationObserver ) {
-			var dualObserver = new MutationObserver( function ( mutations ) {
-				for ( var i = 0; i < mutations.length; i++ ) {
-					var added = mutations[ i ].addedNodes;
-					for ( var j = 0; j < added.length; j++ ) {
-						var node = added[ j ];
-						if ( 1 !== node.nodeType ) {
-							continue;
-						}
-						if ( node.classList && node.classList.contains( 'boldform-lite-slider--dual' ) ) {
-							initDualSlider( node );
-						}
-						if ( node.querySelectorAll ) {
-							var nested = node.querySelectorAll( '.boldform-lite-slider--dual' );
-							for ( var k = 0; k < nested.length; k++ ) {
-								initDualSlider( nested[ k ] );
-							}
-						}
-					}
+			// Debounced so a burst of DOM mutations triggers at most one rescan per
+			// 200ms instead of running querySelectorAll on every mutation batch.
+			// initDualSlider is idempotent (bfDualReady guard), so re-scanning every
+			// dual slider only initialises the newly-added ones.
+			var dualObserverTimer = null;
+			var dualObserver = new MutationObserver( function () {
+				if ( dualObserverTimer ) {
+					return;
 				}
+				dualObserverTimer = setTimeout( function () {
+					dualObserverTimer = null;
+					$( '.boldform-lite-slider--dual' ).each( function () {
+						initDualSlider( this );
+					} );
+				}, 200 );
 			} );
 			dualObserver.observe( document.body, { childList: true, subtree: true } );
 		}
@@ -500,6 +584,15 @@ jQuery(
 			} );
 		}
 
+		/**
+		 * Binds the custom select UI to its hidden native <select>: open/close the
+		 * panel, render single/multi selections, optional search filtering, and
+		 * mirror every choice back to the native control so the form submits the
+		 * real value. Keeps the visible trigger and the native value in sync.
+		 *
+		 * @param {jQuery} $wrap The .bf-select wrapper element.
+		 * @return {void}
+		 */
 		function bindSelectBehaviour( $wrap ) {
 			var $select     = $wrap.prev( 'select[data-boldform-select]' );
 			var $trigger    = $wrap.find( '.bf-select__trigger' );
@@ -529,6 +622,15 @@ jQuery(
 
 			var esc = function ( str ) { return $( '<span>' ).text( str ).html(); };
 			var checkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+			// Index of the keyboard-highlighted option (within the currently rendered
+			// list) and a stable id for the listbox so we can wire aria-activedescendant.
+			var activeIndex = -1;
+			var listId = $list.attr( 'id' );
+			if ( ! listId ) {
+				listId = 'bf-select-list-' + Math.floor( Math.random() * 1e9 );
+				$list.attr( 'id', listId );
+			}
 
 			function findOpt( val ) {
 				for ( var i = 0; i < options.length; i++ ) {
@@ -577,10 +679,12 @@ jQuery(
 				var q = ( filter || '' ).toLowerCase();
 				var html = '';
 
+				var visibleIdx = 0;
 				options.forEach( function ( opt ) {
 					if ( q && opt.text.toLowerCase().indexOf( q ) === -1 ) return;
 					var active = selected.indexOf( opt.value ) !== -1;
-					html += '<div class="bf-select__option' + ( active ? ' is-active' : '' ) + '" role="option" aria-selected="' + active + '" data-val="' + esc( opt.value ) + '">';
+					html += '<div class="bf-select__option' + ( active ? ' is-active' : '' ) + '" id="' + listId + '-opt-' + visibleIdx + '" role="option" aria-selected="' + active + '" data-val="' + esc( opt.value ) + '">';
+					visibleIdx++;
 					if ( isMultiple ) {
 						html += '<span class="bf-select__check">' + ( active ? checkSvg : '' ) + '</span>';
 					}
@@ -607,6 +711,87 @@ jQuery(
 			function close() {
 				$wrap.removeClass( 'is-open' );
 				$trigger.attr( 'aria-expanded', 'false' );
+				$list.find( '.bf-select__option' ).removeClass( 'is-keyboard-active' );
+				$trigger.removeAttr( 'aria-activedescendant' );
+				if ( isSearchable ) {
+					$search.removeAttr( 'aria-activedescendant' );
+				}
+				activeIndex = -1;
+			}
+
+			// Highlight option `idx` (clamped) for keyboard users and expose it via
+			// aria-activedescendant so screen readers announce the focused option.
+			function setActive( idx ) {
+				var $opts = $list.find( '.bf-select__option' );
+				$opts.removeClass( 'is-keyboard-active' );
+				if ( ! $opts.length ) {
+					activeIndex = -1;
+					$trigger.removeAttr( 'aria-activedescendant' );
+					if ( isSearchable ) {
+						$search.removeAttr( 'aria-activedescendant' );
+					}
+					return;
+				}
+				idx = Math.max( 0, Math.min( $opts.length - 1, idx ) );
+				activeIndex = idx;
+				var $active = $opts.eq( idx ).addClass( 'is-keyboard-active' );
+				var id = $active.attr( 'id' );
+				$trigger.attr( 'aria-activedescendant', id );
+				if ( isSearchable ) {
+					$search.attr( 'aria-activedescendant', id );
+				}
+				if ( $active[ 0 ] && $active[ 0 ].scrollIntoView ) {
+					$active[ 0 ].scrollIntoView( { block: 'nearest' } );
+				}
+			}
+
+			// Shared listbox keyboard handling for the trigger and the search input.
+			// Returns true when the key was handled (so callers can stop further work).
+			function navKeydown( e ) {
+				var $opts = $list.find( '.bf-select__option' );
+				switch ( e.key ) {
+					case 'ArrowDown':
+						e.preventDefault();
+						if ( ! $wrap.hasClass( 'is-open' ) ) {
+							open();
+							setActive( 0 );
+						} else {
+							setActive( activeIndex + 1 );
+						}
+						return true;
+					case 'ArrowUp':
+						e.preventDefault();
+						if ( ! $wrap.hasClass( 'is-open' ) ) {
+							open();
+							setActive( $opts.length - 1 );
+						} else {
+							setActive( activeIndex - 1 );
+						}
+						return true;
+					case 'Home':
+						if ( $wrap.hasClass( 'is-open' ) ) {
+							e.preventDefault();
+							setActive( 0 );
+							return true;
+						}
+						return false;
+					case 'End':
+						if ( $wrap.hasClass( 'is-open' ) ) {
+							e.preventDefault();
+							setActive( $opts.length - 1 );
+							return true;
+						}
+						return false;
+					case 'Enter':
+						if ( $wrap.hasClass( 'is-open' ) && activeIndex >= 0 && $opts.eq( activeIndex ).length ) {
+							e.preventDefault();
+							toggle( $opts.eq( activeIndex ).data( 'val' ) + '' );
+							return true;
+						}
+						return false;
+					default:
+						return false;
+				}
 			}
 
 			function toggle( val ) {
@@ -634,17 +819,36 @@ jQuery(
 			} );
 
 			$trigger.on( 'keydown', function ( e ) {
-				if ( e.key === 'Enter' || e.key === ' ' ) { e.preventDefault(); open(); }
-				if ( e.key === 'Escape' ) close();
+				if ( e.key === 'Escape' ) { close(); return; }
+				// Arrow/Home/End/Enter navigation over the options.
+				if ( navKeydown( e ) ) { return; }
+				// Enter/Space: open when closed, select the highlighted option when open,
+				// otherwise close. (Searchable selects move focus to the search box, so
+				// Space there types instead of reaching this handler.)
+				if ( e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar' ) {
+					e.preventDefault();
+					var $opts = $list.find( '.bf-select__option' );
+					if ( ! $wrap.hasClass( 'is-open' ) ) {
+						open();
+						setActive( 0 );
+					} else if ( activeIndex >= 0 && $opts.eq( activeIndex ).length ) {
+						toggle( $opts.eq( activeIndex ).data( 'val' ) + '' );
+					} else {
+						close();
+					}
+				}
 			} );
 
 			if ( isSearchable ) {
 				$search.on( 'input', function () {
 					renderList( $( this ).val() );
+					// After filtering, highlight the first match for keyboard users.
+					setActive( 0 );
 				} );
 
 				$search.on( 'keydown', function ( e ) {
-					if ( e.key === 'Escape' ) close();
+					if ( e.key === 'Escape' ) { close(); $trigger.trigger( 'focus' ); return; }
+					navKeydown( e );
 				} );
 			}
 
@@ -656,11 +860,25 @@ jQuery(
 			$list.on( 'click', '.bf-select__option', function () {
 				toggle( $( this ).data( 'val' ) + '' );
 			} );
-
-			$( document ).on( 'click', function ( e ) {
-				if ( ! $( e.target ).closest( $wrap ).length ) close();
-			} );
 		}
+
+		// Single delegated outside-click handler for ALL custom selects (replaces the
+		// per-instance $(document).on('click') that bindSelectBehaviour used to add,
+		// which leaked one handler per select). Closes every open select except the one
+		// the click landed inside — preserving the "only one open at a time" behaviour.
+		$( document ).on( 'click.bfSelectClose', function ( e ) {
+			var $inside = $( e.target ).closest( '.bf-select' );
+			$( '.bf-select.is-open' ).each( function () {
+				if ( this !== $inside[ 0 ] ) {
+					var $sel = $( this );
+					$sel.removeClass( 'is-open' );
+					$sel.find( '.bf-select__trigger' )
+						.attr( 'aria-expanded', 'false' )
+						.removeAttr( 'aria-activedescendant' );
+					$sel.find( '.bf-select__option' ).removeClass( 'is-keyboard-active' );
+				}
+			} );
+		} );
 
 		// Initialize on page load.
 		initBoldformSelects();

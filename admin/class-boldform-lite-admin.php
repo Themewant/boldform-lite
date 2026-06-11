@@ -918,6 +918,8 @@ class BoldForm_Lite_Admin {
 					array(
 						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
 						'entryId'          => $entry_id,
+						'spamText'         => __( 'Mark as Spam', 'boldform-lite' ),
+						'notSpamText'      => __( 'Not Spam', 'boldform-lite' ),
 					)
 				);
 				wp_add_inline_script(
@@ -931,6 +933,7 @@ class BoldForm_Lite_Admin {
 									$("#boldform-detail-status").attr("class","boldform-status-badge boldform-status--"+status).text(status.charAt(0).toUpperCase()+status.slice(1));
 									$("#boldform-mark-unread").prop("disabled",status==="unread");
 									$("#boldform-mark-starred").find(".dashicons").attr("class","dashicons "+(status==="starred"?"dashicons-star-filled":"dashicons-star-empty"));
+									$("#boldform-mark-spam").toggleClass("is-spam",status==="spam").attr("title",status==="spam"?boldformAdminEntry.notSpamText:boldformAdminEntry.spamText);
 								}
 							});
 						}
@@ -938,6 +941,10 @@ class BoldForm_Lite_Admin {
 						$("#boldform-mark-starred").on("click",function(){
 							var current=$("#boldform-detail-status").text().toLowerCase();
 							updateStatus(current==="starred"?"read":"starred");
+						});
+						$("#boldform-mark-spam").on("click",function(){
+							var current=$("#boldform-detail-status").text().toLowerCase();
+							updateStatus(current==="spam"?"read":"spam");
 						});
 					});'
 				);
@@ -1622,6 +1629,7 @@ class BoldForm_Lite_Admin {
 		$count_unread = $this->get_entries_count( array_merge( $filters, array( 'status' => 'unread' ) ) );
 		$count_read   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'read' ) ) );
 		$count_starred = $this->get_entries_count( array_merge( $filters, array( 'status' => 'starred' ) ) );
+		$count_spam    = $this->get_entries_count( array_merge( $filters, array( 'status' => 'spam' ) ) );
 
 		$base_url = admin_url( 'admin.php?page=boldform-lite-entries' );
 		$notice   = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -1676,6 +1684,9 @@ class BoldForm_Lite_Admin {
 						</a>
 						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'starred' ) ) ); ?>" class="boldform-entries-tab<?php echo 'starred' === $filter_status ? ' is-active' : ''; ?>">
 							<?php esc_html_e( 'Starred', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_starred ); ?></span>
+						</a>
+						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'spam' ) ) ); ?>" class="boldform-entries-tab<?php echo 'spam' === $filter_status ? ' is-active' : ''; ?>">
+							<?php esc_html_e( 'Spam', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_spam ); ?></span>
 						</a>
 					</div>
 				</div>
@@ -1871,8 +1882,12 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php
 		$topbar_active = 'boldform-lite-settings';
-		if ( 'smtp' === $active_tab ) $topbar_active = 'boldform-lite-settings#smtp';
-		if ( 'tools' === $active_tab ) $topbar_active = 'boldform-lite-settings#tools';
+		if ( 'smtp' === $active_tab ) {
+			$topbar_active = 'boldform-lite-settings#smtp';
+		}
+		if ( 'tools' === $active_tab ) {
+			$topbar_active = 'boldform-lite-settings#tools';
+		}
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
@@ -3025,6 +3040,9 @@ class BoldForm_Lite_Admin {
 					<button type="button" class="boldform-entry-action-btn" id="boldform-mark-unread" title="<?php esc_attr_e( 'Mark as Unread', 'boldform-lite' ); ?>" <?php echo 'unread' === $entry_status ? 'disabled' : ''; ?>>
 						<span class="dashicons dashicons-email"></span>
 					</button>
+					<button type="button" class="boldform-entry-action-btn<?php echo 'spam' === $entry_status ? ' is-spam' : ''; ?>" id="boldform-mark-spam" title="<?php echo 'spam' === $entry_status ? esc_attr__( 'Not Spam', 'boldform-lite' ) : esc_attr__( 'Mark as Spam', 'boldform-lite' ); ?>">
+						<span class="dashicons dashicons-shield"></span>
+					</button>
 					<a href="<?php echo esc_url( $delete_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Delete', 'boldform-lite' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this entry permanently?', 'boldform-lite' ) ); ?>');">
 						<span class="dashicons dashicons-trash"></span>
 					</a>
@@ -3196,7 +3214,7 @@ class BoldForm_Lite_Admin {
 		$entry_id = isset( $_POST['entry_id'] ) ? absint( $_POST['entry_id'] ) : 0;
 		$status   = isset( $_POST['status'] ) ? sanitize_key( wp_unslash( $_POST['status'] ) ) : '';
 
-		if ( ! $entry_id || ! in_array( $status, array( 'unread', 'read', 'starred' ), true ) ) {
+		if ( ! $entry_id || ! in_array( $status, array( 'unread', 'read', 'starred', 'spam' ), true ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'boldform-lite' ) ) );
 		}
 
@@ -3673,12 +3691,6 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders entry JSON into readable HTML.
-	 *
-	 * @param object $entry Entry record.
-	 * @return string
-	 */
-	/**
 	 * Returns a short preview string from the first 2-3 field values.
 	 *
 	 * @param object $entry Entry record.
@@ -3718,50 +3730,6 @@ class BoldForm_Lite_Admin {
 		}
 
 		return $parts ? implode( ' — ', $parts ) : __( 'No data', 'boldform-lite' );
-	}
-
-	private function render_entry_data( $entry ) {
-		$decoded = json_decode( (string) $entry->entry_data_json, true );
-
-		if ( empty( $decoded ) || ! is_array( $decoded ) ) {
-			return '<span>' . esc_html__( 'No submission data available.', 'boldform-lite' ) . '</span>';
-		}
-
-		$items = array();
-
-		foreach ( $decoded as $field ) {
-			$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : __( 'Field', 'boldform-lite' );
-			$value = isset( $field['value'] ) ? $field['value'] : '';
-
-			if ( is_array( $value ) ) {
-				$value = implode( ', ', array_map( static function ( $v ) { return sanitize_text_field( (string) ( $v ?? '' ) ); }, $value ) );
-			} else {
-				$value = sanitize_text_field( (string) ( $value ?? '' ) );
-			}
-
-			$is_file = isset( $field['type'] ) && 'file' === $field['type'];
-
-			if ( $is_file && ! empty( $value ) ) {
-				$items[] = sprintf(
-					'<li><strong>%1$s:</strong> <a href="%2$s" target="_blank">%3$s</a></li>',
-					esc_html( (string) $label ),
-					esc_url( (string) $value ),
-					esc_html( basename( (string) $value ) )
-				);
-			} else {
-				$items[] = sprintf(
-					'<li><strong>%1$s:</strong> %2$s</li>',
-					esc_html( (string) $label ),
-					esc_html( (string) $value )
-				);
-			}
-		}
-
-		if ( empty( $items ) ) {
-			return '<span>' . esc_html__( 'No submission data available.', 'boldform-lite' ) . '</span>';
-		}
-
-		return '<ul style="margin:0; padding-left:18px;">' . implode( '', $items ) . '</ul>';
 	}
 
 	/**

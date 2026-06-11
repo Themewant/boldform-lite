@@ -977,6 +977,13 @@ input[data-boldform-picker] {
 	transform: scale(1.15);
 }
 
+/* Visible keyboard focus for the star radios (they are tabbable for a11y). */
+.boldform-lite-star:focus-visible {
+	outline: 2px solid var(--bf-focus-color, #0f766e);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
 .boldform-lite-star.is-active {
 	color: var(--bf-star-color, var(--bf-button-bg, #f59e0b));
 }
@@ -1398,9 +1405,16 @@ input[data-boldform-picker] {
 	transition: background 0.1s ease;
 }
 
-.bf-select__option:hover {
+.bf-select__option:hover,
+.bf-select__option.is-keyboard-active {
 	background: var(--bf-select-opt-hover-bg, rgba(0, 0, 0, 0.035));
 	color: var(--bf-select-opt-hover-color, inherit);
+}
+
+/* Keyboard-highlighted option gets a clear focus outline for visible keyboard nav. */
+.bf-select__option.is-keyboard-active {
+	outline: 2px solid var(--bf-focus-color, #0f766e);
+	outline-offset: -2px;
 }
 
 .bf-select__option.is-active {

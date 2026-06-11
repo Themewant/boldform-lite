@@ -1061,6 +1061,9 @@ jQuery(
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
+				// Intentional raw-HTML sink: field.content is admin-authored rich text
+				// (builder is manage_options-only) and is re-sanitized server-side with
+				// wp_kses_post() on save, so it is emitted unescaped here to preserve markup.
 				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
 			} else if ( field.type === 'captcha' ) {
 				html = '<div class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</div>';
@@ -2072,6 +2075,9 @@ jQuery(
 								'<button type="button" data-cmd="insertUnorderedList" title="Bullet List"><span class="dashicons dashicons-editor-ul"></span></button>' +
 								'<button type="button" data-cmd="insertOrderedList" title="Numbered List"><span class="dashicons dashicons-editor-ol"></span></button>' +
 							'</div>' +
+							// Intentional raw-HTML sink: seeds the contenteditable editor with the
+							// admin-authored rich text. It is re-sanitized server-side via
+							// wp_kses_post() on save, so it is injected unescaped to keep formatting.
 							'<div class="boldform-richtext__editor" id="boldform-richtext-editor" contenteditable="true">' + ( selected.field.content || '' ) + '</div>' +
 						'</div>' +
 					'</div>';

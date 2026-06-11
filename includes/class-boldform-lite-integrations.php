@@ -98,7 +98,9 @@ class BoldForm_Lite_Integrations {
 
 		$clean_map = array();
 		foreach ( $raw_map as $conn_id => $map ) {
-			if ( ! is_array( $map ) ) continue;
+			if ( ! is_array( $map ) ) {
+				continue;
+			}
 			$clean_map[ sanitize_key( (string) $conn_id ) ] = array(
 				'email' => sanitize_key( (string) ( $map['email'] ?? '' ) ),
 				'fname' => sanitize_key( (string) ( $map['fname'] ?? '' ) ),
@@ -129,7 +131,9 @@ class BoldForm_Lite_Integrations {
 			? $settings['assigned_connections']
 			: array();
 
-		if ( empty( $assigned ) ) return;
+		if ( empty( $assigned ) ) {
+			return;
+		}
 
 		$field_map = isset( $settings['connection_field_map'] ) && is_array( $settings['connection_field_map'] )
 			? $settings['connection_field_map']
@@ -223,7 +227,9 @@ class BoldForm_Lite_Integrations {
 		$list_id = trim( (string) ( $conn['list_id'] ?? '' ) );
 		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
 
-		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
+		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) {
+			return;
+		}
 
 		// The Mailchimp data center is the suffix of the API key (e.g. "-us21").
 		// Without it we cannot build a correct endpoint, so bail rather than guess.
@@ -248,9 +254,15 @@ class BoldForm_Lite_Integrations {
 		$merge = array();
 		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
 		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
-		if ( $fname ) $merge['FNAME'] = $fname;
-		if ( $lname ) $merge['LNAME'] = $lname;
-		if ( $merge ) $body['merge_fields'] = $merge;
+		if ( $fname ) {
+			$merge['FNAME'] = $fname;
+		}
+		if ( $lname ) {
+			$merge['LNAME'] = $lname;
+		}
+		if ( $merge ) {
+			$body['merge_fields'] = $merge;
+		}
 
 		if ( ! empty( $conn['tags'] ) ) {
 			$body['tags'] = array_values( array_filter( array_map( 'trim', explode( ',', (string) $conn['tags'] ) ) ) );
@@ -290,16 +302,24 @@ class BoldForm_Lite_Integrations {
 		$list_id = (int) ( $conn['list_id'] ?? 0 );
 		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
 
-		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
+		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) {
+			return;
+		}
 
 		$body = array( 'email' => $email, 'listIds' => array( $list_id ), 'updateEnabled' => true );
 
 		$attrs = array();
 		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
 		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
-		if ( $fname ) $attrs['FIRSTNAME'] = $fname;
-		if ( $lname ) $attrs['LASTNAME']  = $lname;
-		if ( $attrs ) $body['attributes'] = $attrs;
+		if ( $fname ) {
+			$attrs['FIRSTNAME'] = $fname;
+		}
+		if ( $lname ) {
+			$attrs['LASTNAME'] = $lname;
+		}
+		if ( $attrs ) {
+			$body['attributes'] = $attrs;
+		}
 
 		$response = wp_remote_post(
 			'https://api.brevo.com/v3/contacts',
@@ -386,7 +406,9 @@ class BoldForm_Lite_Integrations {
 	 * @return string
 	 */
 	private function get_field_value( array $entry_data, string $field_id ): string {
-		if ( ! $field_id || ! isset( $entry_data[ $field_id ] ) ) return '';
+		if ( ! $field_id || ! isset( $entry_data[ $field_id ] ) ) {
+			return '';
+		}
 		$field = $entry_data[ $field_id ];
 		$val   = is_array( $field ) ? ( $field['value'] ?? '' ) : $field;
 		return is_array( $val ) ? implode( ', ', $val ) : (string) $val;
