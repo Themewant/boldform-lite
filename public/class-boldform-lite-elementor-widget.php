@@ -459,7 +459,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Label Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form' => '--bf-label-focus-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-form__field:focus-within > .boldform-lite-form__label' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -469,7 +469,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'     => __( 'Sub-label Color', 'boldform-lite' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form' => '--bf-sublabel-focus-color: {{VALUE}};',
+					'{{WRAPPER}} .boldform-lite-name__field:focus-within .boldform-lite-name__sub' => 'color: {{VALUE}};',
 				),
 			)
 		);
@@ -515,25 +515,6 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
-		$this->add_control(
-			'field_placeholder_color',
-			array(
-				'label'     => __( 'Placeholder Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__field input::placeholder, {{WRAPPER}} .boldform-lite-form__field textarea::placeholder' => 'color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->add_group_control(
-			\Elementor\Group_Control_Typography::get_type(),
-			array(
-				'name'     => 'field_typography',
-				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
-			)
-		);
-
 		$this->add_responsive_control(
 			'field_border_radius',
 			array(
@@ -555,18 +536,6 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'separator'  => 'before',
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'padding: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
-				),
-			)
-		);
-
-		$this->add_responsive_control(
-			'input_el_margin',
-			array(
-				'label'      => __( 'Margin', 'boldform-lite' ),
-				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
-				'size_units' => array( 'px', 'em' ),
-				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea' => 'margin: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
@@ -734,26 +703,14 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		);
 
 		$this->add_control(
-			'choice_accent_color',
-			array(
-				'label'     => __( 'Accent Color', 'boldform-lite' ),
-				'type'      => \Elementor\Controls_Manager::COLOR,
-				'selectors' => array(
-					'{{WRAPPER}} .boldform-lite-form__choice input[type="checkbox"]' => 'accent-color: {{VALUE}};',
-					'{{WRAPPER}} .boldform-lite-form__choice input[type="radio"]' => 'accent-color: {{VALUE}};',
-				),
-			)
-		);
-
-		$this->add_control(
 			'choice_size',
 			array(
 				'label'      => __( 'Size', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 12, 'max' => 30 ) ),
+				'range'      => array( 'px' => array( 'min' => 12, 'max' => 60 ) ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__choice input[type="checkbox"], {{WRAPPER}} .boldform-lite-form__choice input[type="radio"]' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form' => '--bf-choice-size: {{SIZE}}{{UNIT}};',
 				),
 			)
 		);
@@ -1367,12 +1324,10 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			'terms_checkbox_border_radius',
 			array(
 				'label'      => __( 'Checkbox Border Radius', 'boldform-lite' ),
-				'type'       => \Elementor\Controls_Manager::SLIDER,
-				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 0, 'max' => 10 ) ),
-				'default'    => array( 'size' => 5, 'unit' => 'px' ),
+				'type'       => \Elementor\Controls_Manager::DIMENSIONS,
+				'size_units' => array( 'px', '%' ),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-radius: {{SIZE}}{{UNIT}};',
+					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-radius: {{TOP}}{{UNIT}} {{RIGHT}}{{UNIT}} {{BOTTOM}}{{UNIT}} {{LEFT}}{{UNIT}};',
 				),
 			)
 		);
