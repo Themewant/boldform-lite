@@ -51,6 +51,14 @@ class BoldForm_Lite_Shortcode {
 	private static $render_counts = array();
 
 	/**
+	 * Per-request cache of fetched form rows keyed by form ID, so the same form
+	 * embedded multiple times on one page is queried only once.
+	 *
+	 * @var array<int, object|null>
+	 */
+	private $form_cache = array();
+
+	/**
 	 * Suffix appended to element IDs (not name attributes) for the form instance
 	 * currently being rendered. Empty for the first embed of a form on the page;
 	 * '-2', '-3', … for repeats, so a form embedded multiple times does not emit
@@ -327,18 +335,31 @@ class BoldForm_Lite_Shortcode {
 	 * @return object|null
 	 */
 	private function get_form( $form_id ) {
+		$form_id = (int) $form_id;
+
+		// Per-request memo: the same form embedded multiple times on one page (or
+		// fetched by both the shortcode and a block) then issues a single query, not
+		// one per embed. Scoped to this request, so it never serves stale data.
+		if ( isset( $this->form_cache[ $form_id ] ) ) {
+			return $this->form_cache[ $form_id ];
+		}
+
 		global $wpdb;
 
 		$table_name = $this->plugin->get_forms_table_name();
 
 		$safe_table = esc_sql( $table_name );
 
-		return $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$form = $wpdb->get_row( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
 				"SELECT * FROM `{$safe_table}` WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$form_id
 			)
 		);
+
+		$this->form_cache[ $form_id ] = $form;
+
+		return $form;
 	}
 
 	/**
@@ -935,7 +956,7 @@ class BoldForm_Lite_Shortcode {
 		?>
 		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
-				<label class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
+				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
 					<?php if ( $required ) : ?>
 						<span class="boldform-lite-form__required">*</span>
@@ -1237,6 +1258,8 @@ class BoldForm_Lite_Shortcode {
 			'aria-controls'    => true,
 			'aria-selected'    => true,
 			'aria-describedby' => true,
+			'aria-labelledby'  => true,
+			'aria-invalid'     => true,
 			'aria-required'    => true,
 			'aria-live'        => true,
 			'role'             => true,
@@ -1371,6 +1394,18 @@ class BoldForm_Lite_Shortcode {
 		// the same POST key regardless of which embed was submitted.
 		$field_id_attr = $field_name . $this->current_instance;
 
+		// Id of the field's visible <label> (minted in render_field() with the same
+		// base) so multi-control groups (radio/checkbox, name, custom select) can be
+		// associated to it via aria-labelledby. Only valid when a visible label is
+		// actually rendered: a non-empty label whose placement is not 'hidden'. The
+		// `hide_labels` form setting only hides the label with CSS — the element (and
+		// its id) stays in the DOM — so it does NOT suppress the association.
+		$control_label      = isset( $field['label'] ) ? (string) $field['label'] : '';
+		$control_label_pos  = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top';
+		$has_visible_label  = ( '' !== $control_label && 'hidden' !== $control_label_pos );
+		$label_id           = $field_id_attr . '-label';
+		$group_labelledby   = $has_visible_label ? ' aria-labelledby="' . esc_attr( $label_id ) . '"' : '';
+
 		// When no custom placeholder is set, fall back to the field label so simple
 		// inputs (text/email/tel/url/number/textarea) show guidance text instead of a
 		// bare box — mirroring the built-in placeholders on name/address/select fields.
@@ -1386,22 +1421,28 @@ class BoldForm_Lite_Shortcode {
 			$show_middle = ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] );
 			$show_last   = ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] );
 
-			$html  = '<div class="boldform-lite-name"><div class="boldform-lite-name__field">';
+			// Group the composite parts under the field's visible <label> so SRs
+			// announce them as one labelled group (no <fieldset>/<legend>). Each
+			// part input also carries its own aria-label (its visible sub-label text)
+			// since the sub-label <span> is not programmatically associated.
+			$html  = '<div class="boldform-lite-name" role="group"' . $group_labelledby . '><div class="boldform-lite-name__field">';
 			$html .= sprintf(
-				'<input type="text" id="%1$s" name="%2$s[first]" placeholder="%3$s"%4$s>',
+				'<input type="text" id="%1$s" name="%2$s[first]" placeholder="%3$s" aria-label="%5$s"%4$s>',
 				esc_attr( $field_id_attr ),
 				esc_attr( $field_name ),
 				esc_attr__( 'First Name', 'boldform-lite' ),
-				$required_attr
+				$required_attr,
+				esc_attr__( 'First Name', 'boldform-lite' )
 			);
 			$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'First Name', 'boldform-lite' ) . '</span></div>';
 
 			if ( $show_middle ) {
 				$html .= '<div class="boldform-lite-name__field">';
 				$html .= sprintf(
-					'<input type="text" id="%1$s_middle" name="%2$s[middle]" placeholder="%3$s">',
+					'<input type="text" id="%1$s_middle" name="%2$s[middle]" placeholder="%3$s" aria-label="%4$s">',
 					esc_attr( $field_id_attr ),
 					esc_attr( $field_name ),
+					esc_attr__( 'Middle Name', 'boldform-lite' ),
 					esc_attr__( 'Middle Name', 'boldform-lite' )
 				);
 				$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'Middle Name', 'boldform-lite' ) . '</span></div>';
@@ -1410,11 +1451,12 @@ class BoldForm_Lite_Shortcode {
 			if ( $show_last ) {
 				$html .= '<div class="boldform-lite-name__field">';
 				$html .= sprintf(
-					'<input type="text" id="%1$s_last" name="%2$s[last]" placeholder="%3$s"%4$s>',
+					'<input type="text" id="%1$s_last" name="%2$s[last]" placeholder="%3$s" aria-label="%5$s"%4$s>',
 					esc_attr( $field_id_attr ),
 					esc_attr( $field_name ),
 					esc_attr__( 'Last Name', 'boldform-lite' ),
-					$required_attr
+					$required_attr,
+					esc_attr__( 'Last Name', 'boldform-lite' )
 				);
 				$html .= '<span class="boldform-lite-name__sub">' . esc_html__( 'Last Name', 'boldform-lite' ) . '</span></div>';
 			}
@@ -1503,10 +1545,19 @@ class BoldForm_Lite_Shortcode {
 			$arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
 			$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
 
-			// Prepare accessible label for the trigger
+			// Prepare accessible name for the operable trigger. The native <select>
+			// is display:none, so its visible <label for=…> targets a hidden control;
+			// point the trigger at that same visible <label> via aria-labelledby so the
+			// name is announced once (not duplicated by a redundant aria-label). When no
+			// visible label is rendered, fall back to an aria-label.
 			$field_label = isset( $field['label'] ) ? (string) $field['label'] : '';
-			$trigger_aria_label = $field_label && '' !== $field_label ? esc_attr( $field_label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
-			$trigger_aria_attrs = ' aria-label="' . $trigger_aria_label . '" aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
+			if ( $has_visible_label ) {
+				$trigger_name_attr = ' aria-labelledby="' . esc_attr( $label_id ) . '"';
+			} else {
+				$trigger_aria_label = $field_label && '' !== $field_label ? esc_attr( $field_label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
+				$trigger_name_attr  = ' aria-label="' . $trigger_aria_label . '"';
+			}
+			$trigger_aria_attrs = $trigger_name_attr . ' aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
 			if ( $required ) {
 				$trigger_aria_attrs .= ' aria-required="true"';
 			}
@@ -1566,7 +1617,10 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'checkbox' === $type || 'radio' === $type ) {
 			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' );
-			$html           = '<div class="' . esc_attr( $choices_class ) . '">';
+			// Group semantics so SRs announce the option set as one labelled group
+			// (no <fieldset>/<legend>, which would restyle the form). Points at the
+			// field's visible <label> via aria-labelledby when one is rendered.
+			$html           = '<div class="' . esc_attr( $choices_class ) . '" role="group"' . $group_labelledby . '>';
 			$default_values = 'checkbox' === $type ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
 
 			foreach ( $this->normalize_options( $options ) as $option_index => $option ) {
@@ -1768,6 +1822,15 @@ class BoldForm_Lite_Shortcode {
 			}
 
 			$country_required_attr = $required ? ' aria-required="true"' : '';
+			// Associate the operable trigger with the field's visible <label> (which
+			// `for=`-targets the hidden native <select>) so the name is announced on the
+			// real control. Falls back to an aria-label when no visible label exists.
+			if ( $has_visible_label ) {
+				$country_required_attr .= ' aria-labelledby="' . esc_attr( $label_id ) . '"';
+			} else {
+				$country_label = isset( $field['label'] ) ? (string) $field['label'] : '';
+				$country_required_attr .= ' aria-label="' . ( '' !== $country_label ? esc_attr( $country_label ) : esc_attr__( 'Select a country', 'boldform-lite' ) ) . '"';
+			}
 			$html .= '<div class="bf-select" data-boldform-custom-select="1" data-searchable="1">';
 			if ( $selected_name ) {
 				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $country_required_attr . '><span class="bf-select__value">' . esc_html( $selected_name ) . '</span>' . $arrow . '</div>';

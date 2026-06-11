@@ -186,6 +186,12 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 
 		<main class="boldform-builder-canvas-wrap">
 			<div class="boldform-panel boldform-canvas-panel">
+				<?php if ( ! $boldform_lite_is_new_form ) : ?>
+					<div class="boldform-canvas-loading" id="boldform-canvas-loading">
+						<span class="boldform-canvas-loading__spinner" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Loading form…', 'boldform-lite' ); ?></span>
+					</div>
+				<?php endif; ?>
 				<div class="boldform-panel-head boldform-panel-head--canvas">
 					<div>
 						<h2><?php esc_html_e( 'Form Canvas', 'boldform-lite' ); ?></h2>

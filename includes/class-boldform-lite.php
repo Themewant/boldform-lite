@@ -92,6 +92,13 @@ final class BoldForm_Lite {
 	private $integrations;
 
 	/**
+	 * Privacy (GDPR) export/erase handler.
+	 *
+	 * @var BoldForm_Lite_Privacy
+	 */
+	private $privacy;
+
+	/**
 	 * Returns the single instance of the plugin.
 	 *
 	 * @return BoldForm_Lite
@@ -143,6 +150,7 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-export-import.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-integrations-page.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-privacy.php';
 
 		$this->loader            = new BoldForm_Lite_Loader();
 		$this->admin             = new BoldForm_Lite_Admin( $this );
@@ -154,6 +162,7 @@ final class BoldForm_Lite {
 		$this->export_import     = new BoldForm_Lite_Export_Import( $this );
 		$this->integrations_page = new BoldForm_Lite_Integrations_Page( $this );
 		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
+		$this->privacy           = new BoldForm_Lite_Privacy( $this );
 	}
 
 	/**
@@ -180,6 +189,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );
 		$this->loader->add_filter( 'upload_mimes', $this->admin, 'allow_svg_upload' );
 		$this->loader->add_filter( 'wp_check_filetype_and_ext', $this->admin, 'fix_svg_filetype', 10, 4 );
+		$this->loader->add_filter( 'wp_handle_upload_prefilter', $this->admin, 'sanitize_svg_upload' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_save_form', $this->admin, 'ajax_save_form' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_send_test_mail', $this->admin, 'ajax_send_test_mail' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_update_entry_status', $this->admin, 'ajax_update_entry_status' );
@@ -196,6 +206,8 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'enqueue_block_editor_assets', $this->block, 'enqueue_editor_assets' );
 		$this->loader->add_action( 'elementor/widgets/register', $this->elementor, 'register_widget' );
 		$this->loader->add_action( 'elementor/editor/after_enqueue_scripts', $this->elementor, 'enqueue_editor_scripts' );
+		$this->loader->add_filter( 'wp_privacy_personal_data_exporters', $this->privacy, 'register_exporter' );
+		$this->loader->add_filter( 'wp_privacy_personal_data_erasers', $this->privacy, 'register_eraser' );
 
 		$this->export_import->init();
 		$this->integrations_page->init();

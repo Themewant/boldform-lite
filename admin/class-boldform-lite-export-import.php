@@ -430,7 +430,7 @@ class BoldForm_Lite_Export_Import {
 			// Sanitize every imported value by depth before merging into the trusted option.
 			$imported_settings = map_deep( $imported_settings, 'sanitize_text_field' );
 
-			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ) );
+			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ), false );
 		}
 
 		return $forms_imported;

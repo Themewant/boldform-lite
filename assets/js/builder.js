@@ -30,6 +30,15 @@ jQuery(
 			return 'bf_' + Date.now() + '_' + Math.floor( Math.random() * 100000 );
 		}
 
+		// Announce builder mutations to assistive tech (drag/add/delete have no visible
+		// status text otherwise). Safe no-op if wp.a11y isn't present.
+		function announce( key ) {
+			var messages = boldformLiteBuilder.a11y || {};
+			if ( messages[ key ] && window.wp && wp.a11y && typeof wp.a11y.speak === 'function' ) {
+				wp.a11y.speak( messages[ key ] );
+			}
+		}
+
 		function getLibraryItem( type ) {
 			return boldformLiteBuilder.fieldLibrary[ type ] || { label: type, icon: 'dashicons-editor-textcolor', group: 'basic' };
 		}
@@ -823,6 +832,7 @@ jQuery(
 			switchEditorView( 'builder' );
 			switchSidebarTab( 'library' );
 			renderAll();
+			announce( 'rowAdded' );
 		}
 
 		function duplicateRow( rowIndex ) {
@@ -847,6 +857,7 @@ jQuery(
 			setActiveColumn( rowIndex + 1, 0 );
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'rowDuplicated' );
 		}
 
 		function deleteRow( rowIndex ) {
@@ -867,6 +878,7 @@ jQuery(
 
 			switchSidebarTab( 'library' );
 			renderAll();
+			announce( 'rowDeleted' );
 		}
 
 		function moveRow( oldIndex, newIndex ) {
@@ -896,6 +908,7 @@ jQuery(
 			state.selectedFieldId = null;
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'fieldAdded' );
 		}
 
 		function addFieldToColumn( type, rowIndex, columnIndex, newIndex ) {
@@ -906,6 +919,7 @@ jQuery(
 			state.selectedFieldId = null;
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'fieldAdded' );
 		}
 
 		function duplicateField( fieldId ) {
@@ -924,6 +938,7 @@ jQuery(
 			switchEditorView( 'builder' );
 			switchSidebarTab( 'settings' );
 			renderAll();
+			announce( 'fieldDuplicated' );
 		}
 
 		function buildButtonIconHtml() {
@@ -987,6 +1002,7 @@ jQuery(
 			removeFieldAt( location.rowIndex, location.columnIndex, location.fieldIndex );
 			state.selectedFieldId = null;
 			renderAll();
+			announce( 'fieldDeleted' );
 		}
 
 		function renderInputPreview( field ) {
@@ -5958,6 +5974,13 @@ jQuery(
 
 		updateShortcodeDisplay();
 		renderAll();
+
+		// Canvas is rendered — remove the loading overlay shown for existing forms
+		// so the real layout (or the empty state) is revealed without flashing the
+		// "Start building your form" placeholder while this script downloaded.
+		$( '#boldform-canvas-loading' ).fadeOut( 150, function () {
+			$( this ).remove();
+		} );
 
 		// Expose builder state globally so companion scripts (integrations.js, Pro modules) can read it.
 		window.boldformBuilderState = state;

@@ -1,7 +1,7 @@
-=== BoldForm Lite – Drag & Drop Form Builder ===
+=== BoldForm Lite ===
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
-Requires at least: 6.0
+Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 1.1.0
@@ -257,11 +257,12 @@ All JavaScript and CSS assets are bundled locally within the plugin directory. N
 
 **Bundled third-party libraries:**
 
-* **SortableJS** (`assets/js/sortable.js`) — MIT License — https://github.com/SortableJS/Sortable
-  Local copy used for drag-and-drop field ordering in the builder. Not fetched from any CDN.
-
 * **Flatpickr** (`assets/js/flatpickr.min.js`, `assets/css/flatpickr.min.css`) — MIT License — https://github.com/flatpickr/flatpickr
   Local copy used for the date and time picker fields. Not fetched from any CDN.
+
+**First-party scripts:**
+
+* `assets/js/sortable.js` — a small first-party drag-and-drop helper written for this plugin (used for field ordering in the builder). It is original BoldForm code, not the third-party SortableJS library, and is GPL-licensed with the rest of the plugin.
 
 The submissions chart on the Reports page is rendered using the browser's native HTML5 Canvas API. No external charting library is loaded.
 
@@ -321,6 +322,20 @@ Adds contacts to a Brevo list on form submission.
 
 ---
 
+== Privacy ==
+
+When a visitor submits a form, BoldForm Lite stores the submission in your site's own database (no data is sent anywhere unless you have configured one of the external services listed above). Each stored entry includes:
+
+* The values the visitor entered in the form fields (which may include personal data such as name, email address, phone number, address, and any uploaded files).
+* The submitter's IP address and browser user-agent string, recorded for spam-prevention and auditing.
+* The logged-in user ID, when the form is submitted by a logged-in user.
+
+Entries are retained until you delete them. You can remove individual entries (or all of them) from **BoldForm > Entries** at any time. If you enable "Remove all data on uninstall" in the settings, all stored forms and entries are deleted when the plugin is uninstalled.
+
+BoldForm Lite integrates with WordPress's built-in privacy tools: under **Tools > Export Personal Data** and **Tools > Erase Personal Data**, an administrator can export or erase the form entries associated with a given email address to help fulfil data-subject requests.
+
+---
+
 == Changelog ==
 
 = 1.1.0 =
@@ -363,3 +378,8 @@ Adds contacts to a Brevo list on form submission.
 
 = 1.0.0 =
 * Initial release.
+
+== Upgrade Notice ==
+
+= 1.1.0 =
+Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.

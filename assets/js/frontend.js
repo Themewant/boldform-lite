@@ -1,13 +1,80 @@
 jQuery(
 	function ( $ ) {
+		// Monotonic counter giving every error message <div> a unique id, so the
+		// aria-describedby link is unambiguous even when a form is embedded more than
+		// once on a page (wrappers share their data-bf-field-id across embeds).
+		var bfErrorSeq = 0;
+
+		/**
+		 * Returns the operable control(s) inside a field wrapper that should carry
+		 * aria-invalid / aria-describedby. For custom selects the native <select> is
+		 * display:none (not focusable), so the visible .bf-select__trigger is used;
+		 * the star rating exposes its role="radiogroup" container; composite name /
+		 * address / choice groups expose all their visible inputs.
+		 *
+		 * @param {jQuery} $wrapper The .boldform-lite-form__field element.
+		 * @return {jQuery} The control element(s) to annotate.
+		 */
+		function getInvalidControls( $wrapper ) {
+			var $trigger = $wrapper.find( '.bf-select__trigger' );
+			if ( $trigger.length ) {
+				return $trigger;
+			}
+			var $stars = $wrapper.find( '.boldform-lite-star-rating' );
+			if ( $stars.length ) {
+				return $stars;
+			}
+			var $controls = $wrapper.find( 'input:not([type="hidden"]), textarea, select:not([style*="display:none"])' );
+			return $controls.length ? $controls : $wrapper;
+		}
+
+		// Strip the error association from a wrapper: remove aria-invalid and unlink
+		// the aria-describedby pointer we added (leaving any pre-existing tokens alone).
+		function clearFieldErrorState( $wrapper ) {
+			var errorId = $wrapper.data( 'bf-error-id' );
+			getInvalidControls( $wrapper ).each( function () {
+				var $c = $( this );
+				$c.removeAttr( 'aria-invalid' );
+				if ( errorId ) {
+					var tokens = ( $c.attr( 'aria-describedby' ) || '' ).split( /\s+/ ).filter( function ( t ) {
+						return t && t !== errorId;
+					} );
+					if ( tokens.length ) {
+						$c.attr( 'aria-describedby', tokens.join( ' ' ) );
+					} else {
+						$c.removeAttr( 'aria-describedby' );
+					}
+				}
+			} );
+			$wrapper.removeData( 'bf-error-id' ).removeAttr( 'data-bf-error-id' );
+		}
+
 		function clearFieldErrors( $form ) {
+			$form.find( '.is-invalid' ).each( function () {
+				clearFieldErrorState( $( this ) );
+			} );
 			$form.find( '.boldform-lite-form__field-error' ).remove();
 			$form.find( '.is-invalid' ).removeClass( 'is-invalid' );
 		}
 
 		function showFieldError( $wrapper, message ) {
 			$wrapper.addClass( 'is-invalid' );
-			$wrapper.append( '<div class="boldform-lite-form__field-error">' + $( '<span />' ).text( message ).html() + '</div>' );
+
+			// Unique id for the message so the control can reference it via
+			// aria-describedby. role="alert" (an assertive live region) makes SRs
+			// announce the freshly-inserted text.
+			var errorId = 'boldform-error-' + ( ++bfErrorSeq );
+			$wrapper.data( 'bf-error-id', errorId );
+			$wrapper.append(
+				'<div class="boldform-lite-form__field-error" id="' + errorId + '" role="alert">' + $( '<span />' ).text( message ).html() + '</div>'
+			);
+
+			getInvalidControls( $wrapper ).each( function () {
+				var $c = $( this );
+				$c.attr( 'aria-invalid', 'true' );
+				var existing = $c.attr( 'aria-describedby' );
+				$c.attr( 'aria-describedby', existing ? existing + ' ' + errorId : errorId );
+			} );
 		}
 
 		function showFieldErrors( $form, errors ) {
@@ -25,6 +92,26 @@ jQuery(
 					}
 				}
 			);
+
+			focusFirstInvalid( $form );
+		}
+
+		/**
+		 * Moves keyboard focus to the first invalid control in the form so keyboard
+		 * and screen-reader users land on the field they need to fix.
+		 *
+		 * @param {jQuery} $form The form element.
+		 * @return {void}
+		 */
+		function focusFirstInvalid( $form ) {
+			var $firstInvalid = $form.find( '.boldform-lite-form__field.is-invalid' ).first();
+			if ( ! $firstInvalid.length ) {
+				return;
+			}
+			var $target = getInvalidControls( $firstInvalid ).first();
+			if ( $target.length && typeof $target[ 0 ].focus === 'function' ) {
+				$target[ 0 ].focus();
+			}
 		}
 
 		/**
@@ -113,13 +200,26 @@ jQuery(
 			var $wrapper = $input.closest( '.boldform-lite-form__field' );
 			var val      = $.trim( $input.val() || '' );
 
-			// Clear any previous email error on this field.
+			// Clear any previous email error on this field (incl. its ARIA association).
+			clearFieldErrorState( $wrapper );
 			$wrapper.find( '.boldform-lite-form__field-error' ).remove();
 			$wrapper.removeClass( 'is-invalid' );
 
 			if ( val && ! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test( val ) ) {
 				showFieldError( $wrapper, boldformLiteFrontend.invalidEmail || 'Please enter a valid email address.' );
 			}
+		} );
+
+		// Clear a field's error (and its ARIA association) as soon as the user edits
+		// it, so a corrected field no longer announces as invalid before re-submit.
+		$( document ).on( 'input change', '.boldform-lite-form__field.is-invalid :input', function () {
+			var $wrapper = $( this ).closest( '.boldform-lite-form__field.is-invalid' );
+			if ( ! $wrapper.length ) {
+				return;
+			}
+			clearFieldErrorState( $wrapper );
+			$wrapper.find( '.boldform-lite-form__field-error' ).remove();
+			$wrapper.removeClass( 'is-invalid' );
 		} );
 
 		// ── Flatpickr date/time pickers ──
@@ -174,6 +274,7 @@ jQuery(
 					if ( ! validateClientSide( $form ) ) {
 						event.preventDefault();
 						$message.addClass( 'is-visible is-error' ).text( boldformLiteFrontend.errorText );
+						focusFirstInvalid( $form );
 					}
 					return;
 				}
@@ -184,6 +285,7 @@ jQuery(
 					$message
 						.addClass( 'is-visible is-error' )
 						.text( boldformLiteFrontend.errorText );
+					focusFirstInvalid( $form );
 					return;
 				}
 

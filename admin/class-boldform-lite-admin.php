@@ -304,6 +304,213 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Sanitizes uploaded SVG markup before it is stored.
+	 *
+	 * SVGs can carry executable script (inline <script>, on* event handlers,
+	 * javascript: hrefs, <foreignObject>, XXE via DOCTYPE/ENTITY). Since the media
+	 * library allows SVG uploads for capable users, every uploaded SVG is rewritten
+	 * to a sanitized copy here. Anything that cannot be parsed as a valid SVG is
+	 * rejected rather than stored.
+	 *
+	 * @param array<string, mixed> $file Upload file array ($_FILES entry).
+	 * @return array<string, mixed>
+	 */
+	public function sanitize_svg_upload( $file ) {
+		$name = isset( $file['name'] ) ? (string) $file['name'] : '';
+		$type = isset( $file['type'] ) ? (string) $file['type'] : '';
+		$ext  = strtolower( pathinfo( $name, PATHINFO_EXTENSION ) );
+
+		if ( 'image/svg+xml' !== $type && 'svg' !== $ext ) {
+			return $file;
+		}
+
+		$tmp = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+
+		if ( '' === $tmp || ! is_file( $tmp ) ) {
+			return $file;
+		}
+
+		$markup = file_get_contents( $tmp ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- reading a just-uploaded temp file, not a remote/URL resource.
+
+		if ( false === $markup ) {
+			$file['error'] = __( 'The SVG file could not be read.', 'boldform-lite' );
+			return $file;
+		}
+
+		$clean = $this->sanitize_svg_markup( $markup );
+
+		if ( null === $clean ) {
+			$file['error'] = __( 'This SVG could not be sanitized and was rejected for security reasons.', 'boldform-lite' );
+			return $file;
+		}
+
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- overwriting the upload temp file in place before WordPress moves it.
+		file_put_contents( $tmp, $clean );
+
+		return $file;
+	}
+
+	/**
+	 * Strips script-bearing content from SVG markup.
+	 *
+	 * Removes dangerous elements (script/foreignObject/etc.), all on* event-handler
+	 * attributes, javascript:/vbscript: in href-like attributes, and DOCTYPE/ENTITY
+	 * declarations. Returns the cleaned SVG string, or null if the input is not a
+	 * parseable SVG (caller rejects the upload in that case).
+	 *
+	 * @param string $svg Raw SVG markup.
+	 * @return string|null Cleaned markup, or null on failure.
+	 */
+	private function sanitize_svg_markup( $svg ) {
+		$svg = trim( (string) $svg );
+
+		if ( '' === $svg || ! class_exists( 'DOMDocument' ) ) {
+			return null;
+		}
+
+		// Drop DOCTYPE/ENTITY declarations (XXE / entity-expansion) before parsing.
+		$svg = preg_replace( '/<!DOCTYPE.*?>/is', '', $svg );
+		$svg = preg_replace( '/<!ENTITY[^>]*>/i', '', (string) $svg );
+
+		$dom                     = new DOMDocument();
+		$dom->preserveWhiteSpace = false;
+		$dom->formatOutput       = false;
+
+		$libxml_prev = libxml_use_internal_errors( true );
+
+		// PHP < 8.0: explicitly disable external entity loading (default-safe on 8.0+/libxml 2.9+).
+		$entity_prev = null;
+		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
+			$entity_prev = libxml_disable_entity_loader( true );
+		}
+
+		$loaded = $dom->loadXML( (string) $svg, LIBXML_NONET );
+
+		if ( null !== $entity_prev ) {
+			libxml_disable_entity_loader( $entity_prev );
+		}
+		libxml_clear_errors();
+		libxml_use_internal_errors( $libxml_prev );
+
+		if ( ! $loaded || ! $dom->documentElement || 'svg' !== strtolower( $dom->documentElement->nodeName ) ) {
+			return null;
+		}
+
+		// Dangerous elements removed wholesale. Matched case-INSENSITIVELY on the local
+		// name because SVG/XML is case-sensitive (e.g. <foreignObject>, <animateMotion>),
+		// so a tag-name match must normalize case rather than rely on getElementsByTagName.
+		$dangerous_tags = array(
+			'script',
+			'foreignobject',
+			'iframe',
+			'embed',
+			'object',
+			'audio',
+			'video',
+			'handler',
+			'listener',
+			'set',
+			'animate',
+			'animatemotion',
+			'animatetransform',
+			'style', // CSS can exfiltrate via @import / url(); strip the whole block.
+		);
+
+		$href_attrs = array( 'href', 'xlink:href', 'src', 'from', 'to', 'values', 'by' );
+
+		// Single pass over every element: collect first (removal mutates the live list).
+		$xpath    = new DOMXPath( $dom );
+		$node_list = $xpath->query( '//*' );
+		$elements  = array();
+
+		if ( $node_list ) {
+			foreach ( $node_list as $el ) {
+				$elements[] = $el;
+			}
+		}
+
+		foreach ( $elements as $el ) {
+			$local = strtolower( $el->localName ? $el->localName : $el->nodeName );
+
+			if ( in_array( $local, $dangerous_tags, true ) ) {
+				if ( $el->parentNode ) {
+					$el->parentNode->removeChild( $el );
+				}
+				continue;
+			}
+
+			if ( ! $el->attributes ) {
+				continue;
+			}
+
+			$remove = array();
+
+			foreach ( $el->attributes as $attr ) {
+				$attr_name = strtolower( $attr->nodeName );
+				$attr_val  = (string) $attr->nodeValue;
+
+				if ( 0 === strpos( $attr_name, 'on' ) ) {
+					$remove[] = $attr;
+				} elseif ( in_array( $attr_name, $href_attrs, true ) && $this->svg_href_is_unsafe( $attr_val ) ) {
+					$remove[] = $attr;
+				} elseif ( 'style' === $attr_name && preg_match( '/expression\s*\(|url\s*\(|@import|javascript\s*:|vbscript\s*:/i', $attr_val ) ) {
+					$remove[] = $attr;
+				}
+			}
+
+			foreach ( $remove as $attr ) {
+				$el->removeAttributeNode( $attr );
+			}
+		}
+
+		$clean = $dom->saveXML( $dom->documentElement );
+
+		if ( false === $clean || '' === trim( (string) $clean ) ) {
+			return null;
+		}
+
+		return '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $clean;
+	}
+
+	/**
+	 * Determines whether an SVG href/src-like value is unsafe.
+	 *
+	 * Normalizes the value (decodes entities, strips whitespace and control chars)
+	 * so obfuscated schemes like "java&#9;script:" are caught, then rejects
+	 * executable schemes, non-image data: URIs, and external/protocol-relative
+	 * references (which can fetch remote content or exfiltrate). Internal fragment
+	 * references (#id), relative paths, and safe base64 raster images are allowed.
+	 *
+	 * @param string $value Raw attribute value.
+	 * @return bool True if the reference is unsafe and should be stripped.
+	 */
+	private function svg_href_is_unsafe( $value ) {
+		$normalized = html_entity_decode( (string) $value, ENT_QUOTES, 'UTF-8' );
+		$normalized = preg_replace( '/[\s\x00-\x20]+/', '', (string) $normalized );
+		$normalized = strtolower( (string) $normalized );
+
+		if ( '' === $normalized || '#' === $normalized[0] ) {
+			return false;
+		}
+
+		if ( preg_match( '#^(javascript|vbscript|mocha|livescript):#', $normalized ) ) {
+			return true;
+		}
+
+		if ( 0 === strpos( $normalized, 'data:' ) ) {
+			// Allow only safe base64 raster images; reject data:text/html, data:image/svg+xml, etc.
+			return ! preg_match( '#^data:image/(png|jpe?g|gif|webp);base64,#', $normalized );
+		}
+
+		// Block external and protocol-relative references.
+		if ( preg_match( '#^(https?:)?//#', $normalized ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Cache-busting version string for a plugin asset.
 	 *
 	 * Uses the file's modification time so edits to the (hand-maintained) builder
@@ -327,7 +534,6 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook_suffix ) {
-		// Hide third-party admin notices on all BoldForm pages.
 		$all_pages = array(
 			$this->list_page_hook,
 			$this->builder_page_hook,
@@ -339,8 +545,14 @@ class BoldForm_Lite_Admin {
 		);
 
 		if ( in_array( $hook_suffix, $all_pages, true ) ) {
-			remove_all_actions( 'admin_notices' );
-			remove_all_actions( 'all_admin_notices' );
+			// The builder is a full-screen app UI: foreign admin notices break its layout,
+			// so suppress them there only. The other BoldForm pages are standard wp-admin
+			// screens — leave third-party notices intact on those. BoldForm's own notices
+			// render on every BoldForm page either way.
+			if ( $this->builder_page_hook === $hook_suffix ) {
+				remove_all_actions( 'admin_notices' );
+				remove_all_actions( 'all_admin_notices' );
+			}
 			add_action( 'admin_notices', array( $this, 'render_own_notices' ) );
 		}
 
@@ -369,7 +581,7 @@ class BoldForm_Lite_Admin {
 			wp_enqueue_script(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
-				array( 'jquery', 'boldform-lite-sortable' ),
+				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y' ),
 				$this->asset_version( 'assets/js/builder.js' ),
 				true
 			);
@@ -424,6 +636,15 @@ class BoldForm_Lite_Admin {
 						'duplicate' => __( 'Duplicate', 'boldform-lite' ),
 						'delete'    => __( 'Delete', 'boldform-lite' ),
 						'addRow'    => __( 'Add Row', 'boldform-lite' ),
+					),
+					// Screen-reader announcements (wp.a11y.speak) for builder mutations.
+					'a11y'               => array(
+						'rowAdded'        => __( 'Row added.', 'boldform-lite' ),
+						'rowDeleted'      => __( 'Row deleted.', 'boldform-lite' ),
+						'rowDuplicated'   => __( 'Row duplicated.', 'boldform-lite' ),
+						'fieldAdded'      => __( 'Field added.', 'boldform-lite' ),
+						'fieldDeleted'    => __( 'Field deleted.', 'boldform-lite' ),
+						'fieldDuplicated' => __( 'Field duplicated.', 'boldform-lite' ),
 					),
 					'labels'             => array(
 						'label'        => __( 'Label', 'boldform-lite' ),
@@ -2332,7 +2553,9 @@ class BoldForm_Lite_Admin {
 			$settings['smtp_password'] = sanitize_text_field( wp_unslash( $_POST['boldform_smtp_password'] ) );
 		}
 
-		update_option( 'boldform_lite_settings', $settings );
+		// autoload=false: this option holds secrets (SMTP password, captcha secret keys) and
+		// is only read on admin/submission/mail paths, never on every front-end page load.
+		update_option( 'boldform_lite_settings', $settings, false );
 
 		add_settings_error( 'boldform_lite_settings', 'settings_updated', __( 'Settings saved.', 'boldform-lite' ), 'success' );
 		settings_errors( 'boldform_lite_settings' );
@@ -3279,26 +3502,35 @@ class BoldForm_Lite_Admin {
 			'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
 		);
 		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
-		$entries    = $wpdb->get_results( "SELECT * FROM `{$safe_table}` {$where} ORDER BY created_at DESC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$base_query = "SELECT id, form_id, created_at, entry_data_json FROM `{$safe_table}` {$where} ORDER BY created_at DESC";
+		$batch_size = 500;
 
-		// Collect all unique field labels across entries.
+		// Pass 1: collect the union of field labels (column headers) in bounded batches,
+		// so memory stays flat regardless of how many entries exist.
 		$columns = array();
+		$offset  = 0;
+		do {
+			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
+			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
-		foreach ( $entries as $entry ) {
-			$data = json_decode( $entry['entry_data_json'], true );
+			foreach ( $batch as $entry ) {
+				$data = json_decode( $entry['entry_data_json'], true );
 
-			if ( ! is_array( $data ) ) {
-				continue;
-			}
+				if ( ! is_array( $data ) ) {
+					continue;
+				}
 
-			foreach ( $data as $field ) {
-				$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : 'Field';
+				foreach ( $data as $field ) {
+					$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : 'Field';
 
-				if ( ! in_array( $label, $columns, true ) ) {
-					$columns[] = $label;
+					if ( ! in_array( $label, $columns, true ) ) {
+						$columns[] = $label;
+					}
 				}
 			}
-		}
+
+			$offset += $batch_size;
+		} while ( count( $batch ) === $batch_size );
 
 		$filename = 'boldform-entries-' . gmdate( 'Y-m-d' ) . '.csv';
 
@@ -3311,35 +3543,44 @@ class BoldForm_Lite_Admin {
 		// Header row.
 		fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) ) );
 
-		foreach ( $entries as $entry ) {
-			$data = json_decode( $entry['entry_data_json'], true );
-			$row  = array(
-				$entry['id'],
-				$entry['form_id'],
-				$entry['created_at'],
-			);
+		// Pass 2: stream the rows in the same order, batched to bound memory.
+		$offset = 0;
+		do {
+			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
+			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
-			$field_map = array();
+			foreach ( $batch as $entry ) {
+				$data = json_decode( $entry['entry_data_json'], true );
+				$row  = array(
+					$entry['id'],
+					$entry['form_id'],
+					$entry['created_at'],
+				);
 
-			if ( is_array( $data ) ) {
-				foreach ( $data as $field ) {
-					$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : 'Field';
-					$value = isset( $field['value'] ) ? $field['value'] : '';
+				$field_map = array();
 
-					if ( is_array( $value ) ) {
-						$value = implode( ', ', $value );
+				if ( is_array( $data ) ) {
+					foreach ( $data as $field ) {
+						$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : 'Field';
+						$value = isset( $field['value'] ) ? $field['value'] : '';
+
+						if ( is_array( $value ) ) {
+							$value = implode( ', ', $value );
+						}
+
+						$field_map[ $label ] = (string) $value;
 					}
-
-					$field_map[ $label ] = (string) $value;
 				}
+
+				foreach ( $columns as $col ) {
+					$row[] = isset( $field_map[ $col ] ) ? $field_map[ $col ] : '';
+				}
+
+				fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
 			}
 
-			foreach ( $columns as $col ) {
-				$row[] = isset( $field_map[ $col ] ) ? $field_map[ $col ] : '';
-			}
-
-			fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
-		}
+			$offset += $batch_size;
+		} while ( count( $batch ) === $batch_size );
 
 		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- writing to php://output stream, not a filesystem file.
 		exit;

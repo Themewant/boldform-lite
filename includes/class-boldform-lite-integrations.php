@@ -227,7 +227,9 @@ class BoldForm_Lite_Integrations {
 		$list_id = trim( (string) ( $conn['list_id'] ?? '' ) );
 		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
 
-		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) {
+		// Mailchimp audience IDs are alphanumeric; reject anything else so a stored
+		// value can never inject extra path/query segments into the request URL.
+		if ( ! $api_key || ! $list_id || ! preg_match( '/^[A-Za-z0-9]+$/', $list_id ) || ! is_email( $email ) ) {
 			return;
 		}
 

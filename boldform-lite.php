@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       BoldForm Lite – Drag & Drop Form Builder
+ * Plugin Name:       BoldForm Lite
  * Description:       Lightweight drag and drop form builder for WordPress.
  * Version:           1.1.0
- * Requires at least: 6.0
+ * Requires at least: 6.3
  * Tested up to:      7.0
  * Requires PHP:      7.4
  * Author:      Themewant
@@ -31,6 +31,46 @@ require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-loader.php';
 require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite.php';
 
 register_activation_hook( BOLDFORM_LITE_FILE, array( 'BoldForm_Lite_Activator', 'activate' ) );
+
+/**
+ * Clears plugin-scheduled cron events on deactivation so no orphaned events
+ * linger. User data (tables/options) is preserved — only removed on uninstall
+ * when the user has opted in.
+ *
+ * @return void
+ */
+function boldform_lite_deactivate() {
+	wp_clear_scheduled_hook( 'boldform_integration_dispatch' );
+}
+register_deactivation_hook( BOLDFORM_LITE_FILE, 'boldform_lite_deactivate' );
+
+/**
+ * One-time migration: stop autoloading the settings option on existing installs.
+ *
+ * The option holds secrets (SMTP password, captcha secret keys); new saves already
+ * pass autoload=false, this flips it for installs created before that change. Runs
+ * once in the admin, then a flag short-circuits it.
+ *
+ * @return void
+ */
+function boldform_lite_migrate_settings_autoload() {
+	if ( ! is_admin() || get_option( 'boldform_lite_autoload_migrated' ) ) {
+		return;
+	}
+
+	if ( function_exists( 'wp_set_option_autoload' ) ) { // WP 6.4+.
+		wp_set_option_autoload( 'boldform_lite_settings', false );
+	} else {
+		$settings = get_option( 'boldform_lite_settings', null );
+		if ( null !== $settings ) {
+			delete_option( 'boldform_lite_settings' );
+			add_option( 'boldform_lite_settings', $settings, '', 'no' );
+		}
+	}
+
+	update_option( 'boldform_lite_autoload_migrated', 1 );
+}
+add_action( 'admin_init', 'boldform_lite_migrate_settings_autoload' );
 
 // Multisite: create tables for each new subsite when the plugin is network-active.
 add_action( 'wp_initialize_site', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // WP 5.1+

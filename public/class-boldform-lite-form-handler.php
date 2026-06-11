@@ -1376,6 +1376,21 @@ class BoldForm_Lite_Form_Handler {
 					),
 				);
 			}
+		} else {
+			// No per-field allowlist: still verify the real file content resolves to a
+			// WordPress-recognized type whose MIME matches the extension (finfo-backed),
+			// so a spoofed-content or unknown-type file is rejected rather than stored.
+			$checked = wp_check_filetype_and_ext( $file['tmp_name'], sanitize_file_name( (string) $file['name'] ) );
+
+			if ( empty( $checked['ext'] ) || empty( $checked['type'] ) ) {
+				return array(
+					'error' => sprintf(
+						/* translators: %s: field label */
+						__( '%s: this file type is not allowed.', 'boldform-lite' ),
+						$label ? $label : __( 'File', 'boldform-lite' )
+					),
+				);
+			}
 		}
 
 		if ( ! function_exists( 'wp_handle_upload' ) ) {
