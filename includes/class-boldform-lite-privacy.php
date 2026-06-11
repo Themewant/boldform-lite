@@ -372,11 +372,11 @@ class BoldForm_Lite_Privacy {
 				? (string) $field['label']
 				: (string) $field_key;
 
-			$values = $this->flatten_values( $field['value'] );
+			$type = isset( $field['type'] ) ? (string) $field['type'] : '';
 
 			$data[] = array(
 				'name'  => $label,
-				'value' => implode( ', ', array_map( 'strval', $values ) ),
+				'value' => BoldForm_Lite::format_field_value( $field['value'], $type ),
 			);
 		}
 

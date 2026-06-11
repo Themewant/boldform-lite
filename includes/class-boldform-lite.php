@@ -248,6 +248,44 @@ final class BoldForm_Lite {
 	}
 
 	/**
+	 * Flattens a stored entry field value into a human-readable display string.
+	 *
+	 * Multi-part values are stored as arrays: composite fields as associative
+	 * arrays (name => {first,middle,last}; address => {street,city,…}) and
+	 * checkbox/multiselect as indexed arrays of selected options. Empty parts
+	 * (e.g. a blank middle name) are dropped so a name reads "First Last" rather
+	 * than "First, , Last". Names join with a space; every other multi-part value
+	 * joins with ", ". Scalars pass through unchanged.
+	 *
+	 * This is the single source of truth for value flattening shared by the admin
+	 * entry view, CSV export, email notifications, the privacy exporter, and the
+	 * entries-list preview, so their formatting can never drift apart.
+	 *
+	 * @param mixed  $value Stored field value (string, indexed array, or assoc array).
+	 * @param string $type  Field type (only 'name' changes the separator).
+	 * @return string
+	 */
+	public static function format_field_value( $value, $type = '' ) {
+		if ( ! is_array( $value ) ) {
+			return is_scalar( $value ) ? (string) $value : '';
+		}
+
+		$parts = array_filter(
+			array_map(
+				static function ( $part ) {
+					return is_scalar( $part ) ? sanitize_text_field( (string) $part ) : '';
+				},
+				$value
+			),
+			static function ( $part ) {
+				return '' !== trim( (string) $part );
+			}
+		);
+
+		return implode( 'name' === $type ? ' ' : ', ', $parts );
+	}
+
+	/**
 	 * Placeholder for the translations hook.
 	 *
 	 * WordPress automatically loads plugin translations since 4.6

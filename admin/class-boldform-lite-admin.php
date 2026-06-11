@@ -3284,21 +3284,8 @@ class BoldForm_Lite_Admin {
 								$value   = isset( $field['value'] ) ? $field['value'] : '';
 								$is_file = 'file' === $type;
 
-								// Present each value human-readably by field type.
-								if ( is_array( $value ) ) {
-									// Drop empty parts (e.g. a blank middle name) before joining, so a name
-									// reads "First Last" instead of "First, , Last". Names join with spaces;
-									// everything else (address, multi-select) joins with commas.
-									$parts = array_filter(
-										array_map( 'sanitize_text_field', $value ),
-										static function ( $part ) {
-											return '' !== trim( (string) $part );
-										}
-									);
-									$value = implode( 'name' === $type ? ' ' : ', ', $parts );
-								} else {
-									$value = (string) $value;
-								}
+								// Present each value human-readably by field type via the shared helper.
+								$value = BoldForm_Lite::format_field_value( $value, $type );
 
 								if ( 'country' === $type && '' !== $value ) {
 									// Show the country name instead of the raw ISO code.
@@ -3563,12 +3550,9 @@ class BoldForm_Lite_Admin {
 					foreach ( $data as $field ) {
 						$label = isset( $field['label'] ) && '' !== $field['label'] ? (string) $field['label'] : 'Field';
 						$value = isset( $field['value'] ) ? $field['value'] : '';
+						$type  = isset( $field['type'] ) ? (string) $field['type'] : '';
 
-						if ( is_array( $value ) ) {
-							$value = implode( ', ', $value );
-						}
-
-						$field_map[ $label ] = (string) $value;
+						$field_map[ $label ] = BoldForm_Lite::format_field_value( $value, $type );
 					}
 				}
 
@@ -3955,13 +3939,10 @@ class BoldForm_Lite_Admin {
 				continue;
 			}
 
-			$value = $field['value'];
+			$type  = isset( $field['type'] ) ? (string) $field['type'] : '';
+			$value = BoldForm_Lite::format_field_value( $field['value'], $type );
 
-			if ( is_array( $value ) ) {
-				$value = implode( ', ', $value );
-			}
-
-			$value = sanitize_text_field( (string) $value );
+			$value = sanitize_text_field( $value );
 
 			if ( mb_strlen( $value ) > 40 ) {
 				$value = mb_substr( $value, 0, 40 ) . '...';
