@@ -1004,6 +1004,29 @@ class BoldForm_Lite_Admin {
 						$(this).addClass("is-active");
 						$("#boldform-preview-stage").removeClass("is-desktop is-tablet is-mobile").addClass("is-"+device);
 					});
+					$(document).on("click","#boldform-preview-shortcode",function(){
+						var $btn=$(this),code=String($btn.data("shortcode")||""),$icon=$btn.find(".boldform-preview-shortcode__copy");
+						var flash=function(){
+							$btn.addClass("is-copied");
+							$icon.removeClass("dashicons-admin-page").addClass("dashicons-yes-alt");
+							clearTimeout($btn.data("copiedTimer"));
+							$btn.data("copiedTimer",setTimeout(function(){
+								$btn.removeClass("is-copied");
+								$icon.removeClass("dashicons-yes-alt").addClass("dashicons-admin-page");
+							},1500));
+						};
+						var legacy=function(){
+							var $t=$("<textarea>").val(code).css({position:"fixed",top:"-9999px",opacity:0}).appendTo("body");
+							$t[0].select();
+							try{document.execCommand("copy");}catch(e){}
+							$t.remove();
+						};
+						if(navigator.clipboard&&navigator.clipboard.writeText){
+							navigator.clipboard.writeText(code).then(flash,function(){legacy();flash();});
+							return;
+						}
+						legacy();flash();
+					});
 				}(jQuery));'
 			);
 		}
@@ -1761,12 +1784,7 @@ class BoldForm_Lite_Admin {
 		$form    = $form_id ? $this->get_form( $form_id ) : null;
 		?>
 		<div class="wrap boldform-preview-wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Preview Form', 'boldform-lite' ); ?></h1>
-			<?php if ( $form ) : ?>
-				<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id ) ); ?>" class="page-title-action">
-					<?php esc_html_e( 'Edit Form', 'boldform-lite' ); ?>
-				</a>
-			<?php endif; ?>
+			<h1 class="screen-reader-text"><?php esc_html_e( 'Preview Form', 'boldform-lite' ); ?></h1>
 			<hr class="wp-header-end">
 
 			<?php if ( ! $form ) : ?>
@@ -1776,15 +1794,31 @@ class BoldForm_Lite_Admin {
 
 			<div class="boldform-preview-shell">
 				<div class="boldform-preview-toolbar">
+					<div class="boldform-preview-toolbar__lead">
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . $form_id ) ); ?>" class="boldform-preview-back">
+							<span class="dashicons dashicons-arrow-left-alt2" aria-hidden="true"></span>
+							<span class="boldform-preview-back__label"><?php esc_html_e( 'Exit', 'boldform-lite' ); ?></span>
+						</a>
+						<span class="boldform-preview-toolbar__divider" aria-hidden="true"></span>
+						<span class="boldform-preview-toolbar__badge" aria-hidden="true">
+							<span class="dashicons dashicons-visibility"></span>
+						</span>
+						<span class="boldform-preview-toolbar__title">
+							<span class="boldform-preview-toolbar__eyebrow"><?php esc_html_e( 'Form Preview', 'boldform-lite' ); ?></span>
+							<span class="boldform-preview-toolbar__name"><?php echo esc_html( '' !== (string) $form->title ? (string) $form->title : __( 'Untitled form', 'boldform-lite' ) ); ?></span>
+						</span>
+					</div>
+
 					<div class="boldform-preview-toolbar__devices" role="tablist" aria-label="<?php esc_attr_e( 'Preview devices', 'boldform-lite' ); ?>">
 						<button type="button" class="boldform-device-btn is-active" data-preview-device="desktop" title="<?php esc_attr_e( 'Desktop', 'boldform-lite' ); ?>"><span class="dashicons dashicons-desktop"></span></button>
 						<button type="button" class="boldform-device-btn" data-preview-device="tablet" title="<?php esc_attr_e( 'Tablet', 'boldform-lite' ); ?>"><span class="dashicons dashicons-tablet"></span></button>
 						<button type="button" class="boldform-device-btn" data-preview-device="mobile" title="<?php esc_attr_e( 'Mobile', 'boldform-lite' ); ?>"><span class="dashicons dashicons-smartphone"></span></button>
 					</div>
-					<div class="boldform-preview-toolbar__meta">
-						<strong><?php echo esc_html( (string) $form->title ); ?></strong>
-						<code>[boldform id="<?php echo esc_html( (string) $form_id ); ?>"]</code>
-					</div>
+
+					<button type="button" class="boldform-preview-shortcode" id="boldform-preview-shortcode" data-shortcode="[boldform id=&quot;<?php echo esc_attr( (string) $form_id ); ?>&quot;]" title="<?php esc_attr_e( 'Copy shortcode', 'boldform-lite' ); ?>" aria-label="<?php esc_attr_e( 'Copy shortcode', 'boldform-lite' ); ?>">
+						<span class="boldform-preview-shortcode__label"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></span>
+						<code class="boldform-preview-shortcode__code"><span class="boldform-preview-shortcode__text">[boldform id="<?php echo esc_html( (string) $form_id ); ?>"]</span><span class="dashicons dashicons-admin-page boldform-preview-shortcode__copy" aria-hidden="true"></span></code>
+					</button>
 				</div>
 
 				<div class="boldform-preview-stage is-desktop" id="boldform-preview-stage">

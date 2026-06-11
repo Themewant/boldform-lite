@@ -4542,6 +4542,168 @@
 	text-align: right;
 }
 
+/* Lead group: Back button + "Form Preview" title (left of the toolbar). */
+.boldform-preview-toolbar__lead {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.boldform-preview-toolbar__divider {
+	width: 1px;
+	height: 30px;
+	background: linear-gradient(180deg, transparent, #e2e8f0 25%, #e2e8f0 75%, transparent);
+	flex-shrink: 0;
+}
+
+.boldform-preview-toolbar__badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 9px;
+	background: #f0fdfa;
+	border: 1px solid #cbfbf1;
+	box-shadow: none;
+	color: #0d9488;
+	flex-shrink: 0;
+}
+
+.boldform-preview-toolbar__badge .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.boldform-preview-toolbar__title {
+	display: grid;
+	gap: 1px;
+	line-height: 1.2;
+	min-width: 0;
+}
+
+.boldform-preview-toolbar__eyebrow {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #0d9488;
+}
+
+.boldform-preview-toolbar__name {
+	font-size: 15px;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.01em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Back button (left of the preview toolbar). */
+.boldform-preview-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 9px 16px 9px 11px;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	background: #fff;
+	color: #334155;
+	font-weight: 600;
+	font-size: 13px;
+	line-height: 1;
+	text-decoration: none;
+	box-shadow: none;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.boldform-preview-back:hover,
+.boldform-preview-back:focus {
+	border-color: #99f6e4;
+	background: #f0fdfa;
+	color: #0f766e;
+	box-shadow: none;
+}
+
+.boldform-preview-back .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+	transition: transform 0.15s ease;
+}
+
+.boldform-preview-back:hover .dashicons,
+.boldform-preview-back:focus .dashicons {
+	transform: translateX(-2px);
+}
+
+/* Shortcode copy pill (right of the preview toolbar). */
+.boldform-preview-shortcode {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 8px 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.9);
+	cursor: pointer;
+	appearance: none;
+	text-align: left;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.boldform-preview-shortcode:hover {
+	border-color: #cbd5e1;
+	background: #fff;
+}
+
+.boldform-preview-shortcode__label {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #64748b;
+}
+
+.boldform-preview-shortcode__code {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 280px;
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 12px;
+	color: #0f172a;
+}
+
+.boldform-preview-shortcode__text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.boldform-preview-shortcode__copy {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #98a2b3;
+	flex-shrink: 0;
+}
+
+.boldform-preview-shortcode:hover .boldform-preview-shortcode__copy {
+	color: #0f766e;
+}
+
+.boldform-preview-shortcode.is-copied .boldform-preview-shortcode__copy {
+	color: #16a34a;
+}
+
 .boldform-preview-stage {
 	padding: 28px;
 	border: 1px solid #d9e0ea;
@@ -4817,12 +4979,28 @@
 	}
 
 	.boldform-preview-toolbar {
-		flex-direction: column;
-		align-items: stretch;
+		flex-wrap: wrap;
+		gap: 12px 10px;
+		padding: 14px 16px;
+		border-radius: 14px;
 	}
 
-	.boldform-preview-toolbar__meta {
-		text-align: left;
+	.boldform-preview-toolbar__lead {
+		flex: 1 1 100%;
+		gap: 10px;
+	}
+
+	.boldform-preview-toolbar__devices {
+		order: 2;
+	}
+
+	.boldform-preview-shortcode {
+		order: 3;
+		margin-left: auto;
+	}
+
+	.boldform-preview-shortcode__code {
+		max-width: 190px;
 	}
 
 	.boldform-preview-stage {
@@ -4831,6 +5009,24 @@
 
 	.boldform-preview-viewport {
 		padding: 16px;
+	}
+}
+
+/* Phones: stack the device toggle and shortcode pill into full-width rows. */
+@media screen and (max-width: 520px) {
+	.boldform-preview-toolbar__devices {
+		flex: 1 1 100%;
+		justify-content: center;
+	}
+
+	.boldform-preview-shortcode {
+		flex: 1 1 100%;
+		margin-left: 0;
+		justify-content: center;
+	}
+
+	.boldform-preview-shortcode__code {
+		max-width: none;
 	}
 }
 
