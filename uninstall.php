@@ -29,6 +29,11 @@ $boldform_lite_uninstall_site = static function () use ( $wpdb ) {
 
 	delete_option( 'boldform_lite_db_version' );
 	delete_option( 'boldform_lite_settings' );
+	delete_option( 'boldform_lite_autoload_migrated' );
+	delete_option( 'boldform_connections' ); // Integration connections (may hold API keys).
+
+	// Clear any pending integration-dispatch cron events for this site.
+	wp_clear_scheduled_hook( 'boldform_integration_dispatch' );
 
 	$wpdb->query( "DROP TABLE IF EXISTS `{$forms_table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
 	$wpdb->query( "DROP TABLE IF EXISTS `{$entries_table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange

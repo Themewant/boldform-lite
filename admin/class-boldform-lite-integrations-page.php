@@ -284,7 +284,7 @@ class BoldForm_Lite_Integrations_Page {
 	 */
 	private function render_topbar(): void {
 		$nav_items = array(
-			array( 'slug' => 'boldform-lite',              'label' => __( 'Forms', 'boldform-lite' ),        'icon' => 'dashicons-feedback',      'url' => admin_url( 'admin.php?page=boldform-lite' ) ),
+			array( 'slug' => 'boldform-lite',              'label' => __( 'Forms', 'boldform-lite' ),        'icon' => 'dashicons-feedback', 'brand' => true, 'url' => admin_url( 'admin.php?page=boldform-lite' ) ),
 			array( 'slug' => 'boldform-lite-entries',       'label' => __( 'Entries', 'boldform-lite' ),      'icon' => 'dashicons-email-alt',     'url' => admin_url( 'admin.php?page=boldform-lite-entries' ) ),
 			array( 'slug' => 'boldform-lite-reports',       'label' => __( 'Reports', 'boldform-lite' ),      'icon' => 'dashicons-chart-bar',     'url' => admin_url( 'admin.php?page=boldform-lite-reports' ) ),
 			array( 'slug' => 'boldform-lite-integrations',  'label' => __( 'Integrations', 'boldform-lite' ), 'icon' => 'dashicons-randomize',     'url' => admin_url( 'admin.php?page=boldform-lite-integrations' ) ),
@@ -296,7 +296,7 @@ class BoldForm_Lite_Integrations_Page {
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
-				<span class="dashicons dashicons-feedback"></span>
+				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
 				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
@@ -304,7 +304,11 @@ class BoldForm_Lite_Integrations_Page {
 				<?php foreach ( $nav_items as $item ) : ?>
 					<a href="<?php echo esc_url( $item['url'] ); ?>"
 					   class="boldform-admin-topbar__link<?php echo 'boldform-lite-integrations' === $item['slug'] ? ' is-active' : ''; ?>">
-						<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php if ( ! empty( $item['brand'] ) ) : ?>
+							<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+						<?php else : ?>
+							<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php endif; ?>
 						<?php echo esc_html( $item['label'] ); ?>
 					</a>
 				<?php endforeach; ?>

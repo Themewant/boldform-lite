@@ -14,7 +14,8 @@ jQuery(
 			activeSidebarTab: 'library',
 			activeEditorView: 'builder',
 			activeSettingsAccordion: 'settings',
-			selectedTemplate: 'contact'
+			selectedTemplate: 'contact',
+			activeDevice: 'desktop'
 		};
 
 		// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
@@ -27,6 +28,15 @@ jQuery(
 
 		function generateId() {
 			return 'bf_' + Date.now() + '_' + Math.floor( Math.random() * 100000 );
+		}
+
+		// Announce builder mutations to assistive tech (drag/add/delete have no visible
+		// status text otherwise). Safe no-op if wp.a11y isn't present.
+		function announce( key ) {
+			var messages = boldformLiteBuilder.a11y || {};
+			if ( messages[ key ] && window.wp && wp.a11y && typeof wp.a11y.speak === 'function' ) {
+				wp.a11y.speak( messages[ key ] );
+			}
 		}
 
 		function getLibraryItem( type ) {
@@ -97,7 +107,28 @@ jQuery(
 				dup_method:   settings && settings.dup_method   ? settings.dup_method   : 'email',
 				dup_field_id: settings && settings.dup_field_id ? settings.dup_field_id : '',
 				dup_message:  settings && settings.dup_message  ? settings.dup_message  : '',
+				style: normalizeStyleSettings( settings && settings.style ),
 			};
+		}
+
+		// Advanced per-device style vars written by the Style tab. Shape:
+		// { desktop: { '--bf-*': value }, tablet: {…}, mobile: {…} }. Mirrors the
+		// PHP normalize_style_settings(); only BoldForm-namespaced string vars survive.
+		function normalizeStyleSettings( style ) {
+			var out = { desktop: {}, tablet: {}, mobile: {} };
+			if ( ! style || typeof style !== 'object' ) {
+				return out;
+			}
+			[ 'desktop', 'tablet', 'mobile' ].forEach( function ( device ) {
+				if ( style[ device ] && typeof style[ device ] === 'object' ) {
+					Object.keys( style[ device ] ).forEach( function ( key ) {
+						if ( /^--bf-[a-z0-9-]+$/.test( key ) && typeof style[ device ][ key ] === 'string' ) {
+							out[ device ][ key ] = style[ device ][ key ];
+						}
+					} );
+				}
+			} );
+			return out;
 		}
 
 		function createField( type ) {
@@ -801,6 +832,7 @@ jQuery(
 			switchEditorView( 'builder' );
 			switchSidebarTab( 'library' );
 			renderAll();
+			announce( 'rowAdded' );
 		}
 
 		function duplicateRow( rowIndex ) {
@@ -825,6 +857,7 @@ jQuery(
 			setActiveColumn( rowIndex + 1, 0 );
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'rowDuplicated' );
 		}
 
 		function deleteRow( rowIndex ) {
@@ -845,6 +878,7 @@ jQuery(
 
 			switchSidebarTab( 'library' );
 			renderAll();
+			announce( 'rowDeleted' );
 		}
 
 		function moveRow( oldIndex, newIndex ) {
@@ -874,6 +908,7 @@ jQuery(
 			state.selectedFieldId = null;
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'fieldAdded' );
 		}
 
 		function addFieldToColumn( type, rowIndex, columnIndex, newIndex ) {
@@ -884,6 +919,7 @@ jQuery(
 			state.selectedFieldId = null;
 			switchEditorView( 'builder' );
 			renderAll();
+			announce( 'fieldAdded' );
 		}
 
 		function duplicateField( fieldId ) {
@@ -902,6 +938,7 @@ jQuery(
 			switchEditorView( 'builder' );
 			switchSidebarTab( 'settings' );
 			renderAll();
+			announce( 'fieldDuplicated' );
 		}
 
 		function buildButtonIconHtml() {
@@ -965,6 +1002,7 @@ jQuery(
 			removeFieldAt( location.rowIndex, location.columnIndex, location.fieldIndex );
 			state.selectedFieldId = null;
 			renderAll();
+			announce( 'fieldDeleted' );
 		}
 
 		function renderInputPreview( field ) {
@@ -1039,11 +1077,14 @@ jQuery(
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
-				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
+				// Intentional raw-HTML sink: field.content is admin-authored rich text
+				// (builder is manage_options-only) and is re-sanitized server-side with
+				// wp_kses_post() on save, so it is emitted unescaped here to preserve markup.
+				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
 			} else if ( field.type === 'captcha' ) {
 				html = '<div class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</div>';
 			} else if ( field.type === 'textarea' ) {
-				html = '<textarea rows="3" placeholder="' + escapeHtml( field.placeholder ) + '">' + escapeHtml( field.default_value ) + '</textarea>';
+				html = '<textarea rows="3" placeholder="' + escapeHtml( field.placeholder || field.label || '' ) + '">' + escapeHtml( field.default_value ) + '</textarea>';
 			} else if ( field.type === 'select' ) {
 				var selectedValue = $.trim( field.default_value || '' );
 				var selectedLabel = '';
@@ -1082,12 +1123,12 @@ jQuery(
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
-						html += '<label class="boldform-choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '> ' + escapeHtml( option ) + '</label>';
+						html += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( option ) + '</span></label>';
 					}
 				);
 				html += '</div>';
 			} else if ( field.type === 'input_mask' ) {
-				html = '<input type="text" placeholder="' + escapeHtml( field.placeholder || field.mask_pattern ) + '" value="' + escapeHtml( field.default_value ) + '" disabled>';
+				html = '<input type="text" placeholder="' + escapeHtml( field.placeholder || field.mask_pattern || field.label || '' ) + '" value="' + escapeHtml( field.default_value ) + '" disabled>';
 			} else if ( field.type === 'html_editor' ) {
 				html = '<div class="boldform-canvas-html-editor"><span class="dashicons dashicons-editor-code"></span> ' + escapeHtml( boldformLiteBuilder.labels.htmlEditor || 'Rich Text Editor' ) + '</div>';
 			} else if ( field.type === 'paragraph' ) {
@@ -1097,6 +1138,8 @@ jQuery(
 				if ( field.min_value !== '' || field.max_value !== '' ) {
 					numPlaceholder = numPlaceholder || ( ( field.min_value || '0' ) + ' - ' + ( field.max_value || '...' ) );
 				}
+				// Final fallback to the label so the field is never bare (matches front-end).
+				numPlaceholder = numPlaceholder || field.label || '';
 				html = '<input type="number" placeholder="' + escapeHtml( numPlaceholder ) + '" value="' + escapeHtml( field.default_value ) + '" disabled>';
 			} else if ( field.type === 'address' ) {
 				var af = field.address_fields || {};
@@ -1366,7 +1409,9 @@ jQuery(
 				}
 
 			} else {
-				html = '<input type="' + escapeHtml( field.type ) + '" placeholder="' + escapeHtml( field.placeholder ) + '" value="' + escapeHtml( field.default_value ) + '">';
+				// Free-text inputs fall back to the label when no placeholder is set
+				// (mirrors the front-end renderer).
+				html = '<input type="' + escapeHtml( field.type ) + '" placeholder="' + escapeHtml( field.placeholder || field.label || '' ) + '" value="' + escapeHtml( field.default_value ) + '">';
 			}
 
 			return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
@@ -1464,6 +1509,59 @@ jQuery(
 			return variables.join( ';' ) + ( variables.length ? ';' : '' );
 		}
 
+		// Resolves the advanced per-device style vars into a single cascaded map.
+		// Tablet inherits desktop; mobile inherits desktop+tablet — matching how the
+		// front-end media queries stack (max-width:1024 then max-width:767).
+		function resolveDeviceStyleVars( device ) {
+			var style = state.formSettings.style || { desktop: {}, tablet: {}, mobile: {} };
+			var order = [ 'desktop' ];
+			if ( 'tablet' === device ) { order = [ 'desktop', 'tablet' ]; }
+			if ( 'mobile' === device ) { order = [ 'desktop', 'tablet', 'mobile' ]; }
+			var merged = {};
+			order.forEach( function ( layer ) {
+				var vars = style[ layer ] || {};
+				Object.keys( vars ).forEach( function ( key ) {
+					if ( '' !== vars[ key ] && null != vars[ key ] ) {
+						merged[ key ] = vars[ key ];
+					}
+				} );
+			} );
+			return merged;
+		}
+
+		function styleVarsObjectToString( obj ) {
+			var out = '';
+			Object.keys( obj ).forEach( function ( key ) {
+				out += key + ':' + obj[ key ] + ';';
+			} );
+			return out;
+		}
+
+		// Builds the CSS for one preview surface, scoped to its selector. The builder
+		// preview can't rely on viewport media queries (the editor viewport is always
+		// "desktop"-wide), so it emits the fully RESOLVED vars for state.activeDevice
+		// directly; the device toggle additionally resizes the preview container.
+		function getFormStyleBlock( scopeSelector ) {
+			var decl = getFormStyleVariables() + styleVarsObjectToString( resolveDeviceStyleVars( state.activeDevice ) );
+			return decl ? scopeSelector + '{' + decl + '}' : '';
+		}
+
+		// Single shared <style> node carrying the scoped rules for all three preview
+		// surfaces. Replaces the legacy inline style="" on each canvas so responsive
+		// device resolution (and, later, more complex rules) is possible.
+		function applyPreviewStyleBlock() {
+			var node = document.getElementById( 'boldform-preview-style' );
+			if ( ! node ) {
+				node = document.createElement( 'style' );
+				node.id = 'boldform-preview-style';
+				document.head.appendChild( node );
+			}
+			node.textContent =
+				getFormStyleBlock( '#boldform-canvas' ) +
+				getFormStyleBlock( '#boldform-style-preview-canvas' ) +
+				getFormStyleBlock( '#boldform-template-preview-canvas' );
+		}
+
 		function getStyleControlValue( value, fallback ) {
 			return value || fallback;
 		}
@@ -1480,7 +1578,7 @@ jQuery(
 
 			$rows.empty();
 			$( '#boldform-canvas' ).attr( 'class', canvasClasses );
-			$( '#boldform-canvas' ).attr( 'style', getFormStyleVariables() );
+			applyPreviewStyleBlock();
 
 			if ( ! getAllRows().length ) {
 				$empty.show();
@@ -1512,7 +1610,8 @@ jQuery(
 
 							markup += '<div class="' + columnClasses + '" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '" style="width:' + escapeHtml( column.width ) + ';">';
 							markup += '<div class="boldform-column__head"><span>' + escapeHtml( column.width ) + '</span><span>' + column.fields.length + ' ' + escapeHtml( boldformLiteBuilder.labels.fields ) + '</span></div>';
-							markup += '<div class="boldform-column-fields" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '">';
+							var fieldsClasses = 'boldform-column-fields' + ( column.fields.length ? '' : ' is-empty' );
+							markup += '<div class="' + fieldsClasses + '" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '">';
 
 							if ( ! column.fields.length ) {
 								markup += '<div class="boldform-column__empty">' + escapeHtml( boldformLiteBuilder.labels.dropHere ) + '</div>';
@@ -1992,6 +2091,9 @@ jQuery(
 								'<button type="button" data-cmd="insertUnorderedList" title="Bullet List"><span class="dashicons dashicons-editor-ul"></span></button>' +
 								'<button type="button" data-cmd="insertOrderedList" title="Numbered List"><span class="dashicons dashicons-editor-ol"></span></button>' +
 							'</div>' +
+							// Intentional raw-HTML sink: seeds the contenteditable editor with the
+							// admin-authored rich text. It is re-sanitized server-side via
+							// wp_kses_post() on save, so it is injected unescaped to keep formatting.
 							'<div class="boldform-richtext__editor" id="boldform-richtext-editor" contenteditable="true">' + ( selected.field.content || '' ) + '</div>' +
 						'</div>' +
 					'</div>';
@@ -2876,26 +2978,19 @@ jQuery(
 		}
 
 		function renderStylingSettings() {
-			function colorField( id, label, value, fallback ) {
-				var displayVal = value || '';
-				var colorVal = displayVal || fallback;
-				return '<div class="boldform-setting-group">' +
-					'<label for="' + id + '">' + escapeHtml( label ) + '</label>' +
-					'<div class="boldform-color-field">' +
-						'<div class="boldform-color-swatch" style="background:' + escapeHtml( colorVal ) + '">' +
-							'<input type="color" id="' + id + '" value="' + escapeHtml( colorVal ) + '">' +
-						'</div>' +
-						'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( colorVal ) + '" data-color-for="' + escapeHtml( id ) + '" spellcheck="false">' +
-					'</div>' +
-				'</div>';
-			}
-
 			// Build theme cards.
 			var themeCardsHtml = '<div class="boldform-theme-grid">';
 			Object.keys( designThemes ).forEach( function ( key ) {
 				var t = designThemes[ key ];
 				var isActive = state.formSettings.design_theme === key;
-				themeCardsHtml += '<button type="button" class="boldform-theme-card' + ( isActive ? ' is-active' : '' ) + '" data-theme="' + escapeHtml( key ) + '">' +
+				// Per-theme accent so the card's hover/active border + shadow match the
+				// theme's own colour (not a fixed blue). Emit the hex + an RGB triplet
+				// for the soft tints used by the CSS rgba() rules.
+				var accent = t.primary || '#2f80ed';
+				var hx = accent.replace( '#', '' );
+				if ( 3 === hx.length ) { hx = hx.replace( /(.)/g, '$1$1' ); }
+				var accentRgb = parseInt( hx.substr( 0, 2 ), 16 ) + ',' + parseInt( hx.substr( 2, 2 ), 16 ) + ',' + parseInt( hx.substr( 4, 2 ), 16 );
+				themeCardsHtml += '<button type="button" class="boldform-theme-card' + ( isActive ? ' is-active' : '' ) + '" data-theme="' + escapeHtml( key ) + '" style="--bf-theme-accent:' + escapeHtml( accent ) + ';--bf-theme-accent-rgb:' + accentRgb + '">' +
 					'<span class="boldform-theme-card__preview">' +
 						'<span class="boldform-theme-card__input" style="border-color:' + escapeHtml( t.fieldBorder ) + ';background:' + escapeHtml( t.fieldBg ) + ';border-radius:' + t.fieldRadius + 'px"></span>' +
 						'<span class="boldform-theme-card__btn" style="background:' + escapeHtml( t.btnBg ) + ';color:' + escapeHtml( t.btnText ) + ';border-radius:' + Math.min( t.fieldRadius, 8 ) + 'px"></span>' +
@@ -2905,61 +3000,892 @@ jQuery(
 			} );
 			themeCardsHtml += '</div>';
 
+			var themeResetSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+			var themeResetLabel = escapeHtml( advLabel( 'resetSection' ) );
 			$( '#boldform-form-styling-panel' ).html(
 				'<div class="boldform-style-section is-open">' +
-					'<div class="boldform-style-section__head"><h3>Design Theme</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+					'<div class="boldform-style-section__head"><h3>Design Theme</h3>' +
+						'<div class="boldform-style-section__head-actions">' +
+							'<button type="button" class="boldform-style-section__reset boldform-theme-reset" title="' + themeResetLabel + '" aria-label="' + themeResetLabel + '">' + themeResetSvg + '</button>' +
+							'<span class="dashicons dashicons-arrow-down-alt2"></span>' +
+						'</div>' +
+					'</div>' +
 					'<div class="boldform-style-section__body">' + themeCardsHtml + '</div>' +
 				'</div>' +
-				'<div class="boldform-style-section">' +
-					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.fieldStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
-					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-field-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-field-size-style"><option value="small"' + ( 'small' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.field_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-field-border-style">' + escapeHtml( boldformLiteBuilder.labels.border ) + '</label><select id="boldform-field-border-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="solid"' + ( 'solid' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.solid ) + '</option><option value="dashed"' + ( 'dashed' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.dashed ) + '</option><option value="none"' + ( 'none' === state.formSettings.field_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.none ) + '</option></select></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-field-border-width">' + escapeHtml( boldformLiteBuilder.labels.borderSize ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-field-border-width" min="0" max="10" value="' + escapeHtml( state.formSettings.field_border_width ) + '"><span>px</span></div></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-field-border-radius">' + escapeHtml( boldformLiteBuilder.labels.borderRadius ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-field-border-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.field_border_radius ) + '"><span>px</span></div></div>' +
-						'</div>' +
-						'<div class="boldform-style-color-grid">' +
-							colorField( 'boldform-field-background-color', boldformLiteBuilder.labels.background, state.formSettings.field_background_color, '#ffffff' ) +
-							colorField( 'boldform-field-border-color', boldformLiteBuilder.labels.border, state.formSettings.field_border_color, '#d1d5db' ) +
-							colorField( 'boldform-field-text-color', boldformLiteBuilder.labels.text, state.formSettings.field_text_color, '#111827' ) +
-						'</div>' +
-					'</div>' +
-				'</div>' +
-				'<div class="boldform-style-section">' +
-					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.labelStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
-					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-style-color-grid">' +
-							colorField( 'boldform-label-color-style', boldformLiteBuilder.labels.label, state.formSettings.label_color, '#4b5563' ) +
-							colorField( 'boldform-label-subtext-color-style', boldformLiteBuilder.labels.subLabel, state.formSettings.label_subtext_color, '#6b7280' ) +
-							colorField( 'boldform-error-color-style', boldformLiteBuilder.labels.error, state.formSettings.error_color, '#dc2626' ) +
-						'</div>' +
-					'</div>' +
-				'</div>' +
-				'<div class="boldform-style-section">' +
-					'<div class="boldform-style-section__head"><h3>' + escapeHtml( boldformLiteBuilder.labels.buttonStyles ) + '</h3><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
-					'<div class="boldform-style-section__body">' +
-						'<div class="boldform-style-grid">' +
-							'<div class="boldform-setting-group"><label for="boldform-button-size-style">' + escapeHtml( boldformLiteBuilder.labels.size ) + '</label><select id="boldform-button-size-style"><option value="small"' + ( 'small' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.small ) + '</option><option value="medium"' + ( 'medium' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.medium ) + '</option><option value="large"' + ( 'large' === state.formSettings.button_size ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.large ) + '</option></select></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-button-border-style">' + escapeHtml( boldformLiteBuilder.labels.border ) + '</label><select id="boldform-button-border-style"><option value="">' + escapeHtml( boldformLiteBuilder.labels.defaultStyle ) + '</option><option value="none"' + ( 'none' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.none ) + '</option><option value="solid"' + ( 'solid' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.solid ) + '</option><option value="dashed"' + ( 'dashed' === state.formSettings.button_border_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.dashed ) + '</option></select></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-button-border-width">' + escapeHtml( boldformLiteBuilder.labels.borderSize ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-button-border-width" min="0" max="10" value="' + escapeHtml( state.formSettings.button_border_width ) + '"><span>px</span></div></div>' +
-							'<div class="boldform-setting-group"><label for="boldform-button-border-radius">' + escapeHtml( boldformLiteBuilder.labels.borderRadius ) + '</label><div class="boldform-style-input-wrap"><input type="number" id="boldform-button-border-radius" min="0" max="50" value="' + escapeHtml( state.formSettings.button_border_radius ) + '"><span>px</span></div></div>' +
-						'</div>' +
-						'<div class="boldform-style-color-grid">' +
-							colorField( 'boldform-button-background-color', boldformLiteBuilder.labels.background, state.formSettings.button_background_color, '#2f80ed' ) +
-							colorField( 'boldform-button-border-color', boldformLiteBuilder.labels.border, state.formSettings.button_border_color, '#2f80ed' ) +
-							colorField( 'boldform-button-text-color', boldformLiteBuilder.labels.text, state.formSettings.button_text_color, '#ffffff' ) +
-						'</div>' +
-					'</div>' +
-				'</div>' +
-				''
+				renderAdvancedStyleSections()
 			);
+			bfSyncFormMaxWidthState();
+			bfRefreshResetStates();
+		}
+
+		// ====================================================================
+		// Advanced (full Elementor-parity) Style controls — schema-driven and
+		// responsive-aware. Each control writes finished CSS values into
+		// state.formSettings.style[device] keyed by the literal custom-property
+		// name. The compile/emit/persist pipeline is generic over --bf-* vars
+		// (getFormStyleBlock + PHP build_responsive_style_vars + sanitize_css_value),
+		// so adding a control needs no PHP change — only the matching var hook in
+		// frontend.css. Hover/focus/placeholder states are expressed as static
+		// frontend.css rules that read a state var with the base var as fallback.
+		// ====================================================================
+
+		// Curated, WordPress.org-safe font stacks (no remote/Google Fonts). Stored
+		// unquoted (valid CSS ident sequences) so they pass the value sanitizer.
+		var BF_FONT_STACKS = {
+			'system':    '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif',
+			'arial':     'Arial, Helvetica, sans-serif',
+			'helvetica': 'Helvetica Neue, Helvetica, Arial, sans-serif',
+			'verdana':   'Verdana, Geneva, sans-serif',
+			'tahoma':    'Tahoma, Geneva, sans-serif',
+			'trebuchet': 'Trebuchet MS, Helvetica, sans-serif',
+			'georgia':   'Georgia, Times New Roman, serif',
+			'times':     'Times New Roman, Times, serif',
+			'palatino':  'Palatino Linotype, Book Antiqua, Palatino, serif',
+			'courier':   'Courier New, Courier, monospace'
+		};
+
+		function advLabel( key ) {
+			var a = boldformLiteBuilder.advStyle || {};
+			if ( a[ key ] ) { return a[ key ]; }
+			var b = boldformLiteBuilder.labels || {};
+			return b[ key ] || key;
+		}
+
+		function advStyleGet( cssVar ) {
+			var layer = ( state.formSettings.style && state.formSettings.style[ state.activeDevice ] ) || {};
+			return typeof layer[ cssVar ] === 'string' ? layer[ cssVar ] : '';
+		}
+
+		// Writes a map of { cssVar: value } into the active device layer (deletes on
+		// empty), then refreshes the preview only — never re-renders the controls,
+		// so input focus is preserved while typing.
+		function advStyleSetVars( map ) {
+			if ( ! state.formSettings.style ) {
+				state.formSettings.style = { desktop: {}, tablet: {}, mobile: {} };
+			}
+			var layer = state.formSettings.style[ state.activeDevice ];
+			if ( ! layer ) { layer = state.formSettings.style[ state.activeDevice ] = {}; }
+			Object.keys( map ).forEach( function ( k ) {
+				var v = map[ k ];
+				if ( '' === v || null == v ) { delete layer[ k ]; }
+				else { layer[ k ] = String( v ); }
+			} );
+			applyPreviewStyleBlock();
+			bfRefreshResetStates();
+		}
+
+		var BF_HEX6 = /^#[0-9a-fA-F]{6}$/;
+
+		// ── Colour helpers: store/compose hex ⇄ rgba so colours can carry opacity ──
+		function bfHexToRgb( hex ) {
+			var n = parseInt( hex.slice( 1 ), 16 );
+			return { r: ( n >> 16 ) & 255, g: ( n >> 8 ) & 255, b: n & 255 };
+		}
+		function bfRgbToHex( r, g, b ) {
+			return '#' + [ r, g, b ].map( function ( x ) {
+				x = Math.max( 0, Math.min( 255, parseInt( x, 10 ) || 0 ) );
+				var h = x.toString( 16 );
+				return 1 === h.length ? '0' + h : h;
+			} ).join( '' );
+		}
+		// Compose a stored colour from an RGB hex + opacity 0–100 (plain hex when fully opaque).
+		function bfComposeColor( hex, opacity ) {
+			if ( ! BF_HEX6.test( hex ) ) { return ''; }
+			var op = parseInt( opacity, 10 );
+			if ( isNaN( op ) ) { op = 100; }
+			op = Math.max( 0, Math.min( 100, op ) );
+			if ( op >= 100 ) { return hex.toLowerCase(); }
+			var c = bfHexToRgb( hex );
+			return 'rgba(' + c.r + ', ' + c.g + ', ' + c.b + ', ' + ( Math.round( op ) / 100 ) + ')';
+		}
+		// Parse a stored colour ( #rrggbb | #rrggbbaa | rgb()/rgba() ) → { hex, opacity }.
+		function bfParseColor( val ) {
+			val = ( val || '' ).trim();
+			if ( BF_HEX6.test( val ) ) { return { hex: val.toLowerCase(), opacity: 100 }; }
+			var m8 = /^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})$/.exec( val );
+			if ( m8 ) { return { hex: ( '#' + m8[1] ).toLowerCase(), opacity: Math.round( parseInt( m8[2], 16 ) / 255 * 100 ) }; }
+			var m = /^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(?:,\s*(\d*\.?\d+)\s*)?\)$/i.exec( val );
+			if ( m ) {
+				var a = ( void 0 === m[4] ) ? 1 : parseFloat( m[4] );
+				if ( isNaN( a ) ) { a = 1; }
+				a = Math.max( 0, Math.min( 1, a ) );
+				return { hex: bfRgbToHex( m[1], m[2], m[3] ), opacity: Math.round( a * 100 ) };
+			}
+			return { hex: '', opacity: 100 };
+		}
+		// Read a .boldform-color-field element → composed colour string ('' if no valid hex).
+		function bfReadColorField( $cf ) {
+			if ( ! $cf || ! $cf.length ) { return ''; }
+			var hv = ( $cf.find( '.bf-adv-hex' ).val() || '' ).trim();
+			if ( ! BF_HEX6.test( hv ) ) { return ''; }
+			var opRaw = $cf.find( '.bf-adv-opacity' ).val();
+			return bfComposeColor( hv, ( '' === opRaw || null == opRaw ) ? 100 : opRaw );
+		}
+		// Alpha-slider track gradient: same colour fading 0→100% alpha (8-digit hex keeps
+		// the hue true at every step, unlike fading to the muddy `transparent` keyword).
+		function bfAlphaGrad( hex ) {
+			if ( ! BF_HEX6.test( hex ) ) { hex = '#0f766e'; }
+			return 'linear-gradient(to right, ' + hex + '00, ' + hex + ')';
+		}
+		// When an advanced colour is left unset, the colour the form actually renders is
+		// the flat base/theme value (the advanced layer sits on top of it). Map the
+		// advanced var → its flat settings key so the swatch can preview that real default.
+		var BF_FLAT_DEFAULT = {
+			'--bf-field-bg': 'field_background_color',
+			'--bf-field-text': 'field_text_color',
+			'--bf-field-border': 'field_border_color',
+			'--bf-select-bg': 'field_background_color',
+			'--bf-select-text': 'field_text_color',
+			'--bf-button-bg': 'button_background_color',
+			'--bf-button-text': 'button_text_color',
+			'--bf-button-border': 'button_border_color',
+			'--bf-label-color': 'label_color',
+			'--bf-error-color': 'error_color'
+		};
+		// Controls whose effective default is a hard-coded CSS literal (not a theme/flat
+		// value) — e.g. the success/error notices. Mirrors the fallbacks in frontend.css
+		// so the swatch previews the real default instead of an empty checkerboard.
+		var BF_LITERAL_DEFAULT = {
+			'--bf-msg-success-bg': '#ecfdf5',
+			'--bf-msg-success-text': '#166534',
+			'--bf-msg-success-border-color': '#bbf7d0',
+			'--bf-msg-error-bg': '#fef2f2',
+			'--bf-msg-error-text': '#b91c1c',
+			'--bf-msg-error-border-color': '#fecaca',
+			'--bf-error-color': '#dc2626',
+			'--bf-ph-color': '#9ca3af',
+			'--bf-select-ph': '#9ca3af',
+			'--bf-select-search-ph': '#9ca3af',
+			'--bf-select-arrow': '#6b7280',
+			'--bf-section-title-color': '#0f172a',
+			'--bf-section-desc-color': '#6b7280',
+			'--bf-file-btn-bg': '#e2e8f0',
+			'--bf-file-btn-text': '#334155'
+		};
+		function bfEffectiveDefault( cssVar ) {
+			if ( ! cssVar ) { return ''; }
+			var key = BF_FLAT_DEFAULT[ cssVar ];
+			if ( key && state.formSettings ) {
+				var fromFlat = bfParseColor( String( state.formSettings[ key ] || '' ) ).hex;
+				if ( fromFlat ) { return fromFlat; }
+			}
+			return BF_LITERAL_DEFAULT[ cssVar ] || '';
+		}
+		// Resolve a colour field's visual: an explicit value wins; otherwise preview the
+		// effective default (flat base); otherwise the checkerboard 'no colour' state.
+		function bfVisualFor( composed, defVar ) {
+			if ( composed ) {
+				return { sw: composed, grad: bfAlphaGrad( bfParseColor( composed ).hex ), isDefault: false };
+			}
+			var defHex = bfEffectiveDefault( defVar );
+			if ( defHex ) {
+				return { sw: defHex, grad: bfAlphaGrad( defHex ), isDefault: true };
+			}
+			return { sw: 'transparent', grad: 'linear-gradient(to right, transparent, transparent)', isDefault: false };
+		}
+		function bfSyncColorSwatch( $cf ) {
+			var vis = bfVisualFor( bfReadColorField( $cf ), $cf.attr( 'data-def-var' ) || '' );
+			$cf.css( '--bf-sw', vis.sw ).css( '--bf-agrad', vis.grad ).toggleClass( 'is-default', vis.isDefault );
+		}
+
+		function advColorFieldMarkup( hexClass, val, placeholder, defVar ) {
+			var parsed = bfParseColor( val );
+			var valid = '' !== parsed.hex;
+			var op = valid ? parsed.opacity : 100;
+			var vis = bfVisualFor( valid ? bfComposeColor( parsed.hex, parsed.opacity ) : '', defVar );
+			return '<div class="boldform-color-field boldform-color-field--alpha' + ( vis.isDefault ? ' is-default' : '' ) + '"' + ( defVar ? ' data-def-var="' + escapeHtml( defVar ) + '"' : '' ) + ' style="--bf-sw:' + escapeHtml( vis.sw ) + ';--bf-agrad:' + escapeHtml( vis.grad ) + '">' +
+					'<div class="boldform-color-cmain">' +
+						'<div class="boldform-color-swatch">' +
+							'<input type="color" class="bf-adv-colorpick" value="' + ( valid ? escapeHtml( parsed.hex ) : '#000000' ) + '">' +
+						'</div>' +
+						'<input type="text" class="bf-adv-input bf-adv-hex ' + hexClass + '" maxlength="7" placeholder="' + escapeHtml( placeholder || advLabel( 'inheritDefault' ) ) + '" value="' + escapeHtml( parsed.hex ) + '" spellcheck="false">' +
+						'<button type="button" class="bf-adv-color-reset" title="' + escapeHtml( advLabel( 'reset' ) ) + '" aria-label="' + escapeHtml( advLabel( 'reset' ) ) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>' +
+					'</div>' +
+					'<div class="boldform-color-alpha">' +
+						'<input type="range" class="bf-adv-opacity" min="0" max="100" step="1" value="' + op + '" title="' + escapeHtml( advLabel( 'opacity' ) ) + '" aria-label="' + escapeHtml( advLabel( 'opacity' ) ) + '">' +
+						'<span class="bf-adv-op-val">' + op + '%</span>' +
+					'</div>' +
+				'</div>';
+		}
+
+		function advColor( cssVar, label ) {
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="color" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				advColorFieldMarkup( '', advStyleGet( cssVar ), null, cssVar ) +
+			'</div>';
+		}
+
+		function advSlider( cssVar, label, min, max, units ) {
+			units = units || [ 'px' ];
+			var raw = advStyleGet( cssVar );
+			var num = parseFloat( raw );
+			var unit = 'px';
+			var m = /[a-z%]+$/i.exec( raw ); if ( m ) { unit = m[0]; }
+			var unitCtl;
+			if ( units.length > 1 ) {
+				unitCtl = '<select class="bf-adv-input bf-adv-unit">' + units.map( function ( u ) {
+					return '<option value="' + u + '"' + ( u === unit ? ' selected' : '' ) + '>' + u + '</option>';
+				} ).join( '' ) + '</select>';
+			} else {
+				unitCtl = '<span data-unit="' + escapeHtml( units[0] ) + '">' + escapeHtml( units[0] ) + '</span>';
+			}
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="slider" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-num" min="' + min + '" max="' + max + '" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( num ) ? '' : num ) + '">' + unitCtl + '</div>' +
+			'</div>';
+		}
+
+		function advDimension( cssVar, label, units ) {
+			units = units || [ 'px', 'em', '%' ];
+			var raw = advStyleGet( cssVar );
+			var parts = raw.split( /\s+/ ).filter( Boolean );
+			var unit = 'px';
+			var nums = [ '', '', '', '' ];
+			if ( parts.length ) {
+				var mm = /[a-z%]+$/i.exec( parts[0] ); if ( mm ) { unit = mm[0]; }
+				for ( var i = 0; i < 4; i++ ) {
+					var p = parts[ i ] != null ? parts[ i ] : parts[ parts.length - 1 ];
+					var n = parseFloat( p );
+					nums[ i ] = isNaN( n ) ? '' : n;
+				}
+			}
+			var unitOpts = units.map( function ( u ) {
+				return '<option value="' + u + '"' + ( u === unit ? ' selected' : '' ) + '>' + u + '</option>';
+			} ).join( '' );
+			function dimInp( idx, cap ) {
+				return '<div class="bf-adv-dim-cell">' +
+					'<input type="number" class="bf-adv-input bf-adv-dim" data-side="' + idx + '" placeholder="0" value="' + nums[ idx ] + '">' +
+					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
+				'</div>';
+			}
+			// Linked when all four sides are equal (or a single shorthand value) — restores
+			// the link toggle's active state on reload instead of resetting it each render.
+			var linked = '' !== nums[0] && nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
+			return '<div class="boldform-setting-group boldform-adv-field' + ( linked ? ' is-linked' : '' ) + '" data-type="dimension" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="boldform-adv-dim">' +
+					dimInp( 0, advLabel( 'sideTop' ) ) + dimInp( 1, advLabel( 'sideRight' ) ) + dimInp( 2, advLabel( 'sideBottom' ) ) + dimInp( 3, advLabel( 'sideLeft' ) ) +
+					'<select class="bf-adv-input bf-adv-dim-unit">' + unitOpts + '</select>' +
+					'<button type="button" class="bf-adv-dim-link' + ( linked ? ' is-active' : '' ) + '" title="' + escapeHtml( advLabel( 'linkSides' ) ) + '"><span class="dashicons dashicons-admin-links"></span></button>' +
+				'</div>' +
+			'</div>';
+		}
+
+		function advBorder( baseVar, label, colorVar ) {
+			colorVar = colorVar || ( baseVar + '-color' );
+			var w = advStyleGet( baseVar + '-width' ), st = advStyleGet( baseVar + '-style' ), c = advStyleGet( colorVar );
+			var wn = parseFloat( w );
+			var styles = [ 'solid', 'dashed', 'dotted', 'double', 'none' ];
+			var stOpts = '<option value="">' + escapeHtml( advLabel( 'inheritDefault' ) ) + '</option>' + styles.map( function ( s ) {
+				return '<option value="' + s + '"' + ( s === st ? ' selected' : '' ) + '>' + s + '</option>';
+			} ).join( '' );
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="border" data-var="' + baseVar + '" data-colorvar="' + colorVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="boldform-adv-border">' +
+					'<div class="bf-adv-bd-cell bf-adv-bd-cell--width">' +
+						'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bw" min="0" max="20" placeholder="0" value="' + ( isNaN( wn ) ? '' : wn ) + '"><span>px</span></div>' +
+						'<span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'widthLabel' ) ) + '</span>' +
+					'</div>' +
+					'<div class="bf-adv-bd-cell bf-adv-bd-cell--style">' +
+						'<select class="bf-adv-input bf-adv-bs">' + stOpts + '</select>' +
+						'<span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'styleLabel' ) ) + '</span>' +
+					'</div>' +
+				'</div>' +
+				'<div class="bf-adv-bc-row" data-type="color"><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'colorLabel' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-bc', c, advLabel( 'borderColor' ), colorVar ) + '</div>' +
+			'</div>';
+		}
+
+		function advTypography( baseVar, label ) {
+			var ff = advStyleGet( baseVar + '-ff' ), fs = advStyleGet( baseVar + '-fs' ), fw = advStyleGet( baseVar + '-fw' ),
+				lh = advStyleGet( baseVar + '-lh' ), ls = advStyleGet( baseVar + '-ls' ), tt = advStyleGet( baseVar + '-tt' );
+			var fsNum = parseFloat( fs ), lsNum = parseFloat( ls );
+			var ffKey = '';
+			Object.keys( BF_FONT_STACKS ).forEach( function ( k ) { if ( BF_FONT_STACKS[ k ] === ff ) { ffKey = k; } } );
+			var ffOpts = '<option value="">' + escapeHtml( advLabel( 'themeFont' ) ) + '</option>' + Object.keys( BF_FONT_STACKS ).map( function ( k ) {
+				var name = k.charAt( 0 ).toUpperCase() + k.slice( 1 );
+				return '<option value="' + k + '"' + ( k === ffKey ? ' selected' : '' ) + '>' + escapeHtml( name ) + '</option>';
+			} ).join( '' );
+			var weights = [ '300', '400', '500', '600', '700', '800' ];
+			var fwOpts = '<option value="">' + escapeHtml( advLabel( 'inheritDefault' ) ) + '</option>' + weights.map( function ( wv ) {
+				return '<option value="' + wv + '"' + ( wv === fw ? ' selected' : '' ) + '>' + wv + '</option>';
+			} ).join( '' );
+			var transforms = [ [ 'none', 'none' ], [ 'uppercase', advLabel( 'uppercase' ) ], [ 'lowercase', advLabel( 'lowercase' ) ], [ 'capitalize', advLabel( 'capitalize' ) ] ];
+			var ttOpts = '<option value="">' + escapeHtml( advLabel( 'inheritDefault' ) ) + '</option>' + transforms.map( function ( t ) {
+				return '<option value="' + t[0] + '"' + ( t[0] === tt ? ' selected' : '' ) + '>' + escapeHtml( t[1] ) + '</option>';
+			} ).join( '' );
+			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-typo" data-type="typography" data-var="' + baseVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="boldform-adv-typo-grid">' +
+					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-ff">' + ffOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontFamily' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><select class="bf-adv-input bf-adv-fw">' + fwOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontWeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-tt">' + ttOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'textTransform' ) ) + '</span></div>' +
+				'</div>' +
+			'</div>';
+		}
+
+		function shadowBodyMarkup( cssVar ) {
+			var raw = advStyleGet( cssVar );
+			var inset = /(^|\s)inset(\s|$)/.test( raw );
+			var nums = ( raw.replace( 'inset', '' ).match( /-?\d+(\.\d+)?px/g ) || [] ).map( parseFloat );
+			// Colour may be hex (#rrggbb / #rrggbbaa) or rgb()/rgba() — bfComposeColor emits
+			// rgba() whenever opacity < 100%, so parse every form back (not just hex),
+			// otherwise a translucent shadow colour is lost on reload.
+			var colMatch = raw.match( /#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|rgba?\([^)]*\)/i );
+			var col = colMatch ? colMatch[0] : '';
+			function sInp( cls, cap, v ) {
+				// Caption (not placeholder) so the field name stays visible once a value is
+				// entered — a bare placeholder vanishes and leaves four anonymous px boxes.
+				return '<div class="bf-adv-shadow-cell">' +
+					'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input ' + cls + '" placeholder="0" value="' + ( isNaN( v ) || v == null ? '' : v ) + '"><span>px</span></div>' +
+					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
+				'</div>';
+			}
+			return '<div class="boldform-adv-shadow-grid">' +
+				sInp( 'bf-adv-sx', advLabel( 'shadowX' ), nums[0] ) +
+				sInp( 'bf-adv-sy', advLabel( 'shadowY' ), nums[1] ) +
+				sInp( 'bf-adv-sblur', advLabel( 'shadowBlur' ), nums[2] ) +
+				sInp( 'bf-adv-sspread', advLabel( 'shadowSpread' ), nums[3] ) +
+			'</div>' +
+			'<div class="boldform-adv-shadow-foot">' +
+				'<div class="bf-adv-sc-row" data-type="color"><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'colorLabel' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-sc', col, advLabel( 'shadowColor' ) ) + '</div>' +
+				'<label class="bf-adv-inset-lbl"><input type="checkbox" class="bf-adv-input bf-adv-inset"' + ( inset ? ' checked' : '' ) + '> ' + escapeHtml( advLabel( 'inset' ) ) + '</label>' +
+			'</div>';
+		}
+
+		function advShadow( cssVar, label, states ) {
+			var hasStates = states && states.length > 1;
+			var activeVar = hasStates ? states[0][0] : cssVar;
+			var tabs = '';
+			if ( hasStates ) {
+				tabs = '<div class="boldform-adv-bg-tabs boldform-adv-shadow-tabs">' + states.map( function ( st, i ) {
+					return '<button type="button" class="bf-adv-bgtype bf-adv-shadow-tab' + ( 0 === i ? ' is-active' : '' ) + '" data-shadow-var="' + st[0] + '">' + escapeHtml( advLabel( st[1] ) ) + '</button>';
+				} ).join( '' ) + '</div>';
+			}
+			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-shadow" data-type="shadow" data-var="' + activeVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				tabs +
+				'<div class="bf-adv-shadow-body">' + shadowBodyMarkup( activeVar ) + '</div>' +
+			'</div>';
+		}
+
+		function advBackground( cssVar, label ) {
+			var raw = advStyleGet( cssVar );
+			var isGrad = /gradient/i.test( raw );
+			var c1 = '', c2 = '', angle = 135, solid = '';
+			if ( isGrad ) {
+				// Match hex8/hex6/rgba so opacity-bearing gradient stops restore on reload.
+				var cols = raw.match( /#[0-9a-fA-F]{8}|#[0-9a-fA-F]{6}|rgba?\([^)]*\)/gi ) || [];
+				c1 = cols[0] || ''; c2 = cols[1] || '';
+				var am = raw.match( /(-?\d+)deg/ ); if ( am ) { angle = parseInt( am[1], 10 ); }
+			} else {
+				// Pass the raw colour (hex/hex8/rgba); advColorFieldMarkup parses opacity,
+				// so a solid background set with <100% alpha survives a reload too.
+				solid = raw;
+			}
+			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-bg" data-type="background" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="boldform-adv-bg-tabs">' +
+					'<button type="button" class="bf-adv-bgtype' + ( ! isGrad ? ' is-active' : '' ) + '" data-bg="solid">' + escapeHtml( advLabel( 'solidFill' ) ) + '</button>' +
+					'<button type="button" class="bf-adv-bgtype' + ( isGrad ? ' is-active' : '' ) + '" data-bg="gradient">' + escapeHtml( advLabel( 'gradient' ) ) + '</button>' +
+				'</div>' +
+				'<div class="bf-adv-bg-solid"' + ( isGrad ? ' hidden' : '' ) + ' data-type="color">' + advColorFieldMarkup( 'bf-adv-bg-c', solid, null, cssVar ) + '</div>' +
+				'<div class="bf-adv-bg-grad"' + ( ! isGrad ? ' hidden' : '' ) + '>' +
+					'<div class="bf-adv-bg-stop" data-type="color"><span class="bf-adv-bg-cap">' + escapeHtml( advLabel( 'colorStop1' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-bg-c1', c1 ) + '</div>' +
+					'<div class="bf-adv-bg-stop" data-type="color"><span class="bf-adv-bg-cap">' + escapeHtml( advLabel( 'colorStop2' ) ) + '</span>' + advColorFieldMarkup( 'bf-adv-bg-c2', c2 ) + '</div>' +
+					'<div class="bf-adv-bg-stop"><span class="bf-adv-bg-cap">' + escapeHtml( advLabel( 'angle' ) ) + '</span><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bg-angle" min="0" max="360" value="' + angle + '"><span>deg</span></div></div>' +
+				'</div>' +
+			'</div>';
+		}
+
+		function advSelectCtl( cssVar, label, options ) {
+			var cur = advStyleGet( cssVar );
+			var opts = '<option value="">' + escapeHtml( advLabel( 'inheritDefault' ) ) + '</option>' + options.map( function ( o ) {
+				return '<option value="' + escapeHtml( o[0] ) + '"' + ( o[0] === cur ? ' selected' : '' ) + '>' + escapeHtml( o[1] ) + '</option>';
+			} ).join( '' );
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="select" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<select class="bf-adv-input bf-adv-select">' + opts + '</select>' +
+			'</div>';
+		}
+
+		function advSwitch( cssVar, label, onValue ) {
+			var on = '' !== advStyleGet( cssVar );
+			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-switch" data-type="switch" data-var="' + cssVar + '" data-on="' + escapeHtml( onValue ) + '">' +
+				'<label class="bf-adv-switch-lbl"><input type="checkbox" class="bf-adv-input bf-adv-toggle"' + ( on ? ' checked' : '' ) + '> ' + escapeHtml( label ) + '</label>' +
+			'</div>';
+		}
+
+		// Segmented Normal/Hover/Focus switcher: one panel of controls visible at a
+		// time, so each state's colours are grouped and discoverable instead of a flat
+		// list of "Hover …"/"Focus …" labels. Inner controls are ordinary advControls,
+		// so their handlers/recompute work unchanged whether shown or hidden.
+		function advStateTabs( group ) {
+			var states = group.states || [];
+			var tabs = '<div class="boldform-adv-state-tabs">' + states.map( function ( s, i ) {
+				return '<button type="button" class="bf-adv-state-tab' + ( 0 === i ? ' is-active' : '' ) + '" data-state="' + escapeHtml( s.key ) + '">' + escapeHtml( advLabel( s.label ) ) + '</button>';
+			} ).join( '' ) + '</div>';
+			var panels = states.map( function ( s, i ) {
+				var inner = ( s.controls || [] ).map( advControl ).join( '' );
+				return '<div class="bf-adv-state-panel"' + ( 0 === i ? '' : ' hidden' ) + ' data-state="' + escapeHtml( s.key ) + '"><div class="boldform-adv-grid">' + inner + '</div></div>';
+			} ).join( '' );
+			return '<div class="boldform-adv-statetabs">' +
+				( group.label ? '<label>' + escapeHtml( advLabel( group.label ) ) + '</label>' : '' ) +
+				tabs + panels +
+			'</div>';
+		}
+
+		// Icon-segmented horizontal alignment (left / center / right / full width) for
+		// the form container. Stores the keyword in `cssVar` so the active button
+		// restores on reload; recomputeAdvField derives the margin/width vars the CSS uses.
+		function advAlign( cssVar, label ) {
+			var cur = advStyleGet( cssVar ) || 'left';
+			var svg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">';
+			var icons = {
+				left:    svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="14" y2="12"></line><line x1="3" y1="18" x2="18" y2="18"></line></svg>',
+				center:  svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="5" y1="18" x2="19" y2="18"></line></svg>',
+				right:   svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="6" y1="18" x2="21" y2="18"></line></svg>',
+				justify: svg + '<line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>'
+			};
+			var btns = [ 'left', 'center', 'right', 'justify' ].map( function ( k ) {
+				var t = escapeHtml( advLabel( 'align' + k.charAt( 0 ).toUpperCase() + k.slice( 1 ) ) );
+				return '<button type="button" class="bf-adv-align-btn' + ( k === cur ? ' is-active' : '' ) + '" data-align="' + k + '" title="' + t + '" aria-label="' + t + '">' + icons[ k ] + '</button>';
+			} ).join( '' );
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="align" data-var="' + cssVar + '">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="bf-adv-align">' + btns + '</div>' +
+			'</div>';
+		}
+
+		// Max Width and the "Full Width" (justify) alignment are mutually exclusive:
+		// full width forces 100% and ignores any max-width. When justify is active,
+		// disable the Max Width control so the relationship is clear; re-enable it
+		// for left/center/right. Runs on render and after every alignment change.
+		function bfSyncFormMaxWidthState() {
+			var av = $( '[data-var="--bf-form-align"] .bf-adv-align-btn.is-active' ).data( 'align' ) || '';
+			var disabled = ( 'justify' === av );
+			var $mw = $( '[data-var="--bf-form-max-width"]' );
+			$mw.toggleClass( 'is-disabled', disabled );
+			$mw.find( 'input, select' ).prop( 'disabled', disabled );
+		}
+
+		function advControl( c ) {
+			switch ( c.type ) {
+				case 'color':      return advColor( c.var, advLabel( c.label ) );
+				case 'slider':     return advSlider( c.var, advLabel( c.label ), c.min, c.max, c.units );
+				case 'dimension':  return advDimension( c.var, advLabel( c.label ), c.units );
+				case 'border':     return advBorder( c.var, advLabel( c.label ), c.colorVar );
+				case 'typography': return advTypography( c.var, advLabel( c.label ) );
+				case 'shadow':     return advShadow( c.var, advLabel( c.label ), c.states );
+				case 'background': return advBackground( c.var, advLabel( c.label ) );
+				case 'select':     return advSelectCtl( c.var, advLabel( c.label ), c.options );
+				case 'switch':     return advSwitch( c.var, advLabel( c.label ), c.on );
+				case 'align':      return advAlign( c.var, advLabel( c.label ) );
+				case 'stateTabs':  return advStateTabs( c );
+				case 'heading':    return '<div class="boldform-adv-subhead">' + escapeHtml( advLabel( c.label ) ) + '</div>';
+			}
+			return '';
+		}
+
+		// The full control catalog. Sections are appended after the legacy
+		// Design Theme / Field / Label / Button sections. Phases add sections here.
+		function bfStyleSchema() {
+			// Display order of the Style-tab sections: foundation (container, layout)
+			// → field anatomy (labels, inputs, placeholder) → field types (select,
+			// choice, star, file, terms) → structure (section break) → action (submit)
+			// → messages. Reorder by editing this id list; the definitions stay put.
+			var bfSectionOrder = [ 'container', 'layout', 'labels', 'placeholder', 'inputs', 'select', 'choice', 'star', 'file', 'terms', 'section', 'button', 'error', 'success' ];
+			var bfSections = [
+				{ id: 'container', title: advLabel( 'secContainer' ), controls: [
+					{ type: 'slider', var: '--bf-form-max-width', label: 'maxWidth', min: 0, max: 1400, units: [ 'px', '%' ] },
+						{ type: 'align', var: '--bf-form-align', label: 'alignment' },
+					{ type: 'dimension', var: '--bf-form-padding', label: 'padding' },
+					{ type: 'background', var: '--bf-form-bg', label: 'background' },
+					{ type: 'border', var: '--bf-form-border', label: 'border' },
+					{ type: 'dimension', var: '--bf-form-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'shadow', var: '--bf-form-shadow', label: 'boxShadow', states: [ [ '--bf-form-shadow', 'stateNormal' ], [ '--bf-form-shadow-hover', 'stateHover' ] ] }
+				] },
+				{ id: 'layout', title: advLabel( 'secLayout' ), controls: [
+					{ type: 'slider', var: '--bf-row-gap', label: 'rowGap', min: 0, max: 100, units: [ 'px', 'em' ] },
+					{ type: 'slider', var: '--bf-col-gap', label: 'columnGap', min: 0, max: 80, units: [ 'px' ] },
+					{ type: 'dimension', var: '--bf-field-margin', label: 'fieldMargin' },
+					{ type: 'dimension', var: '--bf-input-margin', label: 'inputMargin' },
+						{ type: 'slider', var: '--bf-subfield-gap', label: 'subfieldGap', min: 0, max: 60, units: [ 'px', 'em' ] }
+				] },
+				{ id: 'labels', title: advLabel( 'secLabels' ), controls: [
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-label-color', label: 'labelColor' },
+							{ type: 'color', var: '--bf-sublabel-color', label: 'subLabelColor' }
+						] },
+						{ key: 'focus', label: 'stateFocus', controls: [
+							{ type: 'color', var: '--bf-label-focus-color', label: 'labelColor' },
+							{ type: 'color', var: '--bf-sublabel-focus-color', label: 'subLabelColor' }
+						] }
+					] },
+					{ type: 'typography', var: '--bf-label', label: 'typography' },
+					{ type: 'dimension', var: '--bf-label-margin', label: 'margin' },
+					{ type: 'color', var: '--bf-required-color', label: 'requiredColor' },
+					{ type: 'heading', label: 'subLabel' },
+					{ type: 'typography', var: '--bf-sublabel', label: 'typography' }
+				] },
+				{ id: 'inputs', title: advLabel( 'secInputs' ), controls: [
+					{ type: 'slider', var: '--bf-field-height', label: 'height', min: 24, max: 90, units: [ 'px' ] },
+					{ type: 'slider', var: '--bf-textarea-height', label: 'textareaHeight', min: 40, max: 400, units: [ 'px' ] },
+					{ type: 'dimension', var: '--bf-field-padding', label: 'padding' },
+					{ type: 'typography', var: '--bf-field', label: 'typography' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-field-bg', label: 'background' },
+							{ type: 'color', var: '--bf-field-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-field-border', colorVar: '--bf-field-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-field-shadow', label: 'boxShadow' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'background', var: '--bf-field-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-field-hover-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-field-hover-border', colorVar: '--bf-field-hover-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-field-hover-shadow', label: 'boxShadow' }
+						] },
+						{ key: 'focus', label: 'stateFocus', controls: [
+							{ type: 'background', var: '--bf-field-focus-bg', label: 'background' },
+							{ type: 'color', var: '--bf-field-focus-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-field-focus-border', colorVar: '--bf-field-focus-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-field-focus-shadow', label: 'boxShadow' }
+						] }
+					] },
+					{ type: 'dimension', var: '--bf-field-radius', label: 'borderRadius', units: [ 'px', '%' ] }
+				] },
+				{ id: 'button', title: advLabel( 'secButton' ), controls: [
+					{ type: 'switch', var: '--bf-btn-width', label: 'fullWidth', on: '100%' },
+					{ type: 'dimension', var: '--bf-button-padding', label: 'padding' },
+					{ type: 'typography', var: '--bf-btn', label: 'typography' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-button-bg', label: 'background' },
+							{ type: 'color', var: '--bf-button-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-button-border', colorVar: '--bf-button-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-button-shadow', label: 'boxShadow' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'background', var: '--bf-btn-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-btn-hover-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-btn-hover-border', colorVar: '--bf-btn-hover-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-button-hover-shadow', label: 'boxShadow' }
+						] }
+					] },
+					{ type: 'dimension', var: '--bf-button-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'color', var: '--bf-btn-icon-color', label: 'iconColor' },
+					{ type: 'dimension', var: '--bf-btn-margin', label: 'buttonMargin' },
+					{ type: 'dimension', var: '--bf-actions-margin', label: 'containerMargin' }
+				] },
+				{ id: 'choice', title: advLabel( 'secChoice' ), controls: [
+					{ type: 'slider', var: '--bf-choice-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
+					{ type: 'color', var: '--bf-choice-color', label: 'labelColor' },
+					{ type: 'typography', var: '--bf-choice', label: 'typography' },
+					{ type: 'slider', var: '--bf-choice-gap', label: 'spacing', min: 0, max: 32, units: [ 'px' ] },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-choice-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-bg', label: 'background' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-choice-hover-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-hover-bg', label: 'background' }
+						] },
+						{ key: 'checked', label: 'stateChecked', controls: [
+							{ type: 'color', var: '--bf-choice-accent', label: 'accentColor' },
+							{ type: 'color', var: '--bf-choice-icon', label: 'iconColor' }
+						] }
+					] }
+				] },
+				{ id: 'terms', title: advLabel( 'secTerms' ), controls: [
+					{ type: 'color', var: '--bf-terms-color', label: 'textColor' },
+					{ type: 'stateTabs', label: 'linkColor', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-terms-link', label: 'linkColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-terms-link-hover', label: 'linkColor' }
+						] }
+					] },
+					{ type: 'typography', var: '--bf-terms', label: 'typography' },
+					{ type: 'typography', var: '--bf-terms-copy', label: 'copyText' },
+					{ type: 'heading', label: 'secChoice' },
+					{ type: 'slider', var: '--bf-terms-box-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-terms-box-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-terms-box-bg', label: 'background' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-terms-box-hover-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-terms-box-hover-bg', label: 'background' }
+						] },
+						{ key: 'checked', label: 'stateChecked', controls: [
+							{ type: 'color', var: '--bf-terms-box-checked', label: 'checkedColor' },
+							{ type: 'color', var: '--bf-terms-box-icon', label: 'iconColor' }
+						] }
+					] },
+					{ type: 'slider', var: '--bf-terms-box-border-width', label: 'borderWidth', min: 1, max: 5, units: [ 'px' ] },
+					{ type: 'slider', var: '--bf-terms-box-radius', label: 'borderRadius', min: 0, max: 12, units: [ 'px' ] },
+					{ type: 'slider', var: '--bf-terms-gap', label: 'gap', min: 0, max: 30, units: [ 'px' ] },
+					{ type: 'dimension', var: '--bf-terms-margin', label: 'margin' }
+				] },
+				{ id: 'star', title: advLabel( 'secStar' ), controls: [
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-star-color', label: 'starColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-star-hover', label: 'starColor' }
+						] }
+					] },
+					{ type: 'color', var: '--bf-star-inactive', label: 'starInactive' },
+					{ type: 'slider', var: '--bf-star-size', label: 'starSize', min: 14, max: 60, units: [ 'px' ] }
+				] },
+				{ id: 'file', title: advLabel( 'secFile' ), controls: [
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-file-btn-bg', label: 'background' },
+							{ type: 'color', var: '--bf-file-btn-text', label: 'textColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'background', var: '--bf-file-btn-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-file-btn-hover-text', label: 'textColor' }
+						] }
+					] }
+				] },
+				{ id: 'section', title: advLabel( 'secSection' ), controls: [
+					{ type: 'dimension', var: '--bf-section-margin', label: 'margin' },
+					{ type: 'dimension', var: '--bf-section-padding', label: 'padding' },
+					{ type: 'border', var: '--bf-section-border', label: 'border' },
+					{ type: 'dimension', var: '--bf-section-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'heading', label: 'titleColor' },
+					{ type: 'color', var: '--bf-section-title-color', label: 'titleColor' },
+					{ type: 'typography', var: '--bf-section-title', label: 'typography' },
+					{ type: 'dimension', var: '--bf-section-title-margin', label: 'margin' },
+					{ type: 'heading', label: 'descColor' },
+					{ type: 'color', var: '--bf-section-desc-color', label: 'descColor' },
+					{ type: 'typography', var: '--bf-section-desc', label: 'typography' },
+					{ type: 'dimension', var: '--bf-section-desc-margin', label: 'margin' }
+				] },
+				{ id: 'select', title: advLabel( 'secSelect' ), controls: [
+					{ type: 'color', var: '--bf-select-ph', label: 'placeholderColor' },
+					{ type: 'color', var: '--bf-select-arrow', label: 'arrowColor' },
+					{ type: 'typography', var: '--bf-select', label: 'typography' },
+					{ type: 'dimension', var: '--bf-select-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'dimension', var: '--bf-select-padding', label: 'padding' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-select-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-text', label: 'textColor' },
+							{ type: 'border', var: '--bf-select-border', label: 'border' },
+							{ type: 'shadow', var: '--bf-select-shadow', label: 'boxShadow' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-select-hover-border', label: 'borderColor' }
+						] },
+						{ key: 'focus', label: 'stateFocus', controls: [
+							{ type: 'color', var: '--bf-select-focus-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-select-focus-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-focus-ring', label: 'ringColor' }
+						] }
+					] },
+					{ type: 'heading', label: 'panelBg' },
+					{ type: 'background', var: '--bf-select-panel-bg', label: 'panelBg' },
+					{ type: 'color', var: '--bf-select-panel-border', label: 'panelBorder' },
+					{ type: 'dimension', var: '--bf-select-panel-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'shadow', var: '--bf-select-panel-shadow', label: 'boxShadow' },
+					{ type: 'heading', label: 'searchBox' },
+					{ type: 'background', var: '--bf-select-search-bg', label: 'searchBg' },
+					{ type: 'color', var: '--bf-select-search-text', label: 'searchText' },
+					{ type: 'color', var: '--bf-select-search-ph', label: 'searchPh' },
+					{ type: 'heading', label: 'optionText' },
+					{ type: 'typography', var: '--bf-select-opt', label: 'typography' },
+					{ type: 'color', var: '--bf-select-check', label: 'accentColor' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-select-opt-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-color', label: 'textColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-select-opt-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-hover-color', label: 'textColor' }
+						] },
+						{ key: 'selected', label: 'stateSelected', controls: [
+							{ type: 'color', var: '--bf-select-opt-active-bg', label: 'background' },
+							{ type: 'color', var: '--bf-select-opt-active-color', label: 'textColor' }
+						] }
+					] }
+				] },
+				{ id: 'placeholder', title: advLabel( 'secPlaceholder' ), controls: [
+					{ type: 'color', var: '--bf-ph-color', label: 'placeholderColor' },
+					{ type: 'typography', var: '--bf-ph', label: 'typography' }
+				] },
+				{ id: 'error', title: advLabel( 'secError' ), controls: [
+					{ type: 'color', var: '--bf-error-color', label: 'textColor' },
+					{ type: 'typography', var: '--bf-error', label: 'typography' },
+					{ type: 'heading', label: 'noticeBg' },
+					{ type: 'background', var: '--bf-msg-error-bg', label: 'noticeBg' },
+					{ type: 'color', var: '--bf-msg-error-text', label: 'noticeText' },
+					{ type: 'dimension', var: '--bf-msg-error-padding', label: 'padding' },
+						{ type: 'dimension', var: '--bf-msg-error-margin', label: 'margin' },
+					{ type: 'border', var: '--bf-msg-error-border', label: 'border' },
+					{ type: 'dimension', var: '--bf-msg-error-radius', label: 'borderRadius', units: [ 'px', '%' ] }
+				] },
+				{ id: 'success', title: advLabel( 'secSuccess' ), controls: [
+					{ type: 'background', var: '--bf-msg-success-bg', label: 'noticeBg' },
+					{ type: 'color', var: '--bf-msg-success-text', label: 'noticeText' },
+					{ type: 'typography', var: '--bf-msg-success', label: 'typography' },
+					{ type: 'dimension', var: '--bf-msg-success-padding', label: 'padding' },
+						{ type: 'dimension', var: '--bf-msg-success-margin', label: 'margin' },
+					{ type: 'border', var: '--bf-msg-success-border', label: 'border' },
+					{ type: 'dimension', var: '--bf-msg-success-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'shadow', var: '--bf-msg-success-shadow', label: 'boxShadow' }
+				] }
+			];
+			bfSections.sort( function ( a, b ) {
+				return bfSectionOrder.indexOf( a.id ) - bfSectionOrder.indexOf( b.id );
+			} );
+			return bfSections;
+		}
+
+		// Every --bf-* var a section's controls write, expanded across composite types
+		// (border → -width/-style/-color, typography → -ff/-fs/…, shadow → each state).
+		function bfSectionVars( sec ) {
+			var vars = [];
+			function expand( c ) {
+				if ( 'stateTabs' === c.type && c.states ) {
+					// Recurse into each state panel's controls.
+					c.states.forEach( function ( s ) { ( s.controls || [] ).forEach( expand ); } );
+					return;
+				}
+				if ( ! c.var ) { return; }
+				if ( 'border' === c.type ) {
+					vars.push( c.var + '-width', c.var + '-style', c.colorVar || ( c.var + '-color' ) );
+				} else if ( 'typography' === c.type ) {
+					[ '-ff', '-fs', '-fw', '-lh', '-ls', '-tt' ].forEach( function ( sfx ) { vars.push( c.var + sfx ); } );
+				} else if ( 'shadow' === c.type && c.states && c.states.length ) {
+					c.states.forEach( function ( st ) { vars.push( st[0] ); } );
+				} else if ( 'align' === c.type ) {
+					// The align control also derives margin-left/right + a max-width override.
+					var ab = c.var.replace( /-align$/, '' );
+					vars.push( c.var, ab + '-ml', ab + '-mr', ab + '-mw' );
+				} else {
+					vars.push( c.var );
+				}
+			}
+			( sec.controls || [] ).forEach( expand );
+			return vars;
+		}
+
+		// True when the active device layer holds any non-empty value for this
+		// section's vars — i.e. there is something for its reset button to clear.
+		function bfSectionHasValues( sec ) {
+			var layer = ( state.formSettings.style && state.formSettings.style[ state.activeDevice ] ) || {};
+			return bfSectionVars( sec ).some( function ( v ) {
+				return typeof layer[ v ] === 'string' && '' !== layer[ v ];
+			} );
+		}
+
+		// Enable a section's reset button only when it has something to reset;
+		// otherwise show it greyed + non-clickable. Covers every schema section plus
+		// the Design Theme card (changed = a theme other than the default is active).
+		function bfRefreshResetStates() {
+			bfStyleSchema().forEach( function ( sec ) {
+				var has = bfSectionHasValues( sec );
+				$( '.boldform-style-section__reset[data-reset-section="' + sec.id + '"]' )
+					.toggleClass( 'is-disabled', ! has )
+					.prop( 'disabled', ! has )
+					.attr( 'aria-disabled', has ? 'false' : 'true' );
+			} );
+			var themeChanged = !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme;
+			$( '.boldform-theme-reset' )
+				.toggleClass( 'is-disabled', ! themeChanged )
+				.prop( 'disabled', ! themeChanged )
+				.attr( 'aria-disabled', themeChanged ? 'false' : 'true' );
+		}
+
+		// Within each heading-delimited segment of a section, render the non-state
+		// controls first and the Normal/Hover/… state-tab groups last, so the tabs
+		// never sit above unrelated non-state controls (which made those read as
+		// state-specific and confused users). Headings start a new segment, so
+		// sub-grouped sections (Select's panel/options groups, Terms' link vs
+		// checkbox groups) keep their internal structure.
+		function bfOrderControls( controls ) {
+			var out = [], seg = [];
+			function flush() {
+				var rest = [], tabs = [];
+				seg.forEach( function ( c ) { ( 'stateTabs' === c.type ? tabs : rest ).push( c ); } );
+				out = out.concat( rest, tabs );
+				seg = [];
+			}
+			( controls || [] ).forEach( function ( c ) {
+				if ( 'heading' === c.type ) { flush(); }
+				seg.push( c );
+			} );
+			flush();
+			return out;
+		}
+
+		function renderAdvancedStyleSections() {
+			var html = '';
+			var resetSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>';
+			bfStyleSchema().forEach( function ( sec ) {
+				var body = '';
+				bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
+				var rLabel = escapeHtml( advLabel( 'resetSection' ) );
+				html += '<div class="boldform-style-section" data-adv-section="' + sec.id + '">' +
+					'<div class="boldform-style-section__head"><h3>' + escapeHtml( sec.title ) + '</h3>' +
+						'<div class="boldform-style-section__head-actions">' +
+							'<button type="button" class="boldform-style-section__reset" data-reset-section="' + sec.id + '" title="' + rLabel + '" aria-label="' + rLabel + '">' + resetSvg + '</button>' +
+							'<span class="dashicons dashicons-arrow-down-alt2"></span>' +
+						'</div>' +
+					'</div>' +
+					'<div class="boldform-style-section__body"><div class="boldform-adv-grid">' + body + '</div></div>' +
+				'</div>';
+			} );
+			return html;
 		}
 
 		// Render a live, read-only mirror of the form on the Style tab so styling
 		// changes preview instantly. Reuses the canvas field structure
 		// (.boldform-canvas ancestor + .boldform-canvas-field > -field-body) so the
 		// same --bf-* variable styling applies, minus the editing chrome.
+		// Sample state previews appended below the form: messages, an open dropdown and a
+		// file button only appear on submit / interaction, so they can't render from the
+		// live form alone — these labelled samples let their --bf-* styles preview too.
+		function bfPreviewStatesMarkup() {
+			var chk = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+			var caret = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+			return '<div class="boldform-preview-states" aria-hidden="true">' +
+				'<div class="boldform-preview-states__cap">' + escapeHtml( advLabel( 'previewStates' ) ) + '</div>' +
+				'<div class="boldform-lite-form__message is-success is-visible">' + escapeHtml( advLabel( 'sampleSuccess' ) ) + '</div>' +
+				'<div class="boldform-lite-form__message is-error is-visible">' + escapeHtml( advLabel( 'sampleError' ) ) + '</div>' +
+				'<div class="boldform-preview-states__field bf-state-invalid">' +
+					'<label>' + escapeHtml( advLabel( 'sampleFieldLabel' ) ) + '</label>' +
+					'<input type="text" value="' + escapeHtml( advLabel( 'sampleValue' ) ) + '" readonly>' +
+					'<div class="boldform-lite-form__field-error">' + escapeHtml( advLabel( 'sampleRequired' ) ) + '</div>' +
+				'</div>' +
+				'<div class="boldform-preview-states__field">' +
+					'<label>' + escapeHtml( advLabel( 'sampleDropdown' ) ) + '</label>' +
+					'<div class="bf-select is-open">' +
+						'<div class="bf-select__trigger"><span class="bf-select__value">' + escapeHtml( advLabel( 'optionSelected' ) ) + '</span><span class="bf-select__arrow">' + caret + '</span></div>' +
+						'<div class="bf-select__panel">' +
+							'<div class="bf-select__search-wrap"><input class="bf-select__panel-search" type="text" placeholder="' + escapeHtml( advLabel( 'sampleSearch' ) ) + '" readonly></div>' +
+							'<div class="bf-select__list">' +
+								'<div class="bf-select__option is-active"><span class="bf-select__check">' + chk + '</span><span class="bf-select__option-text">' + escapeHtml( advLabel( 'optionSelected' ) ) + '</span></div>' +
+								'<div class="bf-select__option"><span class="bf-select__check"></span><span class="bf-select__option-text">' + escapeHtml( advLabel( 'optionAnother' ) ) + '</span></div>' +
+							'</div>' +
+						'</div>' +
+					'</div>' +
+				'</div>' +
+			'</div>';
+		}
+
 		function renderStylePreview() {
 			var $canvas = $( '#boldform-style-preview-canvas' );
 
@@ -2969,8 +3895,8 @@ jQuery(
 
 			var rows = getAllRows();
 
-			// Reflect the live style variables on the preview wrapper.
-			$canvas.attr( 'style', getFormStyleVariables() );
+			// Reflect the live style variables via the shared scoped <style> node.
+			applyPreviewStyleBlock();
 
 			if ( ! rows.length ) {
 				$canvas.html(
@@ -2981,7 +3907,7 @@ jQuery(
 				return;
 			}
 
-			var markup = '';
+			var markup = '<div class="boldform-style-preview-form">';
 
 			rows.forEach(
 				function ( row ) {
@@ -3021,6 +3947,8 @@ jQuery(
 				'</div>';
 			}
 
+			markup += '</div>';
+			markup += bfPreviewStatesMarkup();
 			$canvas.html( markup );
 		}
 
@@ -3060,7 +3988,8 @@ jQuery(
 			( boldformLiteBuilder.columnPresets || [] ).forEach(
 				function ( preset ) {
 					markup += '<button type="button" class="boldform-preset" data-columns="' + escapeHtml( preset.value ) + '" data-widths="' + escapeHtml( preset.widths.join( ',' ) ) + '">';
-					markup += '<strong>' + escapeHtml( preset.label ) + '</strong>';
+					markup += '<span class="boldform-preset__top"><strong>' + escapeHtml( preset.label ) + '</strong>';
+					markup += '<span class="boldform-preset__check" aria-hidden="true"><span class="dashicons dashicons-yes"></span></span></span>';
 					markup += '<span class="boldform-preset__grid">';
 					preset.widths.forEach(
 						function ( width ) {
@@ -3217,7 +4146,7 @@ jQuery(
 
 			$( '#boldform-template-list' ).html( listMarkup );
 			$( '#boldform-template-preview-canvas' ).html( previewMarkup );
-			$( '#boldform-template-preview-canvas' ).attr( 'style', getFormStyleVariables() );
+			applyPreviewStyleBlock();
 			$( '#boldform-template-preview__head' ).html(
 				'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
 				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>'
@@ -3535,9 +4464,246 @@ jQuery(
 			} );
 		}
 
-		// Style section collapse toggle.
+		// Style section collapse toggle — accordion: only one section open at a
+		// time. Opening a section collapses any sibling that was open; clicking an
+		// already-open section's head closes it (leaving all collapsed).
 		$( document ).on( 'click', '.boldform-style-section__head', function () {
-			$( this ).closest( '.boldform-style-section' ).toggleClass( 'is-open' );
+			var $sec = $( this ).closest( '.boldform-style-section' );
+			var willOpen = ! $sec.hasClass( 'is-open' );
+			$sec.siblings( '.boldform-style-section' ).removeClass( 'is-open' );
+			$sec.toggleClass( 'is-open', willOpen );
+		} );
+
+		// Reset a whole section: clear every var its controls write (active device), then
+		// rebuild the section body so all controls fall back to their default.
+		// Design Theme reset — revert to the default theme (no schema section, so it
+		// needs its own handler; the generic one below no-ops on this button).
+		$( document ).on( 'click', '.boldform-theme-reset', function ( e ) {
+			e.preventDefault();
+			e.stopPropagation();
+			if ( $( this ).is( '.is-disabled, :disabled' ) ) { return; }
+			applyDesignTheme( 'default-blue' );
+		} );
+
+		$( document ).on( 'click', '.boldform-style-section__reset', function ( e ) {
+			e.preventDefault();
+			e.stopPropagation();
+			var $btn = $( this ), secId = $btn.attr( 'data-reset-section' ), sec = null;
+			if ( $btn.is( '.is-disabled, :disabled' ) ) { return; }
+			bfStyleSchema().forEach( function ( s ) { if ( s.id === secId ) { sec = s; } } );
+			if ( ! sec ) { return; }
+			var layer = state.formSettings.style && state.formSettings.style[ state.activeDevice || 'desktop' ];
+			if ( layer ) { bfSectionVars( sec ).forEach( function ( v ) { delete layer[ v ]; } ); }
+			var body = '';
+			bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
+			$btn.closest( '.boldform-style-section' ).find( '.boldform-adv-grid' ).html( body );
+			applyPreviewStyleBlock();
+			bfRefreshResetStates();
+			bfSyncFormMaxWidthState();
+		} );
+
+		// Live-preview device switcher. Sets the active breakpoint, frames the preview
+		// at a representative width, and re-renders so the controls + preview reflect
+		// that device's values.
+		$( document ).on( 'click', '.boldform-device-btn', function () {
+			var device = $( this ).data( 'device' );
+			if ( ! device || device === state.activeDevice ) {
+				return;
+			}
+			state.activeDevice = device;
+
+			$( '.boldform-device-btn' ).removeClass( 'is-active' ).attr( 'aria-pressed', 'false' );
+			$( this ).addClass( 'is-active' ).attr( 'aria-pressed', 'true' );
+
+			$( '#boldform-style-preview-canvas' )
+				.removeClass( 'is-device-desktop is-device-tablet is-device-mobile' )
+				.addClass( 'is-device-' + device );
+
+			renderStylingSettings();
+			renderStylePreview();
+		} );
+
+		// ---- Advanced style controls: recompute a field's CSS var(s) from its inputs ----
+		function recomputeAdvField( $field ) {
+			if ( ! $field || ! $field.length ) { return; }
+			var type = $field.data( 'type' );
+			var cssVar = $field.data( 'var' );
+			var out = {};
+			var px = function ( v ) { return ( '' === v || null == v ) ? 0 : parseFloat( v ); };
+
+			if ( 'color' === type ) {
+				out[ cssVar ] = bfReadColorField( $field.find( '.boldform-color-field' ).first() );
+			} else if ( 'slider' === type ) {
+				var n = $field.find( '.bf-adv-num' ).val();
+				var u = $field.find( '.bf-adv-unit' ).length ? $field.find( '.bf-adv-unit' ).val() : ( $field.find( 'span[data-unit]' ).data( 'unit' ) || 'px' );
+				out[ cssVar ] = ( '' === n ) ? '' : ( parseFloat( n ) + u );
+			} else if ( 'dimension' === type ) {
+				var du = $field.find( '.bf-adv-dim-unit' ).val() || 'px';
+				var vals = $field.find( '.bf-adv-dim' ).map( function () { return $( this ).val(); } ).get();
+				var anySet = vals.some( function ( x ) { return '' !== x; } );
+				out[ cssVar ] = anySet ? vals.map( function ( x ) { return px( x ) + du; } ).join( ' ' ) : '';
+			} else if ( 'border' === type ) {
+				var colorVar = $field.data( 'colorvar' ) || ( cssVar + '-color' );
+				var bw = $field.find( '.bf-adv-bw' ).val();
+				out[ cssVar + '-width' ] = ( '' === bw ) ? '' : ( parseFloat( bw ) + 'px' );
+				var bs = $field.find( '.bf-adv-bs' ).val() || '';
+				// A width with no explicit style would otherwise resolve to `none` (button)
+				// and render nothing — default to `solid` so setting a width is visible.
+				if ( ! bs && '' !== bw && parseFloat( bw ) > 0 ) { bs = 'solid'; }
+				out[ cssVar + '-style' ] = bs;
+				out[ colorVar ] = bfReadColorField( $field.find( '.bf-adv-bc' ).closest( '.boldform-color-field' ) );
+			} else if ( 'typography' === type ) {
+				var ffKey = $field.find( '.bf-adv-ff' ).val();
+				out[ cssVar + '-ff' ] = ( ffKey && BF_FONT_STACKS[ ffKey ] ) ? BF_FONT_STACKS[ ffKey ] : '';
+				var fsv = $field.find( '.bf-adv-fs' ).val();
+				out[ cssVar + '-fs' ] = ( '' === fsv ) ? '' : ( parseFloat( fsv ) + 'px' );
+				out[ cssVar + '-fw' ] = $field.find( '.bf-adv-fw' ).val() || '';
+				var lhv = $field.find( '.bf-adv-lh' ).val();
+				out[ cssVar + '-lh' ] = ( '' === lhv ) ? '' : ( parseFloat( lhv ) + 'px' );
+				var lsv = $field.find( '.bf-adv-ls' ).val();
+				out[ cssVar + '-ls' ] = ( '' === lsv ) ? '' : ( parseFloat( lsv ) + 'px' );
+				out[ cssVar + '-tt' ] = $field.find( '.bf-adv-tt' ).val() || '';
+			} else if ( 'shadow' === type ) {
+				var sx = $field.find( '.bf-adv-sx' ).val(), sy = $field.find( '.bf-adv-sy' ).val(),
+					sb = $field.find( '.bf-adv-sblur' ).val(), ss = $field.find( '.bf-adv-sspread' ).val();
+				var sc = bfReadColorField( $field.find( '.bf-adv-sc' ).closest( '.boldform-color-field' ) );
+				var anyNum = ( '' !== sx || '' !== sy || '' !== sb || '' !== ss );
+				if ( ! sc || ! anyNum ) {
+					out[ cssVar ] = '';
+				} else {
+					out[ cssVar ] = ( $field.find( '.bf-adv-inset' ).prop( 'checked' ) ? 'inset ' : '' ) +
+						px( sx ) + 'px ' + px( sy ) + 'px ' + px( sb ) + 'px ' + px( ss ) + 'px ' + sc;
+				}
+			} else if ( 'background' === type ) {
+				if ( $field.find( '.bf-adv-bgtype[data-bg="gradient"]' ).hasClass( 'is-active' ) ) {
+					var c1 = bfReadColorField( $field.find( '.bf-adv-bg-c1' ).closest( '.boldform-color-field' ) );
+					var c2 = bfReadColorField( $field.find( '.bf-adv-bg-c2' ).closest( '.boldform-color-field' ) );
+					var ang = parseInt( $field.find( '.bf-adv-bg-angle' ).val(), 10 );
+					if ( isNaN( ang ) ) { ang = 135; }
+					out[ cssVar ] = ( c1 && c2 )
+						? ( 'linear-gradient(' + ang + 'deg, ' + c1 + ' 0%, ' + c2 + ' 100%)' ) : '';
+				} else {
+					out[ cssVar ] = bfReadColorField( $field.find( '.bf-adv-bg-c' ).closest( '.boldform-color-field' ) );
+				}
+			} else if ( 'select' === type ) {
+				out[ cssVar ] = $field.find( '.bf-adv-select' ).val() || '';
+			} else if ( 'switch' === type ) {
+				out[ cssVar ] = $field.find( '.bf-adv-toggle' ).prop( 'checked' ) ? ( String( $field.data( 'on' ) ) || '1' ) : '';
+			} else if ( 'align' === type ) {
+				// Keep the keyword (for state restore) + derive margin-left/right and a
+				// max-width override (full width = "justify") onto <base>-ml/-mr/-mw.
+				var av = $field.find( '.bf-adv-align-btn.is-active' ).data( 'align' ) || '';
+				var base = cssVar.replace( /-align$/, '' );
+				var amap = { left: [ '0', 'auto', '' ], center: [ 'auto', 'auto', '' ], right: [ 'auto', '0', '' ], justify: [ '0', '0', '100%' ] };
+				var a = amap[ av ] || [ '', '', '' ];
+				out[ cssVar ] = av;
+				out[ base + '-ml' ] = a[0];
+				out[ base + '-mr' ] = a[1];
+				out[ base + '-mw' ] = a[2];
+			}
+
+			advStyleSetVars( out );
+		}
+
+		// Alignment segmented control → activate the clicked button, recompute.
+		$( document ).on( 'click', '.bf-adv-align-btn', function () {
+			var $btn = $( this );
+			$btn.closest( '.bf-adv-align' ).find( '.bf-adv-align-btn' ).removeClass( 'is-active' );
+			$btn.addClass( 'is-active' );
+			recomputeAdvField( $btn.closest( '.boldform-adv-field' ) );
+			bfSyncFormMaxWidthState();
+		} );
+
+		// Color picker → sync hex text + swatch, then recompute owning field.
+		$( document ).on( 'input', '.boldform-adv-field .bf-adv-colorpick', function () {
+			var v = $( this ).val();
+			var $cf = $( this ).closest( '.boldform-color-field' );
+			$cf.find( '.bf-adv-hex' ).val( v );
+			bfSyncColorSwatch( $cf );
+			recomputeAdvField( $( this ).closest( '.boldform-adv-field' ) );
+		} );
+
+		// Opacity (alpha) range slider → live % readout, swatch overlay, recompute → rgba().
+		$( document ).on( 'input', '.boldform-adv-field .bf-adv-opacity', function () {
+			var $cf = $( this ).closest( '.boldform-color-field' );
+			$cf.find( '.bf-adv-op-val' ).text( ( $( this ).val() || '0' ) + '%' );
+			bfSyncColorSwatch( $cf );
+			recomputeAdvField( $( this ).closest( '.boldform-adv-field' ) );
+		} );
+
+		// Reset a colour field back to "unset" — clears the hex + opacity so the
+		// underlying --bf-* var is dropped (advStyleSetVars deletes empty values),
+		// i.e. the colour behaves exactly as if the user never touched it.
+		$( document ).on( 'click', '.boldform-adv-field .bf-adv-color-reset', function ( e ) {
+			e.preventDefault();
+			var $cf = $( this ).closest( '.boldform-color-field' );
+			$cf.find( '.bf-adv-hex' ).val( '' );
+			$cf.find( '.bf-adv-colorpick' ).val( '#000000' );
+			$cf.find( '.bf-adv-opacity' ).val( 100 );
+			$cf.find( '.bf-adv-op-val' ).text( '100%' );
+			bfSyncColorSwatch( $cf );
+			recomputeAdvField( $( this ).closest( '.boldform-adv-field' ) );
+		} );
+
+		// Any other advanced input/select/checkbox change.
+		$( document ).on( 'input change', '.boldform-adv-field .bf-adv-input', function () {
+			var $el = $( this );
+			if ( $el.hasClass( 'bf-adv-hex' ) ) {
+				var hv = ( $el.val() || '' ).trim();
+				var $cf = $el.closest( '.boldform-color-field' );
+				if ( BF_HEX6.test( hv ) ) {
+					$cf.find( '.bf-adv-colorpick' ).val( hv );
+				}
+				bfSyncColorSwatch( $cf );
+			}
+			if ( $el.hasClass( 'bf-adv-dim' ) && $el.closest( '.boldform-adv-field' ).hasClass( 'is-linked' ) ) {
+				$el.closest( '.boldform-adv-field' ).find( '.bf-adv-dim' ).val( $el.val() );
+			}
+			recomputeAdvField( $el.closest( '.boldform-adv-field' ) );
+		} );
+
+		// Dimension link toggle.
+		$( document ).on( 'click', '.bf-adv-dim-link', function () {
+			var $field = $( this ).closest( '.boldform-adv-field' );
+			$field.toggleClass( 'is-linked' );
+			$( this ).toggleClass( 'is-active', $field.hasClass( 'is-linked' ) );
+		} );
+
+		// State switcher tabs (Normal / Hover / Focus): show only the active state's panel.
+		$( document ).on( 'click', '.bf-adv-state-tab', function () {
+			var $wrap = $( this ).closest( '.boldform-adv-statetabs' );
+			var key = String( $( this ).data( 'state' ) );
+			$wrap.find( '.bf-adv-state-tab' ).removeClass( 'is-active' );
+			$( this ).addClass( 'is-active' );
+			$wrap.find( '.bf-adv-state-panel' ).each( function () {
+				$( this ).prop( 'hidden', String( $( this ).data( 'state' ) ) !== key );
+			} );
+		} );
+
+		// Background type tabs (solid / gradient).
+		$( document ).on( 'click', '.bf-adv-bgtype', function () {
+			// Shadow state tabs share the segmented .bf-adv-bgtype styling — let their
+			// own handler manage them.
+			if ( $( this ).hasClass( 'bf-adv-shadow-tab' ) ) { return; }
+			var $field = $( this ).closest( '.boldform-adv-field' );
+			$field.find( '.bf-adv-bgtype' ).removeClass( 'is-active' );
+			$( this ).addClass( 'is-active' );
+			var grad = 'gradient' === $( this ).data( 'bg' );
+			$field.find( '.bf-adv-bg-solid' ).prop( 'hidden', grad );
+			$field.find( '.bf-adv-bg-grad' ).prop( 'hidden', ! grad );
+			recomputeAdvField( $field );
+		} );
+
+		// Box-shadow Normal/Hover (or Normal/Focus) state tabs: switch which CSS var the
+		// shadow fields edit, repopulating them from that state's stored value. The other
+		// state's value persists untouched in state.formSettings.style.
+		$( document ).on( 'click', '.bf-adv-shadow-tab', function () {
+			var $field = $( this ).closest( '.boldform-adv-field' );
+			var newVar = $( this ).attr( 'data-shadow-var' );
+			$field.find( '.bf-adv-shadow-tab' ).removeClass( 'is-active' );
+			$( this ).addClass( 'is-active' );
+			$field.attr( 'data-var', newVar ).data( 'var', newVar );
+			$field.find( '.bf-adv-shadow-body' ).html( shadowBodyMarkup( newVar ) );
 		} );
 
 		// Field setting accordion toggle (only one open at a time).
@@ -4583,7 +5749,9 @@ jQuery(
 		);
 
 		// Color picker → update swatch background + hex text input.
-		$( document ).on( 'input', '.boldform-color-swatch input[type="color"]', function () {
+		// Excludes advanced (.bf-adv-colorpick) pickers — those have their own
+		// alpha-aware handler that composes rgba() and paints the swatch overlay.
+		$( document ).on( 'input', '.boldform-color-swatch input[type="color"]:not(.bf-adv-colorpick)', function () {
 			var val = $( this ).val();
 			$( this ).closest( '.boldform-color-swatch' ).css( 'background', val );
 			$( '[data-color-for="' + $( this ).attr( 'id' ) + '"]' ).val( val );
@@ -4709,14 +5877,6 @@ jQuery(
 			}
 		);
 
-		$( '#boldform-add-row, #boldform-add-row-inline, #boldform-empty-add-row' ).on(
-			'click',
-			function () {
-				switchEditorView( 'builder' );
-				openRowModal();
-			}
-		);
-
 		$( document ).on( 'click', '#boldform-add-row-canvas', function () {
 			openRowModal();
 		} );
@@ -4803,6 +5963,13 @@ jQuery(
 
 		updateShortcodeDisplay();
 		renderAll();
+
+		// Canvas is rendered — remove the loading overlay shown for existing forms
+		// so the real layout (or the empty state) is revealed without flashing the
+		// "Start building your form" placeholder while this script downloaded.
+		$( '#boldform-canvas-loading' ).fadeOut( 150, function () {
+			$( this ).remove();
+		} );
 
 		// Expose builder state globally so companion scripts (integrations.js, Pro modules) can read it.
 		window.boldformBuilderState = state;

@@ -1328,7 +1328,8 @@
 	color: #667085;
 }
 
-.boldform-forms-empty .dashicons {
+.boldform-forms-empty .dashicons,
+.boldform-forms-empty__badge {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1828,6 +1829,18 @@
 .boldform-status--starred {
 	background: #fef3c7;
 	color: #b45309;
+}
+
+.boldform-status--spam {
+	background: #fee2e2;
+	color: #b91c1c;
+}
+
+/* Active "Mark as Spam" toggle on the entry detail header. */
+.boldform-entry-action-btn.is-spam {
+	color: #b91c1c;
+	border-color: #fca5a5;
+	background: #fef2f2;
 }
 
 /* ── Entry detail meta sidebar ── */

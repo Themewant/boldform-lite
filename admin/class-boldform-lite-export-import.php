@@ -273,7 +273,10 @@ class BoldForm_Lite_Export_Import {
 			if (
 				'uninstall_data' === $setting_key
 				|| 0 === strpos( $setting_key, 'smtp_' )
-				|| preg_match( '/(password|secret|_key)$/i', $setting_key )
+				// Substring matches for credential-like names anywhere in the key…
+				|| preg_match( '/(password|secret|token|credential|oauth|client_id|client_secret|api[_-]?key|apikey)/i', $setting_key )
+				// …plus common credential suffixes (e.g. *_key, *_secret, *_token, *_auth).
+				|| preg_match( '/_(key|secret|token|auth)$/i', $setting_key )
 			) {
 				unset( $settings[ $setting_key ] );
 			}
@@ -427,7 +430,7 @@ class BoldForm_Lite_Export_Import {
 			// Sanitize every imported value by depth before merging into the trusted option.
 			$imported_settings = map_deep( $imported_settings, 'sanitize_text_field' );
 
-			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ) );
+			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ), false );
 		}
 
 		return $forms_imported;
