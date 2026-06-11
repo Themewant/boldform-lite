@@ -275,10 +275,20 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		<div class="boldform-modal__backdrop" data-boldform-close-modal></div>
 		<div class="boldform-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-row-modal-title">
 			<div class="boldform-modal__head">
-				<h2 id="boldform-row-modal-title"><?php esc_html_e( 'Choose Column Layout', 'boldform-lite' ); ?></h2>
+				<div class="boldform-modal__heading">
+					<span class="boldform-modal__icon" aria-hidden="true"><span class="dashicons dashicons-screenoptions"></span></span>
+					<div class="boldform-modal__heading-text">
+						<h2 id="boldform-row-modal-title"><?php esc_html_e( 'Choose Column Layout', 'boldform-lite' ); ?></h2>
+						<p class="boldform-modal__subtitle"><?php esc_html_e( 'Select a layout for your new row.', 'boldform-lite' ); ?></p>
+					</div>
+				</div>
 				<button type="button" class="boldform-modal__close" data-boldform-close-modal aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			</div>
 			<div class="boldform-column-presets" id="boldform-column-presets"></div>
+			<div class="boldform-modal__foot">
+				<span class="boldform-modal__hint-icon" aria-hidden="true"><span class="dashicons dashicons-lightbulb"></span></span>
+				<span><?php esc_html_e( 'You can change or add more columns anytime later.', 'boldform-lite' ); ?></span>
+			</div>
 		</div>
 	</div>
 

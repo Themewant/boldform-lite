@@ -4208,12 +4208,12 @@
 
 .boldform-modal__dialog {
 	position: relative;
-	max-width: 640px;
+	max-width: 660px;
 	margin: 8vh auto 0;
-	padding: 20px;
-	border-radius: 18px;
+	padding: 26px;
+	border-radius: 20px;
 	background: #fff;
-	box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+	box-shadow: 0 30px 60px rgba(15, 23, 42, 0.26);
 }
 
 .boldform-modal__dialog--template {
@@ -4243,8 +4243,80 @@
 .boldform-modal__head {
 	display: flex;
 	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.boldform-modal__heading {
+	display: flex;
 	align-items: center;
-	margin-bottom: 16px;
+	gap: 13px;
+	min-width: 0;
+}
+
+.boldform-modal__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	flex-shrink: 0;
+}
+
+.boldform-modal__icon .dashicons {
+	width: 22px;
+	height: 22px;
+	font-size: 22px;
+	line-height: 22px;
+}
+
+.boldform-modal__heading-text h2 {
+	margin: 0;
+	line-height: 1.3;
+}
+
+.boldform-modal__subtitle {
+	margin: 2px 0 0;
+	font-size: 13px;
+	color: #64748b;
+}
+
+/* Footer hint row. */
+.boldform-modal__foot {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 22px;
+	padding-top: 18px;
+	border-top: 1px solid #eef2f7;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.boldform-modal__hint-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 999px;
+	background: #f1f5f9;
+	color: #94a3b8;
+	flex-shrink: 0;
+}
+
+.boldform-modal__hint-icon .dashicons {
+	width: 17px;
+	height: 17px;
+	font-size: 17px;
+	line-height: 17px;
 }
 
 .boldform-modal__close {
@@ -4805,36 +4877,85 @@
 .boldform-column-presets {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
+	gap: 14px;
 }
 
 .boldform-preset {
+	position: relative;
 	display: grid;
-	gap: 12px;
-	padding: 16px;
-	border: 1px solid #d9e0ea;
-	border-radius: 14px;
+	gap: 16px;
+	padding: 20px;
+	border: 1.5px solid #e5e9f0;
+	border-radius: 16px;
 	background: #fff;
 	cursor: pointer;
 	text-align: left;
+	transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.boldform-preset:hover {
+.boldform-preset:hover,
+.boldform-preset:focus-visible,
+.boldform-preset.is-selected {
 	border-color: #0f766e;
-	box-shadow: 0 12px 24px rgba(15, 118, 110, 0.12);
+	box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
+	outline: none;
 }
 
+.boldform-preset__top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 26px;
+}
+
+.boldform-preset__top strong {
+	font-size: 14px;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.01em;
+}
+
+/* Selected/hover checkmark badge. */
+.boldform-preset__check {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 999px;
+	background: #0f766e;
+	color: #fff;
+	opacity: 0;
+	transform: scale(0.6);
+	transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-preset:hover .boldform-preset__check,
+.boldform-preset:focus-visible .boldform-preset__check,
+.boldform-preset.is-selected .boldform-preset__check {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.boldform-preset__check .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
+/* Flat, neutral column placeholders. */
 .boldform-preset__grid {
 	display: flex;
-	gap: 6px;
-	height: 48px;
+	gap: 10px;
+	height: 56px;
 }
 
 .boldform-preset__grid span {
 	display: block;
 	height: 100%;
-	border-radius: 10px;
-	background: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%);
+	border-radius: 8px;
+	background: #e9ecf1;
 }
 
 /* Style tab: stack controls above the preview once the columns get cramped.

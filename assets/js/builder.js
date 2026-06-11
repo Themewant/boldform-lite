@@ -3988,7 +3988,8 @@ jQuery(
 			( boldformLiteBuilder.columnPresets || [] ).forEach(
 				function ( preset ) {
 					markup += '<button type="button" class="boldform-preset" data-columns="' + escapeHtml( preset.value ) + '" data-widths="' + escapeHtml( preset.widths.join( ',' ) ) + '">';
-					markup += '<strong>' + escapeHtml( preset.label ) + '</strong>';
+					markup += '<span class="boldform-preset__top"><strong>' + escapeHtml( preset.label ) + '</strong>';
+					markup += '<span class="boldform-preset__check" aria-hidden="true"><span class="dashicons dashicons-yes"></span></span></span>';
 					markup += '<span class="boldform-preset__grid">';
 					preset.widths.forEach(
 						function ( width ) {
