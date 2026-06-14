@@ -100,7 +100,16 @@ class BoldForm_Lite_Email_Handler {
 	 * @return void
 	 */
 	private function send_admin_email( $form_record, $settings, $entry_data, $attachments = array() ) {
+		// Resolve the recipient, most specific first:
+		// 1. the form's own custom admin address,
+		// 2. the global "Default email" notification setting,
+		// 3. the WordPress site admin email as the final fallback.
 		$to = sanitize_email( get_option( 'admin_email' ) );
+
+		$global_settings = get_option( 'boldform_lite_settings', array() );
+		if ( is_array( $global_settings ) && ! empty( $global_settings['default_email'] ) && is_email( $global_settings['default_email'] ) ) {
+			$to = sanitize_email( (string) $global_settings['default_email'] );
+		}
 
 		if ( ! empty( $settings['admin_email_type'] ) && 'custom' === $settings['admin_email_type'] && ! empty( $settings['admin_email'] ) && is_email( $settings['admin_email'] ) ) {
 			$to = sanitize_email( (string) $settings['admin_email'] );

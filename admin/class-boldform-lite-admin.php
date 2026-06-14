@@ -2735,9 +2735,19 @@ class BoldForm_Lite_Admin {
 		}
 		set_transient( $throttle_key, 1, 15 );
 
-		// Fixed subject/body — the endpoint only verifies delivery, it is not a general mailer.
-		$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
-		$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
+		// Use the admin-supplied subject/body, falling back to defaults when either
+		// is left blank. Sanitized to plain text so this stays a delivery check, not
+		// an open HTML mailer.
+		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+
+		if ( '' === $subject ) {
+			$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
+		}
+
+		if ( '' === $message ) {
+			$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
+		}
 
 		$sent = wp_mail( $to, $subject, $message );
 

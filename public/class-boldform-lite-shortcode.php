@@ -279,8 +279,8 @@ class BoldForm_Lite_Shortcode {
 					</div>
 				<?php endforeach; ?>
 			</div>
-			<div style="position:absolute;left:-9999px;" aria-hidden="true">
-				<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off">
+			<div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+				<label aria-hidden="true">Leave this field empty<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off" readonly aria-hidden="true" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"></label>
 			</div>
 			<input type="hidden" name="action" value="boldform_lite_submit_form">
 			<input type="hidden" name="boldform_action" value="submit_form">
