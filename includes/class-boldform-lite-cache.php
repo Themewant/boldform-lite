@@ -84,6 +84,7 @@ class BoldForm_Lite_Cache {
 	 */
 	public function purge_caches() {
 		// LiteSpeed Cache — listens for this action and purges the page cache.
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Third-party action defined by the LiteSpeed Cache plugin; the name is theirs by design.
 		do_action( 'litespeed_purge_all', 'boldform form saved' );
 
 		// WP Rocket — clear the full domain cache.

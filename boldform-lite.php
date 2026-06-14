@@ -58,14 +58,13 @@ function boldform_lite_migrate_settings_autoload() {
 		return;
 	}
 
-	if ( function_exists( 'wp_set_option_autoload' ) ) { // WP 6.4+.
-		wp_set_option_autoload( 'boldform_lite_settings', false );
-	} else {
-		$settings = get_option( 'boldform_lite_settings', null );
-		if ( null !== $settings ) {
-			delete_option( 'boldform_lite_settings' );
-			add_option( 'boldform_lite_settings', $settings, '', 'no' );
-		}
+	// Re-add the option with autoload disabled. delete + add keeps this compatible
+	// with the plugin's minimum WordPress 6.3 (wp_set_option_autoload() only exists
+	// on 6.4+) while producing an identical end state.
+	$settings = get_option( 'boldform_lite_settings', null );
+	if ( null !== $settings ) {
+		delete_option( 'boldform_lite_settings' );
+		add_option( 'boldform_lite_settings', $settings, '', 'no' );
 	}
 
 	update_option( 'boldform_lite_autoload_migrated', 1 );
