@@ -544,6 +544,21 @@ jQuery(
 					return $( this ).data( 'value' ) === focusVal;
 				} ).trigger( 'focus' );
 			} );
+
+			// Re-sync the star visuals + ARIA when the parent form is reset (e.g.
+			// after a successful AJAX submission); a native reset clears the hidden
+			// input but not this custom layer. Deferred so the reset applies first.
+			$rating.closest( 'form' ).on( 'reset', function () {
+				window.setTimeout( function () {
+					var val = parseInt( $field.val(), 10 ) || 0;
+					paintStars( val );
+					$stars.each( function () {
+						var v = $( this ).data( 'value' );
+						$( this ).attr( 'aria-checked', v === val ? 'true' : 'false' );
+						$( this ).attr( 'tabindex', ( v === val || ( 0 === val && 1 === v ) ) ? '0' : '-1' );
+					} );
+				}, 0 );
+			} );
 		} );
 
 		// Slider Range value display (single handle).
@@ -717,6 +732,10 @@ jQuery(
 					if ( $( this ).prop( 'selected' ) ) selected.push( val );
 				}
 			} );
+
+			// Snapshot the initial selection so the custom UI can be restored when the
+			// form is reset (a native reset reverts the hidden <select> to this state).
+			var defaultSelected = selected.slice();
 
 			if ( ! placeholderText ) {
 				placeholderText = isMultiple ? 'Select options\u2026' : 'Select\u2026';
@@ -959,9 +978,33 @@ jQuery(
 				toggle( $( this ).data( 'val' ) + '' );
 			} );
 
-			$list.on( 'click', '.bf-select__option', function () {
+			$list.on( 'click', '.bf-select__option', function ( e ) {
+				// Stop the click reaching the global outside-click handler. toggle()
+				// re-renders the list, detaching this element, which would otherwise be
+				// read as an "outside" click and wrongly close the (multi-select) panel.
+				e.stopPropagation();
 				toggle( $( this ).data( 'val' ) + '' );
 			} );
+
+			// Restore the visible selection when the parent form is reset (e.g. after a
+			// successful AJAX submission). A native form reset reverts the hidden
+			// <select> but not this custom trigger/tags layer, so re-sync from the
+			// initial selection. Deferred so the native reset applies first.
+			$wrap.closest( 'form' ).on( 'reset', function () {
+				window.setTimeout( function () {
+					selected = defaultSelected.slice();
+					syncToSelect();
+					renderTrigger();
+					renderList( '' );
+				}, 0 );
+			} );
+
+			// Paint the trigger and option list from the JS selection on init so the
+			// visible trigger, the dropdown panel, and the hidden <select> always agree.
+			// The server-rendered trigger can otherwise lag the real selection, leaving
+			// an option checked in the panel but absent from the trigger.
+			renderTrigger();
+			renderList( '' );
 		}
 
 		// Single delegated outside-click handler for ALL custom selects (replaces the

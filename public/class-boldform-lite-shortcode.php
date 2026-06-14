@@ -1484,7 +1484,12 @@ class BoldForm_Lite_Shortcode {
 			$extra_attrs    = ' data-boldform-select="1"';
 
 			if ( $is_multiple ) {
-				$extra_attrs .= ' data-multiple="1"';
+				// The real `multiple` attribute is required: without it the hidden
+				// native <select> is a single control that auto-selects its first
+				// option (no empty placeholder option is emitted for multiselects),
+				// which both pre-selects option 1 and prevents multiple values from
+				// being submitted. `data-multiple` is only a hook for the JS UI.
+				$extra_attrs .= ' multiple data-multiple="1"';
 			}
 			if ( $is_searchable ) {
 				$extra_attrs .= ' data-searchable="1"';
