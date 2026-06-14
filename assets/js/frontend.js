@@ -470,6 +470,11 @@ jQuery(
 			var $field = $( '#' + $rating.data( 'field' ) );
 			var $stars = $rating.find( '.boldform-lite-star' );
 			var maxStars = $stars.length;
+			// The rating to restore on a form reset (after a successful submit). Captured
+			// at init so the reset doesn't depend on the browser having cleared the hidden
+			// input — selecting a star sets the value property, which a native reset does
+			// not always revert in time for our handler.
+			var defaultVal = parseInt( $field.val(), 10 ) || 0;
 
 			// Paint the cumulative fill for a given value.
 			function paintStars( val ) {
@@ -550,12 +555,14 @@ jQuery(
 			// input but not this custom layer. Deferred so the reset applies first.
 			$rating.closest( 'form' ).on( 'reset', function () {
 				window.setTimeout( function () {
-					var val = parseInt( $field.val(), 10 ) || 0;
-					paintStars( val );
+					// Explicitly restore the captured default instead of reading the hidden
+					// input, so the visuals clear even if the native reset hasn't reverted it.
+					$field.val( defaultVal );
+					paintStars( defaultVal );
 					$stars.each( function () {
 						var v = $( this ).data( 'value' );
-						$( this ).attr( 'aria-checked', v === val ? 'true' : 'false' );
-						$( this ).attr( 'tabindex', ( v === val || ( 0 === val && 1 === v ) ) ? '0' : '-1' );
+						$( this ).attr( 'aria-checked', v === defaultVal ? 'true' : 'false' );
+						$( this ).attr( 'tabindex', ( v === defaultVal || ( 0 === defaultVal && 1 === v ) ) ? '0' : '-1' );
 					} );
 				}, 0 );
 			} );
