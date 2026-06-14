@@ -81,6 +81,22 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
+	 * Returns a cache-busting version string for a bundled asset.
+	 *
+	 * Uses the file's modification time so the browser re-fetches the asset whenever
+	 * its contents change, falling back to the plugin version if the file is missing.
+	 * This prevents stale cached scripts/styles after an edit without a version bump.
+	 *
+	 * @param string $relative_path Path relative to the plugin root (e.g. 'assets/js/frontend.js').
+	 * @return string
+	 */
+	private function asset_version( $relative_path ) {
+		$absolute = BOLDFORM_LITE_PATH . ltrim( $relative_path, '/' );
+		$mtime    = file_exists( $absolute ) ? filemtime( $absolute ) : false;
+		return ( false !== $mtime ) ? (string) $mtime : BOLDFORM_LITE_VERSION;
+	}
+
+	/**
 	 * Registers frontend assets.
 	 *
 	 * @return void
@@ -105,14 +121,14 @@ class BoldForm_Lite_Shortcode {
 			'boldform-lite-frontend',
 			BOLDFORM_LITE_URL . 'assets/css/frontend.css',
 			array(),
-			BOLDFORM_LITE_VERSION
+			$this->asset_version( 'assets/css/frontend.css' )
 		);
 
 		wp_register_script(
 			'boldform-lite-frontend',
 			BOLDFORM_LITE_URL . 'assets/js/frontend.js',
 			array( 'jquery' ),
-			BOLDFORM_LITE_VERSION,
+			$this->asset_version( 'assets/js/frontend.js' ),
 			true
 		);
 
@@ -279,8 +295,8 @@ class BoldForm_Lite_Shortcode {
 					</div>
 				<?php endforeach; ?>
 			</div>
-			<div style="position:absolute;left:-9999px;" aria-hidden="true">
-				<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off">
+			<div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+				<label aria-hidden="true">Leave this field empty<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off" readonly aria-hidden="true" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"></label>
 			</div>
 			<input type="hidden" name="action" value="boldform_lite_submit_form">
 			<input type="hidden" name="boldform_action" value="submit_form">
@@ -1484,7 +1500,12 @@ class BoldForm_Lite_Shortcode {
 			$extra_attrs    = ' data-boldform-select="1"';
 
 			if ( $is_multiple ) {
-				$extra_attrs .= ' data-multiple="1"';
+				// The real `multiple` attribute is required: without it the hidden
+				// native <select> is a single control that auto-selects its first
+				// option (no empty placeholder option is emitted for multiselects),
+				// which both pre-selects option 1 and prevents multiple values from
+				// being submitted. `data-multiple` is only a hook for the JS UI.
+				$extra_attrs .= ' multiple data-multiple="1"';
 			}
 			if ( $is_searchable ) {
 				$extra_attrs .= ' data-searchable="1"';

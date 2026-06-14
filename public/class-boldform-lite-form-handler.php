@@ -45,6 +45,15 @@ class BoldForm_Lite_Form_Handler {
 	 * @return void
 	 */
 	public function handle_submission() {
+		// AJAX submissions are handled by ajax_submit_form() on the wp_ajax hook.
+		// This classic handler runs on `init`, which also fires on admin-ajax.php — and
+		// because the AJAX request carries boldform_action=submit_form, without this guard
+		// it would intercept the AJAX POST and emit a 302 redirect instead of the JSON the
+		// front end expects (the front end would then show the generic success fallback).
+		if ( wp_doing_ajax() ) {
+			return;
+		}
+
 		if ( 'POST' !== strtoupper( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ?? '' ) ) ) ) {
 			return;
 		}
@@ -336,11 +345,18 @@ class BoldForm_Lite_Form_Handler {
 			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
 		}
 
+		// Only redirect when the form's confirmation mode is "redirect" (To a Page /
+		// Custom URL). In AJAX/message mode we return no redirect URL so the front end
+		// shows the thank-you message, even if a stale redirect_url lingers in storage.
+		$redirect_url = ! empty( $settings['enable_redirect'] ) && ! empty( $settings['redirect_url'] )
+			? $settings['redirect_url']
+			: '';
+
 		$result = $this->build_result(
 			true,
 			$settings['thank_you_message'],
 			array(),
-			! empty( $settings['redirect_url'] ) ? $settings['redirect_url'] : ''
+			$redirect_url
 		);
 
 		/**

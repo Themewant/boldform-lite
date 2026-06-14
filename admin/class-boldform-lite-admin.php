@@ -2281,7 +2281,7 @@ class BoldForm_Lite_Admin {
 									<div class="boldform-field-row">
 										<div class="boldform-field-label"><label for="boldform-recaptcha-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
-											<input type="text" id="boldform-recaptcha-secret-key" name="boldform_recaptcha_secret_key" value="<?php echo esc_attr( $settings['recaptcha_secret_key'] ); ?>">
+											<input type="password" id="boldform-recaptcha-secret-key" name="boldform_recaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['recaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
 											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: reCAPTCHA URL */ __( 'Get your keys from %s. Supports reCAPTCHA v2 (checkbox).', 'boldform-lite' ), '<code>google.com/recaptcha/admin</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
@@ -2300,7 +2300,7 @@ class BoldForm_Lite_Admin {
 									<div class="boldform-field-row">
 										<div class="boldform-field-label"><label for="boldform-hcaptcha-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
-											<input type="text" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="<?php echo esc_attr( $settings['hcaptcha_secret_key'] ); ?>">
+											<input type="password" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['hcaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
 											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: hCaptcha URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
@@ -2565,9 +2565,16 @@ class BoldForm_Lite_Admin {
 		$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
 		$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
 		$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
-		$settings['recaptcha_secret_key'] = isset( $_POST['boldform_recaptcha_secret_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_secret_key'] ) ) : '';
 		$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
-		$settings['hcaptcha_secret_key']  = isset( $_POST['boldform_hcaptcha_secret_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) ) : '';
+
+		// Secret keys are masked on render (value=""); only overwrite when a new value is
+		// submitted, so re-saving the page with a blank field preserves the stored key.
+		if ( isset( $_POST['boldform_recaptcha_secret_key'] ) && '' !== $_POST['boldform_recaptcha_secret_key'] ) {
+			$settings['recaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_secret_key'] ) );
+		}
+		if ( isset( $_POST['boldform_hcaptcha_secret_key'] ) && '' !== $_POST['boldform_hcaptcha_secret_key'] ) {
+			$settings['hcaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) );
+		}
 
 		// SMTP settings.
 		$settings['smtp_enabled']    = ! empty( $_POST['boldform_smtp_enabled'] );
@@ -2735,9 +2742,19 @@ class BoldForm_Lite_Admin {
 		}
 		set_transient( $throttle_key, 1, 15 );
 
-		// Fixed subject/body — the endpoint only verifies delivery, it is not a general mailer.
-		$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
-		$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
+		// Use the admin-supplied subject/body, falling back to defaults when either
+		// is left blank. Sanitized to plain text so this stays a delivery check, not
+		// an open HTML mailer.
+		$subject = isset( $_POST['subject'] ) ? sanitize_text_field( wp_unslash( $_POST['subject'] ) ) : '';
+		$message = isset( $_POST['message'] ) ? sanitize_textarea_field( wp_unslash( $_POST['message'] ) ) : '';
+
+		if ( '' === $subject ) {
+			$subject = __( 'BoldForm SMTP test email', 'boldform-lite' );
+		}
+
+		if ( '' === $message ) {
+			$message = __( 'This is a test email from BoldForm confirming your email/SMTP settings are working.', 'boldform-lite' );
+		}
 
 		$sent = wp_mail( $to, $subject, $message );
 
@@ -3533,6 +3550,13 @@ class BoldForm_Lite_Admin {
 			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
 			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
+			// A DB error makes get_results() return null (not an empty array); bail cleanly
+			// so the count() loop condition below never receives null, which is a fatal
+			// TypeError on PHP 8.0+. A successful empty result is array() and ends the loop.
+			if ( ! is_array( $batch ) ) {
+				break;
+			}
+
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );
 
@@ -3568,6 +3592,12 @@ class BoldForm_Lite_Admin {
 		do {
 			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
 			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+			// See pass 1: guard against a null (DB-error) result before the count() loop
+			// condition, which would otherwise fatal on PHP 8.0+.
+			if ( ! is_array( $batch ) ) {
+				break;
+			}
 
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );
