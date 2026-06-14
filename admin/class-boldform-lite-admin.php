@@ -3531,7 +3531,7 @@ class BoldForm_Lite_Admin {
 		$offset  = 0;
 		do {
 			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
-			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );
@@ -3567,7 +3567,7 @@ class BoldForm_Lite_Admin {
 		$offset = 0;
 		do {
 			$limit_sql = $wpdb->prepare( ' LIMIT %d OFFSET %d', $batch_size, $offset );
-			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
+			$batch     = $wpdb->get_results( $base_query . $limit_sql, ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );

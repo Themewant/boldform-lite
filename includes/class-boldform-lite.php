@@ -99,6 +99,13 @@ final class BoldForm_Lite {
 	private $privacy;
 
 	/**
+	 * Cache-compatibility (third-party cache purge) handler.
+	 *
+	 * @var BoldForm_Lite_Cache
+	 */
+	private $cache;
+
+	/**
 	 * Returns the single instance of the plugin.
 	 *
 	 * @return BoldForm_Lite
@@ -151,6 +158,7 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-integrations-page.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-privacy.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-cache.php';
 
 		$this->loader            = new BoldForm_Lite_Loader();
 		$this->admin             = new BoldForm_Lite_Admin( $this );
@@ -163,6 +171,7 @@ final class BoldForm_Lite {
 		$this->integrations_page = new BoldForm_Lite_Integrations_Page( $this );
 		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
 		$this->privacy           = new BoldForm_Lite_Privacy( $this );
+		$this->cache             = new BoldForm_Lite_Cache( $this );
 	}
 
 	/**
@@ -208,6 +217,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'elementor/editor/after_enqueue_scripts', $this->elementor, 'enqueue_editor_scripts' );
 		$this->loader->add_filter( 'wp_privacy_personal_data_exporters', $this->privacy, 'register_exporter' );
 		$this->loader->add_filter( 'wp_privacy_personal_data_erasers', $this->privacy, 'register_eraser' );
+		$this->loader->add_action( 'boldform_form_saved', $this->cache, 'purge_on_form_saved', 10, 3 );
 
 		$this->export_import->init();
 		$this->integrations_page->init();
