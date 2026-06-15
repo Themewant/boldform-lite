@@ -16,7 +16,7 @@ Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg b
 
 Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant)
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Join the Pro Waitlist](https://themewant.com/waitlist/)
 
 ---
 
@@ -334,6 +334,14 @@ Entries are retained until you delete them. You can remove individual entries (o
 
 BoldForm Lite integrates with WordPress's built-in privacy tools: under **Tools > Export Personal Data** and **Tools > Erase Personal Data**, an administrator can export or erase the form entries associated with a given email address to help fulfil data-subject requests.
 
+BoldForm – Drag &amp; Drop Form Builder uses [Appsero](https://appsero.com) SDK to collect some telemetry data upon user's confirmation. This helps us to troubleshoot problems faster & make product improvements.
+
+Appsero SDK **does not gather any data by default.** The SDK only starts gathering basic telemetry data **when a user allows it via the admin notice**. We collect the data to ensure a great user experience for all our users.
+
+Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without confirmation from users in any case.**
+
+Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
+
 ---
 
 == Changelog ==
@@ -345,10 +353,12 @@ New features:
 * New: Help & Support page with links to the User Guide, Developer Guide, Support, Community, Leave a Review, and Request a Feature.
 * New: "Mark as Spam" entry action and a Spam filter tab on the Entries screen.
 * New: The BoldForm logo now appears throughout the admin — the sidebar menu icon adapts to your admin colour scheme, and the mark replaces the generic placeholder icon in the topbar, form builder, Reports, and the empty Forms state.
+* New: A dismissible "BoldForm Pro is launching soon!" early-access notice links administrators to the launch waitlist; once dismissed it stays hidden per user.
 
-Privacy (GDPR):
+Privacy:
 * Privacy: A personal-data exporter and eraser are registered with WordPress's privacy tools, keyed on the submitter's email address, so site owners can fulfil data export and erasure requests for form entries.
 * Privacy: readme now documents what data is stored, how long it is kept, and how to export or erase it.
+* Privacy: Optional, opt-in usage telemetry via the Appsero SDK — nothing is collected unless an administrator explicitly agrees through the admin notice (see the Privacy section above).
 
 Security:
 * Security: Integration API keys (Mailchimp, Brevo) are never written into page HTML; the builder receives only the connection id, name, type, and status, and the stored key is preserved when the field is left blank.
@@ -384,6 +394,9 @@ Improvements:
 * Improve: The colour reset button now stays disabled until a colour is changed, so it is clear when a value differs from the default.
 * Improve: BoldForm admin screens now show only BoldForm's own notices — promotional banners from other plugins or the active theme are suppressed on our screens.
 * Improve: The Star Rating field settings were trimmed to the options that apply (removed Placeholder, Default Value, Star Color, and Star Size).
+* Improve: Renamed every admin-visible "Bold Form" to "BoldForm" for consistent product branding.
+* Improve: Moved the Integrations submenu directly above Help & Support in the BoldForm admin menu.
+* Improve: Balanced the Entries list-table column widths so the Submission column no longer crowds the Form, Date, and Status columns.
 
 Fixes:
 * Fix: Forms are no longer submitted for real when rendered in an editor or preview — the Gutenberg block preview, the Elementor editor, and the admin Preview Form screen.

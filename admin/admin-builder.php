@@ -27,6 +27,16 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 <?php $boldform_lite_is_new_form = ! $form_data['id']; ?>
 <div class="wrap boldform-builder-page" id="boldform-builder-root">
 
+	<?php
+	// Notice-placement marker — WordPress relocates admin notices to right after the first
+	// .wp-header-end (wp-admin/js/common.js). On the NEW-form setup screen we want the dark
+	// header bar on top and the notice BELOW it, so the marker is emitted inside the setup
+	// body further down. The existing-form editor keeps it at the very top.
+	?>
+	<?php if ( ! $boldform_lite_is_new_form ) : ?>
+		<hr class="wp-header-end">
+	<?php endif; ?>
+
 	<!-- Setup screen for new forms -->
 	<div class="boldform-setup-screen" id="boldform-setup-screen"<?php echo ! $boldform_lite_is_new_form ? ' hidden' : ''; ?>>
 		<div class="boldform-setup-header">
@@ -38,7 +48,12 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 			</div>
 		</div>
+		
 		<div class="boldform-setup-body">
+			<?php // New-form marker: relocates the notice here — below the dark header bar, above "Create a New Form". ?>
+			<?php if ( $boldform_lite_is_new_form ) : ?>
+				<hr class="wp-header-end">
+			<?php endif; ?>
 			<div class="boldform-setup-intro">
 				<h1><?php esc_html_e( 'Create a New Form', 'boldform-lite' ); ?></h1>
 				<p><?php esc_html_e( 'Start from scratch or pick a pre-built template.', 'boldform-lite' ); ?></p>

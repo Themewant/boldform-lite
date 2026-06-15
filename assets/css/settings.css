@@ -8,6 +8,17 @@
 	padding: 20px;
 }
 
+/* The notice-relocation marker (wp-admin/js/common.js) must contribute zero space so the
+   gap above the notice/header is exactly .wrap's padding — in both states (notice shown or
+   dismissed). admin-notice.css repeats this for when it loads; this copy covers the
+   dismissed state where admin-notice.css is not enqueued. */
+.wp-header-end {
+	margin: 0;
+	border: 0;
+	height: 0;
+	visibility: hidden;
+}
+
 .boldform-admin-topbar {
 	display: flex;
 	align-items: center;
@@ -1439,8 +1450,12 @@
 
 /* ── List-page action notice (modern alert) ──
    Rendered with `notice is-dismissible` so WordPress keeps wiring the dismiss (×)
-   button; these rules override the default WP notice chrome into a soft pill. */
-.boldform-admin-notice.notice {
+   button; these rules override the default WP notice chrome into a soft pill.
+   NOTE: namespaced `.boldform-inline-notice` so it stays separate from the full-width
+   promo card `.boldform-admin-notice` (admin-notice.css). They previously shared a
+   class, and this rule's `display:inline-flex; margin:0` silently shrank the card and
+   killed its bottom gap on every page that loads this stylesheet. Don't merge them. */
+.boldform-inline-notice.notice {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
@@ -1455,7 +1470,7 @@
 	line-height: 1.5;
 }
 
-.boldform-admin-notice .dashicons {
+.boldform-inline-notice .dashicons {
 	flex-shrink: 0;
 	width: 20px;
 	height: 20px;
@@ -1463,47 +1478,47 @@
 	line-height: 20px;
 }
 
-.boldform-admin-notice p {
+.boldform-inline-notice p {
 	margin: 0;
 	padding: 0;
 	font-size: 13px;
 }
 
-.boldform-admin-notice--success.notice {
+.boldform-inline-notice--success.notice {
 	background: #ecfdf3;
 	border-color: #a3e4b8;
 	color: #166534;
 }
 
-.boldform-admin-notice--success .dashicons {
+.boldform-inline-notice--success .dashicons {
 	color: #16a34a;
 }
 
-.boldform-admin-notice--error.notice {
+.boldform-inline-notice--error.notice {
 	background: #fef2f2;
 	border-color: #fca5a5;
 	color: #991b1b;
 }
 
-.boldform-admin-notice--error .dashicons {
+.boldform-inline-notice--error .dashicons {
 	color: #dc2626;
 }
 
 /* Keep WordPress's injected dismiss button centred in the taller pill. */
-.boldform-admin-notice .notice-dismiss {
+.boldform-inline-notice .notice-dismiss {
 	top: 50%;
 	right: 6px;
 	padding: 0;
 	transform: translateY(-50%);
 }
 
-.boldform-admin-notice .notice-dismiss::before {
+.boldform-inline-notice .notice-dismiss::before {
 	color: currentColor;
 	opacity: 0.55;
 }
 
-.boldform-admin-notice .notice-dismiss:hover::before,
-.boldform-admin-notice .notice-dismiss:focus::before {
+.boldform-inline-notice .notice-dismiss:hover::before,
+.boldform-inline-notice .notice-dismiss:focus::before {
 	opacity: 1;
 }
 

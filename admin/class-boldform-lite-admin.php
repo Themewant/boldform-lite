@@ -17,6 +17,20 @@ require_once BOLDFORM_LITE_PATH . 'admin/ajax-save.php';
 class BoldForm_Lite_Admin {
 
 	/**
+	 * User-meta key holding the list of admin-notice ids the user has dismissed.
+	 *
+	 * @var string
+	 */
+	const DISMISSED_NOTICES_META = 'boldform_lite_dismissed_notices';
+
+	/**
+	 * Notice id for the BoldForm Pro waitlist banner.
+	 *
+	 * @var string
+	 */
+	const NOTICE_PRO_WAITLIST = 'pro_waitlist';
+
+	/**
 	 * Main plugin instance.
 	 *
 	 * @var BoldForm_Lite
@@ -1293,10 +1307,225 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders only BoldForm admin notices.
 	 *
+	 * Also re-emits the Pro waitlist notice here: on BoldForm screens the global
+	 * admin_notices hook is purged (suppress_foreign_notices), so without this the
+	 * notice would show everywhere EXCEPT BoldForm's own pages. render_own_notices()
+	 * is the one callback re-added after the purge, so routing it through here keeps
+	 * the notice visible on BoldForm screens too. It is only ever printed once per
+	 * page load because the purged global callback never runs on these screens.
+	 *
 	 * @return void
 	 */
 	public function render_own_notices() {
 		settings_errors( 'boldform_lite_settings' );
+		$this->maybe_render_waitlist_notice();
+	}
+
+	/**
+	 * Outputs the dismissible "BoldForm Pro waitlist" admin notice.
+	 *
+	 * Shown on every admin screen to administrators who have not dismissed it. A thin
+	 * consumer of the shared admin-notice layer: it outputs this notice's specific
+	 * markup with the generic `.boldform-admin-notice` chrome + a `data-notice-id`, and
+	 * relies on enqueue_admin_notice_assets() for styling and ajax_dismiss_notice() for
+	 * persistent, per-user dismissal (stored in user meta, so it stays closed).
+	 *
+	 * The notice is wired on two paths so it survives the foreign-notice purge on
+	 * BoldForm's own screens (global admin_notices hook for normal pages; re-added via
+	 * render_own_notices() after the purge). A render-once-per-request guard makes that
+	 * dual wiring safe regardless of how many paths invoke it — it can never print twice.
+	 *
+	 * @return void
+	 */
+	public function maybe_render_waitlist_notice() {
+		static $rendered = false;
+
+		if ( $rendered ) {
+			return;
+		}
+
+		if ( ! $this->should_show_waitlist_notice() ) {
+			return;
+		}
+
+		$rendered = true;
+
+		$waitlist_url = 'https://themewant.com/waitlist/';
+		$learn_url    = 'https://themewant.com/plugins/boldform/';
+		?>
+		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_WAITLIST ); ?>">
+
+			<button type="button" class="boldform-admin-notice__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+			</button>
+
+			<div class="boldform-admin-notice__inner">
+				<div class="boldform-admin-notice__content">
+					<span class="boldform-admin-notice__badge">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3"/><path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3"/><circle cx="15" cy="9" r="1"/></svg>
+						<?php esc_html_e( 'Early Access', 'boldform-lite' ); ?>
+					</span>
+
+					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
+
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
+
+					<div class="boldform-admin-notice__actions">
+						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+							<?php esc_html_e( 'Join the Waitlist', 'boldform-lite' ); ?>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+						</a>
+						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-admin-notice__link" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Learn More', 'boldform-lite' ); ?>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+						</a>
+					</div>
+				</div>
+
+				<div class="boldform-admin-notice__art" aria-hidden="true">
+					<svg class="boldform-admin-notice__illustration" viewBox="0 0 360 250" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+						<circle cx="150" cy="92" r="72" fill="#eaeefe"/>
+						<circle cx="252" cy="150" r="82" fill="#eff2fe"/>
+						<circle cx="120" cy="172" r="56" fill="#eff2fe"/>
+						<defs>
+							<clipPath id="bfwWindowClip"><rect x="70" y="45" width="240" height="160" rx="14"/></clipPath>
+						</defs>
+						<g clip-path="url(#bfwWindowClip)">
+							<rect x="70" y="45" width="240" height="160" fill="#ffffff"/>
+							<rect x="70" y="45" width="240" height="26" fill="#2c4bff"/>
+							<circle cx="84" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<circle cx="94" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<circle cx="104" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<g>
+								<circle cx="90" cy="92" r="6" fill="#d9def0"/><rect x="102" y="89" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="116" r="6" fill="#d9def0"/><rect x="102" y="113" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="140" r="6" fill="#d9def0"/><rect x="102" y="137" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="164" r="6" fill="#d9def0"/><rect x="102" y="161" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="188" r="6" fill="#d9def0"/><rect x="102" y="185" width="34" height="6" rx="3" fill="#e7ebf6"/>
+							</g>
+							<rect x="150" y="82" width="70" height="116" rx="10" fill="#fbfcff" stroke="#b9c2dd" stroke-width="2" stroke-dasharray="6 6"/>
+							<rect x="166" y="121" width="38" height="36" rx="9" fill="#ffffff" stroke="#e4e8f4" stroke-width="2"/>
+							<text x="185" y="145" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#2c4bff" text-anchor="middle">T</text>
+							<rect x="232" y="92" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="104" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+							<rect x="232" y="132" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="144" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+							<rect x="232" y="172" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="184" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+						</g>
+						<rect x="70" y="45" width="240" height="160" rx="14" stroke="#e4e8f4" stroke-width="2"/>
+						<path d="M196 147v18l4.4-4.4 2.8 5.6 2.7-1.3-2.8-5.5h6z" fill="#2b3040" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>
+						<path d="M52 60l1.9 6.4L60 68l-6.1 1.6L52 76l-1.9-6.4L44 68l6.1-1.6z" fill="#2c4bff" opacity=".9"/>
+						<path d="M318 52l1.5 5.1 4.9 1.3-4.9 1.3-1.5 5.1-1.5-5.1-4.9-1.3 4.9-1.3z" fill="#2c4bff" opacity=".55"/>
+						<path d="M330 146l1.7 5.7 5.5 1.5-5.5 1.5-1.7 5.7-1.7-5.7-5.5-1.5 5.5-1.5z" fill="#2c4bff" opacity=".7"/>
+					</svg>
+					<span class="boldform-admin-notice__logo"><?php boldform_lite_brand_icon( array( 'class' => '', 'size' => 26, 'fill' => '#ffffff' ) ); ?></span>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Persists the current user's dismissal of an admin notice.
+	 *
+	 * Generic: any notice that renders the shared markup (a `.boldform-admin-notice`
+	 * with a `data-notice-id` and a `.boldform-admin-notice__dismiss` button) posts
+	 * its id here, and it is appended to the per-user dismissed-notices list.
+	 *
+	 * @return void
+	 */
+	public function ajax_dismiss_notice() {
+		check_ajax_referer( 'boldform_lite_dismiss_notice', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( '', 403 );
+		}
+
+		$notice_id = isset( $_POST['notice_id'] ) ? sanitize_key( wp_unslash( $_POST['notice_id'] ) ) : '';
+
+		if ( '' === $notice_id ) {
+			wp_send_json_error( '', 400 );
+		}
+
+		$user_id   = get_current_user_id();
+		$dismissed = get_user_meta( $user_id, self::DISMISSED_NOTICES_META, true );
+		$dismissed = is_array( $dismissed ) ? $dismissed : array();
+
+		if ( ! in_array( $notice_id, $dismissed, true ) ) {
+			$dismissed[] = $notice_id;
+			update_user_meta( $user_id, self::DISMISSED_NOTICES_META, $dismissed );
+		}
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * Whether the current user has dismissed a given admin notice.
+	 *
+	 * @param string $notice_id Notice identifier.
+	 * @return bool
+	 */
+	private function is_notice_dismissed( $notice_id ) {
+		$dismissed = get_user_meta( get_current_user_id(), self::DISMISSED_NOTICES_META, true );
+
+		return is_array( $dismissed ) && in_array( $notice_id, $dismissed, true );
+	}
+
+	/**
+	 * Whether the Pro waitlist notice should be shown to the current user.
+	 *
+	 * Single source of truth for both the asset enqueue and the markup render, so
+	 * the stylesheet/script only load when the notice will actually appear.
+	 *
+	 * @return bool
+	 */
+	private function should_show_waitlist_notice() {
+		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_WAITLIST );
+	}
+
+	/**
+	 * Enqueues the shared admin-notice assets on every admin screen.
+	 *
+	 * BoldForm admin notices are global (not limited to BoldForm screens, where
+	 * settings.css loads), so the shared stylesheet + dismiss script are enqueued
+	 * here — only when a notice will actually appear, so nothing loads once every
+	 * notice has been dismissed.
+	 *
+	 * @return void
+	 */
+	public function enqueue_admin_notice_assets() {
+		// Load only when at least one BoldForm admin notice will render. Extend this
+		// condition (|| $this->should_show_x_notice()) as more notices are added.
+		if ( ! $this->should_show_waitlist_notice() ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'boldform-lite-admin-notice',
+			BOLDFORM_LITE_URL . 'assets/css/admin-notice.css',
+			array(),
+			BOLDFORM_LITE_VERSION
+		);
+
+		wp_enqueue_script(
+			'boldform-lite-admin-notice',
+			BOLDFORM_LITE_URL . 'assets/js/admin-notice.js',
+			array( 'jquery' ),
+			BOLDFORM_LITE_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'boldform-lite-admin-notice',
+			'boldformAdminNotice',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'action'  => 'boldform_lite_dismiss_notice',
+				'nonce'   => wp_create_nonce( 'boldform_lite_dismiss_notice' ),
+			)
+		);
 	}
 
 	/**
@@ -1505,6 +1734,8 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite' ); ?>
 		<div class="wrap">
+			<?php // Anchor relocated admin notices above the header. WordPress moves every non-inline .notice to directly after .wp-header-end (wp-admin/js/common.js); without this marker it falls back to "after the first <h1>", which drops the notice between the title and the Add New button. Placing the marker first keeps notices on top, header + content below — and works for any third-party notice too. ?>
+			<hr class="wp-header-end">
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Forms', 'boldform-lite' ); ?></h1>
 				<?php if ( ! $is_trash ) : ?>
@@ -1765,6 +1996,7 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite-docs' ); ?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Help &amp; Support', 'boldform-lite' ); ?></h1>
 			</div>
@@ -1920,6 +2152,7 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite-entries' ); ?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></h1>
 				<?php if ( ! empty( $entries ) ) : ?>
@@ -2159,8 +2392,8 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
-			<hr class="wp-header-end">
 
 			<div class="boldform-settings-wrap">
 				<nav class="boldform-settings-sidebar">
@@ -3129,9 +3362,11 @@ class BoldForm_Lite_Admin {
 		list( $type, $message ) = $messages[ $notice ];
 		$icon = ( 'error' === $type ) ? 'dashicons-warning' : 'dashicons-yes-alt';
 		// Keep `notice is-dismissible` so WordPress still wires up the dismiss (×)
-		// button; the boldform-admin-notice classes restyle it into a modern alert.
+		// button; the boldform-inline-notice classes restyle it into a modern alert.
+		// NB: a distinct namespace from the full-width promo card (.boldform-admin-notice
+		// in admin-notice.css) — they must not share a class or the card's layout breaks.
 		?>
-		<div class="notice inline is-dismissible boldform-admin-notice boldform-admin-notice--<?php echo esc_attr( $type ); ?>">
+		<div class="notice inline is-dismissible boldform-inline-notice boldform-inline-notice--<?php echo esc_attr( $type ); ?>">
 			<span class="dashicons <?php echo esc_attr( $icon ); ?>" aria-hidden="true"></span>
 			<p><?php echo esc_html( $message ); ?></p>
 		</div>
@@ -3282,6 +3517,7 @@ class BoldForm_Lite_Admin {
 		if ( ! $entry ) {
 			?>
 			<div class="wrap">
+				<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 				<div class="boldform-page-header"><h1><?php esc_html_e( 'Entry Not Found', 'boldform-lite' ); ?></h1></div>
 				<p><?php esc_html_e( 'The requested entry does not exist.', 'boldform-lite' ); ?></p>
 			</div>
@@ -3306,6 +3542,7 @@ class BoldForm_Lite_Admin {
 		);
 		?>
 		<div class="wrap boldform-entry-detail-wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<!-- Header bar -->
 			<div class="boldform-entry-header">
 				<div class="boldform-entry-header__left">
@@ -4292,6 +4529,7 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( 'boldform-lite-reports' );
 		?>
 		<div class="wrap boldform-reports-wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Reports', 'boldform-lite' ); ?></h1>
 				<span class="boldform-page-header__badge"><?php esc_html_e( 'Overview', 'boldform-lite' ); ?></span>
