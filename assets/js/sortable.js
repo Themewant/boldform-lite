@@ -99,7 +99,22 @@
 		);
 
 		if ( ! inserted ) {
-			container.appendChild( activeDrag.placeholder );
+			if ( ! items.length ) {
+				container.appendChild( activeDrag.placeholder );
+			} else {
+				// Pointer is past the last item: drop directly AFTER it rather
+				// than at the very end of the container. The rows container also
+				// holds trailing non-draggable siblings (the canvas Submit button
+				// and the "Add Row" button), and appending would place a row below
+				// them — which must never happen. The last item's nextSibling is
+				// those buttons (rows) or null (a column with no trailing element,
+				// where insertBefore(_, null) === appendChild, the prior behaviour).
+				var ref = items[ items.length - 1 ].nextSibling;
+
+				if ( ref !== activeDrag.placeholder ) {
+					container.insertBefore( activeDrag.placeholder, ref );
+				}
+			}
 		}
 	}
 
