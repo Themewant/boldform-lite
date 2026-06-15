@@ -75,7 +75,7 @@
 
 /* Label placement: per-field */
 .boldform-lite-form__field.boldform-lite-label-left {
-	grid-template-columns: 160px 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 	align-items: center;
 	gap: 16px;
 }
@@ -86,7 +86,7 @@
 }
 
 .boldform-lite-form__field.boldform-lite-label-right {
-	grid-template-columns: 1fr 160px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 16px;
 }

@@ -731,17 +731,17 @@
 .boldform-adv-dim .bf-adv-dim {
 	width: 100%;
 	min-width: 0;
-	padding: 0 4px;
+	padding: 0 2px;
 	text-align: center;
 	box-sizing: border-box;
-	-moz-appearance: textfield;
-	appearance: textfield;
 }
 
-.boldform-adv-dim .bf-adv-dim::-webkit-outer-spin-button,
-.boldform-adv-dim .bf-adv-dim::-webkit-inner-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
+/* Keep the native number stepper visible here too, matching the single-value style
+   controls (Font Size, Line Height, …). The spin button reserves its own space at the
+   right, so the centred value stays clear of it. */
+.boldform-adv-dim .bf-adv-dim::-webkit-inner-spin-button,
+.boldform-adv-dim .bf-adv-dim::-webkit-outer-spin-button {
+	opacity: 1;
 }
 
 .bf-adv-dim-cap {
@@ -1713,11 +1713,13 @@
 	line-height: 16px;
 }
 
-.boldform-move-field {
+.boldform-move-field,
+.boldform-row-move {
 	cursor: grab;
 }
 
-.boldform-move-field:active {
+.boldform-move-field:active,
+.boldform-row-move:active {
 	cursor: grabbing;
 }
 
@@ -1832,7 +1834,7 @@
 
 /* Per-field label placement */
 .boldform-canvas-field.is-label-left .boldform-canvas-field-body {
-	grid-template-columns: 120px 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 	align-items: center;
 	gap: 12px;
 }
@@ -1843,7 +1845,7 @@
 }
 
 .boldform-canvas-field.is-label-right .boldform-canvas-field-body {
-	grid-template-columns: 1fr 120px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 12px;
 }
@@ -3350,9 +3352,22 @@
 	padding-right: 34px;
 }
 
+/* Single-unit fields show the unit as an absolute span; reserve extra room so the
+   value never slides under it AND it clears the native number stepper on the right. */
+.boldform-style-input-wrap:has( > span ) input {
+	padding-right: 48px;
+}
+
+/* Keep the native number stepper available (not hidden) — just always visible and
+   to the right of the unit suffix instead of overlapping it. */
+.boldform-style-input-wrap input::-webkit-inner-spin-button,
+.boldform-style-input-wrap input::-webkit-outer-spin-button {
+	opacity: 1;
+}
+
 .boldform-style-input-wrap > span {
 	position: absolute;
-	right: 12px;
+	right: 28px;
 	top: 50%;
 	transform: translateY(-50%);
 	color: #94a3b8;
@@ -3508,6 +3523,13 @@
 
 .boldform-color-field--alpha .bf-adv-color-reset:active {
 	transform: scale(0.92);
+}
+
+/* Nothing to reset when the colour is still at its default — dim and disable. */
+.boldform-color-field--alpha .bf-adv-color-reset:disabled {
+	opacity: 0.35;
+	cursor: default;
+	pointer-events: none;
 }
 
 .boldform-color-alpha {

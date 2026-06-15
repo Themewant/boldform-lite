@@ -2048,19 +2048,6 @@ jQuery(
 					'<div class="boldform-setting-group">' +
 						'<label for="boldform-setting-max-stars">' + escapeHtml( boldformLiteBuilder.labels.maxStars || 'Number of Stars' ) + '</label>' +
 						'<input type="number" id="boldform-setting-max-stars" value="' + escapeHtml( selected.field.max_stars || 5 ) + '" min="1" max="10" placeholder="5">' +
-					'</div>' +
-					'<div class="boldform-setting-row">' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-star-color">' + escapeHtml( boldformLiteBuilder.labels.starColor || 'Star Color' ) + '</label>' +
-							'<div class="bf-color-reset-wrap">' +
-								'<input type="color" id="boldform-setting-star-color" value="' + escapeHtml( selected.field.star_color || state.formSettings.button_background_color || '#f59e0b' ) + '">' +
-								'<button type="button" class="bf-color-reset" data-color-reset="star_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
-							'</div>' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-star-size">' + escapeHtml( boldformLiteBuilder.labels.starSize || 'Star Size (px)' ) + '</label>' +
-							'<input type="number" id="boldform-setting-star-size" value="' + escapeHtml( selected.field.star_size || '20' ) + '" min="16" max="60" placeholder="20">' +
-						'</div>' +
 					'</div>';
 			}
 
@@ -2174,7 +2161,7 @@ jQuery(
 							'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
 						'</div>' +
 					'</div>' +
-					( specialFieldTypes.indexOf( selected.field.type ) !== -1 ? '' :
+					( specialFieldTypes.indexOf( selected.field.type ) !== -1 || 'star_rating' === selected.field.type ? '' :
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder ) + '</label>' +
 							'<input type="text" id="boldform-setting-placeholder" value="' + escapeHtml( selected.field.placeholder ) + '">' +
@@ -3184,8 +3171,11 @@ jQuery(
 			return { sw: 'transparent', grad: 'linear-gradient(to right, transparent, transparent)', isDefault: false };
 		}
 		function bfSyncColorSwatch( $cf ) {
-			var vis = bfVisualFor( bfReadColorField( $cf ), $cf.attr( 'data-def-var' ) || '' );
+			var composed = bfReadColorField( $cf );
+			var vis = bfVisualFor( composed, $cf.attr( 'data-def-var' ) || '' );
 			$cf.css( '--bf-sw', vis.sw ).css( '--bf-agrad', vis.grad ).toggleClass( 'is-default', vis.isDefault );
+			// Reset has nothing to do until an explicit colour is set — disable it otherwise.
+			$cf.find( '.bf-adv-color-reset' ).prop( 'disabled', '' === composed );
 		}
 
 		function advColorFieldMarkup( hexClass, val, placeholder, defVar ) {
@@ -3199,7 +3189,7 @@ jQuery(
 							'<input type="color" class="bf-adv-colorpick" value="' + ( valid ? escapeHtml( parsed.hex ) : '#000000' ) + '">' +
 						'</div>' +
 						'<input type="text" class="bf-adv-input bf-adv-hex ' + hexClass + '" maxlength="7" placeholder="' + escapeHtml( placeholder || advLabel( 'inheritDefault' ) ) + '" value="' + escapeHtml( parsed.hex ) + '" spellcheck="false">' +
-						'<button type="button" class="bf-adv-color-reset" title="' + escapeHtml( advLabel( 'reset' ) ) + '" aria-label="' + escapeHtml( advLabel( 'reset' ) ) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>' +
+						'<button type="button" class="bf-adv-color-reset"' + ( valid ? '' : ' disabled' ) + ' title="' + escapeHtml( advLabel( 'reset' ) ) + '" aria-label="' + escapeHtml( advLabel( 'reset' ) ) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>' +
 					'</div>' +
 					'<div class="boldform-color-alpha">' +
 						'<input type="range" class="bf-adv-opacity" min="0" max="100" step="1" value="' + op + '" title="' + escapeHtml( advLabel( 'opacity' ) ) + '" aria-label="' + escapeHtml( advLabel( 'opacity' ) ) + '">' +
@@ -3254,7 +3244,7 @@ jQuery(
 			} ).join( '' );
 			function dimInp( idx, cap ) {
 				return '<div class="bf-adv-dim-cell">' +
-					'<input type="number" class="bf-adv-input bf-adv-dim" data-side="' + idx + '" placeholder="0" value="' + nums[ idx ] + '">' +
+					'<input type="number" class="bf-adv-input bf-adv-dim" data-side="' + idx + '" placeholder="—" value="' + nums[ idx ] + '">' +
 					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
 				'</div>';
 			}
@@ -3283,7 +3273,7 @@ jQuery(
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-border">' +
 					'<div class="bf-adv-bd-cell bf-adv-bd-cell--width">' +
-						'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bw" min="0" max="20" placeholder="0" value="' + ( isNaN( wn ) ? '' : wn ) + '"><span>px</span></div>' +
+						'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bw" min="0" max="20" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( wn ) ? '' : wn ) + '"><span>px</span></div>' +
 						'<span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'widthLabel' ) ) + '</span>' +
 					'</div>' +
 					'<div class="bf-adv-bd-cell bf-adv-bd-cell--style">' +
@@ -3317,10 +3307,10 @@ jQuery(
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-typo-grid">' +
 					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-ff">' + ffOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontFamily' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
 					'<div class="bf-adv-typo-cell"><select class="bf-adv-input bf-adv-fw">' + fwOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontWeight' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
 					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-tt">' + ttOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'textTransform' ) ) + '</span></div>' +
 				'</div>' +
 			'</div>';

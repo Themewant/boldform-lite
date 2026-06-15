@@ -99,7 +99,22 @@
 		);
 
 		if ( ! inserted ) {
-			container.appendChild( activeDrag.placeholder );
+			if ( ! items.length ) {
+				container.appendChild( activeDrag.placeholder );
+			} else {
+				// Pointer is past the last item: drop directly AFTER it rather
+				// than at the very end of the container. The rows container also
+				// holds trailing non-draggable siblings (the canvas Submit button
+				// and the "Add Row" button), and appending would place a row below
+				// them — which must never happen. The last item's nextSibling is
+				// those buttons (rows) or null (a column with no trailing element,
+				// where insertBefore(_, null) === appendChild, the prior behaviour).
+				var ref = items[ items.length - 1 ].nextSibling;
+
+				if ( ref !== activeDrag.placeholder ) {
+					container.insertBefore( activeDrag.placeholder, ref );
+				}
+			}
 		}
 	}
 
@@ -108,6 +123,115 @@
 		this.options = options || {};
 		this.bind();
 	}
+
+	// --- Auto-scroll while dragging -------------------------------------
+	// Native HTML5 drag-and-drop does NOT auto-scroll scrollable containers
+	// (and only inconsistently scrolls the window), so a drop target below the
+	// fold is unreachable — on small viewports this made it impossible to drop
+	// a row at the bottom of the canvas. While a drag is active we watch the
+	// pointer and, when it nears the top/bottom edge of the nearest scrollable
+	// ancestor (or the window), scroll continuously until it leaves the edge.
+	var SCROLL_EDGE = 60;  // px from an edge that triggers scrolling.
+	var SCROLL_SPEED = 14; // px scrolled per animation frame.
+	var scrollState = { frame: null, target: null, dir: 0 };
+
+	function isScrollable( el ) {
+		var overflowY;
+
+		if ( ! el || 1 !== el.nodeType ) {
+			return false;
+		}
+
+		overflowY = window.getComputedStyle( el ).overflowY;
+
+		return ( 'auto' === overflowY || 'scroll' === overflowY || 'overlay' === overflowY ) &&
+			el.scrollHeight > el.clientHeight;
+	}
+
+	function findScrollable( el ) {
+		while ( el && el !== document.body && el !== document.documentElement ) {
+			if ( isScrollable( el ) ) {
+				return el;
+			}
+
+			el = el.parentNode;
+		}
+
+		return null;
+	}
+
+	function stopAutoScroll() {
+		if ( scrollState.frame ) {
+			window.cancelAnimationFrame( scrollState.frame );
+		}
+
+		scrollState.frame = null;
+		scrollState.target = null;
+		scrollState.dir = 0;
+	}
+
+	function stepAutoScroll() {
+		scrollState.frame = null;
+
+		if ( ! activeDrag || ! scrollState.dir ) {
+			return;
+		}
+
+		if ( scrollState.target ) {
+			scrollState.target.scrollTop += scrollState.dir * SCROLL_SPEED;
+		} else {
+			window.scrollBy( 0, scrollState.dir * SCROLL_SPEED );
+		}
+
+		scrollState.frame = window.requestAnimationFrame( stepAutoScroll );
+	}
+
+	function updateAutoScroll( event ) {
+		var under;
+		var target;
+		var rect;
+		var top;
+		var bottom;
+		var dir = 0;
+
+		if ( ! activeDrag ) {
+			stopAutoScroll();
+			return;
+		}
+
+		under = document.elementFromPoint( event.clientX, event.clientY );
+		target = findScrollable( under );
+
+		if ( target ) {
+			rect = target.getBoundingClientRect();
+			top = rect.top;
+			bottom = rect.bottom;
+		} else {
+			top = 0;
+			bottom = window.innerHeight || document.documentElement.clientHeight;
+		}
+
+		if ( event.clientY < top + SCROLL_EDGE ) {
+			dir = -1;
+		} else if ( event.clientY > bottom - SCROLL_EDGE ) {
+			dir = 1;
+		}
+
+		scrollState.target = target;
+		scrollState.dir = dir;
+
+		if ( dir && ! scrollState.frame ) {
+			scrollState.frame = window.requestAnimationFrame( stepAutoScroll );
+		} else if ( ! dir ) {
+			stopAutoScroll();
+		}
+	}
+
+	// Registered once at module load (not per Sortable instance) so it drives
+	// auto-scroll for every sortable — rows, columns and the field library.
+	document.addEventListener( 'dragover', updateAutoScroll );
+	document.addEventListener( 'drop', stopAutoScroll );
+	document.addEventListener( 'dragend', stopAutoScroll );
 
 	Sortable.prototype.bind = function () {
 		var sortable = this;
