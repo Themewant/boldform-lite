@@ -17,11 +17,18 @@ require_once BOLDFORM_LITE_PATH . 'admin/ajax-save.php';
 class BoldForm_Lite_Admin {
 
 	/**
-	 * User-meta key flagging that the Pro waitlist notice has been dismissed.
+	 * User-meta key holding the list of admin-notice ids the user has dismissed.
 	 *
 	 * @var string
 	 */
-	const WAITLIST_DISMISSED_META = 'boldform_lite_waitlist_dismissed';
+	const DISMISSED_NOTICES_META = 'boldform_lite_dismissed_notices';
+
+	/**
+	 * Notice id for the BoldForm Pro waitlist banner.
+	 *
+	 * @var string
+	 */
+	const NOTICE_PRO_WAITLIST = 'pro_waitlist';
 
 	/**
 	 * Main plugin instance.
@@ -1317,222 +1324,67 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Outputs the dismissible "BoldForm Pro waitlist" admin notice.
 	 *
-	 * Shown on every admin screen to administrators who have not dismissed it. Custom
-	 * markup + scoped inline styles (the notice renders on all admin pages, not only
-	 * BoldForm screens where settings.css loads, so the styles travel with it). The
-	 * custom close button posts to ajax_dismiss_waitlist(), which records the dismissal
-	 * in user meta, so once closed it stays closed for that user — a JS-only hide would
-	 * reappear on the next page load.
+	 * Shown on every admin screen to administrators who have not dismissed it. A thin
+	 * consumer of the shared admin-notice layer: it outputs this notice's specific
+	 * markup with the generic `.boldform-admin-notice` chrome + a `data-notice-id`, and
+	 * relies on enqueue_admin_notice_assets() for styling and ajax_dismiss_notice() for
+	 * persistent, per-user dismissal (stored in user meta, so it stays closed).
+	 *
+	 * The notice is wired on two paths so it survives the foreign-notice purge on
+	 * BoldForm's own screens (global admin_notices hook for normal pages; re-added via
+	 * render_own_notices() after the purge). A render-once-per-request guard makes that
+	 * dual wiring safe regardless of how many paths invoke it — it can never print twice.
 	 *
 	 * @return void
 	 */
 	public function maybe_render_waitlist_notice() {
-		if ( ! current_user_can( 'manage_options' ) ) {
+		static $rendered = false;
+
+		if ( $rendered ) {
 			return;
 		}
 
-		if ( get_user_meta( get_current_user_id(), self::WAITLIST_DISMISSED_META, true ) ) {
+		if ( ! $this->should_show_waitlist_notice() ) {
 			return;
 		}
+
+		$rendered = true;
 
 		$waitlist_url = 'https://themewant.com/waitlist/';
 		$learn_url    = 'https://themewant.com/plugins/boldform/';
 		?>
-		<div class="notice boldform-waitlist-notice">
-			<style>
-				.boldform-waitlist-notice {
-					position: relative;
-					border: 1px solid #e6e9f4;
-					border-left: 1px solid #e6e9f4;
-					border-radius: 16px;
-					background: #fff;
-					padding: 0;
-					margin: 16px 20px 16px 0;
-					box-shadow: 0 10px 30px rgba(22, 33, 91, .07);
-					overflow: hidden;
-				}
-				.boldform-waitlist-notice__inner {
-					display: flex;
-					align-items: center;
-					justify-content: space-between;
-					gap: 24px;
-					padding: 34px 40px;
-				}
-				.boldform-waitlist-notice__content { flex: 1 1 auto; max-width: 600px; }
-				.boldform-waitlist-notice__badge {
-					display: inline-flex;
-					align-items: center;
-					gap: 8px;
-					background: #e9edfe;
-					color: #2c4bff;
-					font-size: 12px;
-					font-weight: 700;
-					letter-spacing: .09em;
-					text-transform: uppercase;
-					padding: 7px 14px;
-					border-radius: 999px;
-					line-height: 1;
-				}
-				.boldform-waitlist-notice__badge svg { width: 15px; height: 15px; }
-				.boldform-waitlist-notice .boldform-waitlist-notice__title {
-					margin: 18px 0 12px;
-					padding: 0;
-					font-size: 30px;
-					line-height: 1.15;
-					font-weight: 800;
-					color: #11161f;
-				}
-				.boldform-waitlist-notice .boldform-waitlist-notice__text {
-					margin: 0 0 24px;
-					padding: 0;
-					font-size: 15px;
-					line-height: 1.6;
-					color: #5a6479;
-					max-width: 540px;
-				}
-				.boldform-waitlist-notice__actions {
-					display: flex;
-					align-items: center;
-					gap: 14px 24px;
-					flex-wrap: wrap;
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:hover,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:focus,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:active,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:visited {
-					color: #fff;
-					text-decoration: none;
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn {
-					display: inline-flex;
-					align-items: center;
-					gap: 10px;
-					background: #2c4bff;
-					font-size: 15px;
-					font-weight: 600;
-					padding: 13px 26px;
-					border-radius: 11px;
-					box-shadow: 0 10px 20px rgba(44, 75, 255, .26);
-					transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:hover {
-					background: #1f3ae0;
-					transform: translateY(-1px);
-					box-shadow: 0 12px 24px rgba(44, 75, 255, .32);
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:focus {
-					background: #1f3ae0;
-					box-shadow: 0 12px 24px rgba(44, 75, 255, .32);
-					outline: 2px solid #1f3ae0;
-					outline-offset: 2px;
-				}
-				.boldform-waitlist-notice__btn svg { width: 18px; height: 18px; }
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:hover,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:active,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:visited {
-					color: #2c4bff;
-					text-decoration: none;
-					box-shadow: none;
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link {
-					display: inline-flex;
-					align-items: center;
-					gap: 8px;
-					font-size: 15px;
-					font-weight: 600;
-				}
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:hover,
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus { color: #1f3ae0; }
-				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus {
-					outline: 2px solid #2c4bff;
-					outline-offset: 3px;
-					border-radius: 4px;
-				}
-				.boldform-waitlist-notice__link svg { width: 16px; height: 16px; }
-				.boldform-waitlist-notice__close {
-					position: absolute;
-					top: 16px;
-					right: 16px;
-					display: inline-flex;
-					align-items: center;
-					justify-content: center;
-					width: 30px;
-					height: 30px;
-					padding: 0;
-					border: 0;
-					border-radius: 8px;
-					background: transparent;
-					color: #8a93a8;
-					cursor: pointer;
-					transition: background .15s ease, color .15s ease;
-				}
-				.boldform-waitlist-notice__close:hover { background: #f1f3fa; color: #11161f; }
-				.boldform-waitlist-notice__close svg { width: 18px; height: 18px; }
-				.boldform-waitlist-notice__art {
-					position: relative;
-					flex: 0 0 auto;
-					width: 360px;
-					max-width: 40%;
-				}
-				.boldform-waitlist-notice__art svg.boldform-waitlist-notice__illustration {
-					width: 100%;
-					height: auto;
-					display: block;
-				}
-				.boldform-waitlist-notice__logo {
-					position: absolute;
-					right: 8%;
-					bottom: 8%;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					width: 46px;
-					height: 46px;
-					border-radius: 13px;
-					background: #2c4bff;
-					box-shadow: 0 10px 20px rgba(44, 75, 255, .35);
-				}
-				.boldform-waitlist-notice__logo svg { width: 26px; height: 26px; }
-				@media screen and (max-width: 1100px) {
-					.boldform-waitlist-notice__art { display: none; }
-					.boldform-waitlist-notice__inner { padding: 28px; }
-					.boldform-waitlist-notice .boldform-waitlist-notice__title { font-size: 24px; }
-				}
-			</style>
+		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_WAITLIST ); ?>">
 
-			<button type="button" class="boldform-waitlist-notice__close" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
+			<button type="button" class="boldform-admin-notice__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
 			</button>
 
-			<div class="boldform-waitlist-notice__inner">
-				<div class="boldform-waitlist-notice__content">
-					<span class="boldform-waitlist-notice__badge">
+			<div class="boldform-admin-notice__inner">
+				<div class="boldform-admin-notice__content">
+					<span class="boldform-admin-notice__badge">
 						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3"/><path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3"/><circle cx="15" cy="9" r="1"/></svg>
 						<?php esc_html_e( 'Early Access', 'boldform-lite' ); ?>
 					</span>
 
-					<div class="boldform-waitlist-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
+					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-waitlist-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
 
-					<div class="boldform-waitlist-notice__actions">
-						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-waitlist-notice__btn" target="_blank" rel="noopener noreferrer">
+					<div class="boldform-admin-notice__actions">
+						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
 							<?php esc_html_e( 'Join the Waitlist', 'boldform-lite' ); ?>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
 						</a>
-						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-waitlist-notice__link" target="_blank" rel="noopener noreferrer">
+						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-admin-notice__link" target="_blank" rel="noopener noreferrer">
 							<?php esc_html_e( 'Learn More', 'boldform-lite' ); ?>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
 						</a>
 					</div>
 				</div>
 
-				<div class="boldform-waitlist-notice__art" aria-hidden="true">
-					<svg class="boldform-waitlist-notice__illustration" viewBox="0 0 360 250" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+				<div class="boldform-admin-notice__art" aria-hidden="true">
+					<svg class="boldform-admin-notice__illustration" viewBox="0 0 360 250" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
 						<circle cx="150" cy="92" r="72" fill="#eaeefe"/>
 						<circle cx="252" cy="150" r="82" fill="#eff2fe"/>
 						<circle cx="120" cy="172" r="56" fill="#eff2fe"/>
@@ -1568,40 +1420,112 @@ class BoldForm_Lite_Admin {
 						<path d="M318 52l1.5 5.1 4.9 1.3-4.9 1.3-1.5 5.1-1.5-5.1-4.9-1.3 4.9-1.3z" fill="#2c4bff" opacity=".55"/>
 						<path d="M330 146l1.7 5.7 5.5 1.5-5.5 1.5-1.7 5.7-1.7-5.7-5.5-1.5 5.5-1.5z" fill="#2c4bff" opacity=".7"/>
 					</svg>
-					<span class="boldform-waitlist-notice__logo"><?php boldform_lite_brand_icon( array( 'class' => '', 'size' => 26, 'fill' => '#ffffff' ) ); ?></span>
+					<span class="boldform-admin-notice__logo"><?php boldform_lite_brand_icon( array( 'class' => '', 'size' => 26, 'fill' => '#ffffff' ) ); ?></span>
 				</div>
 			</div>
 		</div>
-		<script>
-			( function( $ ) {
-				$( document ).on( 'click', '.boldform-waitlist-notice__close', function() {
-					var $notice = $( this ).closest( '.boldform-waitlist-notice' );
-					$.post( window.ajaxurl, {
-						action: 'boldform_lite_dismiss_waitlist',
-						nonce: <?php echo wp_json_encode( wp_create_nonce( 'boldform_lite_dismiss_waitlist' ) ); ?>
-					} );
-					$notice.fadeOut( 150, function() { $( this ).remove(); } );
-				} );
-			} )( jQuery );
-		</script>
 		<?php
 	}
 
 	/**
-	 * Persists the current user's dismissal of the Pro waitlist notice.
+	 * Persists the current user's dismissal of an admin notice.
+	 *
+	 * Generic: any notice that renders the shared markup (a `.boldform-admin-notice`
+	 * with a `data-notice-id` and a `.boldform-admin-notice__dismiss` button) posts
+	 * its id here, and it is appended to the per-user dismissed-notices list.
 	 *
 	 * @return void
 	 */
-	public function ajax_dismiss_waitlist() {
-		check_ajax_referer( 'boldform_lite_dismiss_waitlist', 'nonce' );
+	public function ajax_dismiss_notice() {
+		check_ajax_referer( 'boldform_lite_dismiss_notice', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_send_json_error( '', 403 );
 		}
 
-		update_user_meta( get_current_user_id(), self::WAITLIST_DISMISSED_META, 1 );
+		$notice_id = isset( $_POST['notice_id'] ) ? sanitize_key( wp_unslash( $_POST['notice_id'] ) ) : '';
+
+		if ( '' === $notice_id ) {
+			wp_send_json_error( '', 400 );
+		}
+
+		$user_id   = get_current_user_id();
+		$dismissed = get_user_meta( $user_id, self::DISMISSED_NOTICES_META, true );
+		$dismissed = is_array( $dismissed ) ? $dismissed : array();
+
+		if ( ! in_array( $notice_id, $dismissed, true ) ) {
+			$dismissed[] = $notice_id;
+			update_user_meta( $user_id, self::DISMISSED_NOTICES_META, $dismissed );
+		}
 
 		wp_send_json_success();
+	}
+
+	/**
+	 * Whether the current user has dismissed a given admin notice.
+	 *
+	 * @param string $notice_id Notice identifier.
+	 * @return bool
+	 */
+	private function is_notice_dismissed( $notice_id ) {
+		$dismissed = get_user_meta( get_current_user_id(), self::DISMISSED_NOTICES_META, true );
+
+		return is_array( $dismissed ) && in_array( $notice_id, $dismissed, true );
+	}
+
+	/**
+	 * Whether the Pro waitlist notice should be shown to the current user.
+	 *
+	 * Single source of truth for both the asset enqueue and the markup render, so
+	 * the stylesheet/script only load when the notice will actually appear.
+	 *
+	 * @return bool
+	 */
+	private function should_show_waitlist_notice() {
+		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_WAITLIST );
+	}
+
+	/**
+	 * Enqueues the shared admin-notice assets on every admin screen.
+	 *
+	 * BoldForm admin notices are global (not limited to BoldForm screens, where
+	 * settings.css loads), so the shared stylesheet + dismiss script are enqueued
+	 * here — only when a notice will actually appear, so nothing loads once every
+	 * notice has been dismissed.
+	 *
+	 * @return void
+	 */
+	public function enqueue_admin_notice_assets() {
+		// Load only when at least one BoldForm admin notice will render. Extend this
+		// condition (|| $this->should_show_x_notice()) as more notices are added.
+		if ( ! $this->should_show_waitlist_notice() ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'boldform-lite-admin-notice',
+			BOLDFORM_LITE_URL . 'assets/css/admin-notice.css',
+			array(),
+			BOLDFORM_LITE_VERSION
+		);
+
+		wp_enqueue_script(
+			'boldform-lite-admin-notice',
+			BOLDFORM_LITE_URL . 'assets/js/admin-notice.js',
+			array( 'jquery' ),
+			BOLDFORM_LITE_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'boldform-lite-admin-notice',
+			'boldformAdminNotice',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'action'  => 'boldform_lite_dismiss_notice',
+				'nonce'   => wp_create_nonce( 'boldform_lite_dismiss_notice' ),
+			)
+		);
 	}
 
 	/**
