@@ -2041,12 +2041,12 @@ class BoldForm_Lite_Admin {
 				<table class="widefat fixed striped boldform-entries-table">
 					<thead>
 						<tr>
-							<th style="width:50px;">&nbsp;</th>
+							<th style="width:40px;">&nbsp;</th>
 							<th style="width:60px;"><?php esc_html_e( 'ID', 'boldform-lite' ); ?></th>
-							<th><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
-							<th style="width:100px;"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
-							<th style="width:150px;"><?php esc_html_e( 'Date', 'boldform-lite' ); ?></th>
-							<th style="width:80px;"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
+							<th style="width:48%;"><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
+							<th style="width:12%;"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
+							<th style="width:18%;"><?php esc_html_e( 'Date', 'boldform-lite' ); ?></th>
+							<th style="width:12%;"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
