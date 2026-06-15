@@ -545,15 +545,12 @@ class BoldForm_Lite_Admin {
 		);
 
 		if ( in_array( $hook_suffix, $all_pages, true ) ) {
-			// The builder is a full-screen app UI: foreign admin notices break its layout,
-			// so suppress them there only. The other BoldForm pages are standard wp-admin
-			// screens — leave third-party notices intact on those. BoldForm's own notices
-			// render on every BoldForm page either way.
-			if ( $this->builder_page_hook === $hook_suffix ) {
-				remove_all_actions( 'admin_notices' );
-				remove_all_actions( 'all_admin_notices' );
-			}
-			add_action( 'admin_notices', array( $this, 'render_own_notices' ) );
+			// BoldForm screens show only BoldForm's own notices. Foreign plugins/themes
+			// register their notices as late as admin_head (e.g. MetForm) — after this
+			// admin_enqueue_scripts pass — so defer the purge to in_admin_header, the last
+			// hook before the notice actions fire, to catch them all. Re-add ours there so
+			// it survives the purge. Stripping server-side means no flash before load.
+			add_action( 'in_admin_header', array( $this, 'suppress_foreign_notices' ), 1000 );
 		}
 
 		if ( $this->builder_page_hook === $hook_suffix ) {
@@ -1274,6 +1271,23 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
+	}
+
+	/**
+	 * Strips third-party admin notices on BoldForm screens so only BoldForm's own show.
+	 *
+	 * Hooked to in_admin_header (priority 1000) for BoldForm pages: it runs after every
+	 * plugin/theme has registered its notices — including those added as late as
+	 * admin_head — and immediately before the notice actions fire, then re-registers
+	 * BoldForm's own notice so it survives the purge.
+	 *
+	 * @return void
+	 */
+	public function suppress_foreign_notices() {
+		remove_all_actions( 'admin_notices' );
+		remove_all_actions( 'all_admin_notices' );
+		remove_all_actions( 'user_admin_notices' );
+		add_action( 'admin_notices', array( $this, 'render_own_notices' ) );
 	}
 
 	/**

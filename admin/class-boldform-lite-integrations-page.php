@@ -103,9 +103,18 @@ class BoldForm_Lite_Integrations_Page {
 			return;
 		}
 
-		// Remove third-party admin notices.
-		remove_all_actions( 'admin_notices' );
-		remove_all_actions( 'all_admin_notices' );
+		// Strip third-party admin notices so only BoldForm's own show. Defer to
+		// in_admin_header (the last hook before notices render) because some plugins
+		// register their notices as late as admin_head — after this enqueue pass.
+		add_action(
+			'in_admin_header',
+			static function () {
+				remove_all_actions( 'admin_notices' );
+				remove_all_actions( 'all_admin_notices' );
+				remove_all_actions( 'user_admin_notices' );
+			},
+			1000
+		);
 
 		wp_enqueue_style(
 			'boldform-lite-admin',
