@@ -34,6 +34,23 @@
 	padding-bottom: 40px;
 }
 
+/* When the Pro notice is shown above the setup screen, drop its negative TOP margin so
+   the notice keeps its bottom gap and the screen starts below it (sides still bleed).
+   With no notice the rule above is untouched, so the setup screen bleeds to the top as
+   before — both states stay correct. */
+.boldform-admin-notice + .boldform-setup-screen {
+	margin-top: 0;
+}
+
+/* Collapse the notice-relocation marker on the builder too (mirrors admin-notice.css and
+   integrations-page.css) so the marker adds no space whether or not the notice shows. */
+.wp-header-end {
+	margin: 0;
+	border: 0;
+	height: 0;
+	visibility: hidden;
+}
+
 .boldform-setup-header {
 	display: flex;
 	align-items: center;

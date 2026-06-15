@@ -26,6 +26,19 @@ define( 'BOLDFORM_LITE_FILE', __FILE__ );
 define( 'BOLDFORM_LITE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'BOLDFORM_LITE_URL', plugin_dir_url( __FILE__ ) );
 
+/**
+ * Appsero project hash for opt-in usage telemetry.
+ *
+ * This is the public application identifier for the plugin's Appsero project — it
+ * is not a secret. Telemetry is still strictly opt-in: Appsero's Insights module
+ * collects nothing until the site administrator consents via the admin notice it
+ * displays, and a site can disable it entirely by defining this constant as an
+ * empty string in wp-config.php (or via the 'boldform_lite_appsero_hash' filter).
+ */
+if ( ! defined( 'BOLDFORM_LITE_APPSERO_HASH' ) ) {
+	define( 'BOLDFORM_LITE_APPSERO_HASH', '34841725-f5f2-4b3a-ade1-864bcbd22b07' );
+}
+
 require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-activator.php';
 require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-loader.php';
 require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite.php';
@@ -158,3 +171,45 @@ function boldform_lite_get_brand_icon( $args = array() ) {
 function boldform_lite_brand_icon( $args = array() ) {
 	echo boldform_lite_get_brand_icon( $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static SVG markup; all dynamic attributes escaped in the getter.
 }
+
+/**
+ * Boots the Appsero client for opt-in usage telemetry.
+ *
+ * Appsero's Insights module is strictly opt-in: it gathers nothing until the site
+ * administrator agrees via the admin notice it displays. The client is only created
+ * when a project hash is configured (constant or filter), so telemetry stays
+ * completely dormant otherwise. Runs at plugin-file load so Appsero can register its
+ * own activation/deactivation tracking hooks.
+ *
+ * @return void
+ */
+function boldform_lite_appsero() {
+	/**
+	 * Filters the Appsero project hash used for opt-in telemetry.
+	 *
+	 * @param string $hash The Appsero application hash. Empty disables the client.
+	 */
+	$hash = apply_filters( 'boldform_lite_appsero_hash', BOLDFORM_LITE_APPSERO_HASH );
+
+	if ( empty( $hash ) ) {
+		return;
+	}
+
+	if ( ! class_exists( 'Appsero\Client' ) ) {
+		$sdk = BOLDFORM_LITE_PATH . 'appsero/src/Client.php';
+
+		if ( ! is_readable( $sdk ) ) {
+			return;
+		}
+
+		require_once $sdk;
+	}
+
+	$client = new Appsero\Client( $hash, 'BoldForm – Drag &amp; Drop Form Builder', BOLDFORM_LITE_FILE );
+
+	// Opt-in usage telemetry only — Appsero shows the consent notice and collects
+	// nothing until the administrator allows it.
+	$client->insights()->init();
+}
+
+boldform_lite_appsero();

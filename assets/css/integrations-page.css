@@ -5,7 +5,9 @@
 .boldform-int-page {
 	max-width: 100%;
 	margin: 0;
-	padding: 0 20px 32px;
+	/* 20px top padding matches .wrap on every other BoldForm screen so the notice (or,
+	   when dismissed, the header) sits the same distance below the topbar everywhere. */
+	padding: 20px 20px 32px;
 }
 
 .boldform-int-page .wp-header-end {
@@ -14,7 +16,9 @@
 
 /* ── Header ──────────────────────────────────────────────────────────────── */
 .boldform-int-header {
-	padding: 20px 0 14px;
+	/* Top padding now lives on .boldform-int-page (above); keeping it here too would
+	   double the top gap. Bottom spacing unchanged. */
+	padding: 0 0 14px;
 	margin-bottom: 14px;
 }
 
