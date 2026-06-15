@@ -17,6 +17,13 @@ require_once BOLDFORM_LITE_PATH . 'admin/ajax-save.php';
 class BoldForm_Lite_Admin {
 
 	/**
+	 * User-meta key flagging that the Pro waitlist notice has been dismissed.
+	 *
+	 * @var string
+	 */
+	const WAITLIST_DISMISSED_META = 'boldform_lite_waitlist_dismissed';
+
+	/**
 	 * Main plugin instance.
 	 *
 	 * @var BoldForm_Lite
@@ -1293,10 +1300,308 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders only BoldForm admin notices.
 	 *
+	 * Also re-emits the Pro waitlist notice here: on BoldForm screens the global
+	 * admin_notices hook is purged (suppress_foreign_notices), so without this the
+	 * notice would show everywhere EXCEPT BoldForm's own pages. render_own_notices()
+	 * is the one callback re-added after the purge, so routing it through here keeps
+	 * the notice visible on BoldForm screens too. It is only ever printed once per
+	 * page load because the purged global callback never runs on these screens.
+	 *
 	 * @return void
 	 */
 	public function render_own_notices() {
 		settings_errors( 'boldform_lite_settings' );
+		$this->maybe_render_waitlist_notice();
+	}
+
+	/**
+	 * Outputs the dismissible "BoldForm Pro waitlist" admin notice.
+	 *
+	 * Shown on every admin screen to administrators who have not dismissed it. Custom
+	 * markup + scoped inline styles (the notice renders on all admin pages, not only
+	 * BoldForm screens where settings.css loads, so the styles travel with it). The
+	 * custom close button posts to ajax_dismiss_waitlist(), which records the dismissal
+	 * in user meta, so once closed it stays closed for that user — a JS-only hide would
+	 * reappear on the next page load.
+	 *
+	 * @return void
+	 */
+	public function maybe_render_waitlist_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		if ( get_user_meta( get_current_user_id(), self::WAITLIST_DISMISSED_META, true ) ) {
+			return;
+		}
+
+		$waitlist_url = 'https://themewant.com/waitlist/';
+		$learn_url    = 'https://themewant.com/plugins/boldform/';
+		?>
+		<div class="notice boldform-waitlist-notice">
+			<style>
+				.boldform-waitlist-notice {
+					position: relative;
+					border: 1px solid #e6e9f4;
+					border-left: 1px solid #e6e9f4;
+					border-radius: 16px;
+					background: #fff;
+					padding: 0;
+					margin: 16px 20px 16px 0;
+					box-shadow: 0 10px 30px rgba(22, 33, 91, .07);
+					overflow: hidden;
+				}
+				.boldform-waitlist-notice__inner {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					gap: 24px;
+					padding: 34px 40px;
+				}
+				.boldform-waitlist-notice__content { flex: 1 1 auto; max-width: 600px; }
+				.boldform-waitlist-notice__badge {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					background: #e9edfe;
+					color: #2c4bff;
+					font-size: 12px;
+					font-weight: 700;
+					letter-spacing: .09em;
+					text-transform: uppercase;
+					padding: 7px 14px;
+					border-radius: 999px;
+					line-height: 1;
+				}
+				.boldform-waitlist-notice__badge svg { width: 15px; height: 15px; }
+				.boldform-waitlist-notice .boldform-waitlist-notice__title {
+					margin: 18px 0 12px;
+					padding: 0;
+					font-size: 30px;
+					line-height: 1.15;
+					font-weight: 800;
+					color: #11161f;
+				}
+				.boldform-waitlist-notice .boldform-waitlist-notice__text {
+					margin: 0 0 24px;
+					padding: 0;
+					font-size: 15px;
+					line-height: 1.6;
+					color: #5a6479;
+					max-width: 540px;
+				}
+				.boldform-waitlist-notice__actions {
+					display: flex;
+					align-items: center;
+					gap: 14px 24px;
+					flex-wrap: wrap;
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:hover,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:focus,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:active,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:visited {
+					color: #fff;
+					text-decoration: none;
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn {
+					display: inline-flex;
+					align-items: center;
+					gap: 10px;
+					background: #2c4bff;
+					font-size: 15px;
+					font-weight: 600;
+					padding: 13px 26px;
+					border-radius: 11px;
+					box-shadow: 0 10px 20px rgba(44, 75, 255, .26);
+					transition: background .15s ease, transform .15s ease, box-shadow .15s ease;
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:hover {
+					background: #1f3ae0;
+					transform: translateY(-1px);
+					box-shadow: 0 12px 24px rgba(44, 75, 255, .32);
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__btn:focus {
+					background: #1f3ae0;
+					box-shadow: 0 12px 24px rgba(44, 75, 255, .32);
+					outline: 2px solid #1f3ae0;
+					outline-offset: 2px;
+				}
+				.boldform-waitlist-notice__btn svg { width: 18px; height: 18px; }
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:hover,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:active,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:visited {
+					color: #2c4bff;
+					text-decoration: none;
+					box-shadow: none;
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link {
+					display: inline-flex;
+					align-items: center;
+					gap: 8px;
+					font-size: 15px;
+					font-weight: 600;
+				}
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:hover,
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus { color: #1f3ae0; }
+				.boldform-waitlist-notice a.boldform-waitlist-notice__link:focus {
+					outline: 2px solid #2c4bff;
+					outline-offset: 3px;
+					border-radius: 4px;
+				}
+				.boldform-waitlist-notice__link svg { width: 16px; height: 16px; }
+				.boldform-waitlist-notice__close {
+					position: absolute;
+					top: 16px;
+					right: 16px;
+					display: inline-flex;
+					align-items: center;
+					justify-content: center;
+					width: 30px;
+					height: 30px;
+					padding: 0;
+					border: 0;
+					border-radius: 8px;
+					background: transparent;
+					color: #8a93a8;
+					cursor: pointer;
+					transition: background .15s ease, color .15s ease;
+				}
+				.boldform-waitlist-notice__close:hover { background: #f1f3fa; color: #11161f; }
+				.boldform-waitlist-notice__close svg { width: 18px; height: 18px; }
+				.boldform-waitlist-notice__art {
+					position: relative;
+					flex: 0 0 auto;
+					width: 360px;
+					max-width: 40%;
+				}
+				.boldform-waitlist-notice__art svg.boldform-waitlist-notice__illustration {
+					width: 100%;
+					height: auto;
+					display: block;
+				}
+				.boldform-waitlist-notice__logo {
+					position: absolute;
+					right: 8%;
+					bottom: 8%;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					width: 46px;
+					height: 46px;
+					border-radius: 13px;
+					background: #2c4bff;
+					box-shadow: 0 10px 20px rgba(44, 75, 255, .35);
+				}
+				.boldform-waitlist-notice__logo svg { width: 26px; height: 26px; }
+				@media screen and (max-width: 1100px) {
+					.boldform-waitlist-notice__art { display: none; }
+					.boldform-waitlist-notice__inner { padding: 28px; }
+					.boldform-waitlist-notice .boldform-waitlist-notice__title { font-size: 24px; }
+				}
+			</style>
+
+			<button type="button" class="boldform-waitlist-notice__close" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
+			</button>
+
+			<div class="boldform-waitlist-notice__inner">
+				<div class="boldform-waitlist-notice__content">
+					<span class="boldform-waitlist-notice__badge">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3"/><path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3"/><circle cx="15" cy="9" r="1"/></svg>
+						<?php esc_html_e( 'Early Access', 'boldform-lite' ); ?>
+					</span>
+
+					<div class="boldform-waitlist-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
+
+					<p class="boldform-waitlist-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
+
+					<div class="boldform-waitlist-notice__actions">
+						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-waitlist-notice__btn" target="_blank" rel="noopener noreferrer">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+							<?php esc_html_e( 'Join the Waitlist', 'boldform-lite' ); ?>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+						</a>
+						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-waitlist-notice__link" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'Learn More', 'boldform-lite' ); ?>
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+						</a>
+					</div>
+				</div>
+
+				<div class="boldform-waitlist-notice__art" aria-hidden="true">
+					<svg class="boldform-waitlist-notice__illustration" viewBox="0 0 360 250" fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
+						<circle cx="150" cy="92" r="72" fill="#eaeefe"/>
+						<circle cx="252" cy="150" r="82" fill="#eff2fe"/>
+						<circle cx="120" cy="172" r="56" fill="#eff2fe"/>
+						<defs>
+							<clipPath id="bfwWindowClip"><rect x="70" y="45" width="240" height="160" rx="14"/></clipPath>
+						</defs>
+						<g clip-path="url(#bfwWindowClip)">
+							<rect x="70" y="45" width="240" height="160" fill="#ffffff"/>
+							<rect x="70" y="45" width="240" height="26" fill="#2c4bff"/>
+							<circle cx="84" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<circle cx="94" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<circle cx="104" cy="58" r="2.6" fill="#ffffff" opacity=".85"/>
+							<g>
+								<circle cx="90" cy="92" r="6" fill="#d9def0"/><rect x="102" y="89" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="116" r="6" fill="#d9def0"/><rect x="102" y="113" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="140" r="6" fill="#d9def0"/><rect x="102" y="137" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="164" r="6" fill="#d9def0"/><rect x="102" y="161" width="34" height="6" rx="3" fill="#e7ebf6"/>
+								<circle cx="90" cy="188" r="6" fill="#d9def0"/><rect x="102" y="185" width="34" height="6" rx="3" fill="#e7ebf6"/>
+							</g>
+							<rect x="150" y="82" width="70" height="116" rx="10" fill="#fbfcff" stroke="#b9c2dd" stroke-width="2" stroke-dasharray="6 6"/>
+							<rect x="166" y="121" width="38" height="36" rx="9" fill="#ffffff" stroke="#e4e8f4" stroke-width="2"/>
+							<text x="185" y="145" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#2c4bff" text-anchor="middle">T</text>
+							<rect x="232" y="92" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="104" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+							<rect x="232" y="132" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="144" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+							<rect x="232" y="172" width="58" height="7" rx="3.5" fill="#e7ebf6"/>
+							<rect x="232" y="184" width="64" height="13" rx="4" fill="#f3f5fc" stroke="#e7ebf6" stroke-width="1.5"/>
+						</g>
+						<rect x="70" y="45" width="240" height="160" rx="14" stroke="#e4e8f4" stroke-width="2"/>
+						<path d="M196 147v18l4.4-4.4 2.8 5.6 2.7-1.3-2.8-5.5h6z" fill="#2b3040" stroke="#ffffff" stroke-width="1.4" stroke-linejoin="round"/>
+						<path d="M52 60l1.9 6.4L60 68l-6.1 1.6L52 76l-1.9-6.4L44 68l6.1-1.6z" fill="#2c4bff" opacity=".9"/>
+						<path d="M318 52l1.5 5.1 4.9 1.3-4.9 1.3-1.5 5.1-1.5-5.1-4.9-1.3 4.9-1.3z" fill="#2c4bff" opacity=".55"/>
+						<path d="M330 146l1.7 5.7 5.5 1.5-5.5 1.5-1.7 5.7-1.7-5.7-5.5-1.5 5.5-1.5z" fill="#2c4bff" opacity=".7"/>
+					</svg>
+					<span class="boldform-waitlist-notice__logo"><?php boldform_lite_brand_icon( array( 'class' => '', 'size' => 26, 'fill' => '#ffffff' ) ); ?></span>
+				</div>
+			</div>
+		</div>
+		<script>
+			( function( $ ) {
+				$( document ).on( 'click', '.boldform-waitlist-notice__close', function() {
+					var $notice = $( this ).closest( '.boldform-waitlist-notice' );
+					$.post( window.ajaxurl, {
+						action: 'boldform_lite_dismiss_waitlist',
+						nonce: <?php echo wp_json_encode( wp_create_nonce( 'boldform_lite_dismiss_waitlist' ) ); ?>
+					} );
+					$notice.fadeOut( 150, function() { $( this ).remove(); } );
+				} );
+			} )( jQuery );
+		</script>
+		<?php
+	}
+
+	/**
+	 * Persists the current user's dismissal of the Pro waitlist notice.
+	 *
+	 * @return void
+	 */
+	public function ajax_dismiss_waitlist() {
+		check_ajax_referer( 'boldform_lite_dismiss_waitlist', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( '', 403 );
+		}
+
+		update_user_meta( get_current_user_id(), self::WAITLIST_DISMISSED_META, 1 );
+
+		wp_send_json_success();
 	}
 
 	/**
