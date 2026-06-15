@@ -35,7 +35,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 			</a>
 			<div class="boldform-setup-header__brand">
 				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-				<span><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
+				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 			</div>
 		</div>
 		<div class="boldform-setup-body">
