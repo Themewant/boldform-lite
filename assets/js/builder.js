@@ -3241,7 +3241,7 @@ jQuery(
 			} ).join( '' );
 			function dimInp( idx, cap ) {
 				return '<div class="bf-adv-dim-cell">' +
-					'<input type="number" class="bf-adv-input bf-adv-dim" data-side="' + idx + '" placeholder="0" value="' + nums[ idx ] + '">' +
+					'<input type="number" class="bf-adv-input bf-adv-dim" data-side="' + idx + '" placeholder="—" value="' + nums[ idx ] + '">' +
 					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
 				'</div>';
 			}
@@ -3270,7 +3270,7 @@ jQuery(
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-border">' +
 					'<div class="bf-adv-bd-cell bf-adv-bd-cell--width">' +
-						'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bw" min="0" max="20" placeholder="0" value="' + ( isNaN( wn ) ? '' : wn ) + '"><span>px</span></div>' +
+						'<div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-bw" min="0" max="20" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( wn ) ? '' : wn ) + '"><span>px</span></div>' +
 						'<span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'widthLabel' ) ) + '</span>' +
 					'</div>' +
 					'<div class="bf-adv-bd-cell bf-adv-bd-cell--style">' +
@@ -3304,10 +3304,10 @@ jQuery(
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-typo-grid">' +
 					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-ff">' + ffOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontFamily' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-fs" min="8" max="80" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( fsNum ) ? '' : fsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontSize' ) ) + '</span></div>' +
 					'<div class="bf-adv-typo-cell"><select class="bf-adv-input bf-adv-fw">' + fwOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'fontWeight' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
-					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-lh" min="0" max="100" step="1" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( lh === '' ? '' : parseFloat( lh ) ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'lineHeight' ) ) + '</span></div>' +
+					'<div class="bf-adv-typo-cell"><div class="boldform-style-input-wrap"><input type="number" class="bf-adv-input bf-adv-ls" min="-5" max="20" step="0.1" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + ( isNaN( lsNum ) ? '' : lsNum ) + '"><span>px</span></div><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'letterSpacing' ) ) + '</span></div>' +
 					'<div class="bf-adv-typo-cell bf-adv-typo-cell--full"><select class="bf-adv-input bf-adv-tt">' + ttOpts + '</select><span class="bf-adv-dim-cap">' + escapeHtml( advLabel( 'textTransform' ) ) + '</span></div>' +
 				'</div>' +
 			'</div>';
