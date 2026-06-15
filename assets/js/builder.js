@@ -2048,19 +2048,6 @@ jQuery(
 					'<div class="boldform-setting-group">' +
 						'<label for="boldform-setting-max-stars">' + escapeHtml( boldformLiteBuilder.labels.maxStars || 'Number of Stars' ) + '</label>' +
 						'<input type="number" id="boldform-setting-max-stars" value="' + escapeHtml( selected.field.max_stars || 5 ) + '" min="1" max="10" placeholder="5">' +
-					'</div>' +
-					'<div class="boldform-setting-row">' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-star-color">' + escapeHtml( boldformLiteBuilder.labels.starColor || 'Star Color' ) + '</label>' +
-							'<div class="bf-color-reset-wrap">' +
-								'<input type="color" id="boldform-setting-star-color" value="' + escapeHtml( selected.field.star_color || state.formSettings.button_background_color || '#f59e0b' ) + '">' +
-								'<button type="button" class="bf-color-reset" data-color-reset="star_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to theme color' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
-							'</div>' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-star-size">' + escapeHtml( boldformLiteBuilder.labels.starSize || 'Star Size (px)' ) + '</label>' +
-							'<input type="number" id="boldform-setting-star-size" value="' + escapeHtml( selected.field.star_size || '20' ) + '" min="16" max="60" placeholder="20">' +
-						'</div>' +
 					'</div>';
 			}
 
@@ -2174,7 +2161,7 @@ jQuery(
 							'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
 						'</div>' +
 					'</div>' +
-					( specialFieldTypes.indexOf( selected.field.type ) !== -1 ? '' :
+					( specialFieldTypes.indexOf( selected.field.type ) !== -1 || 'star_rating' === selected.field.type ? '' :
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder ) + '</label>' +
 							'<input type="text" id="boldform-setting-placeholder" value="' + escapeHtml( selected.field.placeholder ) + '">' +
