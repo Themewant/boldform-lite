@@ -1,10 +1,10 @@
-=== BoldForm – Drag & Drop Form Builder ===
+=== BoldForm Lite ===
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
-Requires at least: 6.0
-Tested up to: 6.9
+Requires at least: 6.3
+Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,8 @@ Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg b
 **BoldForm Lite** is a powerful yet lightweight form builder for WordPress. Build any kind of form using a visual drag-and-drop editor, embed it anywhere with a shortcode, Gutenberg block, or Elementor widget, and manage every submission right inside your WordPress dashboard.
 
 Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
+
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant)
 
 ---
 
@@ -62,35 +64,40 @@ Tables are created automatically for each new subsite when the plugin is network
 * Email
 * Number
 * Textarea
-* Password
-* Hidden
+* Phone
+* URL
+* Numeric
 
 **Choice Fields**
 * Select (single or multi-select with custom dropdown)
+* Multi Select
 * Checkbox
 * Radio Button
+* Country
 
 **Date & Time**
 * Date picker (powered by Flatpickr)
-* Date Range picker
 * Time picker
+
+**Rating & Range**
+* Star Rating
+* Slider / Range
+
+**Input Helpers**
+* Input Mask (formatted text input)
 
 **Layout & Content**
 * Section Break (multi-step divider)
 * Paragraph / Static Text
-* HTML Block
+* HTML Editor
 * Terms & Conditions
 
 **File & Media**
 * File Upload (configurable max size, stored in WordPress uploads)
 
 **Address & Identity**
-* Name (structured first/last name)
+* Name (structured first / middle / last name)
 * Address (structured address field)
-
-**Survey & Feedback**
-* NPS (Net Promoter Score)
-* Matrix (grid questions)
 
 ---
 
@@ -233,11 +240,14 @@ Yes, BoldForm Pro is currently in development. It will add payments (Stripe, Pay
 
 == Screenshots ==
 
-1. Drag-and-drop form builder
-2. Frontend form display
-3. Entries management page
-4. Settings and integrations panel
-5. Elementor widget controls
+1. Add New Form
+2. Drag & Drop Builder
+3. Form Preview
+4. Form Confirmation Settings
+5. Form Global Settings
+6. Form Analytics
+7. Form Integration
+8. Form View On Page
 
 ---
 
@@ -247,11 +257,12 @@ All JavaScript and CSS assets are bundled locally within the plugin directory. N
 
 **Bundled third-party libraries:**
 
-* **SortableJS** (`assets/js/sortable.js`) — MIT License — https://github.com/SortableJS/Sortable
-  Local copy used for drag-and-drop field ordering in the builder. Not fetched from any CDN.
-
 * **Flatpickr** (`assets/js/flatpickr.min.js`, `assets/css/flatpickr.min.css`) — MIT License — https://github.com/flatpickr/flatpickr
   Local copy used for the date and time picker fields. Not fetched from any CDN.
+
+**First-party scripts:**
+
+* `assets/js/sortable.js` — a small first-party drag-and-drop helper written for this plugin (used for field ordering in the builder). It is original BoldForm code, not the third-party SortableJS library, and is GPL-licensed with the rest of the plugin.
 
 The submissions chart on the Reports page is rendered using the browser's native HTML5 Canvas API. No external charting library is loaded.
 
@@ -311,7 +322,99 @@ Adds contacts to a Brevo list on form submission.
 
 ---
 
+== Privacy ==
+
+When a visitor submits a form, BoldForm Lite stores the submission in your site's own database (no data is sent anywhere unless you have configured one of the external services listed above). Each stored entry includes:
+
+* The values the visitor entered in the form fields (which may include personal data such as name, email address, phone number, address, and any uploaded files).
+* The submitter's IP address and browser user-agent string, recorded for spam-prevention and auditing.
+* The logged-in user ID, when the form is submitted by a logged-in user.
+
+Entries are retained until you delete them. You can remove individual entries (or all of them) from **BoldForm > Entries** at any time. If you enable "Remove all data on uninstall" in the settings, all stored forms and entries are deleted when the plugin is uninstalled.
+
+BoldForm Lite integrates with WordPress's built-in privacy tools: under **Tools > Export Personal Data** and **Tools > Erase Personal Data**, an administrator can export or erase the form entries associated with a given email address to help fulfil data-subject requests.
+
+---
+
 == Changelog ==
+
+= 1.1.0 =
+New features:
+* New: Dual-handle range slider — an opt-in "Dual range (min–max)" mode renders two handles with a filled track and validates the selected range on submit.
+* New: Greatly expanded Style tab with live preview — field, label, and submit-button styling update instantly beside the controls, with Normal/Hover/Focus/Checked state tabs across every section, selectable Design Themes, gradient backgrounds, a styled file-upload drop-zone, sub-field label styling, container alignment and max-width, and per-device (desktop/tablet/mobile) responsive values.
+* New: Help & Support page with links to the User Guide, Developer Guide, Support, Community, Leave a Review, and Request a Feature.
+* New: "Mark as Spam" entry action and a Spam filter tab on the Entries screen.
+* New: The BoldForm logo now appears throughout the admin — the sidebar menu icon adapts to your admin colour scheme, and the mark replaces the generic placeholder icon in the topbar, form builder, Reports, and the empty Forms state.
+
+Privacy (GDPR):
+* Privacy: A personal-data exporter and eraser are registered with WordPress's privacy tools, keyed on the submitter's email address, so site owners can fulfil data export and erasure requests for form entries.
+* Privacy: readme now documents what data is stored, how long it is kept, and how to export or erase it.
+
+Security:
+* Security: Integration API keys (Mailchimp, Brevo) are never written into page HTML; the builder receives only the connection id, name, type, and status, and the stored key is preserved when the field is left blank.
+* Security: File uploads are re-validated on the server — SVG/SVGZ files are rejected, the size cap is enforced against the real on-disk bytes, and an explicit MIME allowlist is verified instead of trusting the filename.
+* Security: Stronger SVG sanitization now strips `<a>`, `<style>`, SMIL animation tags, and namespaced `href` attributes, failing closed on files that cannot be parsed.
+* Security: Settings import drops uninstall flags, all SMTP fields, and any key, secret, or password values before merging an uploaded file.
+* Security: Form save sanitizes every field and option by type, de-duplicates field IDs, and caps the number of rows, columns, fields, and options.
+* Security: Integrations dispatch only to explicitly active connections, and a connection with no API key can no longer be enabled.
+* Security: The Mailchimp list ID is constrained to its expected grammar before use (SSRF hardening), and the settings option no longer autoloads SMTP passwords and captcha secret keys on every page.
+* Security: Database errors are only surfaced when WP_DEBUG is enabled, so production never leaks raw SQL details.
+
+Accessibility:
+* Accessibility: Star-rating fields are fully keyboard and screen-reader operable (radiogroup, roving tabindex, arrow/Home/End/Space/Enter, per-star labels, visible focus ring).
+* Accessibility: The custom dropdown supports in-listbox keyboard navigation (Arrow/Home/End/Enter/Escape) with an active-option highlight.
+* Accessibility: On submit, validation errors are announced and associated with their fields (aria-invalid, aria-describedby, role="alert"), and focus moves to the first invalid field; choice and name groups gain role="group" with proper labelling.
+* Accessibility: The builder announces row and field add/delete/duplicate actions to screen readers.
+
+Performance:
+* Performance: CSV export now streams in bounded batches instead of loading every entry into memory, so large exports no longer risk a memory spike (the output is identical).
+* Performance: Each form is loaded once per request, so embedding the same form multiple times on a page no longer repeats the query.
+
+Improvements:
+* Improve: The forms list now matches WordPress-native list tables, with sortable column headers, a synced select-all checkbox, and native-styled bulk and filter controls.
+* Improve: Builder canvas polish — clearer field hover and selected states, an accordion Style tab, a full-width Settings tab, a topbar that reflows before overlapping on narrow screens, and an improved shortcode copy button.
+* Improve: An editing overlay now covers the canvas while the builder loads an existing form, so it no longer flashes the empty "Start building" placeholder.
+* Improve: Conditional Logic condition rows wrap cleanly on narrow builder panels and small screens.
+* Improve: The field library is drag-only — fields clone onto the canvas and the palette is never a drop target.
+* Improve: Slider, star-rating, and field styling now follow the form's design theme; star rating defaults to a consistent size.
+* Improve: Refreshed the Forms admin screen — the action notice ("Form moved to trash", etc.) is now a modern alert in the page header, the empty state has a styled "Add New Form" button, the top spacing is tightened, and the form builder sits flush with no left gap.
+* Improve: Builder drag-and-drop now auto-scrolls the canvas while you drag a row or field toward the top or bottom edge, so drop targets below the fold are reachable on small screens; the row and field move handles also show a grab cursor.
+* Improve: The form Preview screen header is now a single toolbar with an Exit button, a "Form Preview" title, and a click-to-copy shortcode pill, and the Choose Column Layout dialog was redesigned with guided layout cards and clearer hover/focus states.
+* Improve: Style-tab numeric controls no longer overlap the unit suffix with the spinner arrows; Padding, Margin, and Border-Radius gained a visible stepper, and size and spacing fields show a meaningful placeholder ("Default" or "—") instead of a misleading "0".
+* Improve: The colour reset button now stays disabled until a colour is changed, so it is clear when a value differs from the default.
+* Improve: BoldForm admin screens now show only BoldForm's own notices — promotional banners from other plugins or the active theme are suppressed on our screens.
+* Improve: The Star Rating field settings were trimmed to the options that apply (removed Placeholder, Default Value, Star Color, and Star Size).
+
+Fixes:
+* Fix: Forms are no longer submitted for real when rendered in an editor or preview — the Gutenberg block preview, the Elementor editor, and the admin Preview Form screen.
+* Fix: Numeric min/max/step bounds and dual-slider ranges are now enforced on the server, not just shown as input hints.
+* Fix: A required dropdown no longer silently submits its first option; an empty placeholder option is emitted and empty required selects are rejected server-side.
+* Fix: Forms embedded more than once on a page now get unique element IDs, so labels and widgets target the correct instance.
+* Fix: Checkbox, radio, and dropdown selected states now follow the form's design-theme colour instead of always showing the default teal.
+* Fix: Each field's configured maximum file size is honoured instead of a fixed 2 MB cap, and rich-content fields render their formatting correctly.
+* Fix: Mailchimp contacts are upserted (PUT) instead of POSTed, resolving the "Member Exists" error on repeat submissions.
+* Fix: Removed the non-functional Brevo "Tags" field and pre-select the form's email field when a connection is assigned.
+* Fix: Restored the `boldform_field_library` filter so add-ons can register custom field types again.
+* Fix: Email fields are validated with `is_email()`, duplicate-entry detection honours each field's own ID, and client-side conditional-logic operators match the server evaluator exactly.
+* Fix: The BoldForm block inspector now shows only Form Settings; the duplicate Container, Layout, Labels, Input, Button, and Error style panels (already covered by the builder's Style tab) were removed.
+* Fix: The BoldForm block form preview keeps its styling when Hide Labels or Hide Placeholders is enabled.
+* Fix: Admin topbar CSS now loads correctly on the Help & Support page, and the topbar wraps correctly when many nav items are present.
+* Fix: Elementor widget cleanup — removed duplicate/dead controls, fixed focus-state label colours not applying, made the Checkbox/Radio Size control work against the visible field, and converted the Terms checkbox radius to a per-corner control.
+* Fix: A row can no longer be dropped below the Submit or Add Row buttons in the builder canvas.
+* Fix: Removed a leading gap before left- and right-aligned field labels in both the builder and the front-end form.
+* Fix: Removed a duplicate "Add Row" panel-header button and a stray file-input sample from the Style-tab live preview.
+
+Compatibility:
+* Update: Tested up to WordPress 7.0; minimum supported version is now WordPress 6.3.
+* Update: The Gutenberg block was upgraded to Block API version 3 for the WordPress 6.3+ iframed editor, and its in-editor preview is now styled.
+
+Developer:
+* Dev: New `boldform_integration_dispatched` action fires after each integration dispatch with the integration type, connection ID, the API response (array or WP_Error), and the entry ID.
+* Dev: Lifecycle cleanup — the integration-dispatch cron is cleared on deactivation, and stored connections plus migration flags are removed on opted-in uninstall.
+
+= 1.0.2 =
+* Improve: Rewrote the readme with the full feature list, integration documentation, and a "Pro coming soon" section.
+* Improve: Minor admin and Elementor widget polish. Documentation and packaging maintenance release — no changes to form rendering or submission behaviour.
 
 = 1.0.1 =
 * Fix: Buttons now include an accessible `aria-label` so screen readers announce the button text correctly.
@@ -323,3 +426,8 @@ Adds contacts to a Brevo list on form submission.
 
 = 1.0.0 =
 * Initial release.
+
+== Upgrade Notice ==
+
+= 1.1.0 =
+Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.

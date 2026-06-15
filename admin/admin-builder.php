@@ -34,8 +34,8 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 				<span class="dashicons dashicons-arrow-left-alt2"></span>
 			</a>
 			<div class="boldform-setup-header__brand">
-				<span class="dashicons dashicons-feedback"></span>
-				<span><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
+				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 			</div>
 		</div>
 		<div class="boldform-setup-body">
@@ -66,7 +66,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 	<div class="boldform-builder-topbar">
 		<div class="boldform-builder-title-wrap">
 			<div class="boldform-builder-title">
-				<span class="dashicons dashicons-feedback"></span>
+				<span class="boldform-builder-title__badge"><?php boldform_lite_brand_icon( array( 'size' => 22 ) ); ?></span>
 				<input
 					type="text"
 					id="boldform-form-title"
@@ -91,7 +91,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		<div class="boldform-builder-actions">
 			<button type="button" class="boldform-builder-shortcode<?php echo $form_data['id'] > 0 ? ' is-visible' : ''; ?>" id="boldform-builder-shortcode"<?php echo $form_data['id'] > 0 ? '' : ' hidden'; ?>>
 				<span class="boldform-builder-shortcode__label"><?php esc_html_e( 'Shortcode', 'boldform-lite' ); ?></span>
-				<code class="boldform-builder-shortcode__code" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</code>
+				<code class="boldform-builder-shortcode__code"><span class="boldform-builder-shortcode__text" id="boldform-builder-shortcode-code">[boldform id="<?php echo esc_html( (string) $form_data['id'] ); ?>"]</span><span class="dashicons dashicons-admin-page boldform-builder-shortcode__copy" aria-hidden="true"></span></code>
 			</button>
 			<a href="<?php echo $form_data['id'] > 0 ? esc_url( admin_url( 'admin.php?page=boldform-lite-preview&form_id=' . absint( $form_data['id'] ) ) ) : '#'; ?>" class="button boldform-preview-btn" id="boldform-preview-form"<?php echo $form_data['id'] > 0 ? '' : ' style="display:none"'; ?>>
 				<span class="dashicons dashicons-visibility"></span>
@@ -186,29 +186,40 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 
 		<main class="boldform-builder-canvas-wrap">
 			<div class="boldform-panel boldform-canvas-panel">
+				<?php if ( ! $boldform_lite_is_new_form ) : ?>
+					<div class="boldform-canvas-loading" id="boldform-canvas-loading">
+						<span class="boldform-canvas-loading__spinner" aria-hidden="true"></span>
+						<span class="screen-reader-text"><?php esc_html_e( 'Loading form…', 'boldform-lite' ); ?></span>
+					</div>
+				<?php endif; ?>
 				<div class="boldform-panel-head boldform-panel-head--canvas">
 					<div>
 						<h2><?php esc_html_e( 'Form Canvas', 'boldform-lite' ); ?></h2>
 						<p><?php esc_html_e( 'Build layouts with rows and columns, then drop fields into each column.', 'boldform-lite' ); ?></p>
 					</div>
-					<button type="button" class="button button-primary" id="boldform-add-row-inline">
-						<?php esc_html_e( 'Add Row', 'boldform-lite' ); ?>
-					</button>
 				</div>
 
 				<div class="boldform-canvas-empty" id="boldform-canvas-empty">
 					<div class="boldform-empty-state">
-						<span class="dashicons dashicons-layout"></span>
+						<span class="boldform-empty-state__icon dashicons dashicons-layout" aria-hidden="true"></span>
 						<h3><?php esc_html_e( 'Start building your form', 'boldform-lite' ); ?></h3>
 						<p><?php esc_html_e( 'Start from a blank canvas or open the built-in template gallery.', 'boldform-lite' ); ?></p>
 						<div class="boldform-start-grid">
 							<button type="button" class="boldform-start-card" data-template="blank">
-								<strong><?php esc_html_e( 'Blank Form', 'boldform-lite' ); ?></strong>
-								<span><?php esc_html_e( 'Choose your layout and build the form from scratch.', 'boldform-lite' ); ?></span>
+								<span class="boldform-start-card__icon"><span class="dashicons dashicons-welcome-add-page" aria-hidden="true"></span></span>
+								<span class="boldform-start-card__body">
+									<strong><?php esc_html_e( 'Blank Form', 'boldform-lite' ); ?></strong>
+									<span><?php esc_html_e( 'Choose your layout and build the form from scratch.', 'boldform-lite' ); ?></span>
+								</span>
+								<span class="boldform-start-card__arrow dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 							</button>
 							<button type="button" class="boldform-start-card" id="boldform-open-template-modal">
-								<strong><?php esc_html_e( 'Use a Template', 'boldform-lite' ); ?></strong>
-								<span><?php esc_html_e( 'Browse starter templates, preview them, and import in one click.', 'boldform-lite' ); ?></span>
+								<span class="boldform-start-card__icon"><span class="dashicons dashicons-layout" aria-hidden="true"></span></span>
+								<span class="boldform-start-card__body">
+									<strong><?php esc_html_e( 'Use a Template', 'boldform-lite' ); ?></strong>
+									<span><?php esc_html_e( 'Browse starter templates, preview them, and import in one click.', 'boldform-lite' ); ?></span>
+								</span>
+								<span class="boldform-start-card__arrow dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 							</button>
 						</div>
 					</div>
@@ -223,12 +234,28 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 	</div>
 
 	<section class="boldform-editor-view" id="boldform-editor-view-style" data-editor-view="style" hidden>
-		<div class="boldform-panel boldform-global-settings-panel">
-			<div class="boldform-panel-head">
-				<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
-				<p><?php esc_html_e( 'Customize field, label, button, and multi-step styles. Changes preview instantly.', 'boldform-lite' ); ?></p>
+		<div class="boldform-style-shell">
+			<div class="boldform-panel boldform-style-controls">
+				<div class="boldform-panel-head">
+					<h2><?php esc_html_e( 'Form Styling', 'boldform-lite' ); ?></h2>
+					<p><?php esc_html_e( 'Customize field, label, button, and multi-step styles. Changes preview instantly.', 'boldform-lite' ); ?></p>
+				</div>
+				<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
 			</div>
-			<div class="boldform-settings-panel" id="boldform-form-styling-panel"></div>
+			<aside class="boldform-panel boldform-style-preview" aria-label="<?php esc_attr_e( 'Form preview', 'boldform-lite' ); ?>">
+				<div class="boldform-panel-head boldform-style-preview__head">
+					<div>
+						<h2><?php esc_html_e( 'Live Preview', 'boldform-lite' ); ?></h2>
+						<p><?php esc_html_e( 'See your styling applied to the form in real time.', 'boldform-lite' ); ?></p>
+					</div>
+					<div class="boldform-device-toggle" role="group" aria-label="<?php esc_attr_e( 'Preview device', 'boldform-lite' ); ?>">
+						<button type="button" class="boldform-device-btn is-active" data-device="desktop" aria-pressed="true" title="<?php esc_attr_e( 'Desktop', 'boldform-lite' ); ?>"><span class="dashicons dashicons-desktop" aria-hidden="true"></span></button>
+						<button type="button" class="boldform-device-btn" data-device="tablet" aria-pressed="false" title="<?php esc_attr_e( 'Tablet', 'boldform-lite' ); ?>"><span class="dashicons dashicons-tablet" aria-hidden="true"></span></button>
+						<button type="button" class="boldform-device-btn" data-device="mobile" aria-pressed="false" title="<?php esc_attr_e( 'Mobile', 'boldform-lite' ); ?>"><span class="dashicons dashicons-smartphone" aria-hidden="true"></span></button>
+					</div>
+				</div>
+				<div class="boldform-canvas boldform-style-preview-canvas" id="boldform-style-preview-canvas"></div>
+			</aside>
 		</div>
 	</section>
 
@@ -248,10 +275,20 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		<div class="boldform-modal__backdrop" data-boldform-close-modal></div>
 		<div class="boldform-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-row-modal-title">
 			<div class="boldform-modal__head">
-				<h2 id="boldform-row-modal-title"><?php esc_html_e( 'Choose Column Layout', 'boldform-lite' ); ?></h2>
+				<div class="boldform-modal__heading">
+					<span class="boldform-modal__icon" aria-hidden="true"><span class="dashicons dashicons-screenoptions"></span></span>
+					<div class="boldform-modal__heading-text">
+						<h2 id="boldform-row-modal-title"><?php esc_html_e( 'Choose Column Layout', 'boldform-lite' ); ?></h2>
+						<p class="boldform-modal__subtitle"><?php esc_html_e( 'Select a layout for your new row.', 'boldform-lite' ); ?></p>
+					</div>
+				</div>
 				<button type="button" class="boldform-modal__close" data-boldform-close-modal aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			</div>
 			<div class="boldform-column-presets" id="boldform-column-presets"></div>
+			<div class="boldform-modal__foot">
+				<span class="boldform-modal__hint-icon" aria-hidden="true"><span class="dashicons dashicons-lightbulb"></span></span>
+				<span><?php esc_html_e( 'You can change or add more columns anytime later.', 'boldform-lite' ); ?></span>
+			</div>
 		</div>
 	</div>
 

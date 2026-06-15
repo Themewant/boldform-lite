@@ -98,7 +98,9 @@ class BoldForm_Lite_Integrations {
 
 		$clean_map = array();
 		foreach ( $raw_map as $conn_id => $map ) {
-			if ( ! is_array( $map ) ) continue;
+			if ( ! is_array( $map ) ) {
+				continue;
+			}
 			$clean_map[ sanitize_key( (string) $conn_id ) ] = array(
 				'email' => sanitize_key( (string) ( $map['email'] ?? '' ) ),
 				'fname' => sanitize_key( (string) ( $map['fname'] ?? '' ) ),
@@ -129,7 +131,9 @@ class BoldForm_Lite_Integrations {
 			? $settings['assigned_connections']
 			: array();
 
-		if ( empty( $assigned ) ) return;
+		if ( empty( $assigned ) ) {
+			return;
+		}
 
 		$field_map = isset( $settings['connection_field_map'] ) && is_array( $settings['connection_field_map'] )
 			? $settings['connection_field_map']
@@ -138,16 +142,19 @@ class BoldForm_Lite_Integrations {
 		foreach ( $assigned as $conn_id ) {
 			$connection = $this->page->get_connection( $conn_id );
 
-			if ( ! $connection || 'inactive' === ( $connection['status'] ?? 'active' ) ) {
+			// Fail closed: only dispatch to a connection that is explicitly active.
+			if ( ! $connection || 'active' !== ( $connection['status'] ?? 'inactive' ) ) {
 				continue;
 			}
 
 			$map = $field_map[ $conn_id ] ?? array();
 
+			// Schedule with the connection ID only — never serialize the API key into the
+			// cron option. run_dispatch() re-fetches and re-validates the connection at run time.
 			wp_schedule_single_event(
 				time(),
 				'boldform_integration_dispatch',
-				array( $connection, $entry_data, $map, $entry_id )
+				array( (string) $conn_id, $entry_data, $map, $entry_id )
 			);
 		}
 
@@ -157,22 +164,35 @@ class BoldForm_Lite_Integrations {
 	/**
 	 * Cron handler — executes one integration dispatch.
 	 *
-	 * @param array<string, mixed> $connection Connection config from global store.
-	 * @param array<string, mixed> $entry_data Submitted field data.
-	 * @param array<string, mixed> $field_map  { email, fname, lname } field ID mapping.
-	 * @param int                  $entry_id   Entry ID.
+	 * @param string|array<string, mixed> $connection_or_id Connection ID (current) or, for
+	 *                                                       legacy in-flight events, the full config array.
+	 * @param array<string, mixed>        $entry_data       Submitted field data.
+	 * @param array<string, mixed>        $field_map        { email, fname, lname } field ID mapping.
+	 * @param int                         $entry_id         Entry ID.
 	 * @return void
 	 */
-	public function run_dispatch( array $connection, array $entry_data, array $field_map, int $entry_id ): void {
+	public function run_dispatch( $connection_or_id, array $entry_data = array(), array $field_map = array(), int $entry_id = 0 ): void {
+		// Resolve the connection from its ID and re-validate it now (it may have been
+		// deactivated or deleted since the event was scheduled). Accept a full array too
+		// so any event scheduled before this change still dispatches.
+		$connection = is_array( $connection_or_id )
+			? $connection_or_id
+			: $this->page->get_connection( (string) $connection_or_id );
+
+		// Fail closed: a connection with no explicit 'active' status is treated as inactive.
+		if ( ! is_array( $connection ) || empty( $connection ) || 'active' !== ( $connection['status'] ?? 'inactive' ) ) {
+			return;
+		}
+
 		$type = $connection['type'] ?? '';
 
 		switch ( $type ) {
 			case 'mailchimp':
-				$this->subscribe_mailchimp( $connection, $entry_data, $field_map );
+				$this->subscribe_mailchimp( $connection, $entry_data, $field_map, $entry_id );
 				break;
 
 			case 'brevo':
-				$this->subscribe_brevo( $connection, $entry_data, $field_map );
+				$this->subscribe_brevo( $connection, $entry_data, $field_map, $entry_id );
 				break;
 
 			default:
@@ -199,39 +219,61 @@ class BoldForm_Lite_Integrations {
 	 * @param array<string, mixed> $conn       Connection config.
 	 * @param array<string, mixed> $entry_data Submission data.
 	 * @param array<string, mixed> $field_map  Field mapping.
+	 * @param int                  $entry_id   Entry ID (for the dispatch-result hook).
 	 * @return void
 	 */
-	private function subscribe_mailchimp( array $conn, array $entry_data, array $field_map ): void {
+	private function subscribe_mailchimp( array $conn, array $entry_data, array $field_map, int $entry_id = 0 ): void {
 		$api_key = trim( (string) ( $conn['api_key'] ?? '' ) );
 		$list_id = trim( (string) ( $conn['list_id'] ?? '' ) );
 		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
 
-		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
-
-		$dc = 'us1';
-		if ( preg_match( '/-([a-z0-9]+)$/', $api_key, $m ) ) {
-			$dc = $m[1];
+		// Mailchimp audience IDs are alphanumeric; reject anything else so a stored
+		// value can never inject extra path/query segments into the request URL.
+		if ( ! $api_key || ! $list_id || ! preg_match( '/^[A-Za-z0-9]+$/', $list_id ) || ! is_email( $email ) ) {
+			return;
 		}
+
+		// The Mailchimp data center is the suffix of the API key (e.g. "-us21").
+		// Without it we cannot build a correct endpoint, so bail rather than guess.
+		// Parsed by the same helper the "Test Connection" path uses, so a key that
+		// tests successfully also dispatches.
+		$dc = BoldForm_Lite_Integrations_Page::mailchimp_datacenter( $api_key );
+		if ( '' === $dc ) {
+			return;
+		}
+
+		// Upsert via PUT to the member resource (hash = md5 of the lowercased email)
+		// rather than POST /members, which returns HTTP 400 "Member Exists" on every
+		// resubmission. With PUT, `status_if_new` applies only on first insert, so a
+		// returning contact's subscription status is never overwritten.
+		$subscriber_hash = md5( strtolower( $email ) );
 
 		$body = array(
 			'email_address' => $email,
-			'status'        => ! empty( $conn['double_optin'] ) ? 'pending' : 'subscribed',
+			'status_if_new' => ! empty( $conn['double_optin'] ) ? 'pending' : 'subscribed',
 		);
 
 		$merge = array();
 		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
 		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
-		if ( $fname ) $merge['FNAME'] = $fname;
-		if ( $lname ) $merge['LNAME'] = $lname;
-		if ( $merge ) $body['merge_fields'] = $merge;
+		if ( $fname ) {
+			$merge['FNAME'] = $fname;
+		}
+		if ( $lname ) {
+			$merge['LNAME'] = $lname;
+		}
+		if ( $merge ) {
+			$body['merge_fields'] = $merge;
+		}
 
 		if ( ! empty( $conn['tags'] ) ) {
 			$body['tags'] = array_values( array_filter( array_map( 'trim', explode( ',', (string) $conn['tags'] ) ) ) );
 		}
 
-		wp_remote_post(
-			"https://{$dc}.api.mailchimp.com/3.0/lists/{$list_id}/members",
+		$response = wp_remote_request(
+			"https://{$dc}.api.mailchimp.com/3.0/lists/{$list_id}/members/{$subscriber_hash}",
 			array(
+				'method'  => 'PUT',
 				'timeout' => 15,
 				'headers' => array(
 					'Authorization' => 'Basic ' . base64_encode( 'anystring:' . $api_key ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
@@ -240,6 +282,8 @@ class BoldForm_Lite_Integrations {
 				'body'    => wp_json_encode( $body ),
 			)
 		);
+
+		$this->record_dispatch_result( 'mailchimp', $conn, $response, $entry_id );
 	}
 
 	// =========================================================================
@@ -252,25 +296,34 @@ class BoldForm_Lite_Integrations {
 	 * @param array<string, mixed> $conn       Connection config.
 	 * @param array<string, mixed> $entry_data Submission data.
 	 * @param array<string, mixed> $field_map  Field mapping.
+	 * @param int                  $entry_id   Entry ID (for the dispatch-result hook).
 	 * @return void
 	 */
-	private function subscribe_brevo( array $conn, array $entry_data, array $field_map ): void {
+	private function subscribe_brevo( array $conn, array $entry_data, array $field_map, int $entry_id = 0 ): void {
 		$api_key = trim( (string) ( $conn['api_key'] ?? '' ) );
 		$list_id = (int) ( $conn['list_id'] ?? 0 );
 		$email   = $this->get_field_value( $entry_data, $field_map['email'] ?? '' );
 
-		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) return;
+		if ( ! $api_key || ! $list_id || ! is_email( $email ) ) {
+			return;
+		}
 
 		$body = array( 'email' => $email, 'listIds' => array( $list_id ), 'updateEnabled' => true );
 
 		$attrs = array();
 		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
 		$lname = $this->get_field_value( $entry_data, $field_map['lname'] ?? '' );
-		if ( $fname ) $attrs['FIRSTNAME'] = $fname;
-		if ( $lname ) $attrs['LASTNAME']  = $lname;
-		if ( $attrs ) $body['attributes'] = $attrs;
+		if ( $fname ) {
+			$attrs['FIRSTNAME'] = $fname;
+		}
+		if ( $lname ) {
+			$attrs['LASTNAME'] = $lname;
+		}
+		if ( $attrs ) {
+			$body['attributes'] = $attrs;
+		}
 
-		wp_remote_post(
+		$response = wp_remote_post(
 			'https://api.brevo.com/v3/contacts',
 			array(
 				'timeout' => 15,
@@ -282,6 +335,32 @@ class BoldForm_Lite_Integrations {
 				'body'    => wp_json_encode( $body ),
 			)
 		);
+
+		$this->record_dispatch_result( 'brevo', $conn, $response, $entry_id );
+	}
+
+	/**
+	 * Fires an action after a built-in integration dispatch HTTP request completes.
+	 *
+	 * The dispatch itself stays fire-and-forget; this seam lets logging/monitoring
+	 * (and Pro) observe whether a subscribe call succeeded or failed.
+	 *
+	 * @param string                  $type     Connection type ('mailchimp', 'brevo', …).
+	 * @param array<string, mixed>    $conn     Connection config.
+	 * @param array<string, mixed>|WP_Error $response wp_remote_* response array or WP_Error.
+	 * @param int                     $entry_id Entry ID that triggered the dispatch.
+	 * @return void
+	 */
+	private function record_dispatch_result( string $type, array $conn, $response, int $entry_id ): void {
+		/**
+		 * Fires after a built-in integration subscribe request returns.
+		 *
+		 * @param string                        $type          Connection type ('mailchimp', 'brevo', …).
+		 * @param string                        $connection_id Connection ID.
+		 * @param array<string, mixed>|WP_Error $response      wp_remote_* response array or WP_Error.
+		 * @param int                           $entry_id      Entry ID that triggered the dispatch.
+		 */
+		do_action( 'boldform_integration_dispatched', $type, (string) ( $conn['id'] ?? '' ), $response, $entry_id );
 	}
 
 	// =========================================================================
@@ -295,7 +374,23 @@ class BoldForm_Lite_Integrations {
 	 * @return array<string, mixed>
 	 */
 	public function inject_builder_data( array $data ): array {
-		$data['globalConnections']      = array_values( $this->page->get_all_connections() );
+		// Only expose what the builder's assign panel actually uses — id, name,
+		// type, status. Never localize the API key (or any secret/config field)
+		// into the builder page HTML.
+		$safe = array();
+		foreach ( $this->page->get_all_connections() as $conn ) {
+			if ( ! is_array( $conn ) ) {
+				continue;
+			}
+			$safe[] = array(
+				'id'     => (string) ( $conn['id'] ?? '' ),
+				'name'   => (string) ( $conn['name'] ?? '' ),
+				'type'   => (string) ( $conn['type'] ?? '' ),
+				'status' => (string) ( $conn['status'] ?? 'inactive' ),
+			);
+		}
+
+		$data['globalConnections']      = $safe;
 		$data['integrationsNonce']      = wp_create_nonce( 'boldform_integration_nonce' );
 		$data['integrationsAdminUrl']   = admin_url( 'admin.php?page=boldform-lite-integrations' );
 		return $data;
@@ -313,7 +408,9 @@ class BoldForm_Lite_Integrations {
 	 * @return string
 	 */
 	private function get_field_value( array $entry_data, string $field_id ): string {
-		if ( ! $field_id || ! isset( $entry_data[ $field_id ] ) ) return '';
+		if ( ! $field_id || ! isset( $entry_data[ $field_id ] ) ) {
+			return '';
+		}
 		$field = $entry_data[ $field_id ];
 		$val   = is_array( $field ) ? ( $field['value'] ?? '' ) : $field;
 		return is_array( $val ) ? implode( ', ', $val ) : (string) $val;

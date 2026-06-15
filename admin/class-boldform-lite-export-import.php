@@ -228,10 +228,10 @@ class BoldForm_Lite_Export_Import {
 				$data['entries'] = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$entries_table}` WHERE form_id = %d ORDER BY id ASC", $form_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
 		} elseif ( 'settings_only' === $scope ) {
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
 		} else {
 			$data['forms'] = $wpdb->get_results( "SELECT * FROM `{$forms_table}` WHERE status != 'trash' ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -240,7 +240,7 @@ class BoldForm_Lite_Export_Import {
 				$data['entries'] = $wpdb->get_results( "SELECT * FROM `{$entries_table}` ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
 
-			$data['settings'] = get_option( 'boldform_lite_settings', array() );
+			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 		}
 
 		$filename = 'boldform-export-' . gmdate( 'Y-m-d' ) . '.json';
@@ -252,6 +252,36 @@ class BoldForm_Lite_Export_Import {
 
 		echo wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE );
 		exit;
+	}
+
+	/**
+	 * Removes credential/secret and destructive keys from a settings array so they
+	 * never leave the site in an export file, nor are trusted from an import file.
+	 * Drops the uninstall flag, every SMTP/mail credential (smtp_*), and any
+	 * credential-like key (*password, *secret, *_key) via a pattern sweep so future
+	 * sensitive keys are covered automatically.
+	 *
+	 * @param mixed $settings Raw settings array.
+	 * @return array<string, mixed> Settings with sensitive keys removed.
+	 */
+	private function scrub_sensitive_settings( $settings ) {
+		if ( ! is_array( $settings ) ) {
+			return array();
+		}
+		foreach ( array_keys( $settings ) as $setting_key ) {
+			$setting_key = (string) $setting_key;
+			if (
+				'uninstall_data' === $setting_key
+				|| 0 === strpos( $setting_key, 'smtp_' )
+				// Substring matches for credential-like names anywhere in the key…
+				|| preg_match( '/(password|secret|token|credential|oauth|client_id|client_secret|api[_-]?key|apikey)/i', $setting_key )
+				// …plus common credential suffixes (e.g. *_key, *_secret, *_token, *_auth).
+				|| preg_match( '/_(key|secret|token|auth)$/i', $setting_key )
+			) {
+				unset( $settings[ $setting_key ] );
+			}
+		}
+		return $settings;
 	}
 
 	/**
@@ -272,7 +302,20 @@ class BoldForm_Lite_Export_Import {
 			return;
 		}
 
-		$file = sanitize_text_field( $_FILES['boldform_import_file']['tmp_name'] );
+		// Confirm this is a genuine PHP upload, succeeded, and is a sane size before reading it.
+		$upload_error = isset( $_FILES['boldform_import_file']['error'] ) ? (int) $_FILES['boldform_import_file']['error'] : UPLOAD_ERR_NO_FILE;
+		$upload_size  = isset( $_FILES['boldform_import_file']['size'] ) ? (int) $_FILES['boldform_import_file']['size'] : 0;
+		$file         = sanitize_text_field( wp_unslash( $_FILES['boldform_import_file']['tmp_name'] ) );
+
+		if ( UPLOAD_ERR_OK !== $upload_error || ! is_uploaded_file( $file ) ) {
+			wp_die( esc_html__( 'Unable to read the import file.', 'boldform-lite' ) );
+		}
+
+		// Cap at 5 MB — an export of forms/entries/settings is far smaller.
+		if ( $upload_size <= 0 || $upload_size > 5 * 1024 * 1024 ) {
+			wp_die( esc_html__( 'The import file is empty or too large.', 'boldform-lite' ) );
+		}
+
 		$json = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 
 		if ( ! $json ) {
@@ -302,6 +345,12 @@ class BoldForm_Lite_Export_Import {
 
 		BoldForm_Lite_Activator::activate();
 
+		// The importer reuses the builder's save-path sanitizers so imported forms get the
+		// exact same field-type allowlisting and per-value sanitization (never trust the file).
+		if ( ! class_exists( 'BoldForm_Lite_Ajax_Save' ) ) {
+			require_once BOLDFORM_LITE_PATH . 'admin/ajax-save.php';
+		}
+
 		$forms_imported = 0;
 		$id_map         = array();
 
@@ -311,13 +360,22 @@ class BoldForm_Lite_Export_Import {
 			foreach ( $data['forms'] as $form ) {
 				$old_id = isset( $form['id'] ) ? (int) $form['id'] : 0;
 
+				// Decode then re-sanitize the structure/settings via the builder's own sanitizers,
+				// so an imported file cannot store unvalidated field types or raw values.
+				$structure_decoded = isset( $form['fields_json'] ) ? json_decode( wp_unslash( (string) $form['fields_json'] ), true ) : array();
+				$settings_decoded  = isset( $form['settings_json'] ) ? json_decode( wp_unslash( (string) $form['settings_json'] ), true ) : array();
+				$fields_json       = wp_json_encode( array( 'rows' => BoldForm_Lite_Ajax_Save::prepare_rows( is_array( $structure_decoded ) ? $structure_decoded : array() ) ) );
+				$settings_json     = wp_json_encode( BoldForm_Lite_Ajax_Save::normalize_form_settings( is_array( $settings_decoded ) ? $settings_decoded : array() ) );
+				$status            = isset( $form['status'] ) ? sanitize_key( (string) $form['status'] ) : 'draft';
+				$status            = in_array( $status, array( 'draft', 'publish', 'trash' ), true ) ? $status : 'draft';
+
 				$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 					$forms_table,
 					array(
 						'title'         => isset( $form['title'] ) ? sanitize_text_field( (string) $form['title'] ) : '',
-						'status'        => isset( $form['status'] ) ? sanitize_key( (string) $form['status'] ) : 'draft',
-						'fields_json'   => isset( $form['fields_json'] ) ? wp_unslash( (string) $form['fields_json'] ) : '{}',
-						'settings_json' => isset( $form['settings_json'] ) ? wp_unslash( (string) $form['settings_json'] ) : '{}',
+						'status'        => $status,
+						'fields_json'   => $fields_json,
+						'settings_json' => $settings_json,
 						'created_by'    => get_current_user_id(),
 					),
 					array( '%s', '%s', '%s', '%s', '%d' )
@@ -341,13 +399,13 @@ class BoldForm_Lite_Export_Import {
 					$entries_table,
 					array(
 						'form_id'         => $new_form_id,
-						'entry_data_json' => isset( $entry['entry_data_json'] ) ? wp_unslash( (string) $entry['entry_data_json'] ) : '{}',
+						'entry_data_json' => $this->sanitize_entry_data_json( isset( $entry['entry_data_json'] ) ? wp_unslash( (string) $entry['entry_data_json'] ) : '' ),
 						'submission_key'  => isset( $entry['submission_key'] ) ? sanitize_text_field( (string) $entry['submission_key'] ) : '',
 						'user_id'         => isset( $entry['user_id'] ) ? absint( $entry['user_id'] ) : 0,
 						'user_ip'         => isset( $entry['user_ip'] ) ? sanitize_text_field( (string) $entry['user_ip'] ) : '',
 						'user_agent'      => isset( $entry['user_agent'] ) ? sanitize_textarea_field( (string) $entry['user_agent'] ) : '',
-						'status'          => isset( $entry['status'] ) ? sanitize_key( (string) $entry['status'] ) : 'unread',
-						'created_at'      => isset( $entry['created_at'] ) ? sanitize_text_field( (string) $entry['created_at'] ) : current_time( 'mysql', true ),
+						'status'          => in_array( isset( $entry['status'] ) ? sanitize_key( (string) $entry['status'] ) : 'unread', array( 'unread', 'read', 'spam', 'starred' ), true ) ? sanitize_key( (string) $entry['status'] ) : 'unread',
+						'created_at'      => $this->sanitize_import_datetime( isset( $entry['created_at'] ) ? (string) $entry['created_at'] : '' ),
 					),
 					array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s' )
 				);
@@ -362,11 +420,99 @@ class BoldForm_Lite_Export_Import {
 			}
 
 			$imported_settings = $data['settings'];
-			unset( $imported_settings['smtp_password'] );
 
-			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ) );
+			// Never let an imported file carry secrets, re-route outgoing mail, or flip
+			// the destructive uninstall flag. Drop the uninstall flag, every SMTP/mail
+			// credential (smtp_*), and any credential-like key (*_key, *secret, *password)
+			// — a pattern sweep so future sensitive keys are covered automatically.
+			$imported_settings = $this->scrub_sensitive_settings( $imported_settings );
+
+			// Sanitize every imported value by depth before merging into the trusted option.
+			$imported_settings = map_deep( $imported_settings, 'sanitize_text_field' );
+
+			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ), false );
 		}
 
 		return $forms_imported;
+	}
+
+	/**
+	 * Re-sanitizes an imported entry's data JSON instead of storing it verbatim.
+	 *
+	 * Decodes the blob and sanitizes each field's label, type and value (recursively
+	 * for structured values such as name/address/checkbox), then re-encodes.
+	 *
+	 * @param string $raw Raw (unslashed) entry_data_json from the import file.
+	 * @return string Sanitized JSON, or '{}' when the input is not decodable.
+	 */
+	private function sanitize_entry_data_json( $raw ) {
+		$decoded = json_decode( (string) $raw, true );
+
+		if ( ! is_array( $decoded ) ) {
+			return '{}';
+		}
+
+		$clean = array();
+
+		foreach ( $decoded as $field_id => $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$entry = array(
+				'label' => isset( $item['label'] ) ? sanitize_text_field( (string) $item['label'] ) : '',
+				'type'  => isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : '',
+				'value' => isset( $item['value'] ) ? $this->sanitize_entry_value( $item['value'] ) : '',
+			);
+
+			if ( isset( $item['path'] ) ) {
+				$entry['path'] = sanitize_text_field( (string) $item['path'] );
+			}
+
+			$clean[ sanitize_key( (string) $field_id ) ] = $entry;
+		}
+
+		return wp_json_encode( $clean );
+	}
+
+	/**
+	 * Recursively sanitizes a single entry value (scalar, list, or assoc map).
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string|array<int|string, mixed>
+	 */
+	private function sanitize_entry_value( $value ) {
+		if ( is_array( $value ) ) {
+			$out = array();
+
+			foreach ( $value as $key => $sub ) {
+				$out_key         = is_int( $key ) ? $key : sanitize_key( (string) $key );
+				$out[ $out_key ] = $this->sanitize_entry_value( $sub );
+			}
+
+			return $out;
+		}
+
+		return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+	}
+
+	/**
+	 * Validates an imported MySQL datetime, falling back to "now" when malformed.
+	 *
+	 * Prevents a bad value from being written into a NOT NULL datetime column
+	 * (strict SQL mode would reject it and silently drop the entry).
+	 *
+	 * @param string $value Raw datetime string.
+	 * @return string Valid 'Y-m-d H:i:s' datetime.
+	 */
+	private function sanitize_import_datetime( $value ) {
+		$value = sanitize_text_field( (string) $value );
+		$dt    = '' !== $value ? DateTime::createFromFormat( 'Y-m-d H:i:s', $value ) : false;
+
+		if ( $dt instanceof DateTime && $dt->format( 'Y-m-d H:i:s' ) === $value ) {
+			return $value;
+		}
+
+		return current_time( 'mysql', true );
 	}
 }

@@ -52,6 +52,19 @@ class BoldForm_Lite_Block {
 			wp_set_script_translations( 'boldform-lite-block-editor', 'boldform-lite', BOLDFORM_LITE_PATH . 'languages' );
 		}
 
+		// Register the form styles so they can be attached as the block's editor styles
+		// below. With apiVersion 3 the editor canvas is iframed (WP 6.3+), and assets
+		// enqueued on enqueue_block_editor_assets do NOT reach the iframe — so the
+		// server-side-rendered block preview would render unstyled. editor_style_handles
+		// loads these inside the iframe. They are editor-only; the front end continues to
+		// enqueue 'boldform-lite-frontend' via the shortcode, so front-end output is unchanged.
+		if ( ! wp_style_is( 'boldform-lite-frontend', 'registered' ) ) {
+			wp_register_style( 'boldform-lite-frontend', BOLDFORM_LITE_URL . 'assets/css/frontend.css', array(), BOLDFORM_LITE_VERSION );
+		}
+		if ( ! wp_style_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_style( 'boldform-lite-flatpickr', BOLDFORM_LITE_URL . 'assets/css/flatpickr.min.css', array(), '4.6.13' );
+		}
+
 		// Register the block explicitly to avoid metadata path resolution passing
 		// unexpected null values into WordPress core on some environments.
 		$block_attributes = array(
@@ -102,11 +115,12 @@ class BoldForm_Lite_Block {
 		register_block_type(
 			'boldform/form',
 			array(
-				'api_version'     => 2,
-				'editor_script'   => 'boldform-lite-block-editor',
-				'render_callback' => array( $this, 'render_block' ),
-				'attributes'      => $block_attributes,
-				'supports'        => array(
+				'api_version'          => 3,
+				'editor_script'        => 'boldform-lite-block-editor',
+				'editor_style_handles' => array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' ),
+				'render_callback'      => array( $this, 'render_block' ),
+				'attributes'           => $block_attributes,
+				'supports'             => array(
 					'html' => false,
 				),
 			)
@@ -124,6 +138,33 @@ class BoldForm_Lite_Block {
 			BOLDFORM_LITE_URL . 'assets/css/frontend.css',
 			array(),
 			BOLDFORM_LITE_VERSION
+		);
+
+		// Load Flatpickr + frontend behaviour so date/time fields render their picker in the
+		// server-side-rendered block preview (matching the live frontend).
+		if ( ! wp_style_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_style( 'boldform-lite-flatpickr', BOLDFORM_LITE_URL . 'assets/css/flatpickr.min.css', array(), '4.6.13' );
+		}
+		if ( ! wp_script_is( 'boldform-lite-flatpickr', 'registered' ) ) {
+			wp_register_script( 'boldform-lite-flatpickr', BOLDFORM_LITE_URL . 'assets/js/flatpickr.min.js', array(), '4.6.13', true );
+		}
+		if ( ! wp_script_is( 'boldform-lite-frontend', 'registered' ) ) {
+			wp_register_script( 'boldform-lite-frontend', BOLDFORM_LITE_URL . 'assets/js/frontend.js', array( 'jquery' ), BOLDFORM_LITE_VERSION, true );
+		}
+		wp_enqueue_style( 'boldform-lite-flatpickr' );
+		wp_enqueue_script( 'boldform-lite-flatpickr' );
+		wp_enqueue_script( 'boldform-lite-frontend' );
+		wp_localize_script(
+			'boldform-lite-frontend',
+			'boldformLiteFrontend',
+			array(
+				'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
+				'ajaxAction'     => 'boldform_lite_submit_form',
+				'submittingText' => __( 'Submitting...', 'boldform-lite' ),
+				'successText'    => __( 'Form submitted successfully.', 'boldform-lite' ),
+				'errorText'      => __( 'Unable to submit the form.', 'boldform-lite' ),
+				'invalidEmail'   => __( 'Please enter a valid email address.', 'boldform-lite' ),
+			)
 		);
 
 		$block_data = array(
@@ -233,7 +274,11 @@ class BoldForm_Lite_Block {
 
 		foreach ( $map as $attr => $var ) {
 			if ( ! empty( $attributes[ $attr ] ) ) {
-				$vars[] = $var . ':' . sanitize_text_field( (string) $attributes[ $attr ] );
+				// Strip characters that could terminate this declaration and inject
+				// extra CSS properties into the shared inline style attribute. Legitimate
+				// color/length values never contain ; { or }.
+				$value  = str_replace( array( ';', '{', '}' ), '', sanitize_text_field( (string) $attributes[ $attr ] ) );
+				$vars[] = $var . ':' . $value;
 			}
 		}
 

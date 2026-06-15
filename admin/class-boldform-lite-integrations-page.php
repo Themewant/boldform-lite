@@ -78,13 +78,18 @@ class BoldForm_Lite_Integrations_Page {
 	 * @return void
 	 */
 	public function register_menu(): void {
+		// This page registers on admin_menu priority 20 — after the core BoldForm
+		// submenus (priority 10) — so by default it would append below "Help &
+		// Support". Pass an explicit position to slot it in just before that item
+		// (Help & Support is the last core submenu, at offset 5).
 		add_submenu_page(
 			'boldform-lite',
 			__( 'Integrations', 'boldform-lite' ),
 			__( 'Integrations', 'boldform-lite' ),
 			'manage_options',
 			'boldform-lite-integrations',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			5
 		);
 	}
 
@@ -103,9 +108,18 @@ class BoldForm_Lite_Integrations_Page {
 			return;
 		}
 
-		// Remove third-party admin notices.
-		remove_all_actions( 'admin_notices' );
-		remove_all_actions( 'all_admin_notices' );
+		// Strip third-party admin notices so only BoldForm's own show. Defer to
+		// in_admin_header (the last hook before notices render) because some plugins
+		// register their notices as late as admin_head — after this enqueue pass.
+		add_action(
+			'in_admin_header',
+			static function () {
+				remove_all_actions( 'admin_notices' );
+				remove_all_actions( 'all_admin_notices' );
+				remove_all_actions( 'user_admin_notices' );
+			},
+			1000
+		);
 
 		wp_enqueue_style(
 			'boldform-lite-admin',
@@ -129,7 +143,7 @@ class BoldForm_Lite_Integrations_Page {
 			true
 		);
 
-		$connections = $this->get_all_connections();
+		$connections = $this->client_safe_connections();
 
 		wp_localize_script(
 			'boldform-lite-integrations-page',
@@ -137,7 +151,7 @@ class BoldForm_Lite_Integrations_Page {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'boldform_integration_nonce' ),
-				'connections' => (object) $connections, // keyed by type or conn_id
+				'connections' => (object) $connections, // keyed by conn_id; api_key stripped
 				'typeDefs'    => array_values( $this->get_type_defs() ),
 				'i18n'        => array(
 					'save'           => __( 'Save', 'boldform-lite' ),
@@ -153,6 +167,7 @@ class BoldForm_Lite_Integrations_Page {
 					'testFail'       => __( 'Connection failed: ', 'boldform-lite' ),
 					'saved'          => __( 'Saved.', 'boldform-lite' ),
 					'errRequired'    => __( 'API Key is required.', 'boldform-lite' ),
+					'keepKey'        => __( 'Saved — leave blank to keep current key', 'boldform-lite' ),
 				),
 			)
 		);
@@ -283,7 +298,7 @@ class BoldForm_Lite_Integrations_Page {
 	 */
 	private function render_topbar(): void {
 		$nav_items = array(
-			array( 'slug' => 'boldform-lite',              'label' => __( 'Forms', 'boldform-lite' ),        'icon' => 'dashicons-feedback',      'url' => admin_url( 'admin.php?page=boldform-lite' ) ),
+			array( 'slug' => 'boldform-lite',              'label' => __( 'Forms', 'boldform-lite' ),        'icon' => 'dashicons-feedback', 'brand' => true, 'url' => admin_url( 'admin.php?page=boldform-lite' ) ),
 			array( 'slug' => 'boldform-lite-entries',       'label' => __( 'Entries', 'boldform-lite' ),      'icon' => 'dashicons-email-alt',     'url' => admin_url( 'admin.php?page=boldform-lite-entries' ) ),
 			array( 'slug' => 'boldform-lite-reports',       'label' => __( 'Reports', 'boldform-lite' ),      'icon' => 'dashicons-chart-bar',     'url' => admin_url( 'admin.php?page=boldform-lite-reports' ) ),
 			array( 'slug' => 'boldform-lite-integrations',  'label' => __( 'Integrations', 'boldform-lite' ), 'icon' => 'dashicons-randomize',     'url' => admin_url( 'admin.php?page=boldform-lite-integrations' ) ),
@@ -295,15 +310,19 @@ class BoldForm_Lite_Integrations_Page {
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
-				<span class="dashicons dashicons-feedback"></span>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
+				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">
 				<?php foreach ( $nav_items as $item ) : ?>
 					<a href="<?php echo esc_url( $item['url'] ); ?>"
 					   class="boldform-admin-topbar__link<?php echo 'boldform-lite-integrations' === $item['slug'] ? ' is-active' : ''; ?>">
-						<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php if ( ! empty( $item['brand'] ) ) : ?>
+							<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+						<?php else : ?>
+							<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php endif; ?>
 						<?php echo esc_html( $item['label'] ); ?>
 					</a>
 				<?php endforeach; ?>
@@ -320,6 +339,40 @@ class BoldForm_Lite_Integrations_Page {
 	public function get_all_connections(): array {
 		$raw = get_option( self::OPTION_KEY, array() );
 		return is_array( $raw ) ? $raw : array();
+	}
+
+	/**
+	 * Returns all connections with the secret API key stripped, suitable for
+	 * sending to the browser. Each connection gains a boolean `has_key` so the
+	 * UI can show whether a key is stored without ever exposing the key itself.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	public function client_safe_connections(): array {
+		$safe = array();
+		foreach ( $this->get_all_connections() as $id => $conn ) {
+			if ( ! is_array( $conn ) ) {
+				continue;
+			}
+			$safe[ $id ] = $this->client_safe_connection( $conn );
+		}
+		return $safe;
+	}
+
+	/**
+	 * Strips the secret API key from a single connection and flags whether one
+	 * is stored. Pass-through for null so callers can forward a missing lookup.
+	 *
+	 * @param array<string, mixed>|null $conn Connection config.
+	 * @return array<string, mixed>|null
+	 */
+	public function client_safe_connection( ?array $conn ): ?array {
+		if ( ! is_array( $conn ) ) {
+			return $conn;
+		}
+		$conn['has_key'] = ! empty( $conn['api_key'] );
+		unset( $conn['api_key'] );
+		return $conn;
 	}
 
 	/** @return array<string, mixed>|null */
@@ -342,6 +395,13 @@ class BoldForm_Lite_Integrations_Page {
 		);
 
 		$normalized = array_merge( $normalized, $this->normalize_type_fields( $data, $type ) );
+
+		// Preserve the stored API key when the payload leaves it blank. The key is
+		// never sent to the browser, so a save from the settings modal arrives with
+		// an empty api_key unless the admin deliberately typed a new one.
+		if ( empty( $normalized['api_key'] ) && ! empty( $all[ $id ]['api_key'] ) ) {
+			$normalized['api_key'] = $all[ $id ]['api_key'];
+		}
 
 		$all[ $id ] = $normalized;
 		update_option( self::OPTION_KEY, $all, false );
@@ -410,10 +470,11 @@ class BoldForm_Lite_Integrations_Page {
 				'category'   => 'newsletter',
 				'desc'       => __( 'Add contacts to a Brevo contact list.', 'boldform-lite' ),
 				'list_label' => __( 'Contact List', 'boldform-lite' ),
+				// No Tags field: Brevo's POST /v3/contacts endpoint has no tags parameter,
+				// so tagging is not supported here (unlike Mailchimp).
 				'fields'     => array(
 					array( 'key' => 'api_key', 'label' => 'API Key',      'type' => 'password', 'required' => true, 'placeholder' => 'xkeysib-…' ),
 					array( 'key' => 'list_id', 'label' => 'Contact List', 'type' => 'list_select', 'required' => true ),
-					array( 'key' => 'tags',    'label' => 'Tags',         'type' => 'text',     'placeholder' => 'subscriber' ),
 				),
 			),
 			// Additional types — shown as static cards. Pro replaces with functional entries via filter.
@@ -818,7 +879,7 @@ class BoldForm_Lite_Integrations_Page {
 		}
 
 		$id         = $this->upsert_connection( $data );
-		$connection = $this->get_connection( $id );
+		$connection = $this->client_safe_connection( $this->get_connection( $id ) );
 
 		wp_send_json_success( array( 'connection' => $connection ) );
 	}
@@ -862,11 +923,40 @@ class BoldForm_Lite_Integrations_Page {
 		}
 
 		if ( $enable ) {
-			// Create or activate.
-			$data = $found ? $found : array( 'type' => $type );
-			$data['status'] = 'active';
-			$id   = $this->upsert_connection( $data );
-			$conn = $this->get_connection( $id );
+			// Refuse to activate a connection that has no API key — it would show
+			// as "on" while every dispatch silently no-ops. Tell the UI to open
+			// the settings modal instead so the admin can add credentials first.
+			if ( empty( $found['api_key'] ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Add your API key in settings before enabling this integration.', 'boldform-lite' ),
+						'code'    => 'needs_setup',
+					)
+				);
+			}
+
+			// Likewise refuse to activate when the type requires a list/audience that has
+			// not been chosen yet — same silent-no-op failure mode as a missing API key.
+			$def = $this->get_type_defs()[ $type ] ?? array();
+			foreach ( ( $def['fields'] ?? array() ) as $def_field ) {
+				if ( 'list_select' !== ( $def_field['type'] ?? '' ) || empty( $def_field['required'] ) ) {
+					continue;
+				}
+				$field_key = (string) ( $def_field['key'] ?? '' );
+				if ( '' !== $field_key && empty( $found[ $field_key ] ) ) {
+					wp_send_json_error(
+						array(
+							'message' => __( 'Choose a list before enabling this integration.', 'boldform-lite' ),
+							'code'    => 'needs_setup',
+						)
+					);
+				}
+			}
+
+			// Activate the existing, configured connection.
+			$found['status'] = 'active';
+			$id   = $this->upsert_connection( $found );
+			$conn = $this->client_safe_connection( $this->get_connection( $id ) );
 			wp_send_json_success( array( 'connection' => $conn ) );
 		} else {
 			// Deactivate (keep settings).
@@ -944,11 +1034,31 @@ class BoldForm_Lite_Integrations_Page {
 	// API clients (free)
 	// =====================================================================
 
+	/**
+	 * Extracts the Mailchimp data center from an API key.
+	 *
+	 * The data center is the suffix after the final dash — always letters followed
+	 * by digits (e.g. us6, us21, eu2). Returns '' when the key has no valid suffix,
+	 * so callers never interpolate an arbitrary value into the request host nor
+	 * silently fall back to a guessed data center. Shared by the list-fetch (here)
+	 * and the dispatcher so both parse the key identically.
+	 *
+	 * @param string $api_key Mailchimp API key.
+	 * @return string Data-center token, or '' when absent/invalid.
+	 */
+	public static function mailchimp_datacenter( string $api_key ): string {
+		if ( preg_match( '/-([a-z]+\d+)$/', trim( $api_key ), $m ) ) {
+			return $m[1];
+		}
+		return '';
+	}
+
 	private function fetch_mailchimp_lists( string $api_key ) {
 		$api_key = trim( $api_key );
-		$dc      = 'us1';
-		if ( preg_match( '/-([a-z0-9]+)$/', $api_key, $m ) ) {
-			$dc = $m[1];
+		$dc      = self::mailchimp_datacenter( $api_key );
+
+		if ( '' === $dc ) {
+			return new WP_Error( 'mailchimp_error', __( 'API key is missing a valid data-center suffix (for example, -us6).', 'boldform-lite' ) );
 		}
 
 		$response = wp_remote_get(

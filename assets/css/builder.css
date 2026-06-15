@@ -1,6 +1,23 @@
+/* Drop WP's left gutter so the builder is flush-left, matching the other admin
+   pages (settings.css does the same). This replaces the old negative-margin hack,
+   which only partly cancelled the gutter and left a gap on the left. */
+#wpcontent {
+	padding-left: 0;
+}
+
+/* The Preview Form page loads builder.css too but uses a normal .wrap, so it
+   needs WP's standard left gutter back — without it the page sits flush-left and
+   the reclaimed width pushes a horizontal scrollbar. Scoped to the preview
+   screen's body class (added in PHP) so the builder stays full-bleed. */
+.boldform-preview-screen #wpcontent {
+	padding-left: 20px;
+}
+
 .boldform-builder-page {
-	margin: 20px 20px 0 0;
-	padding-bottom: 24px;
+	/* Full-bleed: #wpcontent's left padding is removed above and the default
+	   .wrap margins are reset so the builder spans the whole admin content area. */
+	margin: 0;
+	padding: 20px 20px 24px;
 	background:
 		radial-gradient(circle at top left, rgba(191, 219, 254, 0.22), transparent 24%),
 		linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
@@ -10,7 +27,10 @@
 .boldform-setup-screen {
 	min-height: 100vh;
 	background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-	margin: -20px -20px 0 0;
+	/* Full-bleed: negative margins cancel .boldform-builder-page's 20px padding on
+	   top, right AND left so the setup screen (dark header + gradient) reaches every
+	   edge. Left was previously 0, which left a 20px gap showing the parent gradient. */
+	margin: -20px -20px 0 -20px;
 	padding-bottom: 40px;
 }
 
@@ -185,14 +205,18 @@
 	min-width: 0;
 }
 
-.boldform-builder-title .dashicons {
+.boldform-builder-title .dashicons,
+.boldform-builder-title__badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	width: 42px;
 	height: 42px;
-	line-height: 42px;
+	min-width: 42px;
+	min-height: 42px;
 	border-radius: 12px;
 	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
 	color: #fff;
-	text-align: center;
 }
 
 .boldform-builder-title input {
@@ -240,6 +264,15 @@
 .boldform-builder-actions .button-primary:hover {
 	background: #135e96;
 	border-color: #135e96;
+}
+
+.boldform-builder-actions .boldform-builder-status {
+	flex: 0 0 100%;
+    text-align: end;
+}
+
+.boldform-builder-actions .boldform-builder-status:empty {
+	display: none;
 }
 
 .boldform-preview-btn {
@@ -298,12 +331,30 @@
 }
 
 .boldform-builder-shortcode__code {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
 	max-width: 280px;
 	overflow: hidden;
-	text-overflow: ellipsis;
 	white-space: nowrap;
 	font-size: 12px;
+}
+
+.boldform-builder-shortcode__copy {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #98a2b3;
+	flex-shrink: 0;
+}
+
+.boldform-builder-shortcode:hover .boldform-builder-shortcode__copy {
+	color: #0f766e;
+}
+
+.boldform-builder-shortcode.is-copied .boldform-builder-shortcode__copy {
+	color: #16a34a;
 }
 
 .boldform-builder-status {
@@ -352,7 +403,7 @@
 
 .boldform-builder-shell {
 	display: grid;
-	grid-template-columns: 30% 69%;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
 	gap: 20px;
 	align-items: start;
 }
@@ -372,13 +423,13 @@
 	background: rgba(255, 255, 255, 0.86);
 	display: flex;
 	flex-direction: column;
-	max-height: calc(100vh - 100px);
+	max-height: calc(100vh - 22px);
 }
 
 .boldform-sidebar-tabs {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	padding: 12px 12px 0;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	padding: 12px 12px 18px;
 	gap: 8px;
 	border-bottom: 0;
 	background: transparent;
@@ -424,6 +475,10 @@
 	display: block;
 }
 
+.boldform-sidebar-view.is-active .boldform-panel-head {
+	padding-top: 0;
+}
+
 .boldform-panel {
 	background: rgba(255, 255, 255, 0.86);
 	border: 1px solid rgba(226, 232, 240, 0.9);
@@ -433,7 +488,7 @@
 }
 
 .boldform-panel-head {
-	padding: 18px 20px 14px;
+	padding: 18px 18px 14px;
 	border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 
@@ -454,8 +509,610 @@
 	color: #64748b;
 }
 
+/* Settings view: full-width card (the inner left-nav + content layout fills
+   the row; nav width and content padding handle the proportions). */
 .boldform-global-settings-panel {
-	max-width: 960px;
+	width: 100%;
+	max-width: none;
+}
+
+/* Style tab: styling controls on the left, live form preview on the right. */
+.boldform-style-shell {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+	gap: 20px;
+	align-items: start;
+}
+
+.boldform-style-controls {
+	min-width: 0;
+}
+
+/* Pin the preview to the viewport and let it scroll internally (mirrors the
+   Builder field-library sidebar) so a tall form never scrolls the whole page. */
+.boldform-style-preview {
+	min-width: 0;
+	position: sticky;
+	top: 20px;
+	align-self: start;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100vh - 20px);
+	overflow: hidden;
+}
+
+.boldform-style-preview .boldform-panel-head {
+	flex: 0 0 auto;
+}
+
+/* Live-preview header: title on the left, device switcher on the right. */
+.boldform-style-preview__head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.boldform-device-toggle {
+	display: inline-flex;
+	gap: 2px;
+	flex: 0 0 auto;
+	padding: 3px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f1f5f9;
+}
+
+.boldform-device-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 28px;
+	padding: 0;
+	border: 0;
+	border-radius: 7px;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-device-btn .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
+.boldform-device-btn:hover {
+	color: #0f172a;
+}
+
+.boldform-device-btn.is-active {
+	background: #fff;
+	color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+/* Device framing for the preview stage (representative widths). */
+.boldform-style-preview-canvas {
+	transition: max-width 0.2s ease;
+}
+
+.boldform-style-preview-canvas.is-device-tablet,
+.boldform-style-preview-canvas.is-device-mobile {
+	width: 100%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.boldform-style-preview-canvas.is-device-tablet {
+	max-width: 768px;
+}
+
+.boldform-style-preview-canvas.is-device-mobile {
+	max-width: 380px;
+}
+
+/* ── Advanced (full-parity) style controls ── */
+.boldform-adv-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 14px;
+	align-items: start;
+}
+
+/* The row gap owns all vertical rhythm inside the grid — clear each control's
+   own bottom margin so spacing isn't doubled (gap + margin). */
+.boldform-adv-grid > .boldform-setting-group {
+	margin-bottom: 0;
+}
+
+/* Composite controls (and sub-headings) take the full row; compact color /
+   slider controls pack two-up to match the density of the legacy sections. */
+.boldform-adv-grid > .boldform-adv-subhead,
+.boldform-adv-grid > .boldform-adv-statetabs,
+.boldform-adv-grid > .boldform-adv-field[data-type="dimension"],
+.boldform-adv-grid > .boldform-adv-field[data-type="typography"],
+.boldform-adv-grid > .boldform-adv-field[data-type="shadow"],
+.boldform-adv-grid > .boldform-adv-field[data-type="background"],
+.boldform-adv-grid > .boldform-adv-field[data-type="border"],
+.boldform-adv-grid > .boldform-adv-field[data-type="switch"] {
+	grid-column: 1 / -1;
+}
+
+/* Normal / Hover / Focus state switcher — segmented tabs above the active state's
+   controls; only one panel shows at a time so each state's colours are grouped. */
+.boldform-adv-statetabs > label {
+	display: block;
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: #475569;
+}
+
+.boldform-adv-state-tabs {
+	display: flex;
+	gap: 2px;
+	margin-bottom: 12px;
+	padding: 3px;
+	border: 1px solid #e2e8f0;
+	border-radius: 9px;
+	background: #f1f5f9;
+}
+
+.bf-adv-state-tab {
+	flex: 1 1 0;
+	padding: 7px 10px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #64748b;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+.bf-adv-state-tab:hover {
+	color: #0f172a;
+}
+
+.bf-adv-state-tab.is-active {
+	background: #fff;
+	color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.bf-adv-state-panel[hidden] {
+	display: none;
+}
+
+.boldform-adv-subhead {
+	grid-column: 1 / -1;
+	margin: 2px 0 0;
+	padding-top: 12px;
+	border-top: 1px solid #eef2f7;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #94a3b8;
+}
+
+/* First control after a sub-heading shouldn't add extra top gap beyond the
+   heading's own rule — the grid gap already separates them cleanly. */
+.boldform-adv-grid > .boldform-adv-field {
+	min-width: 0;
+}
+
+/* Two-up controls (color/slider/select) sit side by side in the grid. In the
+   narrow style panel many of their labels wrap to two lines while their row
+   neighbor stays on one, which would push the control boxes to different
+   heights and break row alignment. Reserve a consistent two-line label height so
+   single- and double-line labels start their controls at the same baseline. */
+.boldform-adv-dim {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+}
+
+/* Each side input sits above a persistent caption (Top/Right/Bottom/Left), so the
+   side stays identifiable after a value is typed — the unit/link align to the inputs. */
+.bf-adv-dim-cell {
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.boldform-adv-dim .bf-adv-dim {
+	width: 100%;
+	min-width: 0;
+	padding: 0 2px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+/* Keep the native number stepper visible here too, matching the single-value style
+   controls (Font Size, Line Height, …). The spin button reserves its own space at the
+   right, so the centred value stays clear of it. */
+.boldform-adv-dim .bf-adv-dim::-webkit-inner-spin-button,
+.boldform-adv-dim .bf-adv-dim::-webkit-outer-spin-button {
+	opacity: 1;
+}
+
+.bf-adv-dim-cap {
+	text-align: center;
+	font-size: 10px;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+	line-height: 1;
+	color: #94a3b8;
+}
+
+/* Narrow px/em/% unit dropdown: higher specificity than the generic select rule so
+   it can carry its own small chevron without the 36px right-padding that clipped "px". */
+.boldform-style-section .boldform-adv-dim .bf-adv-dim-unit {
+	flex: 0 0 auto;
+	width: 45px;
+	min-width: 45px;
+	padding: 0 17px 0 8px;
+	text-align: left;
+	text-align-last: left;
+	box-sizing: border-box;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 5px center;
+	background-size: 11px;
+}
+
+.boldform-adv-dim .bf-adv-dim-link {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	padding: 0;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.boldform-adv-dim .bf-adv-dim-link .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+	line-height: 15px;
+}
+
+.boldform-adv-dim .bf-adv-dim-link.is-active {
+	border-color: #0f766e;
+	background: #ecfdf5;
+	color: #0f766e;
+}
+
+/* Icon-segmented alignment switch (left / center / right / full width). */
+.bf-adv-align {
+	display: flex;
+	gap: 6px;
+}
+
+.bf-adv-align-btn {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 38px;
+	padding: 0;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	color: #64748b;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.bf-adv-align-btn:hover {
+	border-color: #cbd5e1;
+	color: #475569;
+}
+
+.bf-adv-align-btn.is-active {
+	border-color: #0f766e;
+	background: #ecfdf5;
+	color: #0f766e;
+}
+
+/* Max Width is meaningless under "Full Width" alignment — dim + lock it. */
+.boldform-adv-field.is-disabled {
+	opacity: 0.5;
+	pointer-events: none;
+}
+
+.boldform-adv-field.is-disabled input,
+.boldform-adv-field.is-disabled select {
+	cursor: not-allowed;
+}
+
+.boldform-adv-border {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+/* Width + Style sit in labelled cells (caption on top, left-aligned) so the
+   narrow Width box shows a "0" default instead of a clipped "Wid…" placeholder. */
+.bf-adv-bd-cell {
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 4px;
+}
+
+.bf-adv-bd-cell--width,
+.bf-adv-bd-cell--style {
+	flex: 1 1 0;
+	min-width: 0;
+}
+
+.boldform-adv-border .bf-adv-bw {
+	width: 100%;
+}
+
+.boldform-adv-border .bf-adv-bs {
+	width: 100%;
+}
+
+.boldform-adv-typo-grid,
+.boldform-adv-shadow-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+/* Each typography / box-shadow control shows a persistent caption (font size,
+   blur, etc.) on top, left-aligned — like a normal field label — so the field
+   name stays visible after a value is typed. column-reverse puts the caption
+   (last DOM child) above its input. */
+.bf-adv-typo-cell,
+.bf-adv-shadow-cell {
+	display: flex;
+	flex-direction: column-reverse;
+	gap: 4px;
+	min-width: 0;
+}
+
+.boldform-adv-typo-grid .bf-adv-typo-cell--full {
+	grid-column: 1 / -1;
+}
+
+/* Captions in these labelled cells read top-left (overrides the centered
+   .bf-adv-dim-cap default, which still suits the compact 4-side dimension grid). */
+.bf-adv-bd-cell .bf-adv-dim-cap,
+.bf-adv-typo-cell .bf-adv-dim-cap,
+.bf-adv-shadow-cell .bf-adv-dim-cap {
+	text-align: left;
+}
+
+.boldform-adv-shadow-foot {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+	margin-top: 6px;
+}
+
+.boldform-adv-shadow-foot .bf-adv-sc-row {
+	flex: 1;
+}
+
+.bf-adv-inset-lbl {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	color: #475569;
+	white-space: nowrap;
+}
+
+.boldform-adv-bg-tabs {
+	display: inline-flex;
+	gap: 2px;
+	margin-bottom: 8px;
+	padding: 3px;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	background: #f1f5f9;
+}
+
+.bf-adv-bgtype {
+	padding: 4px 12px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #64748b;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.bf-adv-bgtype.is-active {
+	background: #fff;
+	color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.boldform-adv-bg-grad {
+	display: grid;
+	gap: 12px;
+}
+
+/* Each gradient stop (and the angle) is a labelled control stacked vertically,
+   so the angle field reads as its own field instead of glued under Color 2. */
+.boldform-adv-bg-stop {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.boldform-adv-bg-stop > .bf-adv-bg-cap {
+	font-size: 11px;
+	font-weight: 500;
+	color: #64748b;
+	line-height: 1.3;
+}
+
+.boldform-adv-switch .bf-adv-switch-lbl {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	font-size: 13px;
+	color: #334155;
+}
+
+/* Advanced checkboxes (shadow "Inset", switch toggles) — small, theme-tinted, native. */
+.boldform-adv-field input[type="checkbox"] {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	min-width: 16px;
+	margin: 0;
+	padding: 0;
+	accent-color: #0f766e;
+	cursor: pointer;
+}
+
+/* On/off controls ("Full Width", etc.) read as toggles, so render the switch
+   checkboxes as a sliding switch rather than a native box. Scoped to
+   .bf-adv-toggle so the shadow "Inset" checkbox keeps the plain box. */
+.boldform-adv-field input[type="checkbox"].bf-adv-toggle {
+	position: relative;
+	width: 34px;
+	min-width: 34px;
+	height: 20px;
+	border: none;
+	border-radius: 999px;
+	background: #cbd5e1;
+	-webkit-appearance: none;
+	appearance: none;
+	transition: background 0.18s ease;
+}
+
+.boldform-adv-field input[type="checkbox"].bf-adv-toggle::before {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
+	transition: transform 0.18s ease;
+}
+
+.boldform-adv-field input[type="checkbox"].bf-adv-toggle:checked {
+	background: #0f766e;
+}
+
+.boldform-adv-field input[type="checkbox"].bf-adv-toggle:checked::before {
+	transform: translateX(14px);
+}
+
+.boldform-adv-field input[type="checkbox"].bf-adv-toggle:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 2px;
+}
+
+.bf-adv-bc-row,
+.bf-adv-sc-row {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-top: 2px;
+}
+
+/* "Color" caption sits top-left above the picker, matching Width/Style/X Offset. */
+.bf-adv-bc-row .bf-adv-dim-cap,
+.bf-adv-sc-row .bf-adv-dim-cap {
+	text-align: left;
+}
+
+/* Inherits padding:18px from .boldform-canvas; framed as an inset preview stage
+   that takes the remaining height and scrolls its own overflow. */
+.boldform-style-preview-canvas {
+	overflow-y: auto;
+}
+
+.boldform-style-preview-canvas::-webkit-scrollbar {
+	width: 6px;
+}
+
+.boldform-style-preview-canvas::-webkit-scrollbar-thumb {
+	background: #cbd5e1;
+	border-radius: 999px;
+}
+
+/* Mirror of the front-end .boldform-lite-form so the Form Container controls
+   (max-width, padding, background, border, radius, shadow) preview live. Kept
+   byte-for-byte in sync with frontend.css .boldform-lite-form. */
+.boldform-style-preview-form {
+	max-width: var(--bf-form-mw, var(--bf-form-max-width, 100%));
+	margin-left: var(--bf-form-ml, 0);
+	margin-right: var(--bf-form-mr, 0);
+	padding: var(--bf-form-padding, 0);
+	border-width: var(--bf-form-border-width, 0);
+	border-style: var(--bf-form-border-style, solid);
+	border-color: var(--bf-form-border-color, transparent);
+	border-radius: var(--bf-form-radius, 0);
+	background: var(--bf-form-bg, transparent);
+	box-shadow: var(--bf-form-shadow, none);
+}
+
+.boldform-style-preview-form:hover {
+	box-shadow: var(--bf-form-shadow-hover, var(--bf-form-shadow, none));
+}
+
+.boldform-style-preview-row {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0 -8px;
+}
+
+.boldform-style-preview-column {
+	min-width: 0;
+	padding: 0 8px;
+	box-sizing: border-box;
+}
+
+/* Field margin and the 16px within-column gap come from the Layout & Spacing
+   controls (see "Layout & spacing (Style preview)" further down), wired to
+   mirror the front-end box model. */
+
+/* Read-only preview: no hover affordance and no pointer interactions. */
+.boldform-style-preview-canvas .boldform-canvas-field:hover {
+	background: transparent;
+}
+
+.boldform-style-preview-canvas input,
+.boldform-style-preview-canvas textarea,
+.boldform-style-preview-canvas select,
+.boldform-style-preview-canvas .boldform-canvas-submit__button {
+	pointer-events: none;
+}
+
+.boldform-style-preview-empty {
+	padding: 48px 20px;
+	text-align: center;
+	color: #64748b;
 }
 
 .boldform-field-library {
@@ -507,8 +1164,39 @@
 }
 
 .boldform-canvas-panel {
+	position: relative;
 	min-height: 640px;
 	overflow: hidden;
+}
+
+/* Loading overlay shown until builder.js renders the canvas, so an existing
+   form does not flash the empty "Start building your form" placeholder while
+   the (footer-loaded) script downloads — most visible on slow connections. */
+.boldform-canvas-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #fff;
+}
+
+.boldform-canvas-loading__spinner {
+	width: 38px;
+	height: 38px;
+	border: 3px solid #e5e7eb;
+	border-top-color: #0f766e;
+	border-radius: 50%;
+	animation: boldform-canvas-spin 0.7s linear infinite;
+}
+
+@keyframes boldform-canvas-spin {
+	to { transform: rotate( 360deg ); }
+}
+
+@media ( prefers-reduced-motion: reduce ) {
+	.boldform-canvas-loading__spinner { animation-duration: 1.6s; }
 }
 
 .boldform-canvas-field--section_break .boldform-canvas-field-body,
@@ -533,14 +1221,15 @@
 	color: #64748b;
 }
 
+/* Match the front-end terms field: no wrapper box (the front-end renders the
+   checkbox + copy inline with no border/background). */
 .boldform-canvas-terms {
 	display: flex;
 	align-items: flex-start;
 	gap: 10px;
-	padding: 12px 14px;
-	border: 1px solid #e2e8f0;
-	border-radius: 14px;
-	background: #fff;
+	padding: 0;
+	border: 0;
+	background: transparent;
 }
 
 .boldform-canvas-terms input[type="checkbox"] {
@@ -556,6 +1245,8 @@
 	flex-shrink: 0;
 	-webkit-appearance: auto;
 	appearance: auto;
+	/* Follow the design theme accent (same fallback chain as the front-end choice control). */
+	accent-color: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	cursor: pointer;
 }
 
@@ -574,7 +1265,6 @@
 	padding: 18px;
 }
 
-.boldform-canvas-empty,
 .boldform-settings-empty {
 	margin: 18px;
 	padding: 28px;
@@ -584,43 +1274,163 @@
 	color: #64748b;
 }
 
+.boldform-canvas-empty {
+	margin: 18px;
+	padding: 48px 32px;
+	border: 1px solid #e4ebf3;
+	border-radius: 20px;
+	background:
+		radial-gradient(130% 120% at 50% -10%, #eef6ff 0%, rgba(238, 246, 255, 0) 55%),
+		linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	color: #475569;
+}
+
 .boldform-empty-state {
-	max-width: 520px;
+	max-width: 560px;
 	margin: 0 auto;
 	display: grid;
-	gap: 12px;
+	gap: 10px;
 	text-align: center;
 }
 
-.boldform-empty-state .dashicons {
-	width: 56px;
-	height: 56px;
-	line-height: 56px;
-	margin: 0 auto;
-	border-radius: 16px;
-	background: #e0f2fe;
-	color: #155e75;
-	font-size: 28px;
+.boldform-empty-state__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 6px;
+	border-radius: 18px;
+	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
+	color: #fff;
+	font-size: 32px;
+	box-shadow: 0 12px 26px rgba(15, 118, 110, 0.28);
+}
+
+.boldform-empty-state__icon.dashicons {
+	width: 64px;
+	height: 64px;
+	line-height: 1;
+}
+
+.boldform-empty-state__icon::before {
+	width: 32px;
+	height: 32px;
 }
 
 .boldform-empty-state h3 {
 	margin: 0;
-	font-size: 24px;
+	font-size: 22px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
 	color: #0f172a;
 }
 
 .boldform-empty-state p {
-	margin: 0;
+	margin: 0 auto;
+	max-width: 420px;
+	font-size: 14px;
+	line-height: 1.55;
+	color: #64748b;
 }
 
 .boldform-start-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
-	margin-top: 8px;
+	gap: 14px;
+	margin-top: 18px;
+	text-align: left;
 }
 
-.boldform-start-card,
+.boldform-start-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	width: 100%;
+	padding: 18px;
+	border: 1px solid #e4ebf3;
+	border-radius: 16px;
+	background: #fff;
+	text-align: left;
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-start-card__icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 42px;
+	height: 42px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+	color: #0f766e;
+	transition: background 0.16s ease, color 0.16s ease;
+}
+
+.boldform-start-card__icon .dashicons {
+	width: 22px;
+	height: 22px;
+	font-size: 22px;
+	line-height: 22px;
+}
+
+.boldform-start-card__body {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-start-card__body strong {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.3;
+	color: #0f172a;
+}
+
+.boldform-start-card__body span {
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: #64748b;
+}
+
+.boldform-start-card__arrow.dashicons {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin-top: 2px;
+	font-size: 18px;
+	line-height: 18px;
+	color: #cbd5e1;
+	transition: color 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-start-card:hover {
+	border-color: #0f766e;
+	box-shadow: 0 14px 30px rgba(15, 118, 110, 0.14);
+	transform: translateY(-2px);
+}
+
+.boldform-start-card:hover .boldform-start-card__icon {
+	background: linear-gradient(135deg, #0f766e 0%, #155e75 100%);
+	color: #fff;
+}
+
+.boldform-start-card:hover .boldform-start-card__arrow.dashicons {
+	color: #0f766e;
+	transform: translateX(3px);
+}
+
+.boldform-start-card:focus-visible {
+	outline: 2px solid #0f766e;
+	outline-offset: 2px;
+}
+
 .boldform-template-card,
 .boldform-template-option {
 	display: block;
@@ -665,20 +1475,17 @@
 	min-width: 0;
 }
 
-.boldform-start-card strong,
 .boldform-template-card strong {
 	font-size: 14px;
 	color: #0f172a;
 }
 
-.boldform-start-card span,
 .boldform-template-card span {
 	font-size: 13px;
 	line-height: 1.5;
 	color: #64748b;
 }
 
-.boldform-start-card:hover,
 .boldform-template-card:hover {
 	border-color: #cbd5e1;
 	background: #fff;
@@ -735,19 +1542,30 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	padding: 24px 16px;
-	border: 2px dashed #d1d5db;
-	border-radius: 12px;
-	background: #f9fafb;
-	color: #6b7280;
+	/* Respond to Height (floor) and the Padding control, like the front-end file
+	   input; defaults keep the roomy drop-zone look when neither is set. */
+	min-height: var(--bf-field-height, auto);
+	padding: var(--bf-field-padding, 24px 16px);
+	border: 2px dashed var(--bf-field-border, #d1d5db);
+	border-radius: var(--bf-field-radius, 12px);
+	background: var(--bf-field-bg, #f9fafb);
+	color: var(--bf-file-btn-text, var(--bf-field-text, #6b7280));
 	font-size: 14px;
 }
 
+/* Icon chip — mirrors the front-end drop-zone; driven by the File Upload
+   section's Background / Text controls so the preview reflects them. */
 .boldform-canvas-file-preview .dashicons {
-	font-size: 20px;
-	width: 20px;
-	height: 20px;
-	color: #9ca3af;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	font-size: 18px;
+	line-height: 1;
+	background: var(--bf-file-btn-bg, #e2e8f0);
+	color: var(--bf-file-btn-text, #334155);
 }
 
 /* Button icon in canvas */
@@ -838,6 +1656,8 @@
 
 .boldform-row__actions,
 .boldform-canvas-field-actions {
+	position: relative;
+	z-index: 2;
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -893,11 +1713,13 @@
 	line-height: 16px;
 }
 
-.boldform-move-field {
+.boldform-move-field,
+.boldform-row-move {
 	cursor: grab;
 }
 
-.boldform-move-field:active {
+.boldform-move-field:active,
+.boldform-row-move:active {
 	cursor: grabbing;
 }
 
@@ -932,17 +1754,29 @@
 	min-height: 90px;
 }
 
-.boldform-column__empty {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 76px;
+/* Empty drop zone — the dashed frame lives on the field container itself rather
+   than on a child box. When SortableJS drops a field's ghost into an empty
+   column it becomes a child of .boldform-column-fields; anchoring the frame here
+   means the incoming ghost lands *inside* the dashed area instead of stacking
+   below it (which read as "dropping outside the box"). */
+.boldform-column-fields.is-empty {
+	align-content: center;
 	padding: 12px;
 	border: 1px dashed #dbe4ee;
 	border-radius: 14px;
 	background: rgba(255, 255, 255, 0.7);
+}
+
+.boldform-column__empty {
 	color: #94a3b8;
 	text-align: center;
+}
+
+/* While a field is dragged into the empty column, hide the prompt so only the
+   incoming field shows, centered inside the frame. Browsers without :has()
+   simply keep the prompt above the ghost — still inside the frame. */
+.boldform-column-fields.is-empty:has( .sortable-ghost ) .boldform-column__empty {
+	display: none;
 }
 
 .boldform-canvas-field {
@@ -955,12 +1789,36 @@
 	transition: box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.boldform-canvas-field:hover {
-	background: rgba(248, 250, 252, 0.78);
+/* Hover / selected highlight drawn as an overlay that extends slightly beyond
+   the field content, so it reads as a padded, bordered card without shifting
+   the grid layout (the field itself keeps padding: 0). */
+.boldform-canvas-field::before {
+	content: "";
+	position: absolute;
+	inset: -8px -10px;
+	border: 1px solid transparent;
+	border-radius: 12px;
+	transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+	pointer-events: none;
+	z-index: 0;
+	display: none;
+}
+
+.boldform-canvas-field:hover::before {
+	background: #f8fafc;
+	border-color: #e2e8f0;
+}
+
+.boldform-canvas-field.is-selected::before {
+	background: #f6fafe;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
 }
 
 
 .boldform-canvas-field-body {
+	position: relative;
+	z-index: 1;
 	display: grid;
 	gap: 8px;
 	padding: 0;
@@ -976,7 +1834,7 @@
 
 /* Per-field label placement */
 .boldform-canvas-field.is-label-left .boldform-canvas-field-body {
-	grid-template-columns: 120px 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 	align-items: center;
 	gap: 12px;
 }
@@ -987,7 +1845,7 @@
 }
 
 .boldform-canvas-field.is-label-right .boldform-canvas-field-body {
-	grid-template-columns: 1fr 120px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 12px;
 }
@@ -1051,6 +1909,10 @@
 	font-size: var(--bf-field-font-size, 16px);
 }
 
+.boldform-canvas .boldform-canvas-field-body input:checked::before {
+	display: none;
+}
+
 .boldform-canvas .boldform-choice,
 .boldform-template-preview__canvas .boldform-choice {
 	display: flex;
@@ -1083,9 +1945,21 @@
 	appearance: auto;
 }
 
+.boldform-canvas .boldform-choice input[type="checkbox"]:checked::before {
+	display: none;
+}
+
 .boldform-canvas .boldform-choice input[type="radio"],
 .boldform-template-preview__canvas .boldform-choice input[type="radio"] {
 	border-radius: 50%;
+}
+
+/* Native choice inputs (builder canvas, template preview and the Style-tab live
+   preview all render .boldform-choice) follow the design-theme accent when checked,
+   matching the frontend, which themes its custom control via the same accent. */
+.boldform-choice input[type="checkbox"],
+.boldform-choice input[type="radio"] {
+	accent-color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 }
 
 .boldform-canvas .boldform-canvas-field-body select,
@@ -1218,7 +2092,7 @@
 /* Name field canvas preview */
 .boldform-canvas-name {
 	display: flex;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-name__field {
@@ -1229,9 +2103,17 @@
 }
 
 .boldform-canvas-name__sub {
-	font-size: 11px;
-	color: #94a3b8;
-	font-weight: 500;
+	font-family: var(--bf-sublabel-ff, inherit);
+	font-size: var(--bf-sublabel-fs, 11px);
+	font-weight: var(--bf-sublabel-fw, 500);
+	line-height: var(--bf-sublabel-lh, normal);
+	letter-spacing: var(--bf-sublabel-ls, normal);
+	text-transform: var(--bf-sublabel-tt, none);
+	color: var(--bf-sublabel-color, #94a3b8);
+}
+
+.boldform-canvas-name__field:focus-within .boldform-canvas-name__sub {
+	color: var(--bf-sublabel-focus-color, var(--bf-sublabel-color, #94a3b8));
 }
 
 /* New field canvas previews */
@@ -1240,9 +2122,9 @@
 	align-items: center;
 	gap: 8px;
 	padding: 14px 16px;
-	border: 1px dashed #cbd5e1;
+	border: 1px dashed var(--bf-field-border, #cbd5e1);
 	border-radius: 10px;
-	background: #f8fafc;
+	background: var(--bf-field-bg, #f8fafc);
 	color: #64748b;
 	font-size: 13px;
 }
@@ -1264,13 +2146,13 @@
 
 .boldform-canvas-address {
 	display: grid;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-address__row {
 	display: grid;
 	grid-template-columns: 1fr;
-	gap: 10px;
+	gap: var(--bf-subfield-gap, 10px);
 }
 
 .boldform-canvas-address__row--half {
@@ -1352,12 +2234,15 @@
 .boldform-canvas-star {
 	font-size: var(--star-size, 24px);
 	line-height: 1;
-	color: #cbd5e1;
+	color: #cbd5e1; /* fallback where color-mix is unsupported */
+	/* Empty stars: a light tint of the theme accent so the field reads as
+	   theme-aware even at a 0 rating. Filled stars use the full accent. */
+	color: color-mix(in srgb, var(--star-color, var(--bf-button-bg, #f59e0b)) 30%, #cbd5e1);
 	cursor: default;
 }
 
 .boldform-canvas-star.is-active {
-	color: var(--star-color, #f59e0b);
+	color: var(--star-color, var(--bf-button-bg, #f59e0b));
 }
 
 .boldform-canvas-slider {
@@ -1365,23 +2250,29 @@
 	gap: 6px;
 }
 
-.boldform-canvas-slider input[type="range"] {
+.boldform-canvas-slider:not( .boldform-canvas-slider--dual ) input[type="range"] {
 	width: 100%;
 	height: var(--slider-height, 6px);
+	/* Reset the field padding/border that the generic input rule leaks onto the
+	   range input, so the track height honours --slider-height. */
+	padding: 0;
+	border: 0;
+	box-sizing: border-box;
 	-webkit-appearance: none;
 	appearance: none;
-	background: #e2e8f0;
+	background: #e2e8f0; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e2e8f0);
 	border-radius: 999px;
 	outline: none;
 	pointer-events: none;
 }
 
-.boldform-canvas-slider input[type="range"]::-webkit-slider-thumb {
+.boldform-canvas-slider:not( .boldform-canvas-slider--dual ) input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 18px;
 	height: 18px;
 	border-radius: 50%;
-	background: var(--slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 2px solid #fff;
 	box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
@@ -1395,7 +2286,48 @@
 
 .boldform-canvas-slider__labels span:nth-child(2) {
 	font-weight: 600;
-	color: var(--bf-focus-color, #0f766e);
+	color: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+}
+
+/* Dual-handle slider preview (static: two thumbs over a full-range fill). */
+.boldform-canvas-slider--dual .boldform-canvas-slider__track {
+	position: relative;
+	height: var(--slider-height, 6px);
+	margin: 11px 0;
+	background: #e2e8f0; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e2e8f0);
+	border-radius: 999px;
+}
+
+/* Static preview: teal fill between the two thumb positions (matches the rendered form). */
+.boldform-canvas-slider--dual .boldform-canvas-slider__fill {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 25%;
+	right: 25%;
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border-radius: 999px;
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb {
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border: 2px solid #fff;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb--min {
+	left: 25%;
+}
+
+.boldform-canvas-slider--dual .boldform-canvas-slider__thumb--max {
+	left: 75%;
 }
 
 .boldform-canvas-multiselect {
@@ -1483,8 +2415,8 @@
 .boldform-canvas-calc-input {
 	width: 100%;
 	box-sizing: border-box;
-	background: #f0f4f8;
-	border: 1px dashed #cbd5e1;
+	background: var(--bf-field-bg, #f0f4f8);
+	border: 1px dashed var(--bf-field-border, #cbd5e1);
 	color: #475569;
 	font-style: italic;
 	cursor: default;
@@ -1593,6 +2525,7 @@
 
 .bfcl-condition-row {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: center;
 	gap: 8px;
 	padding: 8px 12px;
@@ -1613,8 +2546,6 @@
 
 .bfcl-condition-row select,
 .bfcl-condition-row input[type="text"] {
-	flex: 1;
-	min-width: 0;
 	padding: 7px 10px;
 	border: 1px solid #e2e8f0;
 	border-radius: 8px;
@@ -1630,6 +2561,27 @@
 	border-color: #2271b1;
 	background: #fff;
 	box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Controls grow to fill the row (flex-basis 0, so the operands share the line
+   equally) but each keeps a usable minimum width. Because the wrap point is
+   driven by these minimums — not the basis — the row stays on one line while
+   the panel is wide and only wraps the value onto a new line, instead of
+   crushing it to nothing, once the 30–35% sidebar gets narrow at mid-size
+   viewports. */
+.bfcl-cond-field {
+	flex: 1 1 0;
+	min-width: 90px;
+}
+
+.bfcl-cond-op {
+	flex: 1 1 0;
+	min-width: 66px;
+}
+
+.bfcl-cond-value {
+	flex: 1 1 0;
+	min-width: 78px;
 }
 
 .bfcl-remove-cond {
@@ -1660,9 +2612,13 @@
 	width: 20px;
 }
 
+.bfcl-remove-placeholder:empty {
+	display: none;
+}
+
 .bfcl-no-value {
-	flex: 1;
-	min-width: 0;
+	flex: 1 1 0;
+	min-width: 78px;
 }
 
 /* Add condition button */
@@ -1882,14 +2838,14 @@
    Class prefix: bfsп- (boldform settings-panel)
    ══════════════════════════════════════════════════════════════════════════ */
 
-.bfsп-stab-layout {
+.bfs-stab-layout {
 	display: flex;
 	min-height: 480px;
 }
 
 /* ── Left nav ────────────────────────────────────────────────────────────── */
-.bfsп-stab-nav {
-	width: 220px;
+.bfs-stab-nav {
+	width: 300px;
 	flex-shrink: 0;
 	border-right: 1px solid rgba(226, 232, 240, 0.8);
 	padding: 14px 10px;
@@ -1900,7 +2856,7 @@
 	border-radius: 0 0 0 20px;
 }
 
-.bfsп-stab-nav-item {
+.bfs-stab-nav-item {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -1916,18 +2872,18 @@
 	position: relative;
 }
 
-.bfsп-stab-nav-item:hover {
+.bfs-stab-nav-item:hover {
 	background: #f1f5f9;
 	color: #0f172a;
 }
 
-.bfsп-stab-nav-item.is-active {
+.bfs-stab-nav-item.is-active {
 	background: #fff;
 	color: #0f172a;
 	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 }
 
-.bfsп-stab-nav-icon {
+.bfs-stab-nav-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1941,12 +2897,12 @@
 	color: #475569;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-icon {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-icon {
 	background: #2271b1;
 	color: #fff;
 }
 
-.bfsп-stab-nav-text {
+.bfs-stab-nav-text {
 	flex: 1;
 	min-width: 0;
 	display: flex;
@@ -1954,7 +2910,7 @@
 	gap: 1px;
 }
 
-.bfsп-stab-nav-label {
+.bfs-stab-nav-label {
 	font-size: 13px;
 	font-weight: 600;
 	line-height: 1.3;
@@ -1963,7 +2919,7 @@
 	text-overflow: ellipsis;
 }
 
-.bfsп-stab-nav-desc {
+.bfs-stab-nav-desc {
 	font-size: 11px;
 	color: #94a3b8;
 	line-height: 1.3;
@@ -1972,33 +2928,33 @@
 	text-overflow: ellipsis;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-desc {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-desc {
 	color: #64748b;
 }
 
-.bfsп-stab-nav-arrow {
+.bfs-stab-nav-arrow {
 	font-size: 16px;
 	color: #cbd5e1;
 	flex-shrink: 0;
 	transition: color 0.13s ease;
 }
 
-.bfsп-stab-nav-item.is-active .bfsп-stab-nav-arrow {
+.bfs-stab-nav-item.is-active .bfs-stab-nav-arrow {
 	color: #94a3b8;
 }
 
 /* Pro-slots area (spacer + separator before Pro tabs) */
-.bfsп-stab-nav-pro-slots {
+.bfs-stab-nav-pro-slots {
 	display: contents;
 }
 
-.bfsп-stab-nav-divider {
+.bfs-stab-nav-divider {
 	margin: 8px 4px;
 	border: none;
 	border-top: 1px solid rgba(226, 232, 240, 0.8);
 }
 
-.bfsп-stab-nav-pro-label {
+.bfs-stab-nav-pro-label {
 	padding: 4px 12px 2px;
 	font-size: 10px;
 	font-weight: 700;
@@ -2008,36 +2964,36 @@
 }
 
 /* ── Right content area ──────────────────────────────────────────────────── */
-.bfsп-stab-content {
+.bfs-stab-content {
 	flex: 1;
 	min-width: 0;
 	overflow-y: auto;
 }
 
-.bfsп-stab-pane {
+.bfs-stab-pane {
 	display: none;
 	padding: 24px 28px;
 }
 
-.bfsп-stab-pane.is-active {
+.bfs-stab-pane.is-active {
 	display: block;
 }
 
 /* Pane header */
-.bfsп-stab-pane-head {
+.bfs-stab-pane-head {
 	margin-bottom: 20px;
 	padding-bottom: 16px;
 	border-bottom: 1px solid rgba(226, 232, 240, 0.7);
 }
 
-.bfsп-stab-pane-head h3 {
+.bfs-stab-pane-head h3 {
 	margin: 0 0 4px;
 	font-size: 15px;
 	font-weight: 700;
 	color: #0f172a;
 }
 
-.bfsп-stab-pane-head p {
+.bfs-stab-pane-head p {
 	margin: 0;
 	font-size: 13px;
 	color: #64748b;
@@ -2093,12 +3049,22 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
+@media ( max-width: 1024px ) {
+	.bfs-stab-nav {
+		width: 240px;
+	}
+
+	.bfs-stab-pane {
+		padding: 20px 22px;
+	}
+}
+
 @media ( max-width: 860px ) {
-	.bfsп-stab-layout {
+	.bfs-stab-layout {
 		flex-direction: column;
 	}
 
-	.bfsп-stab-nav {
+	.bfs-stab-nav {
 		width: auto;
 		flex-direction: row;
 		flex-wrap: wrap;
@@ -2109,17 +3075,17 @@
 		gap: 4px;
 	}
 
-	.bfsп-stab-nav-desc,
-	.bfsп-stab-nav-arrow {
+	.bfs-stab-nav-desc,
+	.bfs-stab-nav-arrow {
 		display: none;
 	}
 
-	.bfsп-stab-nav-item {
+	.bfs-stab-nav-item {
 		flex: 0 0 auto;
 		padding: 7px 12px;
 	}
 
-	.bfsп-stab-pane {
+	.bfs-stab-pane {
 		padding: 18px;
 	}
 }
@@ -2192,23 +3158,50 @@
 }
 
 .boldform-style-section {
-	padding: 16px 18px;
 	border: 1px solid #e2e8f0;
 	border-radius: 12px;
 	background: #fff;
+	overflow: hidden;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Opened group reads as an active card: accent border, soft lift and a tinted
+   header — not just the rotated chevron. */
+.boldform-style-section.is-open {
+	border-color: #cbd5e1;
+	box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+}
+
+/* Padding lives on the head (not the section) so the whole header band is
+   clickable, not just the title text. */
 .boldform-style-section__head {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+	padding: 16px 18px;
 	cursor: pointer;
 	-webkit-user-select: none;
 	user-select: none;
+	transition: background 0.12s ease;
 }
 
+.boldform-style-section__head:hover {
+	background: #f8fafc;
+}
+
+/* When open, divide the header from the body so each is its own evenly
+   padded zone (the hover highlight no longer bleeds into the body). */
 .boldform-style-section.is-open .boldform-style-section__head {
-	margin-bottom: 16px;
+	background: #f1f5f9;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.boldform-style-section.is-open .boldform-style-section__head:hover {
+	background: #e2e8f0;
+}
+
+.boldform-style-section.is-open .boldform-style-section__head h3 {
+	color: #1e293b;
 }
 
 .boldform-style-section__head h3 {
@@ -2216,6 +3209,51 @@
 	font-size: 14px;
 	font-weight: 700;
 	color: #334155;
+}
+
+.boldform-style-section__head-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Per-section reset → clears every control in the group back to its default. */
+.boldform-style-section__reset {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+/* Disabled — the group has no changes, so there is nothing to reset. */
+.boldform-style-section__reset.is-disabled {
+	color: #cbd5e1;
+	opacity: 0.5;
+	cursor: default;
+	pointer-events: none;
+}
+
+/* Active — the group has changed values, so the reset is actionable (accent). */
+.boldform-style-section__reset:not(.is-disabled) {
+	color: #0f766e;
+}
+
+/* Hover (only when actionable) → destructive-red affordance; beats the accent. */
+.boldform-style-section__reset:not(.is-disabled):hover {
+	background: #fee2e2;
+	color: #ef4444;
+}
+
+.boldform-style-section__reset:not(.is-disabled):active {
+	transform: scale(0.92);
 }
 
 .boldform-style-section__head .dashicons {
@@ -2229,10 +3267,20 @@
 
 .boldform-style-section.is-open .boldform-style-section__head .dashicons {
 	transform: rotate(180deg);
+	color: #475569;
+}
+
+.boldform-style-section.is-open .boldform-style-section__head .boldform-style-section__reset:not(.is-disabled) {
+	color: #0f766e;
+}
+
+.boldform-style-section.is-open .boldform-style-section__head .boldform-style-section__reset:not(.is-disabled):hover {
+	color: #ef4444;
 }
 
 .boldform-style-section__body {
 	display: none;
+	padding: 16px 18px;
 }
 
 .boldform-style-section.is-open .boldform-style-section__body {
@@ -2262,6 +3310,14 @@
 	border-top: 1px solid #f1f5f9;
 }
 
+/* In Label Styles the color grid is the body's only child, so its divider has
+   nothing above it — drop the top border/spacing to avoid a stray line + gap. */
+.boldform-style-section__body > .boldform-style-color-grid:first-child {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: 0;
+}
+
 .boldform-style-color-grid .boldform-setting-group {
 	display: flex;
 	flex-direction: column;
@@ -2285,50 +3341,102 @@
 
 .boldform-style-input-wrap {
 	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
 
 .boldform-style-input-wrap input {
-	padding-right: 38px;
+	flex: 1;
+	min-width: 0;
+	padding-right: 34px;
 }
 
-.boldform-style-input-wrap span {
+/* Single-unit fields show the unit as an absolute span; reserve extra room so the
+   value never slides under it AND it clears the native number stepper on the right. */
+.boldform-style-input-wrap:has( > span ) input {
+	padding-right: 48px;
+}
+
+/* Keep the native number stepper available (not hidden) — just always visible and
+   to the right of the unit suffix instead of overlapping it. */
+.boldform-style-input-wrap input::-webkit-inner-spin-button,
+.boldform-style-input-wrap input::-webkit-outer-spin-button {
+	opacity: 1;
+}
+
+.boldform-style-input-wrap > span {
 	position: absolute;
-	right: 12px;
+	right: 28px;
 	top: 50%;
 	transform: translateY(-50%);
 	color: #94a3b8;
 	font-weight: 600;
+	font-size: 11px;
 	pointer-events: none;
 }
 
-/* ── Color field (swatch + hex text) ── */
+/* Unit dropdown next to a slider value (px / em / %) — small chevron, no clipping. */
+.boldform-style-section .boldform-style-input-wrap .bf-adv-unit {
+	flex: 0 0 auto;
+	width: 45px;
+	min-width: 45px;
+	padding: 0 17px 0 8px;
+	text-align: left;
+	text-align-last: left;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 5px center;
+	background-size: 11px;
+}
+
+/* ── Color field (swatch chip + hex text) ── */
 .boldform-color-field {
 	display: flex;
 	align-items: center;
-	gap: 0;
-	height: 40px;
-	border: 1.5px solid #e2e8f0;
-	border-radius: 8px;
-	overflow: hidden;
-	background: #f8fafc;
-	transition: border-color 0.15s, box-shadow 0.15s;
+	gap: 8px;
+	height: 38px;
+	padding: 0 12px 0 6px;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .boldform-color-field:focus-within {
-	border-color: #2271b1;
+	border-color: #0f766e;
 	background: #fff;
-	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
 .boldform-color-swatch {
 	position: relative;
-	width: 38px;
-	min-width: 38px;
-	height: 100%;
+	width: 26px;
+	min-width: 26px;
+	height: 26px;
+	border-radius: 7px;
 	cursor: pointer;
 	overflow: hidden;
-	border-right: 1.5px solid rgba(0, 0, 0, 0.08);
 	flex-shrink: 0;
+	box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+	background-image:
+		linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+		linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+		linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+	background-size: 10px 10px;
+	background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+
+/* Colour overlay painted above the checkerboard so alpha (rgba) shows through. */
+.boldform-color-swatch::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background: var(--bf-sw, transparent);
+	box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.14);
+	pointer-events: none;
 }
 
 .boldform-color-swatch input[type="color"] {
@@ -2349,7 +3457,8 @@
 .boldform-color-swatch input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
 .boldform-color-swatch input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
 
-.boldform-color-hex {
+.boldform-color-hex,
+.boldform-color-field .bf-adv-hex {
 	flex: 1;
 	min-width: 0;
 	height: 100% !important;
@@ -2357,12 +3466,166 @@
 	border-radius: 0 !important;
 	background: transparent !important;
 	box-shadow: none !important;
-	padding: 0 10px !important;
-	font-size: 12px !important;
+	padding: 0 !important;
+	font-size: 12.5px !important;
 	font-family: 'SFMono-Regular', Consolas, monospace;
 	color: #334155 !important;
-	letter-spacing: 0.5px;
+	letter-spacing: 0.4px;
+	text-transform: uppercase;
 	outline: none;
+}
+
+.boldform-color-hex::placeholder,
+.boldform-color-field .bf-adv-hex::placeholder {
+	text-transform: none;
+	letter-spacing: 0;
+	color: #94a3b8;
+}
+
+/* Colour field carrying an opacity (alpha) slider → composes rgba() output. */
+.boldform-color-field--alpha {
+	flex-direction: column;
+	align-items: stretch;
+	height: auto;
+	gap: 7px;
+	padding: 7px 10px;
+}
+
+.boldform-color-field--alpha .boldform-color-cmain {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	height: 26px;
+}
+
+/* Per-colour reset → clears the value so it falls back to the theme default. */
+.boldform-color-field--alpha .bf-adv-color-reset {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+.boldform-color-field--alpha .bf-adv-color-reset:hover {
+	background: #f1f5f9;
+	color: #ef4444;
+}
+
+.boldform-color-field--alpha .bf-adv-color-reset:active {
+	transform: scale(0.92);
+}
+
+/* Nothing to reset when the colour is still at its default — dim and disable. */
+.boldform-color-field--alpha .bf-adv-color-reset:disabled {
+	opacity: 0.35;
+	cursor: default;
+	pointer-events: none;
+}
+
+.boldform-color-alpha {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+/* Slim alpha track: the colour faded 0→100% alpha over a checkerboard, so the
+   exact colour at every opacity step is previewed right on the track. The fade
+   uses an 8-digit-hex gradient (--bf-agrad) so the hue stays true end to end. */
+/* !important mirrors the .bf-adv-hex pattern — it overrides the generic
+   `.boldform-setting-group input` box (padding/border/radius/white bg) that
+   would otherwise turn the range into a tall empty rectangle. */
+.boldform-color-alpha input[type="range"] {
+	-webkit-appearance: none !important;
+	appearance: none !important;
+	flex: 1;
+	min-width: 0;
+	height: 8px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	border-radius: 6px !important;
+	cursor: pointer;
+	outline: none;
+	background-color: #fff !important;
+	background-image:
+		var(--bf-agrad, linear-gradient(to right, #0f766e00, #0f766e)),
+		linear-gradient(45deg, #c2cad6 25%, transparent 25%),
+		linear-gradient(-45deg, #c2cad6 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, #c2cad6 75%),
+		linear-gradient(-45deg, transparent 75%, #c2cad6 75%) !important;
+	background-size: 100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px !important;
+	background-position: 0 0, 0 0, 0 4px, 4px -4px, -4px 0 !important;
+	box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.16);
+}
+
+.boldform-color-alpha input[type="range"]::-webkit-slider-runnable-track {
+	-webkit-appearance: none;
+	height: 8px;
+	border-radius: 6px;
+	background: transparent;
+}
+
+.boldform-color-alpha input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	margin-top: -4px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid rgba(15, 23, 42, 0.22);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.32);
+	cursor: pointer;
+	transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.boldform-color-alpha input[type="range"]:hover::-webkit-slider-thumb {
+	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
+}
+
+.boldform-color-alpha input[type="range"]:active::-webkit-slider-thumb {
+	transform: scale(1.12);
+}
+
+.boldform-color-alpha input[type="range"]:focus-visible::-webkit-slider-thumb {
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.25);
+}
+
+.boldform-color-alpha input[type="range"]::-moz-range-track {
+	height: 8px;
+	border-radius: 6px;
+	background: transparent;
+}
+
+.boldform-color-alpha input[type="range"]::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	border: 1px solid rgba(15, 23, 42, 0.22);
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.32);
+	cursor: pointer;
+}
+
+.boldform-color-alpha .bf-adv-op-val {
+	flex-shrink: 0;
+	min-width: 36px;
+	text-align: right;
+	font-size: 11px;
+	font-weight: 600;
+	font-family: 'SFMono-Regular', Consolas, monospace;
+	color: #475569;
 }
 
 /* Keep old .boldform-color-wrap for any non-style-tab usages */
@@ -2409,6 +3672,65 @@
 .boldform-color-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 .boldform-color-wrap input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 0; }
 .boldform-color-wrap input[type="color"]::-moz-color-swatch { border: 0; border-radius: 0; }
+
+/* Reset-to-theme icon for a field-setting color picker. The wrapper IS the
+   bordered field box: the color swatch fills it, then a thin divider, then a
+   borderless reset icon — all inside the same border. */
+.bf-color-reset-wrap {
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+	max-width: 100%;
+	border: 1px solid #cbd5e1;
+	border-radius: 10px;
+	background: #fff;
+	box-sizing: border-box;
+	overflow: hidden;
+}
+
+.bf-color-reset-wrap input[type="color"] {
+	flex: 1 1 auto;
+	width: auto;
+	min-width: 0;
+	height: 34px;
+	margin: 0;
+	padding: 4px 6px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	cursor: pointer;
+}
+
+.bf-color-reset-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.bf-color-reset-wrap input[type="color"]::-webkit-color-swatch { border: 1px solid #e2e8f0; border-radius: 5px; }
+.bf-color-reset-wrap input[type="color"]::-moz-color-swatch { border: 1px solid #e2e8f0; border-radius: 5px; }
+
+.bf-color-reset {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	padding: 0;
+	border: 0;
+	border-left: 1px solid #e2e8f0;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	transition: color 0.14s ease;
+}
+
+.bf-color-reset:hover {
+	background: transparent;
+	color: #0f172a;
+}
+
+.bf-color-reset .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
 
 .boldform-svg-preview {
 	display: flex;
@@ -2531,23 +3853,25 @@
 	margin-bottom: 0;
 }
 
-.boldform-style-section .boldform-setting-group input,
+.boldform-style-section .boldform-setting-group input:not([type="checkbox"]):not([type="color"]),
 .boldform-style-section .boldform-setting-group select {
-	height: 40px;
-	border: 1.5px solid #e2e8f0;
-	border-radius: 8px;
-	background: #f8fafc;
+	height: 38px;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
 	color: #1e293b;
 	font-size: 13px;
-	transition: border-color 0.15s, box-shadow 0.15s;
+	line-height: 1;
+	padding: 8px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	box-shadow: none;
 }
 
-.boldform-style-section .boldform-setting-group input:focus,
+.boldform-style-section .boldform-setting-group input:not([type="checkbox"]):not([type="color"]):focus,
 .boldform-style-section .boldform-setting-group select:focus {
-	border-color: #2271b1;
+	border-color: #0f766e;
 	background: #fff;
-	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.12);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 	outline: none;
 }
 
@@ -2625,6 +3949,7 @@
 	height: 18px;
 	border: 2px solid #cbd5e1;
 	background: #fff;
+	box-sizing: border-box;
 	transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
@@ -2655,7 +3980,7 @@
 .boldform-options-repeater__default.is-checked .boldform-options-repeater__checkbox::after {
 	content: '';
 	position: absolute;
-	top: 2px;
+	top: 1px;
 	left: 5px;
 	width: 4px;
 	height: 8px;
@@ -2905,12 +4230,12 @@
 
 .boldform-modal__dialog {
 	position: relative;
-	max-width: 640px;
+	max-width: 660px;
 	margin: 8vh auto 0;
-	padding: 20px;
-	border-radius: 18px;
+	padding: 26px;
+	border-radius: 20px;
 	background: #fff;
-	box-shadow: 0 24px 48px rgba(15, 23, 42, 0.22);
+	box-shadow: 0 30px 60px rgba(15, 23, 42, 0.26);
 }
 
 .boldform-modal__dialog--template {
@@ -2940,8 +4265,80 @@
 .boldform-modal__head {
 	display: flex;
 	justify-content: space-between;
+	align-items: flex-start;
+	gap: 16px;
+	margin-bottom: 20px;
+}
+
+.boldform-modal__heading {
+	display: flex;
 	align-items: center;
-	margin-bottom: 16px;
+	gap: 13px;
+	min-width: 0;
+}
+
+.boldform-modal__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: 12px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	color: #0f766e;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	flex-shrink: 0;
+}
+
+.boldform-modal__icon .dashicons {
+	width: 22px;
+	height: 22px;
+	font-size: 22px;
+	line-height: 22px;
+}
+
+.boldform-modal__heading-text h2 {
+	margin: 0;
+	line-height: 1.3;
+}
+
+.boldform-modal__subtitle {
+	margin: 2px 0 0;
+	font-size: 13px;
+	color: #64748b;
+}
+
+/* Footer hint row. */
+.boldform-modal__foot {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 22px;
+	padding-top: 18px;
+	border-top: 1px solid #eef2f7;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.boldform-modal__hint-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 999px;
+	background: #f1f5f9;
+	color: #94a3b8;
+	flex-shrink: 0;
+}
+
+.boldform-modal__hint-icon .dashicons {
+	width: 17px;
+	height: 17px;
+	font-size: 17px;
+	line-height: 17px;
 }
 
 .boldform-modal__close {
@@ -2976,6 +4373,18 @@
 	height: 20px;
 	font-size: 20px;
 	line-height: 20px;
+}
+
+/* The restored gutter (.boldform-preview-screen #wpcontent above) supplies the
+   20px left gap; drop .wrap's default 2px left margin so the left gap matches
+   WP's 20px right margin exactly. */
+.boldform-preview-wrap {
+	margin-left: 0;
+}
+
+/* Breathing room between the page title and the preview toolbar. */
+.boldform-preview-wrap .boldform-preview-shell {
+	margin-top: 16px;
 }
 
 .boldform-preview-shell {
@@ -3227,6 +4636,168 @@
 	text-align: right;
 }
 
+/* Lead group: Back button + "Form Preview" title (left of the toolbar). */
+.boldform-preview-toolbar__lead {
+	display: inline-flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
+
+.boldform-preview-toolbar__divider {
+	width: 1px;
+	height: 30px;
+	background: linear-gradient(180deg, transparent, #e2e8f0 25%, #e2e8f0 75%, transparent);
+	flex-shrink: 0;
+}
+
+.boldform-preview-toolbar__badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	height: 34px;
+	border-radius: 9px;
+	background: #f0fdfa;
+	border: 1px solid #cbfbf1;
+	box-shadow: none;
+	color: #0d9488;
+	flex-shrink: 0;
+}
+
+.boldform-preview-toolbar__badge .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.boldform-preview-toolbar__title {
+	display: grid;
+	gap: 1px;
+	line-height: 1.2;
+	min-width: 0;
+}
+
+.boldform-preview-toolbar__eyebrow {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #0d9488;
+}
+
+.boldform-preview-toolbar__name {
+	font-size: 15px;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.01em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* Back button (left of the preview toolbar). */
+.boldform-preview-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 9px 16px 9px 11px;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	background: #fff;
+	color: #334155;
+	font-weight: 600;
+	font-size: 13px;
+	line-height: 1;
+	text-decoration: none;
+	box-shadow: none;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.boldform-preview-back:hover,
+.boldform-preview-back:focus {
+	border-color: #99f6e4;
+	background: #f0fdfa;
+	color: #0f766e;
+	box-shadow: none;
+}
+
+.boldform-preview-back .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+	transition: transform 0.15s ease;
+}
+
+.boldform-preview-back:hover .dashicons,
+.boldform-preview-back:focus .dashicons {
+	transform: translateX(-2px);
+}
+
+/* Shortcode copy pill (right of the preview toolbar). */
+.boldform-preview-shortcode {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	padding: 8px 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.9);
+	cursor: pointer;
+	appearance: none;
+	text-align: left;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.boldform-preview-shortcode:hover {
+	border-color: #cbd5e1;
+	background: #fff;
+}
+
+.boldform-preview-shortcode__label {
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #64748b;
+}
+
+.boldform-preview-shortcode__code {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	max-width: 280px;
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 12px;
+	color: #0f172a;
+}
+
+.boldform-preview-shortcode__text {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.boldform-preview-shortcode__copy {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #98a2b3;
+	flex-shrink: 0;
+}
+
+.boldform-preview-shortcode:hover .boldform-preview-shortcode__copy {
+	color: #0f766e;
+}
+
+.boldform-preview-shortcode.is-copied .boldform-preview-shortcode__copy {
+	color: #16a34a;
+}
+
 .boldform-preview-stage {
 	padding: 28px;
 	border: 1px solid #d9e0ea;
@@ -3247,30 +4818,38 @@
 	transition: max-width 0.18s ease;
 }
 
-.boldform-preview-viewport .boldform-lite-form {
-	max-width: 100%;
-}
+/* The form's own max-width (--bf-form-max-width) is applied by frontend.css; the
+   preview viewport must NOT force it to 100% or the Form Container max-width
+   setting is silently lost. */
 
-.boldform-preview-viewport .boldform-lite-form input,
+/* Re-assert field styling at viewport specificity so it beats wp-admin core
+   forms.css (which leaks onto this admin page). Mirror frontend.css exactly —
+   same advanced --bf-* vars — so the preview matches the real form, and keep
+   min-height so wp-admin's default field height can't floor it. */
+.boldform-preview-viewport .boldform-lite-form input:not([type="range"]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
 .boldform-preview-viewport .boldform-lite-form select,
 .boldform-preview-viewport .boldform-lite-form textarea {
 	width: 100%;
 	max-width: 100%;
-	padding: var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px);
+	padding: var(--bf-field-padding, var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px));
 	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 16px);
 	background: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 16px);
-	line-height: 1.5;
+	font-family: var(--bf-field-ff, inherit);
+	font-size: var(--bf-field-fs, var(--bf-field-font-size, 16px));
+	font-weight: var(--bf-field-fw, normal);
+	line-height: var(--bf-field-lh, 1.5);
+	letter-spacing: var(--bf-field-ls, normal);
+	text-transform: var(--bf-field-tt, none);
 	box-sizing: border-box;
-	height: auto;
-	min-height: 0;
-	box-shadow: none;
+	height: var(--bf-field-height, auto);
+	min-height: var(--bf-field-height, 0);
+	box-shadow: var(--bf-field-shadow, none);
 }
 
 .boldform-preview-viewport .boldform-lite-form textarea {
-	min-height: 150px;
+	min-height: var(--bf-textarea-height, 150px);
 }
 
 .boldform-preview-viewport .boldform-lite-form__choice input {
@@ -3292,16 +4871,17 @@
 }
 
 .boldform-preview-viewport .boldform-lite-form__submit {
-	padding: var(--bf-button-padding-y, 18px) var(--bf-button-padding-x, 42px);
+	padding: var(--bf-button-padding, var(--bf-button-padding-y, 18px) var(--bf-button-padding-x, 42px));
 	border: var(--bf-button-border-width, 0) var(--bf-button-border-style, none) var(--bf-button-border, transparent);
 	border-radius: var(--bf-button-radius, 16px);
 	background: var(--bf-button-bg, #2f80ed);
 	color: var(--bf-button-text, #fff);
-	font-size: var(--bf-button-font-size, 18px);
-	font-weight: 600;
+	font-family: var(--bf-btn-ff, inherit);
+	font-size: var(--bf-btn-fs, var(--bf-button-font-size, 18px));
+	font-weight: var(--bf-btn-fw, 600);
 	height: auto;
-	line-height: 1.5;
-	box-shadow: none;
+	line-height: var(--bf-btn-lh, 1.5);
+	box-shadow: var(--bf-button-shadow, none);
 }
 
 .boldform-preview-stage.is-desktop .boldform-preview-viewport {
@@ -3319,41 +4899,120 @@
 .boldform-column-presets {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 12px;
+	gap: 14px;
 }
 
 .boldform-preset {
+	position: relative;
 	display: grid;
-	gap: 12px;
-	padding: 16px;
-	border: 1px solid #d9e0ea;
-	border-radius: 14px;
+	gap: 16px;
+	padding: 20px;
+	border: 1.5px solid #e5e9f0;
+	border-radius: 16px;
 	background: #fff;
 	cursor: pointer;
 	text-align: left;
+	transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.boldform-preset:hover {
+.boldform-preset:hover,
+.boldform-preset:focus-visible,
+.boldform-preset.is-selected {
 	border-color: #0f766e;
-	box-shadow: 0 12px 24px rgba(15, 118, 110, 0.12);
+	box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
+	outline: none;
 }
 
+.boldform-preset__top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	min-height: 26px;
+}
+
+.boldform-preset__top strong {
+	font-size: 14px;
+	font-weight: 700;
+	color: #0f172a;
+	letter-spacing: -0.01em;
+}
+
+/* Selected/hover checkmark badge. */
+.boldform-preset__check {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	border-radius: 999px;
+	background: #0f766e;
+	color: #fff;
+	opacity: 0;
+	transform: scale(0.6);
+	transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.boldform-preset:hover .boldform-preset__check,
+.boldform-preset:focus-visible .boldform-preset__check,
+.boldform-preset.is-selected .boldform-preset__check {
+	opacity: 1;
+	transform: scale(1);
+}
+
+.boldform-preset__check .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
+/* Flat, neutral column placeholders. */
 .boldform-preset__grid {
 	display: flex;
-	gap: 6px;
-	height: 48px;
+	gap: 10px;
+	height: 56px;
 }
 
 .boldform-preset__grid span {
 	display: block;
 	height: 100%;
-	border-radius: 10px;
-	background: linear-gradient(180deg, #ccfbf1 0%, #99f6e4 100%);
+	border-radius: 8px;
+	background: #e9ecf1;
 }
 
-@media screen and (max-width: 1200px) {
-	.boldform-builder-shell {
-		grid-template-columns: 35% 65%;
+/* Style tab: stack controls above the preview once the columns get cramped.
+   Stacked, the preview flows naturally (no viewport cap / internal scroll). */
+@media screen and (max-width: 1024px) {
+	.boldform-style-shell {
+		grid-template-columns: 1fr;
+	}
+
+	.boldform-style-preview {
+		position: static;
+		top: auto;
+		max-height: none;
+		overflow: visible;
+	}
+
+	.boldform-style-preview-canvas {
+		overflow-y: visible;
+	}
+}
+
+/* Topbar: wrap to two rows (title + tabs, then actions) before the title,
+   tabs, shortcode and action buttons run out of room and overlap. It fully
+   stacks at <= 782px below. */
+@media screen and (max-width: 1180px) {
+	.boldform-builder-topbar {
+		flex-wrap: wrap;
+	}
+
+	.boldform-builder-title-wrap {
+		flex: 1 1 100%;
+	}
+
+	.boldform-builder-actions {
+		flex: 1 1 100%;
 	}
 }
 
@@ -3463,12 +5122,28 @@
 	}
 
 	.boldform-preview-toolbar {
-		flex-direction: column;
-		align-items: stretch;
+		flex-wrap: wrap;
+		gap: 12px 10px;
+		padding: 14px 16px;
+		border-radius: 14px;
 	}
 
-	.boldform-preview-toolbar__meta {
-		text-align: left;
+	.boldform-preview-toolbar__lead {
+		flex: 1 1 100%;
+		gap: 10px;
+	}
+
+	.boldform-preview-toolbar__devices {
+		order: 2;
+	}
+
+	.boldform-preview-shortcode {
+		order: 3;
+		margin-left: auto;
+	}
+
+	.boldform-preview-shortcode__code {
+		max-width: 190px;
 	}
 
 	.boldform-preview-stage {
@@ -3477,6 +5152,24 @@
 
 	.boldform-preview-viewport {
 		padding: 16px;
+	}
+}
+
+/* Phones: stack the device toggle and shortcode pill into full-width rows. */
+@media screen and (max-width: 520px) {
+	.boldform-preview-toolbar__devices {
+		flex: 1 1 100%;
+		justify-content: center;
+	}
+
+	.boldform-preview-shortcode {
+		flex: 1 1 100%;
+		margin-left: 0;
+		justify-content: center;
+	}
+
+	.boldform-preview-shortcode__code {
+		max-width: none;
 	}
 }
 
@@ -3711,11 +5404,12 @@
 
 /* Field search */
 .boldform-field-search {
-	padding: 0 16px 12px;
+	padding: 14px 18px;
 }
 
 .boldform-field-search input {
 	width: 100%;
+	margin: 0;
 	padding: 8px 12px;
 	border: 1px solid #d1d5db;
 	border-radius: 6px;
@@ -3781,7 +5475,7 @@
 /* Design Theme Cards */
 .boldform-theme-grid {
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(2, 1fr);
 	gap: 8px;
 }
 
@@ -3799,12 +5493,12 @@
 }
 
 .boldform-theme-card:hover {
-	border-color: #93c5fd;
+	border-color: rgba(var(--bf-theme-accent-rgb, 47, 128, 237), 0.5);
 }
 
 .boldform-theme-card.is-active {
-	border-color: #2f80ed;
-	box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.15);
+	border-color: var(--bf-theme-accent, #2f80ed);
+	box-shadow: 0 0 0 2px rgba(var(--bf-theme-accent-rgb, 47, 128, 237), 0.15);
 }
 
 .boldform-theme-card__preview {
@@ -3838,13 +5532,7 @@
 }
 
 .boldform-theme-card.is-active .boldform-theme-card__name {
-	color: #2f80ed;
-}
-
-@media (max-width: 1200px) {
-	.boldform-theme-grid {
-		grid-template-columns: repeat(3, 1fr);
-	}
+	color: var(--bf-theme-accent, #2f80ed);
 }
 
 /* ============================================================
@@ -4149,3 +5837,660 @@
 	height: 14px;
 	line-height: 1;
 }
+
+
+/* =========================================================================
+   LIVE-PREVIEW PARITY (advanced style vars)
+   The frontend (.boldform-lite-form …) consumes the full advanced style layer,
+   but the Style-tab live preview renders .boldform-canvas-* markup. These rules
+   mirror the frontend so EVERY advanced control previews. Scoped to
+   .boldform-canvas (the preview canvas carries that class). Same specificity as
+   the base canvas rules above but later in the file, so they layer cleanly.
+   ========================================================================= */
+
+/* ---- Input fields: typography, height, spacing, shadow ---- */
+.boldform-canvas .boldform-canvas-field-body input,
+.boldform-canvas .boldform-canvas-field-body textarea,
+.boldform-canvas .boldform-canvas-field-body select {
+	padding: var(--bf-field-padding, var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px));
+	font-size: var(--bf-field-fs, var(--bf-field-font-size, 16px));
+	font-family: var(--bf-field-ff, inherit);
+	font-weight: var(--bf-field-fw, inherit);
+	line-height: var(--bf-field-lh, normal);
+	letter-spacing: var(--bf-field-ls, normal);
+	text-transform: var(--bf-field-tt, none);
+	margin: var(--bf-input-margin, 0);
+	box-shadow: var(--bf-field-shadow, none);
+}
+
+.boldform-canvas .boldform-canvas-field-body input,
+.boldform-canvas .boldform-canvas-field-body select {
+	height: var(--bf-field-height, auto);
+	/* wp-admin's forms.css (loaded in the builder page) sets min-height:40px on text
+	   inputs/selects, which floors a set Height to 40px. Override it so the Height
+	   control actually shrinks the field; 0 when unset lets it size naturally,
+	   matching the front-end where wp-admin CSS isn't present. */
+	min-height: var(--bf-field-height, 0);
+}
+
+.boldform-canvas .boldform-canvas-field-body textarea {
+	height: var(--bf-textarea-height, 150px);
+	min-height: var(--bf-textarea-height, 150px);
+}
+
+/* Placeholder colour + typography. */
+.boldform-canvas .boldform-canvas-field-body input::placeholder,
+.boldform-canvas .boldform-canvas-field-body textarea::placeholder {
+	color: var(--bf-ph-color, #9ca3af);
+	font-family: var(--bf-ph-ff, inherit);
+	font-size: var(--bf-ph-fs, inherit);
+	font-weight: var(--bf-ph-fw, inherit);
+	letter-spacing: var(--bf-ph-ls, normal);
+	font-style: var(--bf-ph-style, inherit);
+	opacity: 1;
+}
+
+/* Hover state — mirrors the front-end; previewable by mousing over a field. */
+.boldform-canvas .boldform-canvas-field-body input:hover,
+.boldform-canvas .boldform-canvas-field-body textarea:hover,
+.boldform-canvas .boldform-canvas-field-body select:hover {
+	border-width: var(--bf-field-hover-border-width, var(--bf-field-border-width, 1px));
+	border-style: var(--bf-field-hover-border-style, var(--bf-field-border-style, solid));
+	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
+	background: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-hover-shadow, var(--bf-field-shadow, none));
+}
+
+/* Focus state. */
+.boldform-canvas .boldform-canvas-field-body input:focus,
+.boldform-canvas .boldform-canvas-field-body textarea:focus,
+.boldform-canvas .boldform-canvas-field-body select:focus {
+	border-width: var(--bf-field-focus-border-width, var(--bf-field-border-width, 1px));
+	border-style: var(--bf-field-focus-border-style, var(--bf-field-border-style, solid));
+	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
+	background: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-focus-shadow, 0 0 0 3px rgba(15, 118, 110, 0.12));
+}
+
+/* Label highlight while its field is focused (front-end parity). */
+.boldform-canvas .boldform-canvas-field-body:focus-within > label {
+	color: var(--bf-label-focus-color, var(--bf-label-color, #4b5563));
+}
+
+/* ---- Labels: colour + typography + spacing ---- */
+.boldform-canvas .boldform-canvas-field-body label {
+	color: var(--bf-label-color, #4b5563);
+	font-size: var(--bf-label-fs, var(--bf-label-font-size, 17px));
+	font-family: var(--bf-label-ff, inherit);
+	font-weight: var(--bf-label-fw, 500);
+	line-height: var(--bf-label-lh, normal);
+	letter-spacing: var(--bf-label-ls, normal);
+	text-transform: var(--bf-label-tt, none);
+	margin: var(--bf-label-margin, 0 0 0 0);
+}
+
+/* Required mark colour. */
+.boldform-canvas .boldform-required {
+	color: var(--bf-required-color, var(--bf-error-color, #dc2626));
+}
+
+/* ---- Submit button: typography, shadow, width, spacing, icon, hover ---- */
+.boldform-canvas .boldform-canvas-submit__button {
+	padding: var(--bf-button-padding, var(--bf-button-padding-y, 18px) var(--bf-button-padding-x, 42px));
+	font-family: var(--bf-btn-ff, inherit);
+	font-size: var(--bf-btn-fs, var(--bf-button-font-size, 18px));
+	font-weight: var(--bf-btn-fw, 600);
+	line-height: var(--bf-btn-lh, normal);
+	letter-spacing: var(--bf-btn-ls, normal);
+	text-transform: var(--bf-btn-tt, none);
+	box-shadow: var(--bf-button-shadow, none);
+	width: var(--bf-btn-width, auto);
+	margin: var(--bf-btn-margin, 0);
+}
+
+.boldform-canvas .boldform-canvas-submit__button:hover {
+	background: var(--bf-btn-hover-bg, var(--bf-button-bg, #2f80ed));
+	color: var(--bf-btn-hover-text, var(--bf-button-text, #fff));
+	border-width: var(--bf-btn-hover-border-width, var(--bf-button-border-width, 0));
+	border-style: var(--bf-btn-hover-border-style, var(--bf-button-border-style, none));
+	border-color: var(--bf-btn-hover-border, var(--bf-button-border, transparent));
+	box-shadow: var(--bf-button-hover-shadow, var(--bf-button-shadow, none));
+}
+
+.boldform-canvas .boldform-canvas-submit__button:focus-visible {
+	outline: 2px solid var(--bf-button-focus-ring, var(--bf-button-bg, #2f80ed));
+	outline-offset: 2px;
+}
+
+.boldform-canvas .boldform-canvas-submit__button .dashicons,
+.boldform-canvas .boldform-canvas-submit__button .boldform-btn-icon-svg {
+	color: var(--bf-btn-icon-color, currentColor);
+}
+
+/* Submit actions wrapper margin. */
+.boldform-canvas .boldform-canvas-submit {
+	margin: var(--bf-actions-margin, 0);
+}
+
+/* ---- Choice (checkbox / radio) — custom shell ----
+   Mirrors the front-end custom control so every control previews accurately
+   (Normal border/bg, Checked accent, Hover border, Size, icon↔label gap). The
+   choice rows ARE <label> elements, so the colour/typography rule is qualified
+   (0,3,1) to beat the generic `.boldform-canvas-field-body label` (0,2,1) rule.
+   The shell rules are scoped to .boldform-canvas-field-choices (the checkbox/
+   radio wrapper) so product/terms/template choice previews keep their own look. */
+.boldform-canvas .boldform-canvas-field-body label.boldform-choice,
+.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice {
+	display: flex;
+	align-items: center;
+	gap: var(--bf-choice-gap, 10px);
+	margin: 0;
+	color: var(--bf-choice-color, var(--bf-field-text, #111827));
+	font-family: var(--bf-choice-ff, inherit);
+	font-size: var(--bf-choice-fs, var(--bf-field-font-size, 15px));
+	font-weight: var(--bf-choice-fw, inherit);
+	line-height: var(--bf-choice-lh, normal);
+	letter-spacing: var(--bf-choice-ls, normal);
+	text-transform: var(--bf-choice-tt, none);
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
+	--bf-choice-accent-r: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	cursor: default;
+}
+
+/* Native input hidden; the shell span is the visible control. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	margin: 0;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--bf-choice-size, 18px);
+	height: var(--bf-choice-size, 18px);
+	min-width: var(--bf-choice-size, 18px);
+	border: 2px solid var(--bf-choice-border, var(--bf-field-border, #cbd5e1));
+	border-radius: 5px;
+	background: var(--bf-choice-bg, var(--bf-field-bg, #fff));
+	flex-shrink: 0;
+	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
+	border-radius: 50%;
+}
+
+/* Checked = the Accent colour. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: var(--bf-choice-accent-r);
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: #fff;
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 9px;
+	border-right: 2px solid var(--bf-choice-icon, #fff);
+	border-bottom: 2px solid var(--bf-choice-icon, #fff);
+	transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--bf-choice-icon, var(--bf-choice-accent-r));
+}
+
+/* Hover = the Hover border + background colours (fall back to normal). */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
+	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
+}
+
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
+	flex: 1;
+	min-width: 0;
+}
+
+/* ---- Terms & Conditions ---- */
+.boldform-canvas .boldform-canvas-terms {
+	gap: var(--bf-terms-gap, 10px);
+	margin: var(--bf-terms-margin, var(--bf-field-margin, 0));
+	color: var(--bf-terms-color, inherit);
+}
+
+/* Terms checkbox uses the same custom shell as the choice fields (mirrors the
+   front-end) so Border/Background/Hover/Checked/Icon all preview. Native input
+   hidden; the .boldform-lite-form__choice-control span is the visible box. */
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+	pointer-events: none;
+	margin: 0;
+}
+
+.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
+	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin-top: 2px;
+	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	border: var(--bf-terms-box-border-width, 2px) solid var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1));
+	border-radius: var(--bf-terms-box-radius, 5px);
+	background: var(--bf-terms-box-bg, var(--bf-field-bg, #fff));
+	flex-shrink: 0;
+	transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border-color: var(--bf-choice-accent-r);
+	background: var(--bf-choice-accent-r);
+}
+
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 5px;
+	height: 9px;
+	border-right: 2px solid var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	border-bottom: 2px solid var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
+	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
+}
+
+.boldform-canvas .boldform-canvas-terms__copy {
+	color: var(--bf-terms-color, #334155);
+	font-family: var(--bf-terms-copy-ff, var(--bf-terms-ff, inherit));
+	font-size: var(--bf-terms-copy-fs, var(--bf-terms-fs, 13px));
+	font-weight: var(--bf-terms-copy-fw, var(--bf-terms-fw, normal));
+	line-height: var(--bf-terms-copy-lh, var(--bf-terms-lh, 1.5));
+	letter-spacing: var(--bf-terms-copy-ls, var(--bf-terms-ls, normal));
+	text-transform: var(--bf-terms-copy-tt, var(--bf-terms-tt, none));
+}
+
+.boldform-canvas .boldform-canvas-terms__copy a {
+	color: var(--bf-terms-link, var(--bf-focus-color, #0f766e));
+}
+
+.boldform-canvas .boldform-canvas-terms__copy a:hover {
+	color: var(--bf-terms-link-hover, var(--bf-terms-link, var(--bf-focus-color, #0f766e)));
+}
+
+/* ---- Select dropdown trigger ---- */
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger {
+	min-height: var(--bf-field-height, auto);
+	height: var(--bf-field-height, auto);
+	padding: var(--bf-select-padding, var(--bf-field-padding, var(--bf-field-padding-y, 18px) var(--bf-field-padding-x, 24px)));
+	border: var(--bf-select-border-width, var(--bf-field-border-width, 1px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bf-select-radius, var(--bf-field-radius, 16px));
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-select-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-select-shadow, none);
+	font-family: var(--bf-select-ff, inherit);
+	font-size: var(--bf-select-fs, var(--bf-field-font-size, 16px));
+	font-weight: var(--bf-select-fw, inherit);
+	letter-spacing: var(--bf-select-ls, normal);
+	text-transform: var(--bf-select-tt, none);
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__trigger:hover {
+	border-color: var(--bf-select-hover-border, var(--bf-field-border-hover, #9ca3af));
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__placeholder {
+	color: var(--bf-select-ph, #9ca3af);
+}
+
+.boldform-canvas .boldform-canvas-field-body .bf-select__arrow {
+	color: var(--bf-select-arrow, #6b7280);
+}
+
+/* ---- Section break ---- */
+.boldform-canvas .boldform-canvas-section-break {
+	margin: var(--bf-section-margin, 8px 0);
+	padding: var(--bf-section-padding, 14px 0 4px);
+	border-width: var(--bf-section-border-width, 2px 0 0);
+	border-style: var(--bf-section-border-style, solid);
+	border-color: var(--bf-section-border-color, #cbd5e1);
+	border-radius: var(--bf-section-radius, 0);
+}
+
+.boldform-canvas .boldform-canvas-section-break strong {
+	display: block;
+	margin: var(--bf-section-title-margin, 0 0 4px);
+	color: var(--bf-section-title-color, #0f172a);
+	font-family: var(--bf-section-title-ff, inherit);
+	font-size: var(--bf-section-title-fs, 18px);
+	font-weight: var(--bf-section-title-fw, 600);
+	line-height: var(--bf-section-title-lh, 1.3);
+	letter-spacing: var(--bf-section-title-ls, normal);
+	text-transform: var(--bf-section-title-tt, none);
+}
+
+.boldform-canvas .boldform-canvas-section-break p {
+	margin: var(--bf-section-desc-margin, 6px 0 0);
+	color: var(--bf-section-desc-color, #6b7280);
+	font-family: var(--bf-section-desc-ff, inherit);
+	font-size: var(--bf-section-desc-fs, 14px);
+	font-weight: var(--bf-section-desc-fw, normal);
+	line-height: var(--bf-section-desc-lh, 1.5);
+	letter-spacing: var(--bf-section-desc-ls, normal);
+	text-transform: var(--bf-section-desc-tt, none);
+}
+
+/* ---- Star rating ---- */
+.boldform-canvas .boldform-canvas-star {
+	font-size: var(--bf-star-size, var(--star-size, 24px));
+	color: var(--bf-star-inactive, color-mix(in srgb, var(--bf-star-color, var(--star-color, var(--bf-button-bg, #f59e0b))) 30%, #cbd5e1));
+}
+
+.boldform-canvas .boldform-canvas-star.is-active {
+	color: var(--bf-star-color, var(--star-color, var(--bf-button-bg, #f59e0b)));
+}
+
+/* Hover a preview star to preview the hover colour. */
+.boldform-canvas .boldform-canvas-star:hover {
+	color: var(--bf-star-hover, var(--bf-star-color, var(--star-color, var(--bf-button-bg, #f59e0b))));
+}
+
+/* ---- Layout & spacing (Style preview) ----
+   Mirror the front-end box model (frontend.css) so the four Layout controls
+   read identically in the preview and on the front end, and stay independent
+   of one another:
+     • Row gap     → gap between rows (the form wraps rows like __fields).
+     • Column gap  → row negative-margin gutter + column horizontal padding.
+     • Field margin→ margin on each field box (default 0).
+     • Input margin→ margin on the control inside the field (default 0).
+   The earlier hack folded row gap into the field's bottom-margin, so setting
+   Field Margin silently discarded Row Gap. Keeping them on separate boxes (form
+   gap vs field margin) fixes that. Defaults match frontend.css: row 24px,
+   column 10px, margins 0. */
+.boldform-style-preview-form {
+	display: grid;
+	gap: var(--bf-row-gap, 24px);
+}
+
+.boldform-style-preview-form .boldform-style-preview-row {
+	margin: 0 calc(var(--bf-col-gap, 10px) * -1);
+}
+
+.boldform-style-preview-form .boldform-style-preview-column {
+	display: grid;
+	gap: 16px;
+	align-content: start;
+	padding: 0 var(--bf-col-gap, 10px);
+}
+
+.boldform-style-preview-canvas .boldform-canvas-field {
+	margin: var(--bf-field-margin, 0);
+}
+
+.boldform-style-preview-canvas .boldform-canvas-field-body input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.boldform-style-preview-canvas .boldform-canvas-field-body textarea,
+.boldform-style-preview-canvas .boldform-canvas-field-body select {
+	margin: var(--bf-input-margin, 0);
+}
+
+
+/* =========================================================================
+   SAMPLE STATE PREVIEWS — labelled samples below the live form so the styles
+   for messages, an open select dropdown and the file button (none of which
+   render from the static form alone) can still be previewed. Self-contained
+   (frontend.css is not loaded here); mirrors the frontend var usage.
+   ========================================================================= */
+.boldform-preview-states {
+	margin-top: 24px;
+	padding-top: 18px;
+	border-top: 1px dashed #cbd5e1;
+}
+
+.boldform-preview-states__cap {
+	margin-bottom: 14px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #94a3b8;
+}
+
+.boldform-preview-states__field {
+	position: relative;
+	margin-bottom: 16px;
+}
+
+.boldform-preview-states__field > label {
+	display: block;
+	margin: var(--bf-label-margin, 0 0 6px);
+	color: var(--bf-label-color, #4b5563);
+	font-family: var(--bf-label-ff, inherit);
+	font-size: var(--bf-label-fs, var(--bf-label-font-size, 15px));
+	font-weight: var(--bf-label-fw, 500);
+	line-height: var(--bf-label-lh, normal);
+	letter-spacing: var(--bf-label-ls, normal);
+	text-transform: var(--bf-label-tt, none);
+}
+
+/* Sample text input + select trigger share the field styling. */
+.boldform-preview-states input[type="text"],
+.boldform-preview-states .bf-select__trigger {
+	width: 100%;
+	box-sizing: border-box;
+	padding: var(--bf-field-padding, var(--bf-field-padding-y, 12px) var(--bf-field-padding-x, 14px));
+	border: var(--bf-field-border-width, 1px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
+	border-radius: var(--bf-field-radius, 10px);
+	background: var(--bf-field-bg, #fff);
+	color: var(--bf-field-text, #111827);
+	font-size: var(--bf-field-fs, var(--bf-field-font-size, 15px));
+	font-family: var(--bf-field-ff, inherit);
+}
+
+/* Notices. */
+.boldform-preview-states .boldform-lite-form__message {
+	display: block;
+	margin: 0 0 12px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	font-size: 14px;
+}
+
+.boldform-preview-states .boldform-lite-form__message.is-success {
+	margin: var(--bf-msg-success-margin, 0 0 12px);
+	padding: var(--bf-msg-success-padding, 12px 14px);
+	background: var(--bf-msg-success-bg, #ecfdf5);
+	color: var(--bf-msg-success-text, #166534);
+	border-width: var(--bf-msg-success-border-width, 1px);
+	border-style: var(--bf-msg-success-border-style, solid);
+	border-color: var(--bf-msg-success-border-color, #bbf7d0);
+	border-radius: var(--bf-msg-success-radius, 12px);
+	box-shadow: var(--bf-msg-success-shadow, none);
+	font-family: var(--bf-msg-success-ff, inherit);
+	font-size: var(--bf-msg-success-fs, 14px);
+	font-weight: var(--bf-msg-success-fw, normal);
+	line-height: var(--bf-msg-success-lh, normal);
+	letter-spacing: var(--bf-msg-success-ls, normal);
+	text-transform: var(--bf-msg-success-tt, none);
+}
+
+.boldform-preview-states .boldform-lite-form__message.is-error {
+	margin: var(--bf-msg-error-margin, 0 0 12px);
+	padding: var(--bf-msg-error-padding, 12px 14px);
+	background: var(--bf-msg-error-bg, #fef2f2);
+	color: var(--bf-msg-error-text, #b91c1c);
+	border-width: var(--bf-msg-error-border-width, 1px);
+	border-style: var(--bf-msg-error-border-style, solid);
+	border-color: var(--bf-msg-error-border-color, #fecaca);
+	border-radius: var(--bf-msg-error-radius, 12px);
+}
+
+/* Invalid field. */
+.boldform-preview-states .bf-state-invalid input[type="text"] {
+	border-color: var(--bf-error-color, #dc2626);
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--bf-error-color, #dc2626) 12%, transparent);
+}
+
+.boldform-preview-states .boldform-lite-form__field-error {
+	margin-top: 4px;
+	color: var(--bf-error-color, #dc2626);
+	font-family: var(--bf-error-ff, inherit);
+	font-size: var(--bf-error-fs, 13px);
+	font-weight: var(--bf-error-fw, normal);
+	line-height: var(--bf-error-lh, normal);
+	letter-spacing: var(--bf-error-ls, normal);
+	text-transform: var(--bf-error-tt, none);
+}
+
+/* Open select dropdown. */
+.boldform-preview-states .bf-select {
+	position: relative;
+}
+
+.boldform-preview-states .bf-select__trigger {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	border: var(--bf-select-border-width, var(--bf-field-border-width, 1px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bf-select-radius, var(--bf-field-radius, 10px));
+	color: var(--bf-select-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-select-shadow, none);
+	padding: var(--bf-select-padding, var(--bf-field-padding-y, 12px) var(--bf-field-padding-x, 14px));
+}
+
+/* The open dropdown also previews the select focus state. */
+.boldform-preview-states .bf-select.is-open .bf-select__trigger {
+	border-color: var(--bf-select-focus-border, var(--bf-focus-color, #0f766e));
+	background: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
+	box-shadow: 0 0 0 3px var(--bf-select-focus-ring, transparent);
+}
+
+.boldform-preview-states .bf-select__value {
+	flex: 1;
+	min-width: 0;
+}
+
+.boldform-preview-states .bf-select__arrow {
+	margin-left: auto;
+	display: inline-flex;
+	align-items: center;
+	color: var(--bf-select-arrow, #6b7280);
+	transform: rotate(180deg);
+}
+
+.boldform-preview-states .bf-select__panel {
+	display: block;
+	margin-top: 6px;
+	border: 1px solid var(--bf-select-panel-border, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bf-select-panel-radius, var(--bf-field-radius, 8px));
+	background: var(--bf-select-panel-bg, var(--bf-field-bg, #fff));
+	box-shadow: var(--bf-select-panel-shadow, 0 12px 36px rgba(0, 0, 0, 0.1));
+	overflow: hidden;
+}
+
+.boldform-preview-states .bf-select__search-wrap {
+	display: flex;
+	align-items: center;
+	padding: 10px 14px;
+	border-bottom: 1px solid var(--bf-select-panel-border, #e5e7eb);
+	background: var(--bf-select-search-bg, transparent);
+}
+
+.boldform-preview-states .bf-select__panel-search {
+	flex: 1;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	font-size: 14px;
+	color: var(--bf-select-search-text, var(--bf-field-text, #111827));
+	outline: none;
+}
+
+.boldform-preview-states .bf-select__panel-search::placeholder {
+	color: var(--bf-select-search-ph, #9ca3af);
+}
+
+.boldform-preview-states .bf-select__list {
+	padding: 6px 0;
+}
+
+.boldform-preview-states .bf-select__option {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 16px;
+	font-family: var(--bf-select-opt-ff, inherit);
+	font-size: var(--bf-select-opt-fs, var(--bf-field-font-size, 15px));
+	font-weight: var(--bf-select-opt-fw, normal);
+	background: var(--bf-select-opt-bg, transparent);
+	color: var(--bf-select-opt-color, var(--bf-field-text, #111827));
+}
+
+/* Hover the sample option to preview the option-hover styling. */
+.boldform-preview-states .bf-select__option:hover {
+	background: var(--bf-select-opt-hover-bg, rgba(0, 0, 0, 0.035));
+	color: var(--bf-select-opt-hover-color, inherit);
+}
+
+.boldform-preview-states .bf-select__option.is-active {
+	background: var(--bf-select-opt-active-bg, var(--bf-focus-ring, rgba(15, 118, 110, 0.08)));
+	/* Mirror of frontend.css: selected-option accent follows the theme primary
+	   (--bf-button-bg) so it matches the checkmark and the active design theme. */
+	color: var(--bf-select-opt-active-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	font-weight: 600;
+}
+
+.boldform-preview-states .bf-select__check {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 20px;
+	height: 20px;
+	border: 2px solid #d1d5db;
+	border-radius: 6px;
+	background: #fff;
+	color: transparent;
+}
+
+.boldform-preview-states .bf-select__option.is-active .bf-select__check {
+	border-color: var(--bf-select-check, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	background: var(--bf-select-check, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	color: #fff;
+}
+
+.boldform-preview-states .bf-select__option-text {
+	flex: 1;
+	min-width: 0;
+}
+
+/* File upload sample removed from preview states (native button is not styled). */

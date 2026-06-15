@@ -53,18 +53,6 @@ class BoldForm_Lite_Ajax_Save {
 		$structure_raw     = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- same as above; decoded values sanitized in normalize_form_settings().
 		$settings_raw      = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : '';
-		$allowed_types     = array( 'text', 'name', 'email', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'radio', 'date', 'time', 'tel', 'url', 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'input_mask', 'html_editor', 'paragraph', 'numeric', 'address', 'country', 'star_rating', 'slider_range' );
-
-		/**
-		 * Filter the list of allowed field types that can be saved.
-		 *
-		 * Pro can add new field types (payment, signature, repeater, etc.).
-		 *
-		 * @param array<int, string> $allowed_types Allowed field type keys.
-		 */
-		$allowed_types = apply_filters( 'boldform_allowed_field_types', $allowed_types );
-		$allowed_widths    = array( '100%', '50%', '33.33%', '25%' );
-
 		$payload           = json_decode( $structure_raw, true );
 		$settings_payload  = json_decode( $settings_raw, true );
 
@@ -75,8 +63,7 @@ class BoldForm_Lite_Ajax_Save {
 			$settings_payload = array();
 		}
 
-		$prepared_rows     = array();
-		$prepared_settings = $this->normalize_form_settings( $settings_payload );
+		$prepared_settings = self::normalize_form_settings( $settings_payload );
 
 		if ( empty( $payload['rows'] ) || ! is_array( $payload['rows'] ) ) {
 			wp_send_json_error(
@@ -87,30 +74,195 @@ class BoldForm_Lite_Ajax_Save {
 			);
 		}
 
+		$prepared_rows = self::prepare_rows( $payload );
+
+		if ( ! self::structure_has_fields( $prepared_rows ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Add at least one field before saving.', 'boldform-lite' ),
+				),
+				400
+			);
+		}
+
+		if ( empty( $prepared_rows ) ) {
+			wp_send_json_error(
+				array(
+					'message' => __( 'Invalid form structure supplied.', 'boldform-lite' ),
+				),
+				400
+			);
+		}
+
+		global $wpdb;
+
+		$table_name = esc_sql( $this->plugin->get_forms_table_name() );
+		$data       = array(
+			'title'         => $title ? $title : __( 'Untitled Form', 'boldform-lite' ),
+			'status'        => 'publish',
+			'fields_json'   => wp_json_encode(
+				array(
+					'rows' => $prepared_rows,
+				)
+			),
+			'settings_json' => wp_json_encode( $prepared_settings ),
+		);
+		$formats    = array( '%s', '%s', '%s', '%s' );
+
+		if ( $form_id > 0 ) {
+			// Guard against a phantom "saved" success for a non-existent form id
+			// ($wpdb->update returns 0 — not false — when no row matches).
+			// Table name is from esc_sql( get_forms_table_name() ); the id is bound via %d.
+			$exists = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table_name}` WHERE id = %d", $form_id ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			if ( ! $exists ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'The form you are trying to update no longer exists.', 'boldform-lite' ),
+					),
+					404
+				);
+			}
+
+			$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$table_name,
+				$data,
+				array( 'id' => $form_id ),
+				$formats,
+				array( '%d' )
+			);
+
+			if ( false === $updated ) {
+				$message = __( 'Unable to update the form.', 'boldform-lite' );
+
+				// Only expose the raw DB error while debugging — never leak schema/SQL
+				// internals to the browser in production.
+				if ( ! empty( $wpdb->last_error ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					$message = sprintf(
+						/* translators: %s: database error message */
+						__( 'Unable to update the form. Database error: %s', 'boldform-lite' ),
+						sanitize_text_field( $wpdb->last_error )
+					);
+				}
+
+				wp_send_json_error(
+					array(
+						'message' => $message,
+					),
+					500
+				);
+			}
+		} else {
+			$data['created_by'] = get_current_user_id();
+			$formats[]          = '%d';
+
+			$inserted = $wpdb->insert( $table_name, $data, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+
+			if ( false === $inserted ) {
+				$message = __( 'Unable to save the form.', 'boldform-lite' );
+
+				// Only expose the raw DB error while debugging — never leak schema/SQL
+				// internals to the browser in production.
+				if ( ! empty( $wpdb->last_error ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					$message = sprintf(
+						/* translators: %s: database error message */
+						__( 'Unable to save the form. Database error: %s', 'boldform-lite' ),
+						sanitize_text_field( $wpdb->last_error )
+					);
+				}
+
+				wp_send_json_error(
+					array(
+						'message' => $message,
+					),
+					500
+				);
+			}
+
+			$form_id = (int) $wpdb->insert_id;
+		}
+
+		/**
+		 * Fires after a form is successfully saved via the builder.
+		 *
+		 * Pro can use this to sync to external CRM, invalidate caches, etc.
+		 *
+		 * @param int    $form_id Form ID (newly inserted or updated).
+		 * @param array<string, mixed> $data    Saved data array (title, fields_json, settings_json).
+		 * @param bool   $is_new  True when a new form was created, false on update.
+		 */
+		do_action( 'boldform_form_saved', $form_id, $data, ! isset( $_POST['form_id'] ) || 0 === absint( $_POST['form_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already checked above.
+
+		wp_send_json_success(
+			array(
+				'formId'  => $form_id,
+				'message' => __( 'Form saved successfully.', 'boldform-lite' ),
+			)
+		);
+	}
+
+	/**
+	 * Sanitizes a decoded builder structure (rows -> columns -> fields) into the
+	 * trusted, allowlisted shape that gets stored in `fields_json`.
+	 *
+	 * Shared by the AJAX save path and the JSON importer so both apply identical
+	 * field-type allowlisting and per-value sanitization (never trust a raw blob).
+	 *
+	 * @param array<string, mixed>|mixed $payload Decoded structure (expects a 'rows' array).
+	 * @return array<int, array<string, mixed>> Prepared rows (empty array when none valid).
+	 */
+	public static function prepare_rows( $payload ) {
+		$allowed_types = array( 'text', 'name', 'email', 'number', 'textarea', 'select', 'multiselect', 'checkbox', 'radio', 'date', 'time', 'tel', 'url', 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'input_mask', 'html_editor', 'paragraph', 'numeric', 'address', 'country', 'star_rating', 'slider_range' );
+
+		/**
+		 * Filter the list of allowed field types that can be saved.
+		 *
+		 * Pro can add new field types (payment, signature, repeater, etc.).
+		 *
+		 * @param array<int, string> $allowed_types Allowed field type keys.
+		 */
+		$allowed_types = apply_filters( 'boldform_allowed_field_types', $allowed_types );
+
+		$prepared_rows = array();
+		$seen_ids      = array();
+
+		if ( ! is_array( $payload ) || empty( $payload['rows'] ) || ! is_array( $payload['rows'] ) ) {
+			return $prepared_rows;
+		}
+
 		// Builder data is stored as rows -> columns -> fields so the renderer can rebuild the layout exactly.
-		foreach ( $payload['rows'] as $row ) {
+		// Defensive caps keep a hostile/runaway payload from exhausting memory.
+		foreach ( array_slice( $payload['rows'], 0, 200 ) as $row ) {
 			if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
 				continue;
 			}
 
 			$prepared_columns = array();
 
-			foreach ( $row['columns'] as $column ) {
+			foreach ( array_slice( $row['columns'], 0, 12 ) as $column ) {
 				$width  = isset( $column['width'] ) ? sanitize_text_field( (string) $column['width'] ) : '100%';
 				$fields = array();
 
-				// Allow any valid CSS width value (%, px, auto, etc.).
-				if ( ! preg_match( '/^[\d.]+(px|%|em|rem|vw|auto)$/', $width ) ) {
+				// Restrict column widths to the layout presets the builder offers.
+				if ( ! in_array( $width, array( '100%', '75%', '66.66%', '50%', '33.33%', '25%' ), true ) ) {
 					$width = '100%';
 				}
 
 				if ( isset( $column['fields'] ) && is_array( $column['fields'] ) ) {
-					foreach ( $column['fields'] as $field ) {
+					foreach ( array_slice( $column['fields'], 0, 200 ) as $field ) {
 						$field_type = isset( $field['type'] ) ? sanitize_key( (string) $field['type'] ) : '';
 
 						if ( ! in_array( $field_type, $allowed_types, true ) ) {
 							continue;
 						}
+
+						// Guarantee a unique field id within the form — duplicates break labels,
+						// conditional logic and entry keying (last-writer-wins on submit).
+						$field_id = ! empty( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : wp_unique_id( 'field_' );
+						if ( '' === $field_id || isset( $seen_ids[ $field_id ] ) ) {
+							$field_id = wp_unique_id( 'field_' );
+						}
+						$seen_ids[ $field_id ] = true;
 
 						$options = array();
 
@@ -121,7 +273,7 @@ class BoldForm_Lite_Ajax_Save {
 										static function ( $option ) {
 											return sanitize_text_field( (string) ( $option ?? '' ) );
 										},
-										$field['options']
+										array_slice( $field['options'], 0, 200 )
 									)
 								)
 							);
@@ -131,7 +283,7 @@ class BoldForm_Lite_Ajax_Save {
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
 						$core_field = array(
-							'id'             => isset( $field['id'] ) ? sanitize_key( (string) $field['id'] ) : wp_unique_id( 'field_' ),
+							'id'             => $field_id,
 							'type'           => $field_type,
 							'label'          => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
 							'placeholder'    => isset( $field['placeholder'] ) ? sanitize_text_field( (string) $field['placeholder'] ) : '',
@@ -192,10 +344,11 @@ class BoldForm_Lite_Ajax_Save {
 							'max_value'       => isset( $field['max_value'] ) ? sanitize_text_field( (string) $field['max_value'] ) : '',
 							'step_value'      => isset( $field['step_value'] ) ? sanitize_text_field( (string) $field['step_value'] ) : '',
 							'max_stars'       => isset( $field['max_stars'] ) ? absint( $field['max_stars'] ) : 5,
-							'star_color'      => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '#f59e0b',
-							'star_size'       => isset( $field['star_size'] ) ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : 28,
+							'star_color'      => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '',
+							'star_size'       => isset( $field['star_size'] ) ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : 20,
 							'slider_color'    => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
 							'slider_height'   => isset( $field['slider_height'] ) ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
+							'dual_handle'     => ! empty( $field['dual_handle'] ),
 							'step_title'      => isset( $field['step_title'] ) ? sanitize_text_field( (string) $field['step_title'] ) : '',
 							'next_text'       => isset( $field['next_text'] ) ? sanitize_text_field( (string) $field['next_text'] ) : 'Next',
 							'prev_text'       => isset( $field['prev_text'] ) ? sanitize_text_field( (string) $field['prev_text'] ) : 'Previous',
@@ -240,111 +393,7 @@ class BoldForm_Lite_Ajax_Save {
 			);
 		}
 
-		if ( ! $this->structure_has_fields( $prepared_rows ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Add at least one field before saving.', 'boldform-lite' ),
-				),
-				400
-			);
-		}
-
-		if ( empty( $prepared_rows ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Invalid form structure supplied.', 'boldform-lite' ),
-				),
-				400
-			);
-		}
-
-		global $wpdb;
-
-		$table_name = $this->plugin->get_forms_table_name();
-		$data       = array(
-			'title'         => $title ? $title : __( 'Untitled Form', 'boldform-lite' ),
-			'status'        => 'publish',
-			'fields_json'   => wp_json_encode(
-				array(
-					'rows' => $prepared_rows,
-				)
-			),
-			'settings_json' => wp_json_encode( $prepared_settings ),
-		);
-		$formats    = array( '%s', '%s', '%s', '%s' );
-
-		if ( $form_id > 0 ) {
-			$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$table_name,
-				$data,
-				array( 'id' => $form_id ),
-				$formats,
-				array( '%d' )
-			);
-
-			if ( false === $updated ) {
-				$message = __( 'Unable to update the form.', 'boldform-lite' );
-
-				if ( ! empty( $wpdb->last_error ) ) {
-					$message = sprintf(
-						/* translators: %s: database error message */
-						__( 'Unable to update the form. Database error: %s', 'boldform-lite' ),
-						sanitize_text_field( $wpdb->last_error )
-					);
-				}
-
-				wp_send_json_error(
-					array(
-						'message' => $message,
-					),
-					500
-				);
-			}
-		} else {
-			$data['created_by'] = get_current_user_id();
-			$formats[]          = '%d';
-
-			$inserted = $wpdb->insert( $table_name, $data, $formats ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-
-			if ( false === $inserted ) {
-				$message = __( 'Unable to save the form.', 'boldform-lite' );
-
-				if ( ! empty( $wpdb->last_error ) ) {
-					$message = sprintf(
-						/* translators: %s: database error message */
-						__( 'Unable to save the form. Database error: %s', 'boldform-lite' ),
-						sanitize_text_field( $wpdb->last_error )
-					);
-				}
-
-				wp_send_json_error(
-					array(
-						'message' => $message,
-					),
-					500
-				);
-			}
-
-			$form_id = (int) $wpdb->insert_id;
-		}
-
-		/**
-		 * Fires after a form is successfully saved via the builder.
-		 *
-		 * Pro can use this to sync to external CRM, invalidate caches, etc.
-		 *
-		 * @param int    $form_id Form ID (newly inserted or updated).
-		 * @param array<string, mixed> $data    Saved data array (title, fields_json, settings_json).
-		 * @param bool   $is_new  True when a new form was created, false on update.
-		 */
-		do_action( 'boldform_form_saved', $form_id, $data, ! isset( $_POST['form_id'] ) || 0 === absint( $_POST['form_id'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce already checked above.
-
-		wp_send_json_success(
-			array(
-				'formId'  => $form_id,
-				'message' => __( 'Form saved successfully.', 'boldform-lite' ),
-			)
-		);
+		return $prepared_rows;
 	}
 
 	/**
@@ -353,7 +402,7 @@ class BoldForm_Lite_Ajax_Save {
 	 * @param array<int, array<string, mixed>> $rows Prepared rows.
 	 * @return bool
 	 */
-	private function structure_has_fields( $rows ) {
+	public static function structure_has_fields( $rows ) {
 		foreach ( $rows as $row ) {
 			if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
 				continue;
@@ -375,7 +424,7 @@ class BoldForm_Lite_Ajax_Save {
 	 * @param array<string, mixed>|mixed $settings_payload Raw settings payload.
 	 * @return array<string, mixed>
 	 */
-	private function normalize_form_settings( $settings_payload ) {
+	public static function normalize_form_settings( $settings_payload ) {
 		$defaults = array(
 			'submission_type'   => 'ajax',
 			'enable_ajax'       => true,
@@ -405,6 +454,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_background_color' => '',
 			'button_border_color' => '',
 			'button_text_color' => '',
+			'style'             => array(),
 			'admin_email_type'  => 'site_admin',
 			'enable_admin_email'=> true,
 			'enable_user_email' => true,
@@ -432,7 +482,9 @@ class BoldForm_Lite_Ajax_Save {
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
 			'redirect_type'     => $redirect_type,
-			'redirect_url'      => isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
+			// Persist a redirect URL only in redirect mode; AJAX/message mode always
+			// stores an empty URL so switching back to AJAX can't leave a stale redirect.
+			'redirect_url'      => 'redirect' === $submission_type && isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
 			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? sanitize_textarea_field( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $settings_payload['button_alignment'] ) && in_array( $settings_payload['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['button_alignment'] : $defaults['button_alignment'],
@@ -464,6 +516,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_background_color' => isset( $settings_payload['button_background_color'] ) && sanitize_hex_color( $settings_payload['button_background_color'] ) ? sanitize_hex_color( $settings_payload['button_background_color'] ) : '',
 			'button_border_color' => isset( $settings_payload['button_border_color'] ) && sanitize_hex_color( $settings_payload['button_border_color'] ) ? sanitize_hex_color( $settings_payload['button_border_color'] ) : '',
 			'button_text_color' => isset( $settings_payload['button_text_color'] ) && sanitize_hex_color( $settings_payload['button_text_color'] ) ? sanitize_hex_color( $settings_payload['button_text_color'] ) : '',
+			'style'             => self::normalize_style_settings( isset( $settings_payload['style'] ) ? $settings_payload['style'] : array() ),
 			'admin_email_type'  => $admin_email_type,
 			'enable_admin_email'=> isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
 			'enable_user_email' => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
@@ -483,7 +536,7 @@ class BoldForm_Lite_Ajax_Save {
 			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
 			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
 			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
-			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
+			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
 		);
 
 		/**
@@ -499,5 +552,103 @@ class BoldForm_Lite_Ajax_Save {
 		$extra = (array) apply_filters( 'boldform_form_settings_extra', array(), $settings_payload );
 
 		return array_merge( $normalized, $extra );
+	}
+
+	/**
+	 * Normalizes the advanced (responsive) style settings written by the Style tab.
+	 *
+	 * Shape: { desktop: { "--bf-*": value, … }, tablet: {…}, mobile: {…} }. Each
+	 * device map holds finished CSS custom-property values keyed by the literal
+	 * property name. Every value is validated against a strict safe grammar
+	 * (see sanitize_css_value()); anything unrecognised is dropped. Var names must
+	 * match the BoldForm namespace, so a hostile key can never set arbitrary
+	 * properties. This keeps the per-form <style> block injection-safe even though
+	 * the plugin ships to WordPress.org.
+	 *
+	 * @param mixed $payload Raw style payload.
+	 * @return array<string, array<string, string>> Sanitized { device => { var => value } }.
+	 */
+	private static function normalize_style_settings( $payload ) {
+		$out = array(
+			'desktop' => array(),
+			'tablet'  => array(),
+			'mobile'  => array(),
+		);
+
+		if ( ! is_array( $payload ) ) {
+			return $out;
+		}
+
+		foreach ( array( 'desktop', 'tablet', 'mobile' ) as $device ) {
+			if ( empty( $payload[ $device ] ) || ! is_array( $payload[ $device ] ) ) {
+				continue;
+			}
+
+			foreach ( $payload[ $device ] as $css_var => $value ) {
+				if ( ! is_string( $css_var ) || ! preg_match( '/^--bf-[a-z0-9-]+$/', $css_var ) ) {
+					continue;
+				}
+
+				$clean = self::sanitize_css_value( $value );
+				if ( '' !== $clean ) {
+					$out[ $device ][ $css_var ] = $clean;
+				}
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Validates a single CSS custom-property value against a strict safe grammar.
+	 *
+	 * Accepts only the character set that legitimately appears in our generated
+	 * values — letters, digits, whitespace and `#%().,-_`. Crucially this excludes
+	 * `:;{}<>@"'` and `\`, so a value can neither terminate its declaration, close
+	 * the rule/`<style>` element, nor smuggle a CSS escape. `url()`, `expression()`,
+	 * comments and any non-allowlisted CSS function are rejected outright. This
+	 * lets the builder send finished tokens (lengths, hex/rgba colours, 1–4 length
+	 * lists, box-shadow strings, linear/radial gradients) while staying safe.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string The value if it passes, otherwise ''.
+	 */
+	private static function sanitize_css_value( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$value = trim( (string) $value );
+
+		if ( '' === $value || strlen( $value ) > 200 ) {
+			return '';
+		}
+
+		// Hard charset gate: no `:;{}<>@"'` or backslash can appear in a value.
+		if ( preg_match( '/[^a-zA-Z0-9#%().,\s_\-]/', $value ) ) {
+			return '';
+		}
+
+		$lower = strtolower( $value );
+		if (
+			false !== strpos( $lower, 'url(' ) ||
+			false !== strpos( $lower, 'expression' ) ||
+			false !== strpos( $lower, 'import' ) ||
+			false !== strpos( $lower, '/*' )
+		) {
+			return '';
+		}
+
+		// Only a curated set of CSS functions may appear.
+		if ( preg_match_all( '/([a-zA-Z][a-zA-Z-]*)\s*\(/', $value, $matches ) ) {
+			$allowed = array( 'rgb', 'rgba', 'hsl', 'hsla', 'linear-gradient', 'radial-gradient', 'calc', 'var', 'color-mix' );
+			foreach ( $matches[1] as $fn ) {
+				if ( ! in_array( strtolower( $fn ), $allowed, true ) ) {
+					return '';
+				}
+			}
+		}
+
+		return $value;
 	}
 }

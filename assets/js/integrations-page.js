@@ -25,8 +25,11 @@
 	// Helpers
 	// =====================================================================
 
+	// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
+	// characters, so the result is safe inside quote-delimited attribute values.
 	function escHtml( s ) {
-		return $( '<div>' ).text( String( s || '' ) ).html();
+		return $( '<div>' ).text( String( s || '' ) ).html()
+			.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 	}
 
 	function typeDefBySlug( type ) {
@@ -72,8 +75,13 @@
 					$row.attr( 'data-conn-id', res.data.connection.id );
 				}
 			} else {
-				// Revert.
+				// Revert the toggle.
 				$cb.prop( 'checked', ! on );
+				// Enabling was refused because no API key is stored yet — open the
+				// settings modal so the admin can add credentials first.
+				if ( res && res.data && 'needs_setup' === res.data.code ) {
+					$( '.bf-settings-btn[data-type="' + type + '"]' ).trigger( 'click' );
+				}
 			}
 		} )
 		.fail( function () {
@@ -102,8 +110,8 @@
 		$( '#bf-conn-modal-status' ).text( '' ).removeClass( 'is-error is-ok' );
 		$( '#bf-conn-modal-body' ).html( buildModalBody( def, editingConn ) );
 
-		// Pre-load lists if we have api_key.
-		if ( editingConn && editingConn.api_key ) {
+		// Pre-load lists if a key is already stored (fetched server-side by conn ID).
+		if ( editingConn && editingConn.has_key ) {
 			doFetchLists( false );
 		}
 
@@ -145,7 +153,15 @@
 					return;
 				}
 
-				var inputType = field.type === 'password' ? 'password' : 'text';
+				var inputType  = field.type === 'password' ? 'password' : 'text';
+				var isPassword = 'password' === inputType;
+				// Secrets are never sent to the browser. A password field stays empty;
+				// when a key is already stored, the placeholder tells the admin they can
+				// leave it blank to keep it. All other fields prefill their saved value.
+				var fieldValue  = isPassword ? '' : ( conn[ field.key ] || '' );
+				var placeholder = ( isPassword && conn.has_key )
+					? ( i18n.keepKey || 'Saved — leave blank to keep current key' )
+					: ( field.placeholder || '' );
 				html +=
 					'<div class="bf-modal-row">' +
 						'<label class="bf-modal-label" for="bf-conn-' + escHtml( field.key ) + '">' +
@@ -153,8 +169,8 @@
 							( field.required ? ' <span class="bf-modal-req">*</span>' : '' ) +
 						'</label>' +
 						( field.type === 'textarea'
-							? '<textarea id="bf-conn-' + escHtml( field.key ) + '" data-field-key="' + escHtml( field.key ) + '" class="large-text" rows="4" placeholder="' + escHtml( field.placeholder || '' ) + '">' + escHtml( conn[ field.key ] || '' ) + '</textarea>'
-							: '<input type="' + inputType + '" id="bf-conn-' + escHtml( field.key ) + '" data-field-key="' + escHtml( field.key ) + '" class="regular-text" value="' + escHtml( conn[ field.key ] || '' ) + '" placeholder="' + escHtml( field.placeholder || '' ) + '" autocomplete="' + ( 'password' === inputType ? 'new-password' : 'off' ) + '">'
+							? '<textarea id="bf-conn-' + escHtml( field.key ) + '" data-field-key="' + escHtml( field.key ) + '" class="large-text" rows="4" placeholder="' + escHtml( placeholder ) + '">' + escHtml( fieldValue ) + '</textarea>'
+							: '<input type="' + inputType + '" id="bf-conn-' + escHtml( field.key ) + '" data-field-key="' + escHtml( field.key ) + '" class="regular-text" value="' + escHtml( fieldValue ) + '" placeholder="' + escHtml( placeholder ) + '" autocomplete="' + ( isPassword ? 'new-password' : 'off' ) + '">'
 						) +
 					'</div>';
 			} );
@@ -174,7 +190,7 @@
 		conn = conn || {};
 		var listLabel = def.list_label || 'List';
 
-		if ( ! conn.api_key ) {
+		if ( ! conn.has_key ) {
 			return (
 				'<div class="bf-modal-row" id="bf-list-row">' +
 					'<label class="bf-modal-label">' + escHtml( listLabel ) + '</label>' +
@@ -224,17 +240,9 @@
 			$( '#bf-conn-test-btn' ).prop( 'disabled', true ).text( i18n.testing || 'Testing…' );
 		}
 
-		var apiKey = $( '#bf-conn-api_key' ).val() || ( editingConn ? editingConn.api_key : '' );
-		var extra  = collectExtraFields();
+		var typedKey = $.trim( $( '#bf-conn-api_key' ).val() || '' );
 
-		$.post( ajaxUrl, {
-			action:  'boldform_connection_test',
-			nonce:   nonce,
-			type:    editingType,
-			api_key: apiKey,
-			extra:   extra,
-		} )
-		.done( function ( res ) {
+		var onDone = function ( res ) {
 			if ( res && res.success ) {
 				fetchedLists = res.data.lists || [];
 				renderListSelect( fetchedLists, editingConn ? editingConn.list_id : '' );
@@ -243,11 +251,32 @@
 				var msg = ( res && res.data && res.data.message ) ? res.data.message : 'Failed.';
 				setStatus( ( i18n.testFail || 'Failed: ' ) + msg, 'is-error' );
 			}
-		} )
-		.fail( function () { setStatus( 'Request failed.', 'is-error' ); } )
-		.always( function () {
+		};
+		var onFail   = function () { setStatus( 'Request failed.', 'is-error' ); };
+		var onAlways = function () {
 			$( '#bf-conn-test-btn' ).prop( 'disabled', false ).text( i18n.test || 'Test Connection' );
-		} );
+		};
+
+		if ( typedKey ) {
+			// Validate the freshly-typed key.
+			$.post( ajaxUrl, {
+				action:  'boldform_connection_test',
+				nonce:   nonce,
+				type:    editingType,
+				api_key: typedKey,
+				extra:   collectExtraFields(),
+			} ).done( onDone ).fail( onFail ).always( onAlways );
+		} else if ( editingConn && editingConn.has_key && editingConn.id ) {
+			// No new key typed — fetch lists using the key stored server-side.
+			$.post( ajaxUrl, {
+				action:  'boldform_connection_fetch_lists',
+				nonce:   nonce,
+				conn_id: editingConn.id,
+			} ).done( onDone ).fail( onFail ).always( onAlways );
+		} else {
+			if ( fromTestBtn ) setStatus( i18n.errRequired || 'API Key is required.', 'is-error' );
+			onAlways();
+		}
 	}
 
 	function doSave() {

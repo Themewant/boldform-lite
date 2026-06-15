@@ -1,10 +1,18 @@
 .boldform-lite-form {
-	max-width: 100%;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
+	max-width: var(--bf-form-mw, var(--bf-form-max-width, 100%));
+	margin-left: var(--bf-form-ml, 0);
+	margin-right: var(--bf-form-mr, 0);
+	padding: var(--bf-form-padding, 0);
+	border-width: var(--bf-form-border-width, 0);
+	border-style: var(--bf-form-border-style, solid);
+	border-color: var(--bf-form-border-color, transparent);
+	border-radius: var(--bf-form-radius, 0);
+	background: var(--bf-form-bg, transparent);
+	box-shadow: var(--bf-form-shadow, none);
+}
+
+.boldform-lite-form:hover {
+	box-shadow: var(--bf-form-shadow-hover, var(--bf-form-shadow, none));
 }
 
 .boldform-lite-form__title {
@@ -16,18 +24,18 @@
 
 .boldform-lite-form__fields {
 	display: grid;
-	gap: 24px;
+	gap: var(--bf-row-gap, 24px);
 }
 
 .boldform-lite-form__row {
 	display: flex;
 	flex-wrap: wrap;
-	margin: 0 -10px;
+	margin: 0 calc(var(--bf-col-gap, 10px) * -1);
 }
 
 .boldform-lite-form__column {
 	min-width: 0;
-	padding: 0 10px;
+	padding: 0 var(--bf-col-gap, 10px);
 	display: grid;
 	gap: 16px;
 	align-content: start;
@@ -37,15 +45,27 @@
 .boldform-lite-form__field {
 	display: grid;
 	gap: 8px;
+	margin: var(--bf-field-margin, 0);
 }
 
 .boldform-lite-form__label {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	font-weight: 500;
+	margin: var(--bf-label-margin, 0);
+	font-family: var(--bf-label-ff, inherit);
+	font-weight: var(--bf-label-fw, 500);
+	line-height: var(--bf-label-lh, normal);
+	letter-spacing: var(--bf-label-ls, normal);
+	text-transform: var(--bf-label-tt, none);
 	color: var(--bf-label-color, #4b5563);
-	font-size: var(--bf-label-font-size, 17px);
+	font-size: var(--bf-label-fs, var(--bf-label-font-size, 17px));
+}
+
+/* Highlight a field's label while that field is focused. Falls back to the normal
+   label colour so unset = no change. */
+.boldform-lite-form__field:focus-within > .boldform-lite-form__label {
+	color: var(--bf-label-focus-color, var(--bf-label-color, #4b5563));
 }
 
 /* Field control wrapper */
@@ -55,7 +75,7 @@
 
 /* Label placement: per-field */
 .boldform-lite-form__field.boldform-lite-label-left {
-	grid-template-columns: 160px 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 	align-items: center;
 	gap: 16px;
 }
@@ -66,7 +86,7 @@
 }
 
 .boldform-lite-form__field.boldform-lite-label-right {
-	grid-template-columns: 1fr 160px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 16px;
 }
@@ -113,7 +133,12 @@
 
 .boldform-lite-form__field-error {
 	color: var(--bf-error-color, #dc2626);
-	font-size: 13px;
+	font-family: var(--bf-error-ff, inherit);
+	font-size: var(--bf-error-fs, 13px);
+	font-weight: var(--bf-error-fw, normal);
+	line-height: var(--bf-error-lh, normal);
+	letter-spacing: var(--bf-error-ls, normal);
+	text-transform: var(--bf-error-tt, none);
 	margin-top: 4px;
 }
 
@@ -141,15 +166,32 @@
 }
 
 .boldform-lite-form__message.is-success {
-	background: #ecfdf5;
-	color: #166534;
-	border: 1px solid #bbf7d0;
+	margin: var(--bf-msg-success-margin, 0 0 18px);
+	padding: var(--bf-msg-success-padding, 12px 14px);
+	background: var(--bf-msg-success-bg, #ecfdf5);
+	color: var(--bf-msg-success-text, #166534);
+	border-width: var(--bf-msg-success-border-width, 1px);
+	border-style: var(--bf-msg-success-border-style, solid);
+	border-color: var(--bf-msg-success-border-color, #bbf7d0);
+	border-radius: var(--bf-msg-success-radius, 12px);
+	box-shadow: var(--bf-msg-success-shadow, none);
+	font-family: var(--bf-msg-success-ff, inherit);
+	font-size: var(--bf-msg-success-fs, 14px);
+	font-weight: var(--bf-msg-success-fw, normal);
+	line-height: var(--bf-msg-success-lh, normal);
+	letter-spacing: var(--bf-msg-success-ls, normal);
+	text-transform: var(--bf-msg-success-tt, none);
 }
 
 .boldform-lite-form__message.is-error {
-	background: #fef2f2;
-	color: #b91c1c;
-	border: 1px solid #fecaca;
+	margin: var(--bf-msg-error-margin, 0 0 18px);
+	padding: var(--bf-msg-error-padding, 12px 14px);
+	background: var(--bf-msg-error-bg, #fef2f2);
+	color: var(--bf-msg-error-text, #b91c1c);
+	border-width: var(--bf-msg-error-border-width, 1px);
+	border-style: var(--bf-msg-error-border-style, solid);
+	border-color: var(--bf-msg-error-border-color, #fecaca);
+	border-radius: var(--bf-msg-error-radius, 12px);
 }
 
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
@@ -157,16 +199,32 @@
 .boldform-lite-form textarea {
 	width: 100%;
 	max-width: 100%;
-	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px);
+	margin: var(--bf-input-margin, 0);
+	padding: var(--bf-field-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px));
 	border: var(--bf-field-border-width, 1.5px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 8px);
 	background: var(--bf-field-bg, #fff);
 	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 14px);
-	line-height: 1.5;
+	font-family: var(--bf-field-ff, inherit);
+	font-size: var(--bf-field-fs, var(--bf-field-font-size, 14px));
+	font-weight: var(--bf-field-fw, normal);
+	line-height: var(--bf-field-lh, 1.5);
+	letter-spacing: var(--bf-field-ls, normal);
+	text-transform: var(--bf-field-tt, none);
+	box-shadow: var(--bf-field-shadow, none);
 	box-sizing: border-box;
 	transition: border-color 0.18s ease, box-shadow 0.18s ease;
-	height: auto;
+	height: var(--bf-field-height, auto);
+}
+
+.boldform-lite-form input::placeholder,
+.boldform-lite-form textarea::placeholder {
+	color: var(--bf-ph-color, #9ca3af);
+	font-family: var(--bf-ph-ff, inherit);
+	font-size: var(--bf-ph-fs, inherit);
+	font-weight: var(--bf-ph-fw, inherit);
+	font-style: var(--bf-ph-style, inherit);
+	letter-spacing: var(--bf-ph-ls, inherit);
 }
 
 /* ── Native select — custom arrow ── */
@@ -230,18 +288,50 @@ input[data-boldform-picker] {
 	outline: none;
 }
 
+/* Hover — declared before :focus (equal specificity) so focus wins when both apply.
+   Defaults fall back to the normal field border/bg, so unset = no visible change. */
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.boldform-lite-form select:hover,
+.boldform-lite-form textarea:hover {
+	border-width: var(--bf-field-hover-border-width, var(--bf-field-border-width, 1.5px));
+	border-style: var(--bf-field-hover-border-style, var(--bf-field-border-style, solid));
+	border-color: var(--bf-field-hover-border, var(--bf-field-border, #d1d5db));
+	background-color: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-hover-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-hover-shadow, var(--bf-field-shadow, none));
+}
+
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 .boldform-lite-form select:focus,
 .boldform-lite-form textarea:focus {
-	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: var(--bf-field-focus-shadow, none);
+	border-width: var(--bf-field-focus-border-width, var(--bf-field-border-width, 1.5px));
+	border-style: var(--bf-field-focus-border-style, var(--bf-field-border-style, solid));
+	border-color: var(--bf-field-focus-border, var(--bf-focus-color, #0f766e));
+	background-color: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-field-focus-text, var(--bf-field-text, #111827));
+	box-shadow: var(--bf-field-focus-shadow, var(--bf-field-shadow, none));
 	outline: none;
 }
 
+/* Gradient-capable hover/focus background for text inputs & textareas. The
+   combined rules above keep `background-color` so the native <select> arrow
+   (a background-image) survives; here the `background` shorthand lets a
+   --bf-field-*-bg that holds a linear-gradient render on inputs/textareas. */
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):hover,
+.boldform-lite-form textarea:hover {
+	background: var(--bf-field-hover-bg, var(--bf-field-bg, #fff));
+}
+
+.boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+.boldform-lite-form textarea:focus {
+	background: var(--bf-field-focus-bg, var(--bf-field-bg, #fff));
+}
+
 .boldform-lite-form textarea {
-	min-height: 110px;
+	min-height: var(--bf-textarea-height, 110px);
+	height: var(--bf-textarea-height, auto);
 	resize: vertical;
-	line-height: 1.6;
+	line-height: var(--bf-field-lh, 1.6);
 }
 
 /* ── Radio & Checkbox choice groups ── */
@@ -259,6 +349,7 @@ input[data-boldform-picker] {
 
 .boldform-lite-form__actions {
 	display: flex;
+	margin: var(--bf-actions-margin, 0);
 }
 
 .boldform-lite-form__actions.is-align-left {
@@ -273,21 +364,105 @@ input[data-boldform-picker] {
 	justify-content: flex-end;
 }
 
-/* File upload field */
-.boldform-lite-form__field--file input[type="file"] {
-	width: 100%;
-	padding: 12px;
+/* File upload — styled drop-zone matching the builder Live Preview. The native
+   <input> is hidden but stretched over the whole zone, so the click target and
+   native drag-and-drop keep working; frontend.js reflects the chosen filename. */
+.boldform-lite-form__file {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: var(--bf-field-height, auto);
+	padding: var(--bf-field-padding, 24px 16px);
 	border: 2px dashed var(--bf-field-border, #d1d5db);
 	border-radius: var(--bf-field-radius, 12px);
-	background: #f9fafb;
-	cursor: pointer;
+	background: var(--bf-field-bg, #f9fafb);
+	color: var(--bf-file-btn-text, var(--bf-field-text, #6b7280));
 	font-size: 14px;
-	color: #6b7280;
+	text-align: center;
+	cursor: pointer;
+	box-sizing: border-box;
+	transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-.boldform-lite-form__field--file input[type="file"]:hover {
+.boldform-lite-form__file:hover,
+.boldform-lite-form__file.is-dragover {
 	border-color: var(--bf-focus-color, #0f766e);
-	background: #f0fdfa;
+}
+
+/* The real input: invisible but covers the zone (click + native file drop). */
+.boldform-lite-form__file-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+/* Icon "chip" — driven by the File Upload section's Background / Text controls. */
+.boldform-lite-form__file-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: 0 0 auto;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	background: var(--bf-file-btn-bg, #e2e8f0);
+	color: var(--bf-file-btn-text, #334155);
+}
+
+.boldform-lite-form__file:hover .boldform-lite-form__file-icon,
+.boldform-lite-form__file.is-dragover .boldform-lite-form__file-icon {
+	background: var(--bf-file-btn-hover-bg, var(--bf-file-btn-bg, #e2e8f0));
+	color: var(--bf-file-btn-hover-text, var(--bf-file-btn-text, #334155));
+}
+
+.boldform-lite-form__file-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.boldform-lite-form__file.has-file .boldform-lite-form__file-text {
+	font-weight: 600;
+}
+
+/* Section break */
+.boldform-lite-form__section-break {
+	margin: var(--bf-section-margin, 8px 0);
+	padding: var(--bf-section-padding, 0);
+	border-width: var(--bf-section-border-width, 0);
+	border-style: var(--bf-section-border-style, solid);
+	border-color: var(--bf-section-border-color, transparent);
+	border-radius: var(--bf-section-radius, 0);
+}
+
+.boldform-lite-form__section-title {
+	margin: var(--bf-section-title-margin, 0 0 4px);
+	color: var(--bf-section-title-color, #0f172a);
+	font-family: var(--bf-section-title-ff, inherit);
+	font-size: var(--bf-section-title-fs, 18px);
+	font-weight: var(--bf-section-title-fw, 600);
+	line-height: var(--bf-section-title-lh, 1.3);
+	letter-spacing: var(--bf-section-title-ls, normal);
+	text-transform: var(--bf-section-title-tt, none);
+}
+
+.boldform-lite-form__section-description {
+	margin: var(--bf-section-desc-margin, 0);
+	color: var(--bf-section-desc-color, #6b7280);
+	font-family: var(--bf-section-desc-ff, inherit);
+	font-size: var(--bf-section-desc-fs, 14px);
+	font-weight: var(--bf-section-desc-fw, normal);
+	line-height: var(--bf-section-desc-lh, 1.5);
+	letter-spacing: var(--bf-section-desc-ls, normal);
+	text-transform: var(--bf-section-desc-tt, none);
 }
 
 /* Submit button field — button rendered as a draggable field inside the form grid. */
@@ -297,7 +472,7 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-form__field--submit .boldform-lite-form__actions {
-	margin-top: 0;
+	margin: var(--bf-actions-margin, 0);
 	width: 100%;
 }
 
@@ -305,15 +480,21 @@ input[data-boldform-picker] {
 .boldform-lite-form__choice {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	/* Spacing control = the gap between the box/circle and its label. Row spacing
+	   between options comes from .boldform-lite-form__choices' own gap. */
+	gap: var(--bf-choice-gap, 10px);
 	padding: 0;
 	border: 0;
 	border-radius: 0;
 	background: transparent;
-	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 14px);
+	color: var(--bf-choice-color, var(--bf-field-text, #111827));
+	font-family: var(--bf-choice-ff, inherit);
+	font-size: var(--bf-choice-fs, var(--bf-field-font-size, 14px));
+	font-weight: var(--bf-choice-fw, normal);
+	letter-spacing: var(--bf-choice-ls, normal);
+	text-transform: var(--bf-choice-tt, none);
 	cursor: pointer;
-	line-height: 1.4;
+	line-height: var(--bf-choice-lh, 1.4);
 	-webkit-user-select: none;
 	user-select: none;
 }
@@ -331,16 +512,17 @@ input[data-boldform-picker] {
 
 /* Custom control shell */
 .boldform-lite-form__choice-control {
+	--bf-choice-accent-r: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 18px;
-	height: 18px;
-	min-width: 18px;
-	border: 2px solid var(--bf-field-border, #cbd5e1);
+	width: var(--bf-choice-size, 18px);
+	height: var(--bf-choice-size, 18px);
+	min-width: var(--bf-choice-size, 18px);
+	border: 2px solid var(--bf-choice-border, var(--bf-field-border, #cbd5e1));
 	border-radius: 5px;
-	background: var(--bf-field-bg, #fff);
+	background: var(--bf-choice-bg, var(--bf-field-bg, #fff));
 	flex-shrink: 0;
 	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
@@ -349,14 +531,17 @@ input[data-boldform-picker] {
 	border-radius: 50%;
 }
 
-/* Checked state */
+/* Checked state — follow the design-theme accent (--bf-button-bg), falling back to
+   the field focus colour and then the default teal. --bf-focus-color is a limited
+   enum (blue/green/dark/teal) and cannot represent arbitrary theme colours, so the
+   checked fill keys off the same accent the stars and slider already use. */
 .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
-	background: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-choice-accent-r);
+	background: var(--bf-choice-accent-r);
 }
 
 .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-choice-accent-r);
 	background: #fff;
 }
 
@@ -366,8 +551,8 @@ input[data-boldform-picker] {
 	display: block;
 	width: 5px;
 	height: 9px;
-	border-right: 2px solid #fff;
-	border-bottom: 2px solid #fff;
+	border-right: 2px solid var(--bf-choice-icon, #fff);
+	border-bottom: 2px solid var(--bf-choice-icon, #fff);
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
@@ -378,18 +563,20 @@ input[data-boldform-picker] {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background: var(--bf-focus-color, #0f766e);
+	background: var(--bf-choice-icon, var(--bf-choice-accent-r));
 }
 
-/* Focus ring */
+/* Focus ring — tint with the same accent so the whole control stays coherent.
+   --bf-choice-focus-ring overrides the ring colour; falls back to the accent tint. */
 .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-control {
-	box-shadow: 0 0 0 3px color-mix(in srgb, var(--bf-focus-color, #0f766e) 18%, transparent);
-	border-color: var(--bf-focus-color, #0f766e);
+	box-shadow: 0 0 0 3px var(--bf-choice-focus-ring, color-mix(in srgb, var(--bf-choice-accent-r) 18%, transparent));
+	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
 }
 
 /* Hover */
 .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
-	border-color: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
+	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
 }
 
 /* Choice label text */
@@ -401,39 +588,83 @@ input[data-boldform-picker] {
 /* Terms & conditions */
 .boldform-lite-form__terms {
 	align-items: flex-start;
+	gap: var(--bf-terms-gap, 10px);
+	color: var(--bf-terms-color, inherit);
+}
+
+.boldform-lite-form__field--terms_conditions {
+	margin: var(--bf-terms-margin, var(--bf-field-margin, 0));
 }
 
 .boldform-lite-form__terms .boldform-lite-form__choice-control {
+	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
 	margin-top: 2px;
+	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
+	border-color: var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1));
+	border-width: var(--bf-terms-box-border-width, 2px);
+	border-radius: var(--bf-terms-box-radius, 5px);
+	background: var(--bf-terms-box-bg, var(--bf-field-bg, #fff));
+}
+
+/* Terms-specific Hover + Checked-icon colours. Declared after the shared choice
+   :hover / checkmark rules (equal specificity), so they win for the terms box. */
+.boldform-lite-form__terms:hover .boldform-lite-form__choice-control {
+	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
+	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
+}
+
+.boldform-lite-form__terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	border-right-color: var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
+	border-bottom-color: var(--bf-terms-box-icon, var(--bf-choice-icon, #fff));
 }
 
 .boldform-lite-form__terms-copy {
-	font-size: 14px;
-	line-height: 1.5;
+	font-family: var(--bf-terms-copy-ff, var(--bf-terms-ff, inherit));
+	font-size: var(--bf-terms-copy-fs, var(--bf-terms-fs, 14px));
+	font-weight: var(--bf-terms-copy-fw, var(--bf-terms-fw, normal));
+	line-height: var(--bf-terms-copy-lh, var(--bf-terms-lh, 1.5));
+	letter-spacing: var(--bf-terms-copy-ls, var(--bf-terms-ls, normal));
+	text-transform: var(--bf-terms-copy-tt, var(--bf-terms-tt, none));
 }
 
 .boldform-lite-form__terms-copy a {
-	color: var(--bf-focus-color, #0f766e);
+	color: var(--bf-terms-link, var(--bf-focus-color, #0f766e));
 	text-decoration: underline;
 }
 
+.boldform-lite-form__terms-copy a:hover {
+	color: var(--bf-terms-link-hover, var(--bf-terms-link, var(--bf-focus-color, #0f766e)));
+}
+
 .boldform-lite-form__submit {
-	padding: var(--bf-button-padding-y, 10px) var(--bf-button-padding-x, 24px);
+	width: var(--bf-btn-width, auto);
+	padding: var(--bf-button-padding, var(--bf-button-padding-y, 10px) var(--bf-button-padding-x, 24px));
 	border: var(--bf-button-border-width, 0) var(--bf-button-border-style, none) var(--bf-button-border, transparent);
 	border-radius: var(--bf-button-radius, 6px);
 	background: var(--bf-button-bg, #2f80ed);
 	color: var(--bf-button-text, #fff);
-	font-size: var(--bf-button-font-size, 14px);
-	font-weight: 600;
+	font-family: var(--bf-btn-ff, inherit);
+	font-size: var(--bf-btn-fs, var(--bf-button-font-size, 14px));
+	font-weight: var(--bf-btn-fw, 600);
+	line-height: var(--bf-btn-lh, normal);
+	letter-spacing: var(--bf-btn-ls, normal);
+	text-transform: var(--bf-btn-tt, none);
 	cursor: pointer;
 	box-shadow: var(--bf-button-shadow, none);
-	transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
-	margin-top: 10px;
+	transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+	margin: var(--bf-btn-margin, 10px 0 0);
 }
 
 .boldform-lite-form__submit:hover {
 	transform: translateY(-1px);
-	box-shadow: var(--bf-button-hover-shadow, none);
+	color: var(--bf-btn-hover-text, var(--bf-button-text, #fff));
+	background: var(--bf-btn-hover-bg, var(--bf-button-bg, #2f80ed));
+	border-width: var(--bf-btn-hover-border-width, var(--bf-button-border-width, 0));
+	border-style: var(--bf-btn-hover-border-style, var(--bf-button-border-style, none));
+	border-color: var(--bf-btn-hover-border, var(--bf-button-border, transparent));
+	box-shadow: var(--bf-button-hover-shadow, var(--bf-button-shadow, none));
 }
 
 .boldform-lite-form__submit .boldform-btn-inner {
@@ -447,6 +678,7 @@ input[data-boldform-picker] {
 	width: 18px;
 	height: 18px;
 	line-height: 18px;
+	color: var(--bf-btn-icon-color, inherit);
 }
 
 .boldform-lite-form__submit img.boldform-btn-icon-svg {
@@ -456,8 +688,14 @@ input[data-boldform-picker] {
 	vertical-align: middle;
 }
 
+.boldform-lite-form__submit .boldform-btn-icon-svg svg,
+.boldform-lite-form__submit .boldform-btn-icon-svg svg path,
+.boldform-lite-form__submit .boldform-btn-icon-svg svg rect {
+	fill: var(--bf-btn-icon-color, currentColor);
+}
+
 .boldform-lite-form__submit:focus-visible {
-	outline: 2px solid var(--bf-button-bg, #2f80ed);
+	outline: 2px solid var(--bf-button-focus-ring, var(--bf-button-bg, #2f80ed));
 	outline-offset: 2px;
 }
 
@@ -554,14 +792,25 @@ input[data-boldform-picker] {
 }
 
 /* ── Gutenberg block style overrides via CSS custom properties ── */
+
+/* The block wrapper carries inline --bfb-* custom properties only for the
+   controls the user actually changed in the block inspector. Each consuming
+   declaration therefore falls back — first to the matching form-level --bf-*
+   var (set on the inner <form> by the per-form Style tab), then to the plugin
+   default — so an unset control inherits the form's own styling instead of
+   collapsing to CSS initial values (which would render fields as 3px black,
+   square, padding-less boxes whenever the wrapper is present, e.g. when "Hide
+   Labels"/"Hide Placeholders" is on). The fallback lives on each property, not
+   centrally on the wrapper, because --bf-* are set on the inner form and only
+   resolve correctly at the field/button/label element itself. */
 .boldform-block-wrap .boldform-lite-form {
-	max-width: var(--bfb-form-max-width, 100%);
-	padding: var(--bfb-form-padding, 0);
-	background: var(--bfb-form-bg, transparent);
-	border-radius: var(--bfb-form-radius, 0);
-	border-width: var(--bfb-form-border-width, 0);
-	border-color: var(--bfb-form-border-color, transparent);
-	border-style: solid;
+	max-width: var(--bfb-form-max-width, var(--bf-form-max-width, 100%));
+	padding: var(--bfb-form-padding, var(--bf-form-padding, 0));
+	background: var(--bfb-form-bg, var(--bf-form-bg, transparent));
+	border-radius: var(--bfb-form-radius, var(--bf-form-radius, 0));
+	border-width: var(--bfb-form-border-width, var(--bf-form-border-width, 0));
+	border-color: var(--bfb-form-border-color, var(--bf-form-border-color, transparent));
+	border-style: var(--bf-form-border-style, solid);
 }
 
 .boldform-block-wrap .boldform-lite-form__fields {
@@ -577,74 +826,74 @@ input[data-boldform-picker] {
 }
 
 .boldform-block-wrap .boldform-lite-form__label {
-	color: var(--bfb-label-color);
-	font-size: var(--bfb-label-font-size);
+	color: var(--bfb-label-color, var(--bf-label-color, #4b5563));
+	font-size: var(--bfb-label-font-size, var(--bf-label-font-size, 17px));
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field select,
 .boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
-	height: var(--bfb-field-height);
-	min-height: var(--bfb-field-height);
+	height: var(--bfb-field-height, auto);
+	min-height: var(--bfb-field-height, auto);
 }
 
 .boldform-block-wrap .boldform-lite-form__field textarea {
-	height: var(--bfb-textarea-height);
+	height: var(--bfb-textarea-height, auto);
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]),
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field textarea,
 .boldform-block-wrap .boldform-lite-form__field select,
 .boldform-block-wrap .boldform-lite-form__field .bf-select__trigger {
-	padding: var(--bfb-field-padding);
-	background-color: var(--bfb-field-bg);
-	color: var(--bfb-field-text);
-	border-width: var(--bfb-field-border-width);
-	border-color: var(--bfb-field-border-color);
-	border-radius: var(--bfb-field-radius);
+	padding: var(--bfb-field-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 14px));
+	background-color: var(--bfb-field-bg, var(--bf-field-bg, #fff));
+	color: var(--bfb-field-text, var(--bf-field-text, #111827));
+	border-width: var(--bfb-field-border-width, var(--bf-field-border-width, 1.5px));
+	border-color: var(--bfb-field-border-color, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bfb-field-radius, var(--bf-field-radius, 8px));
 }
 
-.boldform-block-wrap .boldform-lite-form__field input:focus,
+.boldform-block-wrap .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
 .boldform-block-wrap .boldform-lite-form__field textarea:focus,
 .boldform-block-wrap .boldform-lite-form__field select:focus,
 .boldform-block-wrap .boldform-lite-form__field .bf-select.is-open .bf-select__trigger {
-	border-color: var(--bfb-focus-color);
-	box-shadow: 0 0 0 1px var(--bfb-focus-color);
-	background-color: var(--bfb-focus-bg);
+	border-color: var(--bfb-focus-color, var(--bf-focus-color, #0f766e));
+	box-shadow: 0 0 0 1px var(--bfb-focus-color, var(--bf-focus-color, #0f766e));
+	background-color: var(--bfb-focus-bg, var(--bf-field-bg, #fff));
 }
 
 .boldform-block-wrap .boldform-lite-form__submit {
-	padding: var(--bfb-btn-padding);
-	background: var(--bfb-btn-bg);
-	color: var(--bfb-btn-text);
-	border-radius: var(--bfb-btn-radius);
-	font-size: var(--bfb-btn-font-size);
+	padding: var(--bfb-btn-padding, var(--bf-button-padding-y, 10px) var(--bf-button-padding-x, 24px));
+	background: var(--bfb-btn-bg, var(--bf-button-bg, #2f80ed));
+	color: var(--bfb-btn-text, var(--bf-button-text, #fff));
+	border-radius: var(--bfb-btn-radius, var(--bf-button-radius, 6px));
+	font-size: var(--bfb-btn-font-size, var(--bf-button-font-size, 14px));
 	width: var(--bfb-btn-width, auto);
 }
 
 .boldform-block-wrap .boldform-lite-form__submit:hover {
-	background: var(--bfb-btn-hover-bg);
+	background: var(--bfb-btn-hover-bg, var(--bf-button-bg, #2f80ed));
 }
 
 .boldform-block-wrap .boldform-lite-form__field-error {
-	color: var(--bfb-error-color);
+	color: var(--bfb-error-color, var(--bf-error-color, #dc2626));
 }
 
 .boldform-block-wrap .boldform-lite-form__required {
-	color: var(--bfb-required-color, var(--bfb-error-color));
+	color: var(--bfb-required-color, var(--bfb-error-color, var(--bf-error-color, #dc2626)));
 }
 
-.boldform-block-wrap .boldform-lite-form__field.is-invalid input,
+.boldform-block-wrap .boldform-lite-form__field.is-invalid input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-block-wrap .boldform-lite-form__field.is-invalid textarea,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid select,
 .boldform-block-wrap .boldform-lite-form__field.is-invalid .bf-select__trigger {
-	border-color: var(--bfb-error-color);
+	border-color: var(--bfb-error-color, var(--bf-error-color, #dc2626));
 }
 
 /* ── Name ── */
 .boldform-lite-name {
 	display: flex;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-name__field {
@@ -655,9 +904,19 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-name__sub {
-	font-size: 12px;
-	color: #6b7280;
-	font-weight: 500;
+	font-family: var(--bf-sublabel-ff, inherit);
+	font-size: var(--bf-sublabel-fs, 12px);
+	font-weight: var(--bf-sublabel-fw, 500);
+	line-height: var(--bf-sublabel-lh, normal);
+	letter-spacing: var(--bf-sublabel-ls, normal);
+	text-transform: var(--bf-sublabel-tt, none);
+	color: var(--bf-sublabel-color, #6b7280);
+}
+
+/* Sub-label highlights while its part input is focused — parity with the main
+   label's focus colour. Falls back to the normal sub-label colour = no change. */
+.boldform-lite-name__field:focus-within .boldform-lite-name__sub {
+	color: var(--bf-sublabel-focus-color, var(--bf-sublabel-color, #6b7280));
 }
 
 @media screen and (max-width: 480px) {
@@ -677,12 +936,12 @@ input[data-boldform-picker] {
 /* ── Address ── */
 .boldform-lite-address {
 	display: grid;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-address__row {
 	display: grid;
-	gap: 12px;
+	gap: var(--bf-subfield-gap, 12px);
 }
 
 .boldform-lite-address__row--half {
@@ -702,9 +961,12 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-star {
-	font-size: var(--bf-star-size, 28px);
+	font-size: var(--bf-star-size, 16px);
 	line-height: 1;
-	color: #d1d5db;
+	color: #d1d5db; /* fallback where color-mix is unsupported */
+	/* Empty stars: a light tint of the theme accent so the field reads as
+	   theme-aware even before it is rated. Filled stars use the full accent. */
+	color: var(--bf-star-inactive, color-mix(in srgb, var(--bf-star-color, var(--bf-button-bg, #f59e0b)) 30%, #d1d5db));
 	cursor: pointer;
 	transition: color 0.12s ease, transform 0.12s ease;
 	-webkit-user-select: none;
@@ -715,12 +977,19 @@ input[data-boldform-picker] {
 	transform: scale(1.15);
 }
 
+/* Visible keyboard focus for the star radios (they are tabbable for a11y). */
+.boldform-lite-star:focus-visible {
+	outline: 2px solid var(--bf-focus-color, #0f766e);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
 .boldform-lite-star.is-active {
-	color: var(--bf-star-color, #f59e0b);
+	color: var(--bf-star-color, var(--bf-button-bg, #f59e0b));
 }
 
 .boldform-lite-star.is-hover {
-	color: var(--bf-star-color, #f59e0b);
+	color: var(--bf-star-hover, var(--bf-star-color, var(--bf-button-bg, #f59e0b)));
 }
 
 /* ── Slider Range ── */
@@ -730,46 +999,51 @@ input[data-boldform-picker] {
 	padding: 4px 0;
 }
 
-.boldform-lite-slider input[type="range"] {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"] {
 	width: 100%;
 	height: var(--bf-slider-height, 8px);
+	padding: 0;
+	border: 0;
+	box-shadow: none;
 	-webkit-appearance: none;
 	appearance: none;
-	background: #e5e7eb;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
 	border-radius: 999px;
 	outline: none;
 	cursor: pointer;
 }
 
-.boldform-lite-slider input[type="range"]::-webkit-slider-thumb {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
 	transition: box-shadow 0.14s ease;
 }
 
-.boldform-lite-slider input[type="range"]::-webkit-slider-thumb:hover {
-	box-shadow: 0 0 0 6px color-mix(in srgb, var(--bf-slider-color, var(--bf-focus-color, #0f766e)) 12%, transparent), 0 1px 6px rgba(0, 0, 0, 0.18);
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb:hover {
+	box-shadow: 0 0 0 6px color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 12%, transparent), 0 1px 6px rgba(0, 0, 0, 0.18);
 }
 
-.boldform-lite-slider input[type="range"]::-moz-range-thumb {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-thumb {
 	width: 22px;
 	height: 22px;
 	border-radius: 50%;
-	background: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	border: 3px solid #fff;
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
 }
 
-.boldform-lite-slider input[type="range"]::-moz-range-track {
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-moz-range-track {
 	height: var(--bf-slider-height, 8px);
-	background: #e5e7eb;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
 	border-radius: 999px;
 }
 
@@ -782,8 +1056,73 @@ input[data-boldform-picker] {
 
 .boldform-lite-slider__value {
 	font-weight: 700;
-	color: var(--bf-slider-color, var(--bf-focus-color, #0f766e));
+	color: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	font-size: 15px;
+}
+
+/* Dual-handle slider: two range inputs overlaid on a shared track + fill. */
+.boldform-lite-slider--dual .boldform-lite-slider__track {
+	position: relative;
+	height: var(--bf-slider-height, 8px);
+	margin: 9px 0;
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
+	border-radius: 999px;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__fill {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border-radius: 999px;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input {
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 100%;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	box-shadow: none;
+	-webkit-appearance: none;
+	appearance: none;
+	pointer-events: none;
+	outline: none;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-webkit-slider-runnable-track,
+.boldform-lite-slider--dual .boldform-lite-slider__input::-moz-range-track {
+	background: none;
+	border: none;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	pointer-events: auto;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border: 3px solid #fff;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+	cursor: pointer;
+}
+
+.boldform-lite-slider--dual .boldform-lite-slider__input::-moz-range-thumb {
+	pointer-events: auto;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	border: 3px solid #fff;
+	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+	cursor: pointer;
 }
 
 /* ── HTML Content Display ── */
@@ -872,26 +1211,37 @@ input[data-boldform-picker] {
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	min-height: calc(1.5em + var(--bf-field-padding-y, 10px) * 2 + var(--bf-field-border-width, 1.5px) * 2);
-	padding: var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px);
-	border: var(--bf-field-border-width, 1.5px) var(--bf-field-border-style, solid) var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 8px);
-	background-color: var(--bf-field-bg, #fff);
-	color: var(--bf-field-text, #111827);
-	font-size: var(--bf-field-font-size, 14px);
+	/* Height: when set it pins the trigger to that exact height (content centred via
+	   flex, matching a plain input); when unset it falls back to the natural calc. */
+	min-height: var(--bf-field-height, calc(1.5em + var(--bf-field-padding-y, 10px) * 2 + var(--bf-field-border-width, 1.5px) * 2));
+	height: var(--bf-field-height, auto);
+	/* Honour the field Padding control (which writes the --bf-field-padding shorthand)
+	   so reducing padding actually shrinks the select, not just plain inputs. */
+	padding: var(--bf-select-padding, var(--bf-field-padding, var(--bf-field-padding-y, 10px) var(--bf-field-padding-x, 12px)));
+	border: var(--bf-select-border-width, var(--bf-field-border-width, 1.5px)) var(--bf-select-border-style, var(--bf-field-border-style, solid)) var(--bf-select-border-color, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bf-select-radius, var(--bf-field-radius, 8px));
+	background: var(--bf-select-bg, var(--bf-field-bg, #fff));
+	color: var(--bf-select-text, var(--bf-field-text, #111827));
+	font-family: var(--bf-select-ff, inherit);
+	font-size: var(--bf-select-fs, var(--bf-field-font-size, 14px));
+	font-weight: var(--bf-select-fw, normal);
+	letter-spacing: var(--bf-select-ls, normal);
+	text-transform: var(--bf-select-tt, none);
 	line-height: 1.5;
 	cursor: pointer;
 	box-sizing: border-box;
+	box-shadow: var(--bf-select-shadow, none);
 	transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .bf-select__trigger:hover {
-	border-color: var(--bf-field-border-hover, #9ca3af);
+	border-color: var(--bf-select-hover-border, var(--bf-field-border-hover, #9ca3af));
 }
 
 .bf-select.is-open .bf-select__trigger {
-	border-color: var(--bf-focus-color, #0f766e);
-	box-shadow: var(--bf-select-focus-shadow, none);
+	border-color: var(--bf-select-focus-border, var(--bf-focus-color, #0f766e));
+	background: var(--bf-select-focus-bg, var(--bf-select-bg, var(--bf-field-bg, #fff)));
+	box-shadow: 0 0 0 3px var(--bf-select-focus-ring, transparent);
 }
 
 .bf-select__value,
@@ -902,7 +1252,7 @@ input[data-boldform-picker] {
 
 .bf-select__placeholder {
 	flex: 1;
-	color: #9ca3af;
+	color: var(--bf-select-ph, #9ca3af);
 }
 
 .bf-select__active-mark {
@@ -918,7 +1268,8 @@ input[data-boldform-picker] {
 	align-items: center;
 	gap: 8px;
 	padding: 10px 14px;
-	border-bottom: 1px solid #e5e7eb;
+	border-bottom: 1px solid var(--bf-select-panel-border, #e5e7eb);
+	background: var(--bf-select-search-bg, transparent);
 	color: #9ca3af;
 }
 
@@ -930,13 +1281,13 @@ input[data-boldform-picker] {
 	border-radius: 0;
 	background: transparent;
 	font-size: var(--bf-field-font-size, 15px);
-	color: var(--bf-field-text, #111827);
+	color: var(--bf-select-search-text, var(--bf-field-text, #111827));
 	outline: none;
 	box-shadow: none;
 }
 
 .bf-select__panel-search::placeholder {
-	color: #9ca3af;
+	color: var(--bf-select-search-ph, #9ca3af);
 }
 
 .bf-select__arrow {
@@ -946,7 +1297,7 @@ input[data-boldform-picker] {
 	justify-content: center;
 	width: 20px;
 	height: 20px;
-	color: #6b7280;
+	color: var(--bf-select-arrow, #6b7280);
 	transition: transform 0.2s ease, color 0.18s ease;
 }
 
@@ -1006,10 +1357,10 @@ input[data-boldform-picker] {
 	left: 0;
 	right: 0;
 	z-index: 100;
-	border: 1px solid var(--bf-field-border, #d1d5db);
-	border-radius: var(--bf-field-radius, 6px);
-	background: var(--bf-field-bg, #fff);
-	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04);
+	border: 1px solid var(--bf-select-panel-border, var(--bf-field-border, #d1d5db));
+	border-radius: var(--bf-select-panel-radius, var(--bf-field-radius, 6px));
+	background: var(--bf-select-panel-bg, var(--bf-field-bg, #fff));
+	box-shadow: var(--bf-select-panel-shadow, 0 12px 36px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04));
 	overflow: hidden;
 }
 
@@ -1046,18 +1397,32 @@ input[data-boldform-picker] {
 	gap: 10px;
 	padding: 10px 16px;
 	cursor: pointer;
-	font-size: var(--bf-field-font-size, 15px);
-	color: var(--bf-field-text, #111827);
+	font-family: var(--bf-select-opt-ff, inherit);
+	font-size: var(--bf-select-opt-fs, var(--bf-field-font-size, 15px));
+	font-weight: var(--bf-select-opt-fw, normal);
+	background: var(--bf-select-opt-bg, transparent);
+	color: var(--bf-select-opt-color, var(--bf-field-text, #111827));
 	transition: background 0.1s ease;
 }
 
-.bf-select__option:hover {
-	background: rgba(0, 0, 0, 0.035);
+.bf-select__option:hover,
+.bf-select__option.is-keyboard-active {
+	background: var(--bf-select-opt-hover-bg, rgba(0, 0, 0, 0.035));
+	color: var(--bf-select-opt-hover-color, inherit);
+}
+
+/* Keyboard-highlighted option gets a clear focus outline for visible keyboard nav. */
+.bf-select__option.is-keyboard-active {
+	outline: 2px solid var(--bf-focus-color, #0f766e);
+	outline-offset: -2px;
 }
 
 .bf-select__option.is-active {
-	background: var(--bf-focus-ring, rgba(15, 118, 110, 0.08));
-	color: var(--bf-focus-color, #0f766e);
+	background: var(--bf-select-opt-active-bg, var(--bf-focus-ring, rgba(15, 118, 110, 0.08)));
+	/* Selected-option accent follows the theme primary (--bf-button-bg), matching the
+	   checkmark fill below, before the named focus color — themes like Sunset Orange
+	   set no --bf-focus-color, so keying off it alone left the text stuck on teal. */
+	color: var(--bf-select-opt-active-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	font-weight: 600;
 }
 
@@ -1075,8 +1440,8 @@ input[data-boldform-picker] {
 }
 
 .bf-select__option.is-active .bf-select__check {
-	border-color: var(--bf-focus-color, #0f766e);
-	background: var(--bf-focus-color, #0f766e);
+	border-color: var(--bf-select-check, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	background: var(--bf-select-check, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	color: #fff;
 }
 

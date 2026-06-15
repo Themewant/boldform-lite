@@ -92,6 +92,20 @@ final class BoldForm_Lite {
 	private $integrations;
 
 	/**
+	 * Privacy (GDPR) export/erase handler.
+	 *
+	 * @var BoldForm_Lite_Privacy
+	 */
+	private $privacy;
+
+	/**
+	 * Cache-compatibility (third-party cache purge) handler.
+	 *
+	 * @var BoldForm_Lite_Cache
+	 */
+	private $cache;
+
+	/**
 	 * Returns the single instance of the plugin.
 	 *
 	 * @return BoldForm_Lite
@@ -143,6 +157,8 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-export-import.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-integrations-page.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-privacy.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-cache.php';
 
 		$this->loader            = new BoldForm_Lite_Loader();
 		$this->admin             = new BoldForm_Lite_Admin( $this );
@@ -154,6 +170,8 @@ final class BoldForm_Lite {
 		$this->export_import     = new BoldForm_Lite_Export_Import( $this );
 		$this->integrations_page = new BoldForm_Lite_Integrations_Page( $this );
 		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
+		$this->privacy           = new BoldForm_Lite_Privacy( $this );
+		$this->cache             = new BoldForm_Lite_Cache( $this );
 	}
 
 	/**
@@ -173,11 +191,14 @@ final class BoldForm_Lite {
 	 */
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
+		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
+		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
 		$this->loader->add_action( 'admin_bar_menu', $this->admin, 'register_admin_bar', 100 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_assets' );
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );
 		$this->loader->add_filter( 'upload_mimes', $this->admin, 'allow_svg_upload' );
 		$this->loader->add_filter( 'wp_check_filetype_and_ext', $this->admin, 'fix_svg_filetype', 10, 4 );
+		$this->loader->add_filter( 'wp_handle_upload_prefilter', $this->admin, 'sanitize_svg_upload' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_save_form', $this->admin, 'ajax_save_form' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_send_test_mail', $this->admin, 'ajax_send_test_mail' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_update_entry_status', $this->admin, 'ajax_update_entry_status' );
@@ -194,6 +215,9 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'enqueue_block_editor_assets', $this->block, 'enqueue_editor_assets' );
 		$this->loader->add_action( 'elementor/widgets/register', $this->elementor, 'register_widget' );
 		$this->loader->add_action( 'elementor/editor/after_enqueue_scripts', $this->elementor, 'enqueue_editor_scripts' );
+		$this->loader->add_filter( 'wp_privacy_personal_data_exporters', $this->privacy, 'register_exporter' );
+		$this->loader->add_filter( 'wp_privacy_personal_data_erasers', $this->privacy, 'register_eraser' );
+		$this->loader->add_action( 'boldform_form_saved', $this->cache, 'purge_on_form_saved', 10, 3 );
 
 		$this->export_import->init();
 		$this->integrations_page->init();
@@ -231,6 +255,44 @@ final class BoldForm_Lite {
 		global $wpdb;
 
 		return $wpdb->prefix . 'boldform_entries';
+	}
+
+	/**
+	 * Flattens a stored entry field value into a human-readable display string.
+	 *
+	 * Multi-part values are stored as arrays: composite fields as associative
+	 * arrays (name => {first,middle,last}; address => {street,city,…}) and
+	 * checkbox/multiselect as indexed arrays of selected options. Empty parts
+	 * (e.g. a blank middle name) are dropped so a name reads "First Last" rather
+	 * than "First, , Last". Names join with a space; every other multi-part value
+	 * joins with ", ". Scalars pass through unchanged.
+	 *
+	 * This is the single source of truth for value flattening shared by the admin
+	 * entry view, CSV export, email notifications, the privacy exporter, and the
+	 * entries-list preview, so their formatting can never drift apart.
+	 *
+	 * @param mixed  $value Stored field value (string, indexed array, or assoc array).
+	 * @param string $type  Field type (only 'name' changes the separator).
+	 * @return string
+	 */
+	public static function format_field_value( $value, $type = '' ) {
+		if ( ! is_array( $value ) ) {
+			return is_scalar( $value ) ? (string) $value : '';
+		}
+
+		$parts = array_filter(
+			array_map(
+				static function ( $part ) {
+					return is_scalar( $part ) ? sanitize_text_field( (string) $part ) : '';
+				},
+				$value
+			),
+			static function ( $part ) {
+				return '' !== trim( (string) $part );
+			}
+		);
+
+		return implode( 'name' === $type ? ' ' : ', ', $parts );
 	}
 
 	/**

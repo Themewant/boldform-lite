@@ -93,12 +93,23 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Sends admin notification email.
 	 *
-	 * @param object                           $form_record Form record.
-	 * @param array<string, array<string,mixed>> $entry_data Entry data.
+	 * @param object                             $form_record Form record.
+	 * @param array<string, mixed>               $settings    Form settings.
+	 * @param array<string, array<string,mixed>> $entry_data  Entry data.
+	 * @param array<int, string>                 $attachments File paths to attach.
 	 * @return void
 	 */
 	private function send_admin_email( $form_record, $settings, $entry_data, $attachments = array() ) {
+		// Resolve the recipient, most specific first:
+		// 1. the form's own custom admin address,
+		// 2. the global "Default email" notification setting,
+		// 3. the WordPress site admin email as the final fallback.
 		$to = sanitize_email( get_option( 'admin_email' ) );
+
+		$global_settings = get_option( 'boldform_lite_settings', array() );
+		if ( is_array( $global_settings ) && ! empty( $global_settings['default_email'] ) && is_email( $global_settings['default_email'] ) ) {
+			$to = sanitize_email( (string) $global_settings['default_email'] );
+		}
 
 		if ( ! empty( $settings['admin_email_type'] ) && 'custom' === $settings['admin_email_type'] && ! empty( $settings['admin_email'] ) && is_email( $settings['admin_email'] ) ) {
 			$to = sanitize_email( (string) $settings['admin_email'] );
@@ -207,15 +218,15 @@ class BoldForm_Lite_Email_Handler {
 
 			$is_file = ! empty( $field['type'] ) && 'file' === $field['type'];
 
-			if ( is_array( $value ) ) {
-				$value = implode( ', ', array_map( static function ( $v ) { return sanitize_text_field( (string) ( $v ?? '' ) ); }, $value ) );
-			}
+			// Flatten multi-part values ("John Doe", not "John, , Doe") via the shared helper.
+			$value = BoldForm_Lite::format_field_value( $value, ! empty( $field['type'] ) ? (string) $field['type'] : '' );
 
 			if ( $is_file && ! empty( $value ) ) {
 				$file_name  = basename( (string) $value );
 				$value_html = '<a href="' . esc_url( (string) $value ) . '" target="_blank">' . esc_html( $file_name ) . '</a>';
 			} else {
-				$value_html = esc_html( (string) $value );
+				// Preserve line breaks from textarea/multi-line values in the HTML email.
+				$value_html = nl2br( esc_html( (string) $value ) );
 			}
 
 			$rows .= '<tr><td style="padding:8px 12px;border:1px solid #e2e8f0;font-weight:600;">' . $label . '</td><td style="padding:8px 12px;border:1px solid #e2e8f0;">' . $value_html . '</td></tr>';

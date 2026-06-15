@@ -24,8 +24,11 @@
 	// Helpers
 	// =========================================================================
 
+	// Escapes for HTML text AND attribute contexts: encodes < > & plus both quote
+	// characters, so the result is safe inside quote-delimited attribute values.
 	function escHtml( s ) {
-		return $( '<div>' ).text( String( s || '' ) ).html();
+		return $( '<div>' ).text( String( s || '' ) ).html()
+			.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 	}
 
 	function connById( id ) {
@@ -45,11 +48,22 @@
 				col.fields.forEach( function ( f ) {
 					var skip = [ 'submit', 'section_break', 'html_editor', 'paragraph' ];
 					if ( skip.indexOf( f.type ) !== -1 ) return;
-					fields.push( { id: f.id, label: f.label || f.type } );
+					fields.push( { id: f.id, label: f.label || f.type, type: f.type } );
 				} );
 			} );
 		} );
 		return fields;
+	}
+
+	// First email-type field on the form, used to pre-fill the Email mapping when a
+	// connection is assigned — otherwise the mapping is required but left blank and
+	// the dispatch silently no-ops.
+	function defaultEmailFieldId() {
+		var fields = getFormFields();
+		for ( var i = 0; i < fields.length; i++ ) {
+			if ( fields[ i ].type === 'email' ) return fields[ i ].id;
+		}
+		return '';
 	}
 
 	function fieldOptions( selectedId ) {
@@ -175,28 +189,28 @@
 
 	function injectTab( formSettings ) {
 		var $panel   = $( '#boldform-form-settings-panel' );
-		var $navSlot = $panel.find( '.bfsп-stab-nav-pro-slots' );
-		var $content = $panel.find( '.bfsп-stab-content' );
+		var $navSlot = $panel.find( '.bfs-stab-nav-pro-slots' );
+		var $content = $panel.find( '.bfs-stab-content' );
 		if ( ! $navSlot.length || ! $content.length ) return;
 
-		$panel.find( '.bfsп-stab-nav-item[data-stab="integrations"]' ).remove();
-		$panel.find( '.bfsп-stab-pane[data-pane="integrations"]' ).remove();
+		$panel.find( '.bfs-stab-nav-item[data-stab="integrations"]' ).remove();
+		$panel.find( '.bfs-stab-pane[data-pane="integrations"]' ).remove();
 
 		var count      = assignedIds.length;
 		var countBadge = count ? ' <span class="bf-int-count-badge">' + count + '</span>' : '';
 
 		$navSlot.append(
-			'<button type="button" class="bfsп-stab-nav-item" data-stab="integrations">' +
-				'<span class="bfsп-stab-nav-icon">&#9741;</span>' +
-				'<span class="bfsп-stab-nav-text">' +
-					'<span class="bfsп-stab-nav-label">Integrations' + countBadge + '</span>' +
-					'<span class="bfsп-stab-nav-desc">Assign connections</span>' +
+			'<button type="button" class="bfs-stab-nav-item" data-stab="integrations">' +
+				'<span class="bfs-stab-nav-icon">&#9741;</span>' +
+				'<span class="bfs-stab-nav-text">' +
+					'<span class="bfs-stab-nav-label">Integrations' + countBadge + '</span>' +
+					'<span class="bfs-stab-nav-desc">Assign connections</span>' +
 				'</span>' +
-				'<span class="bfsп-stab-nav-arrow">&#8250;</span>' +
+				'<span class="bfs-stab-nav-arrow">&#8250;</span>' +
 			'</button>'
 		);
 
-		var $pane = $( '<div class="bfsп-stab-pane" data-pane="integrations"></div>' );
+		var $pane = $( '<div class="bfs-stab-pane" data-pane="integrations"></div>' );
 		$pane.html( renderPane( formSettings ) );
 		$content.append( $pane );
 	}
@@ -218,7 +232,7 @@
 
 		if ( on ) {
 			if ( assignedIds.indexOf( connId ) === -1 ) assignedIds.push( connId );
-			if ( ! fieldMap[ connId ] ) fieldMap[ connId ] = { email: '', fname: '', lname: '' };
+			if ( ! fieldMap[ connId ] ) fieldMap[ connId ] = { email: defaultEmailFieldId(), fname: '', lname: '' };
 		} else {
 			assignedIds = assignedIds.filter( function ( id ) { return id !== connId; } );
 		}
@@ -249,7 +263,7 @@
 		}
 
 		// Update count badge.
-		var $label = $( '.bfsп-stab-nav-item[data-stab="integrations"] .bfsп-stab-nav-label' );
+		var $label = $( '.bfs-stab-nav-item[data-stab="integrations"] .bfs-stab-nav-label' );
 		$label.find( '.bf-int-count-badge' ).remove();
 		if ( assignedIds.length ) {
 			$label.append( ' <span class="bf-int-count-badge">' + assignedIds.length + '</span>' );
