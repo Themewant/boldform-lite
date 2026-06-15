@@ -78,13 +78,18 @@ class BoldForm_Lite_Integrations_Page {
 	 * @return void
 	 */
 	public function register_menu(): void {
+		// This page registers on admin_menu priority 20 — after the core BoldForm
+		// submenus (priority 10) — so by default it would append below "Help &
+		// Support". Pass an explicit position to slot it in just before that item
+		// (Help & Support is the last core submenu, at offset 5).
 		add_submenu_page(
 			'boldform-lite',
 			__( 'Integrations', 'boldform-lite' ),
 			__( 'Integrations', 'boldform-lite' ),
 			'manage_options',
 			'boldform-lite-integrations',
-			array( $this, 'render_page' )
+			array( $this, 'render_page' ),
+			5
 		);
 	}
 
@@ -306,7 +311,7 @@ class BoldForm_Lite_Integrations_Page {
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
 				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">

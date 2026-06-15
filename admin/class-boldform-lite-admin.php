@@ -96,8 +96,8 @@ class BoldForm_Lite_Admin {
 	 */
 	public function register_menu() {
 		$this->list_page_hook = add_menu_page(
-			__( 'Bold Form', 'boldform-lite' ),
-			__( 'Bold Form', 'boldform-lite' ),
+			__( 'BoldForm', 'boldform-lite' ),
+			__( 'BoldForm', 'boldform-lite' ),
 			'manage_options',
 			'boldform-lite',
 			array( $this, 'render_forms_page' ),
@@ -1366,7 +1366,7 @@ class BoldForm_Lite_Admin {
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
 				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'Bold Form', 'boldform-lite' ); ?></span>
+				<span class="boldform-admin-topbar__name"><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 				<span class="boldform-admin-topbar__version"><?php echo esc_html( BOLDFORM_LITE_VERSION ); ?></span>
 			</div>
 			<nav class="boldform-admin-topbar__nav">
@@ -1447,7 +1447,7 @@ class BoldForm_Lite_Admin {
 		$wp_admin_bar->add_node(
 			array(
 				'id'    => 'boldform-bar',
-				'title' => __( 'Bold Form', 'boldform-lite' ),
+				'title' => __( 'BoldForm', 'boldform-lite' ),
 				'href'  => admin_url( 'admin.php?page=boldform-lite' ),
 			)
 		);
@@ -2041,12 +2041,12 @@ class BoldForm_Lite_Admin {
 				<table class="widefat fixed striped boldform-entries-table">
 					<thead>
 						<tr>
-							<th style="width:50px;">&nbsp;</th>
+							<th style="width:40px;">&nbsp;</th>
 							<th style="width:60px;"><?php esc_html_e( 'ID', 'boldform-lite' ); ?></th>
-							<th><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
-							<th style="width:100px;"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
-							<th style="width:150px;"><?php esc_html_e( 'Date', 'boldform-lite' ); ?></th>
-							<th style="width:80px;"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
+							<th style="width:48%;"><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
+							<th style="width:12%;"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
+							<th style="width:18%;"><?php esc_html_e( 'Date', 'boldform-lite' ); ?></th>
+							<th style="width:12%;"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -2159,7 +2159,7 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'Bold Form Settings', 'boldform-lite' ); ?></h1>
+			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
 			<hr class="wp-header-end">
 
 			<div class="boldform-settings-wrap">

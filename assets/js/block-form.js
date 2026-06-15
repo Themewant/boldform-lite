@@ -13,7 +13,7 @@
 	blocks.registerBlockType(
 		'boldform/form',
 		{
-			title: __( 'Bold Form', 'boldform-lite' ),
+			title: __( 'BoldForm', 'boldform-lite' ),
 			icon: 'feedback',
 			category: 'widgets',
 			description: __( 'Display a BoldForm form.', 'boldform-lite' ),
@@ -92,7 +92,7 @@
 							: el(
 								Placeholder,
 								{
-									label: __( 'Bold Form', 'boldform-lite' ),
+									label: __( 'BoldForm', 'boldform-lite' ),
 									instructions: forms.length
 										? ( window.boldformLiteBlock && window.boldformLiteBlock.previewText ? window.boldformLiteBlock.previewText : __( 'Select a form to preview it in the editor.', 'boldform-lite' ) )
 										: ( window.boldformLiteBlock && window.boldformLiteBlock.emptyMessage ? window.boldformLiteBlock.emptyMessage : __( 'No published forms found.', 'boldform-lite' ) )

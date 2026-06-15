@@ -49,7 +49,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Bold Form', 'boldform-lite' );
+		return __( 'BoldForm', 'boldform-lite' );
 	}
 
 	/**
@@ -101,7 +101,7 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Bold Form', 'boldform-lite' ),
+				'label' => __( 'BoldForm', 'boldform-lite' ),
 			)
 		);
 
