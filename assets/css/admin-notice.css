@@ -12,6 +12,17 @@
  * Child selectors are parent-prefixed so they out-specify WordPress core
  * `.notice p` / link (`a:hover`/`a:visited`) rules.
  */
+
+/* Anti-flash: WordPress prints admin notices as a direct child of #wpbody-content
+ * (above our topbar), then common.js moves them below .wp-header-end on DOM-ready —
+ * so without this the big card paints at the very top for a frame and then jumps.
+ * Hiding only the PRE-relocation position (direct child of #wpbody-content) kills the
+ * flash; once relocated the card is nested inside .wrap, this no longer matches, and it
+ * shows in place. This stylesheet loads in <head>, so the rule applies before first paint. */
+#wpbody-content > .boldform-admin-notice {
+	display: none;
+}
+
 .boldform-admin-notice {
 	position: relative;
 	border: 1px solid #e6e9f4;
@@ -19,9 +30,24 @@
 	border-radius: 16px;
 	background: #fff;
 	padding: 0;
-	margin: 16px 20px 16px 0;
+	/* Full width within the page's 20px-padded container: zero side margins so the
+	   card lines up with the header and content cards below it. Bottom margin is the
+	   ONLY gap the notice owns; the top gap comes from the container's own padding, so
+	   the header sits in the same place whether or not the notice is rendered. */
+	margin: 0 0 20px;
 	box-shadow: 0 10px 30px rgba(22, 33, 91, .07);
 	overflow: hidden;
+}
+
+/* The relocation marker WordPress keys off (wp-admin/js/common.js) must not add any
+   vertical space of its own, or the gap above the notice/header would differ from the
+   page's own padding. Loaded with the notice; the per-page stylesheets repeat this so
+   the collapse also holds once the notice is dismissed. */
+.wp-header-end {
+	margin: 0;
+	border: 0;
+	height: 0;
+	visibility: hidden;
 }
 
 .boldform-admin-notice__dismiss {

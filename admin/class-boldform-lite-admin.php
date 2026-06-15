@@ -1734,6 +1734,8 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite' ); ?>
 		<div class="wrap">
+			<?php // Anchor relocated admin notices above the header. WordPress moves every non-inline .notice to directly after .wp-header-end (wp-admin/js/common.js); without this marker it falls back to "after the first <h1>", which drops the notice between the title and the Add New button. Placing the marker first keeps notices on top, header + content below — and works for any third-party notice too. ?>
+			<hr class="wp-header-end">
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Forms', 'boldform-lite' ); ?></h1>
 				<?php if ( ! $is_trash ) : ?>
@@ -1994,6 +1996,7 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite-docs' ); ?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Help &amp; Support', 'boldform-lite' ); ?></h1>
 			</div>
@@ -2149,6 +2152,7 @@ class BoldForm_Lite_Admin {
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite-entries' ); ?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></h1>
 				<?php if ( ! empty( $entries ) ) : ?>
@@ -2388,8 +2392,8 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( $topbar_active );
 		?>
 		<div class="wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
-			<hr class="wp-header-end">
 
 			<div class="boldform-settings-wrap">
 				<nav class="boldform-settings-sidebar">
@@ -3358,9 +3362,11 @@ class BoldForm_Lite_Admin {
 		list( $type, $message ) = $messages[ $notice ];
 		$icon = ( 'error' === $type ) ? 'dashicons-warning' : 'dashicons-yes-alt';
 		// Keep `notice is-dismissible` so WordPress still wires up the dismiss (×)
-		// button; the boldform-admin-notice classes restyle it into a modern alert.
+		// button; the boldform-inline-notice classes restyle it into a modern alert.
+		// NB: a distinct namespace from the full-width promo card (.boldform-admin-notice
+		// in admin-notice.css) — they must not share a class or the card's layout breaks.
 		?>
-		<div class="notice inline is-dismissible boldform-admin-notice boldform-admin-notice--<?php echo esc_attr( $type ); ?>">
+		<div class="notice inline is-dismissible boldform-inline-notice boldform-inline-notice--<?php echo esc_attr( $type ); ?>">
 			<span class="dashicons <?php echo esc_attr( $icon ); ?>" aria-hidden="true"></span>
 			<p><?php echo esc_html( $message ); ?></p>
 		</div>
@@ -3511,6 +3517,7 @@ class BoldForm_Lite_Admin {
 		if ( ! $entry ) {
 			?>
 			<div class="wrap">
+				<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 				<div class="boldform-page-header"><h1><?php esc_html_e( 'Entry Not Found', 'boldform-lite' ); ?></h1></div>
 				<p><?php esc_html_e( 'The requested entry does not exist.', 'boldform-lite' ); ?></p>
 			</div>
@@ -3535,6 +3542,7 @@ class BoldForm_Lite_Admin {
 		);
 		?>
 		<div class="wrap boldform-entry-detail-wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<!-- Header bar -->
 			<div class="boldform-entry-header">
 				<div class="boldform-entry-header__left">
@@ -4521,6 +4529,7 @@ class BoldForm_Lite_Admin {
 		$this->render_admin_topbar( 'boldform-lite-reports' );
 		?>
 		<div class="wrap boldform-reports-wrap">
+			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Reports', 'boldform-lite' ); ?></h1>
 				<span class="boldform-page-header__badge"><?php esc_html_e( 'Overview', 'boldform-lite' ); ?></span>
