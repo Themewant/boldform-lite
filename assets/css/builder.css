@@ -1713,11 +1713,13 @@
 	line-height: 16px;
 }
 
-.boldform-move-field {
+.boldform-move-field,
+.boldform-row-move {
 	cursor: grab;
 }
 
-.boldform-move-field:active {
+.boldform-move-field:active,
+.boldform-row-move:active {
 	cursor: grabbing;
 }
 
