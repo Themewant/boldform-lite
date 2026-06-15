@@ -378,6 +378,12 @@ Improvements:
 * Improve: The field library is drag-only — fields clone onto the canvas and the palette is never a drop target.
 * Improve: Slider, star-rating, and field styling now follow the form's design theme; star rating defaults to a consistent size.
 * Improve: Refreshed the Forms admin screen — the action notice ("Form moved to trash", etc.) is now a modern alert in the page header, the empty state has a styled "Add New Form" button, the top spacing is tightened, and the form builder sits flush with no left gap.
+* Improve: Builder drag-and-drop now auto-scrolls the canvas while you drag a row or field toward the top or bottom edge, so drop targets below the fold are reachable on small screens; the row and field move handles also show a grab cursor.
+* Improve: The form Preview screen header is now a single toolbar with an Exit button, a "Form Preview" title, and a click-to-copy shortcode pill, and the Choose Column Layout dialog was redesigned with guided layout cards and clearer hover/focus states.
+* Improve: Style-tab numeric controls no longer overlap the unit suffix with the spinner arrows; Padding, Margin, and Border-Radius gained a visible stepper, and size and spacing fields show a meaningful placeholder ("Default" or "—") instead of a misleading "0".
+* Improve: The colour reset button now stays disabled until a colour is changed, so it is clear when a value differs from the default.
+* Improve: BoldForm admin screens now show only BoldForm's own notices — promotional banners from other plugins or the active theme are suppressed on our screens.
+* Improve: The Star Rating field settings were trimmed to the options that apply (removed Placeholder, Default Value, Star Color, and Star Size).
 
 Fixes:
 * Fix: Forms are no longer submitted for real when rendered in an editor or preview — the Gutenberg block preview, the Elementor editor, and the admin Preview Form screen.
@@ -394,6 +400,9 @@ Fixes:
 * Fix: The BoldForm block form preview keeps its styling when Hide Labels or Hide Placeholders is enabled.
 * Fix: Admin topbar CSS now loads correctly on the Help & Support page, and the topbar wraps correctly when many nav items are present.
 * Fix: Elementor widget cleanup — removed duplicate/dead controls, fixed focus-state label colours not applying, made the Checkbox/Radio Size control work against the visible field, and converted the Terms checkbox radius to a per-corner control.
+* Fix: A row can no longer be dropped below the Submit or Add Row buttons in the builder canvas.
+* Fix: Removed a leading gap before left- and right-aligned field labels in both the builder and the front-end form.
+* Fix: Removed a duplicate "Add Row" panel-header button and a stray file-input sample from the Style-tab live preview.
 
 Compatibility:
 * Update: Tested up to WordPress 7.0; minimum supported version is now WordPress 6.3.
