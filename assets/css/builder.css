@@ -1832,7 +1832,7 @@
 
 /* Per-field label placement */
 .boldform-canvas-field.is-label-left .boldform-canvas-field-body {
-	grid-template-columns: 120px 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 	align-items: center;
 	gap: 12px;
 }
@@ -1843,7 +1843,7 @@
 }
 
 .boldform-canvas-field.is-label-right .boldform-canvas-field-body {
-	grid-template-columns: 1fr 120px;
+	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 12px;
 }
