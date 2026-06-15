@@ -3171,8 +3171,11 @@ jQuery(
 			return { sw: 'transparent', grad: 'linear-gradient(to right, transparent, transparent)', isDefault: false };
 		}
 		function bfSyncColorSwatch( $cf ) {
-			var vis = bfVisualFor( bfReadColorField( $cf ), $cf.attr( 'data-def-var' ) || '' );
+			var composed = bfReadColorField( $cf );
+			var vis = bfVisualFor( composed, $cf.attr( 'data-def-var' ) || '' );
 			$cf.css( '--bf-sw', vis.sw ).css( '--bf-agrad', vis.grad ).toggleClass( 'is-default', vis.isDefault );
+			// Reset has nothing to do until an explicit colour is set — disable it otherwise.
+			$cf.find( '.bf-adv-color-reset' ).prop( 'disabled', '' === composed );
 		}
 
 		function advColorFieldMarkup( hexClass, val, placeholder, defVar ) {
@@ -3186,7 +3189,7 @@ jQuery(
 							'<input type="color" class="bf-adv-colorpick" value="' + ( valid ? escapeHtml( parsed.hex ) : '#000000' ) + '">' +
 						'</div>' +
 						'<input type="text" class="bf-adv-input bf-adv-hex ' + hexClass + '" maxlength="7" placeholder="' + escapeHtml( placeholder || advLabel( 'inheritDefault' ) ) + '" value="' + escapeHtml( parsed.hex ) + '" spellcheck="false">' +
-						'<button type="button" class="bf-adv-color-reset" title="' + escapeHtml( advLabel( 'reset' ) ) + '" aria-label="' + escapeHtml( advLabel( 'reset' ) ) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>' +
+						'<button type="button" class="bf-adv-color-reset"' + ( valid ? '' : ' disabled' ) + ' title="' + escapeHtml( advLabel( 'reset' ) ) + '" aria-label="' + escapeHtml( advLabel( 'reset' ) ) + '"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg></button>' +
 					'</div>' +
 					'<div class="boldform-color-alpha">' +
 						'<input type="range" class="bf-adv-opacity" min="0" max="100" step="1" value="' + op + '" title="' + escapeHtml( advLabel( 'opacity' ) ) + '" aria-label="' + escapeHtml( advLabel( 'opacity' ) ) + '">' +

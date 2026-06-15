@@ -3523,6 +3523,13 @@
 	transform: scale(0.92);
 }
 
+/* Nothing to reset when the colour is still at its default — dim and disable. */
+.boldform-color-field--alpha .bf-adv-color-reset:disabled {
+	opacity: 0.35;
+	cursor: default;
+	pointer-events: none;
+}
+
 .boldform-color-alpha {
 	display: flex;
 	align-items: center;
