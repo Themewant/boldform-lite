@@ -131,6 +131,14 @@ jQuery(
 			return out;
 		}
 
+		// Default placeholder text for a field type (localized in PHP). Pre-filled into a
+		// new field's Placeholder setting so the same value shows in settings, canvas,
+		// preview and on the front end; users can edit or clear it per field.
+		function getDefaultPlaceholder( type ) {
+			var map = ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.placeholders ) || {};
+			return typeof map[ type ] !== 'undefined' ? map[ type ] : '';
+		}
+
 		function createField( type ) {
 			var libraryItem = getLibraryItem( type );
 
@@ -138,7 +146,7 @@ jQuery(
 				id: generateId(),
 				type: type,
 				label: libraryItem.label,
-				placeholder: '',
+				placeholder: getDefaultPlaceholder( type ),
 				required: false,
 				default_value: '',
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
@@ -189,7 +197,14 @@ jQuery(
 				calc_formula:  'calculation' === type ? '' : '',
 				calc_decimals: 'calculation' === type ? 2 : 2,
 				calc_prefix:   '',
-				calc_suffix:   ''
+				calc_suffix:   '',
+				// Seed a new repeater with two text sub-fields so the settings list, the
+				// canvas preview AND the front end all show real, editable sub-fields from
+				// the start (a repeater with zero sub-fields renders an empty, unusable row).
+				repeater_fields: 'repeater' === type ? [
+					{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false },
+					{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false }
+				] : []
 			};
 		}
 
@@ -284,23 +299,45 @@ jQuery(
 
 			// Image choice field defaults.
 			// image_choice_options may arrive as a JSON string (from DB) or as an array (live state).
+			// Seed 3 starter options when missing OR empty so the settings-panel repeater, the
+			// canvas preview and the front-end renderer all show the same options — and a save
+			// persists real choices instead of "[]" (self-heals forms saved with no options).
 			normalized.image_choice_options    = ( function () {
-				if ( ! field ) { return []; }
-				if ( Array.isArray( field.image_choice_options ) ) { return field.image_choice_options; }
-				if ( typeof field.image_choice_options === 'string' && field.image_choice_options ) {
-					try { var p = JSON.parse( field.image_choice_options ); return Array.isArray( p ) ? p : []; } catch (e) { return []; }
+				var arr = [];
+				if ( field ) {
+					if ( Array.isArray( field.image_choice_options ) ) {
+						arr = field.image_choice_options;
+					} else if ( typeof field.image_choice_options === 'string' && field.image_choice_options ) {
+						try { var p = JSON.parse( field.image_choice_options ); arr = Array.isArray( p ) ? p : []; } catch (e) { arr = []; }
+					}
 				}
-				return [];
+				return arr.length ? arr : [
+					{ label: 'Option 1', value: 'Option 1', image_url: '' },
+					{ label: 'Option 2', value: 'Option 2', image_url: '' },
+					{ label: 'Option 3', value: 'Option 3', image_url: '' }
+				];
 			}() );
 			normalized.image_choice_type       = field && field.image_choice_type === 'checkbox' ? 'checkbox' : 'radio';
 			normalized.image_choice_columns    = field && field.image_choice_columns ? Number( field.image_choice_columns ) : 3;
 			normalized.image_choice_img_height = field && field.image_choice_img_height ? Number( field.image_choice_img_height ) : 160;
 
 			// Repeater field defaults.
-			normalized.repeater_fields       = field && Array.isArray( field.repeater_fields )  ? field.repeater_fields  : [];
+			// Pro persists repeater_fields as a JSON STRING (wp_json_encode), so parse it
+			// back to an array on load — otherwise reopening a saved repeater would wipe its
+			// sub-fields (and their options) to [] and the next save would lose them. Mirrors
+			// the matrix_rows/columns self-heal below and the panel/canvas string parsing.
+			// NOTE: do NOT re-seed an empty array here — a new repeater gets its starter
+			// sub-fields from createField(); once the user deletes them all, an empty
+			// repeater must STAY empty (respect the deletion) rather than reappearing.
+			normalized.repeater_fields       = ( function () {
+				var v = field ? field.repeater_fields : undefined;
+				if ( Array.isArray( v ) ) { return v; }
+				try { var arr = JSON.parse( v || '[]' ); return Array.isArray( arr ) ? arr : []; } catch ( e ) { return []; }
+			}() );
 			normalized.repeater_min_rows     = field && field.repeater_min_rows ? Number( field.repeater_min_rows ) : 1;
 			normalized.repeater_max_rows     = field && field.repeater_max_rows ? Number( field.repeater_max_rows ) : 5;
 			normalized.repeater_add_label    = field && typeof field.repeater_add_label    !== 'undefined' ? field.repeater_add_label    : '';
+			normalized.repeater_columns      = field && field.repeater_columns ? Number( field.repeater_columns ) : 2;
 			normalized.repeater_remove_label = field && typeof field.repeater_remove_label !== 'undefined' ? field.repeater_remove_label : '';
 
 			// Advanced Pro field defaults.
@@ -312,8 +349,23 @@ jQuery(
 			normalized.date_range_max_days  = field && typeof field.date_range_max_days  !== 'undefined' ? field.date_range_max_days  : '';
 			normalized.nps_low_label        = field && typeof field.nps_low_label  !== 'undefined' ? field.nps_low_label  : 'Not likely';
 			normalized.nps_high_label       = field && typeof field.nps_high_label !== 'undefined' ? field.nps_high_label : 'Extremely likely';
-			normalized.matrix_rows          = field && typeof field.matrix_rows    !== 'undefined' ? field.matrix_rows    : '["Row 1","Row 2","Row 3"]';
-			normalized.matrix_columns       = field && typeof field.matrix_columns !== 'undefined' ? field.matrix_columns : '["Agree","Neutral","Disagree"]';
+			// Matrix rows/columns: keep the saved list, but fall back to defaults when the
+			// value is missing OR an empty array. This self-heals forms previously saved
+			// with empty matrix_rows/matrix_columns (the front-end already substitutes the
+			// same defaults), so the builder, canvas and front end all stay consistent and
+			// a save persists real values instead of "[]".
+			normalized.matrix_rows = ( function () {
+				var v = field ? field.matrix_rows : undefined;
+				var arr;
+				try { arr = Array.isArray( v ) ? v : JSON.parse( v || '[]' ); } catch ( e ) { arr = []; }
+				return ( arr && arr.length ) ? JSON.stringify( arr ) : '["Row 1","Row 2","Row 3"]';
+			}() );
+			normalized.matrix_columns = ( function () {
+				var v = field ? field.matrix_columns : undefined;
+				var arr;
+				try { arr = Array.isArray( v ) ? v : JSON.parse( v || '[]' ); } catch ( e ) { arr = []; }
+				return ( arr && arr.length ) ? JSON.stringify( arr ) : '["Agree","Neutral","Disagree"]';
+			}() );
 			normalized.matrix_type          = field && field.matrix_type === 'checkbox' ? 'checkbox' : 'radio';
 			normalized.lookup_items         = field && typeof field.lookup_items       !== 'undefined' ? field.lookup_items       : '[]';
 			normalized.lookup_min_chars     = field && field.lookup_min_chars     ? Number( field.lookup_min_chars )     : 2;
@@ -800,6 +852,19 @@ jQuery(
 			};
 		}
 
+		// ── Unsaved-changes tracking ──────────────────────────────────────────────
+		// hasUnsavedChanges flips true on any structural or value mutation and is
+		// cleared after a successful save. builderReady gates it so the initial render
+		// (which builds state from saved data) does not count as a change. The Preview
+		// button reads this to warn before navigating (the preview renders the SAVED form).
+		var hasUnsavedChanges = false;
+		var builderReady = false;
+		function markDirty() {
+			if ( builderReady ) {
+				hasUnsavedChanges = true;
+			}
+		}
+
 		function removeFieldAt( rowIndex, columnIndex, fieldIndex ) {
 			var column = getColumn( rowIndex, columnIndex );
 
@@ -807,6 +872,7 @@ jQuery(
 				return null;
 			}
 
+			markDirty();
 			return column.fields.splice( fieldIndex, 1 )[ 0 ];
 		}
 
@@ -822,12 +888,14 @@ jQuery(
 			column.fields.splice( insertAt, 0, field );
 			state.selectedFieldId = field.id;
 			setActiveColumn( rowIndex, columnIndex );
+			markDirty();
 		}
 
 		function addRow( widths ) {
 			var row = createRow( widths );
 
 			getAllRows().push( row );
+			markDirty();
 			setActiveColumn( getAllRows().length - 1, 0 );
 			switchEditorView( 'builder' );
 			switchSidebarTab( 'library' );
@@ -854,6 +922,7 @@ jQuery(
 
 			// Insert the clone immediately after the source row.
 			rows.splice( rowIndex + 1, 0, clone );
+			markDirty();
 			setActiveColumn( rowIndex + 1, 0 );
 			switchEditorView( 'builder' );
 			renderAll();
@@ -868,6 +937,7 @@ jQuery(
 			}
 
 			rows.splice( rowIndex, 1 );
+			markDirty();
 			state.selectedFieldId = null;
 
 			if ( rows.length ) {
@@ -891,6 +961,7 @@ jQuery(
 
 			row = rows.splice( oldIndex, 1 )[ 0 ];
 			rows.splice( newIndex, 0, row );
+			markDirty();
 			renderAll();
 		}
 
@@ -1028,26 +1099,31 @@ jQuery(
 				if ( 'select' === field.product_style ) {
 					html += '<select style="pointer-events:none"><option>' + ( prodOpts.length ? escapeHtml( prodOpts[0].label || 'Select…' ) + ' — $' + escapeHtml( parseFloat( prodOpts[0].price || 0 ).toFixed( 2 ) ) : 'Select…' ) + '</option></select>';
 				} else {
-					html += '<div class="boldform-lite-form__choices">';
+					// Use the SAME wrapper/markup as the checkbox/radio canvas preview
+					// (boldform-canvas-field-choices + __choice-control + __choice-label) so
+					// the canvas CSS hides the native input, draws the custom radio, and
+					// stacks rows with min-width:0 (no overflow). Frontend __choices alone
+					// leaves native radios styled as full-width input lines.
+					html += '<div class="boldform-canvas-field-choices">';
 					prodOpts.slice( 0, 4 ).forEach( function ( opt, idx ) {
-						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span>' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-focus-color,#0d9488);font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
+						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-focus-color,#0d9488);font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
 					} );
-					if ( prodOpts.length > 4 ) { html += '<label class="boldform-lite-form__choice" style="color:#9ca3af">…and ' + ( prodOpts.length - 4 ) + ' more</label>'; }
+					if ( prodOpts.length > 4 ) { html += '<label class="boldform-lite-form__choice"><span class="boldform-lite-form__choice-label" style="color:#9ca3af">…and ' + ( prodOpts.length - 4 ) + ' more</span></label>'; }
 					html += '</div>';
 				}
-				return html;
+				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'quantity' ) {
-				html += '<input type="number" value="' + escapeHtml( field.qty_default || '1' ) + '" min="' + escapeHtml( field.qty_min || '1' ) + '"' + ( field.qty_max ? ' max="' + escapeHtml( field.qty_max ) + '"' : '' ) + ' disabled style="width:120px;">';
-				return html;
+				html += '<input type="number" value="' + escapeHtml( field.qty_default || '1' ) + '" min="' + escapeHtml( field.qty_min || '1' ) + '"' + ( field.qty_max ? ' max="' + escapeHtml( field.qty_max ) + '"' : '' ) + ' disabled>';
+				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'custom_amount' ) {
 				var caMin = field.amount_min ? parseFloat( field.amount_min ) : 0;
 				var caMax = field.amount_max ? parseFloat( field.amount_max ) : '';
 				var caDefault = field.amount_default ? parseFloat( field.amount_default ) : 0;
-				html += '<div style="display:flex;align-items:center;gap:4px;border:1px solid #d1d5db;border-radius:6px;padding:8px 12px;width:fit-content;">';
-				html += '<span style="font-weight:600;color:#374151;">$</span>';
-				html += '<input type="number" value="' + escapeHtml( caDefault.toFixed(2) ) + '" step="0.01"' + ( caMin > 0 ? ' min="' + caMin + '"' : '' ) + ( caMax !== '' ? ' max="' + caMax + '"' : '' ) + ' disabled style="border:none;outline:none;width:100px;">';
+				html += '<div class="boldform-canvas-amount">';
+				html += '<span class="boldform-canvas-amount__symbol">$</span>';
+				html += '<input type="number" value="' + escapeHtml( caDefault.toFixed(2) ) + '" step="0.01"' + ( caMin > 0 ? ' min="' + caMin + '"' : '' ) + ( caMax !== '' ? ' max="' + caMax + '"' : '' ) + ' disabled>';
 				html += '</div>';
-				return html;
+				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'order_summary' ) {
 				var osTotal = 0;
 				html  = '<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-size:13px;">';
@@ -1073,7 +1149,7 @@ jQuery(
 				html += '</table>';
 				html += '';
 				html += '</div>';
-				return html;
+				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'section_break' ) {
 				html = '<div class="boldform-canvas-section-break"><strong>' + escapeHtml( field.label ) + '</strong><p>' + escapeHtml( field.description || '' ) + '</p></div>';
 			} else if ( field.type === 'terms_conditions' ) {
@@ -1282,10 +1358,11 @@ jQuery(
 				// Scale down proportionally for the builder canvas (canvas ~280px wide).
 				var icCanvasH = Math.round( icImgH * 0.35 );
 				icCanvasH = Math.max( 40, Math.min( 180, icCanvasH ) );
+				// Fallback matches normalizeField + the front-end renderer's defaults.
 				var icItems = icOpts.length ? icOpts : [
-					{ label: 'Option 1', value: '1', image_url: '' },
-					{ label: 'Option 2', value: '2', image_url: '' },
-					{ label: 'Option 3', value: '3', image_url: '' }
+					{ label: 'Option 1', value: 'Option 1', image_url: '' },
+					{ label: 'Option 2', value: 'Option 2', image_url: '' },
+					{ label: 'Option 3', value: 'Option 3', image_url: '' }
 				];
 				html = '<div class="boldform-canvas-ic boldform-canvas-ic--' + escapeHtml( String( icCols ) ) + 'col">';
 				icItems.slice( 0, 6 ).forEach( function ( opt, i ) {
@@ -1315,19 +1392,59 @@ jQuery(
 							: field.repeater_fields;
 					} catch (e) { repFields = []; }
 				}
+				if ( ! Array.isArray( repFields ) ) { repFields = []; }
+				var repColsP = Math.max( 1, Math.min( 4, Number( field.repeater_columns ) || 2 ) );
+				// Default sub-field labels mirror render_sub_field() in the Pro module so
+				// the canvas preview matches the front end when a sub-field has no label.
+				var repLabelMap = { text: 'Text', email: 'Email', url: 'URL', tel: 'Phone', number: 'Number', date: 'Date', time: 'Time', textarea: 'Message', select: 'Select', radio: 'Choose one', checkbox: 'Select all' };
+				var repSubLabel = function ( sf ) {
+					var l = ( sf.label || '' ).toString();
+					return ( l && l.replace( /\s+/g, '' ) ) ? l : ( repLabelMap[ sf.type ] || 'Field' );
+				};
+				// Render a lightweight mockup of each sub-field's control, matching its type
+				// (and its options for select/radio/checkbox) so the preview reflects settings.
+				var repControl = function ( sf ) {
+					var t = sf.type || 'text';
+					var ph = ( sf.placeholder || '' ).toString();
+					// Text-style controls fall back to the (default) label so the preview box
+					// is never empty — mirrors Lite core fields and the front-end render.
+					var phText = ph || repSubLabel( sf );
+					var opts = Array.isArray( sf.options ) ? sf.options : [];
+					if ( 'textarea' === t ) {
+						return '<div class="boldform-canvas-repeater__control boldform-canvas-repeater__control--area">' + escapeHtml( phText ) + '</div>';
+					}
+					if ( 'select' === t ) {
+						return '<div class="boldform-canvas-repeater__control boldform-canvas-repeater__control--select"><span>' + escapeHtml( ph || opts[ 0 ] || 'Select…' ) + '</span><svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true"><path fill="#94a3b8" d="M1 1l5 5 5-5"/></svg></div>';
+					}
+					if ( 'radio' === t || 'checkbox' === t ) {
+						var items = opts.length ? opts : [ 'Option 1', 'Option 2' ];
+						var markCls = 'boldform-canvas-repeater__mark' + ( 'radio' === t ? ' boldform-canvas-repeater__mark--radio' : '' );
+						var ch = '<div class="boldform-canvas-repeater__choices">';
+						items.slice( 0, 6 ).forEach( function ( o ) {
+							ch += '<span class="boldform-canvas-repeater__choice"><span class="' + markCls + '"></span>' + escapeHtml( ( o || '' ).toString() ) + '</span>';
+						} );
+						ch += '</div>';
+						return ch;
+					}
+					return '<div class="boldform-canvas-repeater__control">' + escapeHtml( phText ) + '</div>';
+				};
+				// Show ONLY the configured sub-fields — no fake fallback. A repeater with no
+				// sub-fields shows a guidance hint (it starts with two via createField; once
+				// the user deletes them all, the canvas reflects that empty state).
+				var repCells = repFields.slice( 0, 8 );
 				html  = '<div class="boldform-canvas-repeater">';
-				html += '<div class="boldform-canvas-repeater__row">';
-				if ( repFields.length ) {
-					repFields.slice( 0, 4 ).forEach( function ( sf ) {
-						html += '<div class="boldform-canvas-repeater__cell" title="' + escapeHtml( sf.label || sf.type || '' ) + '"></div>';
-					} );
+				if ( ! repCells.length ) {
+					html += '<div class="boldform-canvas-repeater__empty" style="padding:10px 12px;color:#9ca3af;font-size:13px;font-style:italic">' + escapeHtml( 'No sub-fields yet — add one in Field Settings.' ) + '</div>';
 				} else {
-					html += '<div class="boldform-canvas-repeater__cell"></div>';
-					html += '<div class="boldform-canvas-repeater__cell"></div>';
-					html += '<div class="boldform-canvas-repeater__cell"></div>';
+					html += '<div class="boldform-canvas-repeater__row" style="display:grid;grid-template-columns:repeat(' + repColsP + ',minmax(0,1fr));gap:10px 12px;align-items:start">';
+					repCells.forEach( function ( sf ) {
+						html += '<div class="boldform-canvas-repeater__field">';
+						html += '<span class="boldform-canvas-repeater__label">' + escapeHtml( repSubLabel( sf ) ) + ( sf.required ? ' <span class="boldform-required">*</span>' : '' ) + '</span>';
+						html += repControl( sf );
+						html += '</div>';
+					} );
+					html += '</div>';
 				}
-				html += '<div class="boldform-canvas-repeater__remove-placeholder"></div>';
-				html += '</div>';
 				html += '<div class="boldform-canvas-repeater__add"><span class="dashicons dashicons-plus-alt2"></span> ' + escapeHtml( field.repeater_add_label || 'Add Row' ) + '</div>';
 				html += '</div>';
 
@@ -1344,13 +1461,25 @@ jQuery(
 				}
 
 			} else if ( field.type === 'rich_text' ) {
-				var rteH = Math.max( 60, Math.round( ( field.rte_height || 200 ) * 0.4 ) );
-				html  = '<div style="border:1px solid #e5e7eb;border-radius:6px;overflow:hidden">';
-				html += '<div style="display:flex;gap:4px;padding:5px 8px;background:#f9fafb;border-bottom:1px solid #e5e7eb;font-size:12px">';
-				html += '<span style="font-weight:700">B</span><span style="font-style:italic">I</span><span style="text-decoration:underline">U</span>';
-				html += '<span style="margin:0 4px;border-left:1px solid #d1d5db"></span><span>&#8226; List</span>';
+				var rteH = Math.max( 80, Math.round( ( field.rte_height || 200 ) * 0.45 ) );
+				// Mockup of the front-end TinyMCE editor (real editor renders on the front end).
+				var rteBtn = 'display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;color:#475569;font-size:12px;';
+				var rteSep = '<span style="width:1px;height:18px;background:#e2e8f0;margin:0 2px"></span>';
+				html  = '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#fff">';
+				html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;background:#f8fafc;border-bottom:1px solid #e5e7eb">';
+				html += '<span style="' + rteBtn + 'font-weight:700">B</span>';
+				html += '<span style="' + rteBtn + 'font-style:italic">I</span>';
+				html += '<span style="' + rteBtn + 'text-decoration:underline">U</span>';
+				html += rteSep;
+				html += '<span style="' + rteBtn + '">&#8226;</span>';
+				html += '<span style="' + rteBtn + '">1.</span>';
+				html += rteSep;
+				html += '<span style="' + rteBtn + '">&#128279;</span>';
+				html += rteSep;
+				html += '<span style="' + rteBtn + '">&#8634;</span>';
+				html += '<span style="' + rteBtn + '">&#8635;</span>';
 				html += '</div>';
-				html += '<div style="min-height:' + rteH + 'px;padding:8px;color:#9ca3af;font-size:13px;font-style:italic">Rich text content…</div>';
+				html += '<div style="min-height:' + rteH + 'px;padding:10px 12px;color:#9ca3af;font-size:13px">Rich text content…</div>';
 				html += '</div>';
 
 			} else if ( field.type === 'date_range' ) {
@@ -1375,18 +1504,25 @@ jQuery(
 			} else if ( field.type === 'matrix' ) {
 				var matRows = [];
 				var matCols = [];
-				try { matRows = JSON.parse( field.matrix_rows || '[]' ); } catch(e) { matRows = [ 'Row 1', 'Row 2' ]; }
-				try { matCols = JSON.parse( field.matrix_columns || '[]' ); } catch(e) { matCols = [ 'Col 1', 'Col 2' ]; }
-				if ( ! matRows.length ) matRows = [ 'Row 1', 'Row 2' ];
-				if ( ! matCols.length ) matCols = [ 'Col 1', 'Col 2' ];
+				// Empty/invalid data falls back to the SAME defaults the front-end renderer
+				// uses (render_matrix in Pro) so the canvas preview matches what visitors see.
+				try { matRows = JSON.parse( field.matrix_rows || '[]' ); } catch(e) { matRows = []; }
+				try { matCols = JSON.parse( field.matrix_columns || '[]' ); } catch(e) { matCols = []; }
+				if ( ! matRows.length ) matRows = [ 'Row 1', 'Row 2', 'Row 3' ];
+				if ( ! matCols.length ) matCols = [ 'Agree', 'Neutral', 'Disagree' ];
 				var matType = field.matrix_type || 'radio';
+				// Render a styled control SPAN (radio circle / checkbox square) rather than a
+				// native <input>: a bare input inherits the generic full-width canvas-input
+				// styling and renders as an orange underline instead of a control. Mirrors the
+				// front-end's grey outline (matches the product/choice canvas preview approach).
+				var matMarkStyle = 'display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;background:#fff;vertical-align:middle;box-sizing:border-box;border-radius:' + ( 'checkbox' === matType ? '4px' : '50%' );
 				html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
 				html += '<thead><tr><th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb"></th>';
 				matCols.forEach( function(c) { html += '<th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb;text-align:center">' + escapeHtml( c ) + '</th>'; } );
 				html += '</tr></thead><tbody>';
 				matRows.forEach( function(r) {
 					html += '<tr><td style="border:1px solid #e5e7eb;padding:4px 8px;font-weight:500">' + escapeHtml( r ) + '</td>';
-					matCols.forEach( function() { html += '<td style="border:1px solid #e5e7eb;text-align:center;padding:4px"><input type="' + matType + '" disabled></td>'; } );
+					matCols.forEach( function() { html += '<td style="border:1px solid #e5e7eb;text-align:center;padding:4px"><span style="' + matMarkStyle + '"></span></td>'; } );
 					html += '</tr>';
 				} );
 				html += '</tbody></table></div>';
@@ -2428,15 +2564,27 @@ jQuery(
 						}
 						var repRowsHtml = '';
 						repFields.forEach( function ( sf, idx ) {
+							var sfType    = sf.type || 'text';
+							// Choice sub-types carry an options list (one per line).
+							var isChoice  = ( 'select' === sfType || 'radio' === sfType || 'checkbox' === sfType );
+							var sfOptions = Array.isArray( sf.options ) ? sf.options : [];
 							repRowsHtml +=
 								'<div class="boldform-rep-field-row" data-rep-index="' + idx + '">' +
-									'<select class="boldform-rep-field__type" data-rep-index="' + idx + '">' +
-										[ 'text','email','number','tel','textarea','select','date' ].map( function (t) {
-											return '<option value="' + t + '"' + ( t === ( sf.type || 'text' ) ? ' selected' : '' ) + '>' + t + '</option>';
-										} ).join('') +
-									'</select>' +
-									'<input type="text" class="boldform-rep-field__label" data-rep-index="' + idx + '" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
-									'<button type="button" class="boldform-rep-field__remove" data-rep-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+									'<div class="boldform-rep-field-row__main">' +
+										'<select class="boldform-rep-field__type" data-rep-index="' + idx + '">' +
+											[ 'text','email','url','tel','number','date','time','textarea','select','radio','checkbox' ].map( function (t) {
+												return '<option value="' + t + '"' + ( t === sfType ? ' selected' : '' ) + '>' + t + '</option>';
+											} ).join('') +
+										'</select>' +
+										'<input type="text" class="boldform-rep-field__label" data-rep-index="' + idx + '" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
+										'<button type="button" class="boldform-rep-field__remove" data-rep-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+									'</div>' +
+									( isChoice ?
+										'<div class="boldform-rep-field-row__options">' +
+											'<label class="boldform-rep-field__options-label">Options (one per line)</label>' +
+											'<textarea class="boldform-rep-field__options" data-rep-index="' + idx + '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( sfOptions.join( '\n' ) ) + '</textarea>' +
+										'</div>'
+									: '' ) +
 								'</div>';
 						} );
 						return '<div class="boldform-setting-group">' +
@@ -2446,6 +2594,14 @@ jQuery(
 							'</div>' +
 							'<div class="boldform-rep-fields-list" id="boldform-rep-fields-list">' + repRowsHtml + '</div>' +
 							'<button type="button" class="boldform-options-repeater__add" id="boldform-rep-field-add"><span class="dashicons dashicons-plus-alt2"></span> Add Sub-field</button>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-rep-columns">Columns</label>' +
+							'<select id="boldform-setting-rep-columns">' +
+								[ 1, 2, 3, 4 ].map( function (n) {
+									return '<option value="' + n + '"' + ( n === ( Number( selected.field.repeater_columns ) || 2 ) ? ' selected' : '' ) + '>' + n + '</option>';
+								} ).join('') +
+							'</select>' +
 						'</div>' +
 						'<div class="boldform-setting-row">' +
 							'<div class="boldform-setting-group">' +
@@ -2539,8 +2695,15 @@ jQuery(
 					( 'matrix' === selected.field.type ? ( function () {
 						var mRows = [];
 						var mCols = [];
-						try { mRows = JSON.parse( selected.field.matrix_rows || '["Row 1","Row 2","Row 3"]' ); } catch(e) { mRows = [ 'Row 1', 'Row 2', 'Row 3' ]; }
-						try { mCols = JSON.parse( selected.field.matrix_columns || '["Agree","Neutral","Disagree"]' ); } catch(e) { mCols = [ 'Agree', 'Neutral', 'Disagree' ]; }
+						// Hydrate the textareas from the saved values. Empty/invalid data falls
+						// back to the same defaults the front-end renderer (Pro render_matrix)
+						// substitutes, so the builder shows the effective values a visitor sees
+						// instead of blank boxes — and a save then persists them (self-heals
+						// forms saved with empty matrix_rows/matrix_columns).
+						try { mRows = JSON.parse( selected.field.matrix_rows || '[]' ); } catch(e) { mRows = []; }
+						try { mCols = JSON.parse( selected.field.matrix_columns || '[]' ); } catch(e) { mCols = []; }
+						if ( ! mRows.length ) { mRows = [ 'Row 1', 'Row 2', 'Row 3' ]; }
+						if ( ! mCols.length ) { mCols = [ 'Agree', 'Neutral', 'Disagree' ]; }
 						return '<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-matrix-type">Input Type</label>' +
 							'<select id="boldform-setting-matrix-type">' +
@@ -4051,6 +4214,7 @@ jQuery(
 			// IDs and fills in all defaults — required for Pro templates that arrive as
 			// plain PHP-serialized objects without pre-generated IDs.
 			state.structure = normalizeStructure( { rows: template.rows } );
+			markDirty();
 			state.selectedFieldId = null;
 			state.formTitle = template.title || state.formTitle || boldformLiteBuilder.defaultFormTitle;
 			setActiveColumn( 0, 0 );
@@ -4211,15 +4375,18 @@ jQuery(
 			flashCopied();
 		}
 
-		function saveForm() {
+		// Save the form. Accepts an optional onSaved( formId ) callback invoked only
+		// after a successful save — used by the Preview button to auto-save the current
+		// builder state (including unsaved fields) before navigating to the preview page,
+		// which renders the SAVED form from the database.
+		function saveForm( onSaved ) {
 			var $save = $( '#boldform-save-form' );
 			var title = $.trim( $( '#boldform-form-title' ).val() ) || boldformLiteBuilder.defaultFormTitle;
 			var payload;
 
-			if ( ! getAllRows().length ) {
-				$( '#boldform-builder-status' ).text( boldformLiteBuilder.messages.emptyFields );
-				return;
-			}
+			// Note: an empty form (no rows/fields) is intentionally allowed to save,
+			// so a user can clear a form and have that persist. The server stores an
+			// empty structure and the renderer skips a field-less form gracefully.
 
 			/**
 			 * Allow Pro modules to mutate state.formSettings before it is serialised.
@@ -4251,6 +4418,7 @@ jQuery(
 					function ( response ) {
 						if ( response && response.success ) {
 							state.formId = response.data.formId;
+							hasUnsavedChanges = false; // saved → no pending changes
 							updateShortcodeDisplay();
 							$( '#boldform-builder-status' ).text( response.data.message );
 
@@ -4270,6 +4438,10 @@ jQuery(
 									url += ( url.indexOf( '?' ) !== -1 ? '&' : '?' ) + 'form_id=' + state.formId;
 								}
 								window.history.replaceState( null, '', url );
+							}
+
+							if ( 'function' === typeof onSaved ) {
+								onSaved( state.formId );
 							}
 
 							return;
@@ -4986,6 +5158,7 @@ jQuery(
 			renderSettingsPanel();
 			setupOptionsSortable();
 			setupAddressSortable();
+			renderCanvas();
 			$( '#boldform-rep-fields-list .boldform-rep-field-row:last-child .boldform-rep-field__label' ).focus();
 		} );
 
@@ -5022,7 +5195,26 @@ jQuery(
 			if ( selected.field.repeater_fields[ idx ] ) {
 				selected.field.repeater_fields[ idx ].type = $( this ).val();
 			}
+			// Re-render so the per-sub-field options editor appears/disappears when
+			// switching to/from a choice sub-type (select/radio/checkbox).
+			renderSettingsPanel();
+			setupOptionsSortable();
+			setupAddressSortable();
 			renderCanvas();
+		} );
+
+		// Edit repeater sub-field options (one per line) for choice sub-types.
+		$( document ).on( 'input', '.boldform-rep-field__options', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
+			var $row = $( this ).closest( '.boldform-rep-field-row' );
+			var idx = Number( $row.data( 'rep-index' ) );
+			if ( selected.field.repeater_fields[ idx ] ) {
+				// Keep raw line splits while editing; the Pro sanitizer drops blanks on
+				// save and the array is re-joined with newlines on reload.
+				selected.field.repeater_fields[ idx ].options = $( this ).val().split( '\n' );
+				renderCanvas();
+			}
 		} );
 
 		$( '#boldform-field-library' ).on(
@@ -5202,7 +5394,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -5417,7 +5609,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -5486,6 +5678,11 @@ jQuery(
 				}
 				if ( $( '#boldform-setting-ic-columns' ).length ) {
 					selected.field.image_choice_columns = Number( $( '#boldform-setting-ic-columns' ).val() ) || 3;
+				}
+
+				// Repeater columns.
+				if ( $( '#boldform-setting-rep-columns' ).length ) {
+					selected.field.repeater_columns = Math.max( 1, Math.min( 4, Number( $( '#boldform-setting-rep-columns' ).val() ) || 2 ) );
 				}
 
 				// Password confirm toggle.
@@ -5849,6 +6046,7 @@ jQuery(
 			}
 
 			row.columns = newColumns;
+			markDirty();
 			setActiveColumn( rowIndex, 0 );
 			renderAll();
 		} );
@@ -5857,6 +6055,110 @@ jQuery(
 			'click',
 			function () {
 				saveForm();
+			}
+		);
+
+		// Any value edit in the builder (field settings, form settings, title, style
+		// controls, option repeaters) marks the form dirty so Preview can warn about
+		// unsaved changes. Structural changes (add/remove/move field & row, layout,
+		// template import) are flagged in their mutation functions via markDirty().
+		$( '#boldform-builder-main' ).on( 'input change', 'input, textarea, select', markDirty );
+
+		// Preview button. The preview page renders the SAVED form from the database, so an
+		// unsaved change can only be previewed by saving first. If there are unsaved changes
+		// we ask the user (Save & Preview / Preview last saved / Cancel) instead of silently
+		// saving; with no unsaved changes we navigate straight to the preview.
+		function boldformPreviewUrl( formId ) {
+			return 'admin.php?page=boldform-lite-preview&form_id=' + formId;
+		}
+
+		function boldformSaveThenPreview() {
+			saveForm( function ( formId ) {
+				if ( formId ) {
+					window.location.href = boldformPreviewUrl( formId );
+				}
+			} );
+		}
+
+		function boldformShowPreviewUnsavedDialog() {
+			$( '#boldform-preview-confirm' ).remove();
+
+			// "Preview last saved" is only meaningful once the form has been saved at least once.
+			var canPreviewSaved = !! state.formId;
+
+			var $overlay = $(
+				'<div id="boldform-preview-confirm" role="dialog" aria-modal="true" aria-labelledby="boldform-preview-confirm-title" ' +
+					'style="position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55)">' +
+					'<div style="background:#fff;max-width:460px;width:calc(100% - 40px);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px">' +
+						'<h2 id="boldform-preview-confirm-title" style="margin:0 0 8px;font-size:18px;line-height:1.3">' +
+							escapeHtml( boldformLiteBuilder.labels && boldformLiteBuilder.labels.previewUnsavedTitle ? boldformLiteBuilder.labels.previewUnsavedTitle : 'You have unsaved changes' ) +
+						'</h2>' +
+						'<p style="margin:0 0 20px;color:#475569;line-height:1.5">' +
+							escapeHtml( boldformLiteBuilder.labels && boldformLiteBuilder.labels.previewUnsavedBody ? boldformLiteBuilder.labels.previewUnsavedBody : 'The preview shows your saved form. Save your changes first to preview your latest work.' ) +
+						'</p>' +
+						'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">' +
+							'<button type="button" class="button" data-bf-prev="cancel">' +
+								escapeHtml( boldformLiteBuilder.labels && boldformLiteBuilder.labels.cancel ? boldformLiteBuilder.labels.cancel : 'Cancel' ) +
+							'</button>' +
+							( canPreviewSaved
+								? '<button type="button" class="button" data-bf-prev="saved">' +
+									escapeHtml( boldformLiteBuilder.labels && boldformLiteBuilder.labels.previewSaved ? boldformLiteBuilder.labels.previewSaved : 'Preview last saved' ) +
+									'</button>'
+								: '' ) +
+							'<button type="button" class="button button-primary" data-bf-prev="save">' +
+								escapeHtml( boldformLiteBuilder.labels && boldformLiteBuilder.labels.savePreview ? boldformLiteBuilder.labels.savePreview : 'Save & Preview' ) +
+							'</button>' +
+						'</div>' +
+					'</div>' +
+				'</div>'
+			);
+
+			function closeDialog() {
+				$overlay.remove();
+				$( document ).off( 'keydown.bfpreview' );
+			}
+
+			$overlay.on( 'click', function ( e ) {
+				var action = $( e.target ).closest( '[data-bf-prev]' ).attr( 'data-bf-prev' );
+				if ( e.target === $overlay[ 0 ] ) {
+					action = 'cancel'; // clicked the backdrop
+				}
+				if ( ! action ) {
+					return;
+				}
+				if ( 'cancel' === action ) {
+					closeDialog();
+				} else if ( 'saved' === action ) {
+					window.location.href = boldformPreviewUrl( state.formId );
+				} else if ( 'save' === action ) {
+					closeDialog();
+					boldformSaveThenPreview();
+				}
+			} );
+
+			$( document ).on( 'keydown.bfpreview', function ( e ) {
+				if ( 'Escape' === e.key ) {
+					closeDialog();
+				}
+			} );
+
+			$( 'body' ).append( $overlay );
+			$overlay.find( '[data-bf-prev="save"]' ).trigger( 'focus' );
+		}
+
+		$( '#boldform-preview-form' ).on(
+			'click',
+			function ( event ) {
+				event.preventDefault();
+
+				if ( hasUnsavedChanges ) {
+					boldformShowPreviewUnsavedDialog();
+				} else if ( state.formId ) {
+					window.location.href = boldformPreviewUrl( state.formId );
+				} else {
+					// Brand-new form never saved yet — save so there is something to preview.
+					boldformSaveThenPreview();
+				}
 			}
 		);
 
@@ -5953,6 +6255,9 @@ jQuery(
 
 		updateShortcodeDisplay();
 		renderAll();
+
+		// Initial render is done — from here on, mutations count as unsaved changes.
+		builderReady = true;
 
 		// Canvas is rendered — remove the loading overlay shown for existing forms
 		// so the real layout (or the empty state) is revealed without flashing the

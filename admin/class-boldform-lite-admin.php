@@ -642,6 +642,26 @@ class BoldForm_Lite_Admin {
 						'option2'          => __( 'Option 2', 'boldform-lite' ),
 						'termsContent'     => __( 'I agree to the <a href="#">terms and conditions</a>.', 'boldform-lite' ),
 						'sectionDesc'      => __( 'Add a short description for this section.', 'boldform-lite' ),
+						// Default placeholder text, keyed by field type. Pre-filled into a new
+						// field's Placeholder setting so it shows in settings, canvas, preview
+						// and on the front end consistently (the builder bakes it into the
+						// saved value, so it stays editable / clearable per field).
+						'placeholders'     => array(
+							'text'           => __( 'Enter text', 'boldform-lite' ),
+							'email'          => __( 'you@example.com', 'boldform-lite' ),
+							'url'            => __( 'https://example.com', 'boldform-lite' ),
+							'tel'            => __( '+1 (555) 000-0000', 'boldform-lite' ),
+							'number'         => __( 'Enter a number', 'boldform-lite' ),
+							'numeric'        => __( 'Enter a number', 'boldform-lite' ),
+							'textarea'       => __( 'Enter your message', 'boldform-lite' ),
+							'select'         => __( 'Select…', 'boldform-lite' ),
+							'multiselect'    => __( 'Select options…', 'boldform-lite' ),
+							'date'           => __( 'Select a date', 'boldform-lite' ),
+							'time'           => __( 'Select a time', 'boldform-lite' ),
+							'password_field' => __( 'Password', 'boldform-lite' ),
+							'date_range'     => __( 'Select date range', 'boldform-lite' ),
+							'lookup'         => __( 'Type to search…', 'boldform-lite' ),
+						),
 					),
 					'actions'            => array(
 						'duplicate' => __( 'Duplicate', 'boldform-lite' ),

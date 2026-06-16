@@ -1080,6 +1080,27 @@ class BoldForm_Lite_Form_Handler {
 	 * @return string|array<int, string>
 	 */
 	private function sanitize_field_value( $type, $raw ) {
+		/**
+		 * Short-circuits field-value sanitization for a given field type.
+		 *
+		 * Returning a non-null value fully replaces Lite's built-in sanitization,
+		 * letting add-ons (BoldForm Pro) correctly handle custom field types whose
+		 * values Lite's generic text sanitizer would otherwise damage — e.g. array
+		 * values (matrix grids, geolocation, multi image-choice) coerced to '', or
+		 * HTML (rich text) that would be tag-stripped. Implementations MUST return
+		 * an already-sanitized value, or null to defer to Lite.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param mixed  $pre  Null to defer to Lite; any other value short-circuits.
+		 * @param string $type Field type slug.
+		 * @param mixed  $raw  Raw submitted value (string or array).
+		 */
+		$pre = apply_filters( 'boldform_pre_sanitize_field_value', null, $type, $raw );
+		if ( null !== $pre ) {
+			return $pre;
+		}
+
 		if ( 'checkbox' === $type || 'multiselect' === $type ) {
 			if ( ! is_array( $raw ) ) {
 				return is_scalar( $raw ) && '' !== (string) $raw ? array( sanitize_text_field( (string) $raw ) ) : array();

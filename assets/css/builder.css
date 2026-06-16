@@ -1907,6 +1907,7 @@
 	border-radius: 10px;
 	background: #fff;
 	color: #1e293b;
+	line-height: 1;
 	box-sizing: border-box;
 }
 
@@ -2453,6 +2454,27 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+/* Custom Amount (Pro) canvas preview — currency symbol overlaid on a standard
+   full-width field so it matches the front-end amount input. */
+.boldform-canvas-amount {
+	position: relative;
+}
+
+.boldform-canvas-amount__symbol {
+	position: absolute;
+	left: 16px;
+	top: 50%;
+	transform: translateY( -50% );
+	font-weight: 600;
+	color: #374151;
+	pointer-events: none;
+	z-index: 1;
+}
+
+.boldform-canvas .boldform-canvas-field-body .boldform-canvas-amount input {
+	padding-left: 34px;
 }
 
 /* Conditional logic — multi-condition builder */
@@ -5778,18 +5800,61 @@
 }
 
 .boldform-rep-field-row {
-	display: grid;
-	grid-template-columns: 120px 1fr auto;
+	display: flex;
+	flex-direction: column;
 	gap: 6px;
-	align-items: center;
 	background: #f8fafc;
 	border: 1px solid #e2e8f0;
 	border-radius: 7px;
 	padding: 6px 8px;
 }
 
+/* Top line of a sub-field row: [type] [label] [remove]. */
+.boldform-rep-field-row__main {
+	display: grid;
+	grid-template-columns: 120px 1fr auto;
+	gap: 6px;
+	align-items: center;
+}
+
+/* Per-sub-field options editor (only shown for select/radio/checkbox). */
+.boldform-rep-field-row__options {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.boldform-rep-field__options-label {
+	font-size: 10px;
+	font-weight: 600;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.boldform-rep-field__options {
+	width: 100%;
+	box-sizing: border-box;
+	font-size: 12px;
+	line-height: 1.5;
+	padding: 6px 8px;
+	border: 1px solid #e2e8f0;
+	border-radius: 5px;
+	background: #fff;
+	color: #1e293b;
+	resize: vertical;
+	font-family: inherit;
+}
+
+.boldform-rep-field__options:focus {
+	outline: none;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 2px rgba( 34, 113, 177, 0.12 );
+}
+
 .boldform-rep-field__type {
 	height: 32px;
+	box-sizing: border-box; /* match .boldform-rep-field__label so type + label align (the border was adding 2px) */
 	padding: 0 6px;
 	font-size: 12px;
 	border: 1px solid #e2e8f0;
