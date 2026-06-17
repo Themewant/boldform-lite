@@ -820,7 +820,18 @@ class BoldForm_Lite_Shortcode {
 		 * @param string $value Empty string by default.
 		 * @param string $key   The auto-populate key.
 		 */
-		return (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+		$value = (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+
+		/**
+		 * Generic auto-populate filter that passes the key as a second argument.
+		 *
+		 * Lets an extension resolve any key with a single registered filter instead
+		 * of hooking the dynamic per-key tag above (avoids the `all`-hook anti-pattern).
+		 *
+		 * @param string $value Resolved value so far ('' if nothing matched yet).
+		 * @param string $key   The auto-populate key.
+		 */
+		return (string) apply_filters( 'boldform_auto_populate_value', $value, $key );
 	}
 
 	/**

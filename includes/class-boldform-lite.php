@@ -369,4 +369,28 @@ final class BoldForm_Lite {
 	public function get_admin() {
 		return $this->admin;
 	}
+
+	/**
+	 * Returns the form-submission handler.
+	 *
+	 * Exposed so an extension can persist an entry itself when it defers the
+	 * default save via the `boldform_should_save_entry` filter.
+	 *
+	 * @return BoldForm_Lite_Form_Handler
+	 */
+	public function get_form_handler() {
+		return $this->form_handler;
+	}
+
+	/**
+	 * Returns the email notifications handler.
+	 *
+	 * Exposed so an extension can dispatch the standard notification emails itself
+	 * after it has deferred them via the `boldform_defer_post_save_actions` filter.
+	 *
+	 * @return BoldForm_Lite_Email_Handler
+	 */
+	public function get_email_handler() {
+		return $this->email_handler;
+	}
 }
