@@ -140,7 +140,7 @@ class BoldForm_Lite_Admin {
 		$this->entries_page_hook = add_submenu_page(
 			'boldform-lite',
 			__( 'Entries', 'boldform-lite' ),
-			__( 'Entries', 'boldform-lite' ),
+			$this->get_entries_menu_title(),
 			'manage_options',
 			'boldform-lite-entries',
 			array( $this, 'render_entries_page' )
@@ -196,6 +196,73 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Builds the "Entries" submenu title, appending an unread-count bubble when
+	 * there are unread entries — mirroring core's "Comments" awaiting-moderation
+	 * badge so it inherits the active admin colour scheme automatically.
+	 *
+	 * @return string Menu title (may contain the count-bubble markup).
+	 */
+	private function get_entries_menu_title() {
+		$title  = __( 'Entries', 'boldform-lite' );
+		$unread = $this->get_unread_entries_count();
+
+		if ( $unread < 1 ) {
+			return $title;
+		}
+
+		return sprintf(
+			'%1$s <span class="awaiting-mod boldform-menu-count count-%2$d"><span class="boldform-unread-count" aria-hidden="true">%3$s</span><span class="screen-reader-text">%4$s</span></span>',
+			$title,
+			$unread,
+			number_format_i18n( $unread ),
+			esc_html(
+				sprintf(
+					/* translators: %s: number of unread entries. */
+					_n( '%s unread entry', '%s unread entries', $unread, 'boldform-lite' ),
+					number_format_i18n( $unread )
+				)
+			)
+		);
+	}
+
+	/**
+	 * Returns the number of unread entries, cached in a short-lived transient to
+	 * keep the count off the critical path of every admin page load. The cache is
+	 * cleared explicitly on every entry mutation (see clear_unread_count_cache),
+	 * with the TTL as a safety net for any path not covered.
+	 *
+	 * @return int Unread entry count.
+	 */
+	private function get_unread_entries_count() {
+		$cached = get_transient( 'boldform_lite_unread_count' );
+
+		if ( false !== $cached ) {
+			return (int) $cached;
+		}
+
+		global $wpdb;
+
+		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
+
+		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		set_transient( 'boldform_lite_unread_count', $count, 5 * MINUTE_IN_SECONDS );
+
+		return $count;
+	}
+
+	/**
+	 * Invalidates the cached unread-entry count. Hooked to entry creation and
+	 * called after every admin-side status/delete mutation so the menu badge
+	 * reflects the change on the next page load.
+	 *
+	 * @return void
+	 */
+	public function clear_unread_count_cache() {
+		delete_transient( 'boldform_lite_unread_count' );
+	}
+
+	/**
 	 * Returns the brand mark as a base64 data-URI for use as the admin-menu icon.
 	 *
 	 * Rendered as a white silhouette so the raw data-URI still degrades to a visible
@@ -236,7 +303,16 @@ class BoldForm_Lite_Admin {
 			. 'background-color:currentColor;'
 			. '-webkit-mask:url("' . $icon . '") center/20px auto no-repeat;'
 			. 'mask:url("' . $icon . '") center/20px auto no-repeat;'
-			. '}';
+			. '}'
+			// Entries unread-count badge. Keep it a visible pill in EVERY state — core's
+			// colour-scheme rules (_admin.scss) flip any .awaiting-mod to its "current"
+			// colours on `li:hover`, which blanks a submenu badge on the dark flyout. The
+			// two-id selector below outranks those rules so our badge stays consistent.
+			. '#adminmenu #toplevel_page_boldform-lite .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite:hover .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite.current .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite.wp-has-current-submenu .boldform-menu-count{'
+			. 'background:#2271b1;color:#fff;}';
 
 		// $css is fully static, developer-authored CSS; the only interpolated value is
 		// a base64 data-URI of our own SVG (base64 alphabet only — no markup-breaking chars).
@@ -3479,6 +3555,8 @@ class BoldForm_Lite_Admin {
 		$wpdb->delete( $entries_table, array( 'form_id' => $form_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$deleted = $wpdb->delete( $forms_table, array( 'id' => $form_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
+		$this->clear_unread_count_cache();
+
 		return false !== $deleted && $deleted > 0;
 	}
 
@@ -3554,6 +3632,7 @@ class BoldForm_Lite_Admin {
 			global $wpdb;
 			$wpdb->update( $this->plugin->get_entries_table_name(), array( 'status' => 'read' ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$entry->status = 'read';
+			$this->clear_unread_count_cache();
 		}
 
 		$decoded      = json_decode( (string) $entry->entry_data_json, true );
@@ -3775,6 +3854,8 @@ class BoldForm_Lite_Admin {
 
 		$wpdb->update( $table, array( 'status' => $status ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
+		$this->clear_unread_count_cache();
+
 		wp_send_json_success( array( 'status' => $status ) );
 	}
 
@@ -3801,6 +3882,8 @@ class BoldForm_Lite_Admin {
 		$table = $this->plugin->get_entries_table_name();
 
 		$wpdb->delete( $table, array( 'id' => $entry_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$this->clear_unread_count_cache();
 
 		wp_safe_redirect( admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_deleted' ) );
 		exit;

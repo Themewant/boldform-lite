@@ -191,6 +191,7 @@ final class BoldForm_Lite {
 	 */
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
+		$this->loader->add_action( 'boldform_entry_created', $this->admin, 'clear_unread_count_cache' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
 		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
 		$this->loader->add_action( 'admin_bar_menu', $this->admin, 'register_admin_bar', 100 );
