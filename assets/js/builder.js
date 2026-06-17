@@ -171,6 +171,7 @@ jQuery(
 				step_value: '',
 				max_stars: 5,
 				star_color: '',
+				star_inactive_color: '',
 				star_size: '20',
 				slider_color: '',
 				slider_height: '',
@@ -259,6 +260,7 @@ jQuery(
 			// Treat the legacy forced default (#f59e0b) as "unset" so existing star
 			// fields follow the theme accent; a deliberate custom color is kept.
 			normalized.star_color = field && field.star_color && '#f59e0b' !== field.star_color ? field.star_color : '';
+			normalized.star_inactive_color = field && field.star_inactive_color ? field.star_inactive_color : '';
 			normalized.star_size = field && field.star_size ? field.star_size : '20';
 			normalized.slider_color = field && field.slider_color ? field.slider_color : '';
 			normalized.slider_height = field && field.slider_height ? field.slider_height : '';
@@ -349,6 +351,11 @@ jQuery(
 			normalized.date_range_max_days  = field && typeof field.date_range_max_days  !== 'undefined' ? field.date_range_max_days  : '';
 			normalized.nps_low_label        = field && typeof field.nps_low_label  !== 'undefined' ? field.nps_low_label  : 'Not likely';
 			normalized.nps_high_label       = field && typeof field.nps_high_label !== 'undefined' ? field.nps_high_label : 'Extremely likely';
+			// NPS zone colours (detractor 0-6 / passive 7-8 / promoter 9-10). Empty = use
+			// the semantic default (red/amber/green); a value overrides it everywhere.
+			normalized.nps_detractor_color  = field && field.nps_detractor_color ? field.nps_detractor_color : '';
+			normalized.nps_passive_color    = field && field.nps_passive_color   ? field.nps_passive_color   : '';
+			normalized.nps_promoter_color   = field && field.nps_promoter_color  ? field.nps_promoter_color  : '';
 			// Matrix rows/columns: keep the saved list, but fall back to defaults when the
 			// value is missing OR an empty array. This self-heals forms previously saved
 			// with empty matrix_rows/matrix_columns (the front-end already substitutes the
@@ -1080,6 +1087,22 @@ jQuery(
 			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement ) ? '' : '<label>' + escapeHtml( field.label || getLibraryItem( field.type ).label ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
 			var html = '';
 
+			// Shared theme tokens so the advanced (Pro) field previews adopt the active
+			// Design Theme — accent + field surface — exactly like the free fields,
+			// instead of rendering with hardcoded greys. The accent resolves theme
+			// primary (button bg, always set by a theme) → focus colour → neutral,
+			// matching the established --bf-choice-accent-r fallback chain in builder.css
+			// so every Pro field agrees with the core checkbox/radio accent. These read
+			// the --bf-* vars emitted onto the canvas / style-preview surfaces by
+			// getFormStyleBlock().
+			var bfAccent      = 'var(--bf-button-bg, var(--bf-focus-color, #0f766e))';
+			var bfFieldBorder = 'var(--bf-field-border, #d1d5db)';
+			var bfFieldBg     = 'var(--bf-field-bg, #fff)';
+			var bfFieldText   = 'var(--bf-field-text, #374151)';
+			var bfFieldRadius = 'var(--bf-field-radius, 6px)';
+			var bfLabelColor  = 'var(--bf-label-color, #1f2937)';
+			var bfMuted       = '#9ca3af';
+
 			if ( field.type === 'name' ) {
 				html = '<div class="boldform-canvas-name">';
 				html += '<div class="boldform-canvas-name__field"><input type="text" placeholder="' + escapeHtml( boldformLiteBuilder.labels.firstName || 'First Name' ) + '" disabled><span class="boldform-canvas-name__sub">' + escapeHtml( boldformLiteBuilder.labels.firstName || 'First Name' ) + '</span></div>';
@@ -1125,27 +1148,43 @@ jQuery(
 				html += '</div>';
 				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'order_summary' ) {
-				var osTotal = 0;
-				html  = '<div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-size:13px;">';
+				var osTotal  = 0;
+				var osFields = getAllFields();
+				// Mirror the front end: map each product to its linked quantity
+				// field's default qty (Pro's build_order_line_items()).
+				var osQtyByProduct = {};
+				osFields.forEach( function ( qf ) {
+					if ( qf.type === 'quantity' && qf.linked_product ) {
+						osQtyByProduct[ qf.linked_product ] = qf;
+					}
+				} );
+				html  = '<div style="border:1px solid ' + bfFieldBorder + ';border-radius:' + bfFieldRadius + ';overflow:hidden;font-size:13px;color:' + bfFieldText + ';">';
 				html += '<table style="width:100%;border-collapse:collapse;">';
-				html += '<thead style="background:#f3f4f6;"><tr><th style="padding:8px 12px;text-align:left;">Item</th><th style="padding:8px 12px;text-align:right;">Price</th><th style="padding:8px 12px;text-align:right;">Qty</th><th style="padding:8px 12px;text-align:right;">Total</th></tr></thead>';
+				html += '<thead style="background:' + bfFieldBg + ';color:' + bfLabelColor + ';"><tr><th style="padding:8px 12px;text-align:left;">Item</th><th style="padding:8px 12px;text-align:right;">Price</th><th style="padding:8px 12px;text-align:right;">Qty</th><th style="padding:8px 12px;text-align:right;">Total</th></tr></thead>';
 				html += '<tbody>';
-				getAllFields().forEach( function ( pf ) {
+				osFields.forEach( function ( pf ) {
 					if ( pf.type === 'product' ) {
-						var opts  = Array.isArray( pf.product_options ) ? pf.product_options : [];
-						var first = opts[0] || {};
-						var price = parseFloat( first.price || 0 );
-						var lbl   = ( pf.label || 'Product' ) + ( first.label ? ' — ' + first.label : '' );
-						osTotal += price;
-						html += '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 12px;">' + escapeHtml( lbl ) + '</td><td style="padding:8px 12px;text-align:right;">$' + price.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">1</td><td style="padding:8px 12px;text-align:right;">$' + price.toFixed(2) + '</td></tr>';
+						var opts   = Array.isArray( pf.product_options ) ? pf.product_options : [];
+						var first  = opts[0] || {};
+						var price  = parseFloat( first.price || 0 );
+						var qtyF   = osQtyByProduct[ pf.id ];
+						var qty    = qtyF && '' !== qtyF.qty_default && typeof qtyF.qty_default !== 'undefined' ? parseInt( qtyF.qty_default, 10 ) || 1 : 1;
+						var rowTot = price * qty;
+						var lbl    = ( pf.label || 'Product' ) + ( first.label ? ' — ' + first.label : '' );
+						osTotal += rowTot;
+						html += '<tr style="border-bottom:1px solid ' + bfFieldBorder + ';"><td style="padding:8px 12px;">' + escapeHtml( lbl ) + '</td><td style="padding:8px 12px;text-align:right;">$' + price.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">' + qty + '</td><td style="padding:8px 12px;text-align:right;">$' + rowTot.toFixed(2) + '</td></tr>';
 					} else if ( pf.type === 'custom_amount' ) {
+						// Front end starts this row hidden (display:none) until the
+						// visitor types a non-zero amount; the default still counts
+						// toward the total. Show it muted in the builder so designers
+						// know it exists without implying it renders on load.
 						var ca = parseFloat( pf.amount_default || 0 );
 						osTotal += ca;
-						html += '<tr style="border-bottom:1px solid #f3f4f6;"><td style="padding:8px 12px;">' + escapeHtml( pf.label || 'Custom Amount' ) + '</td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">1</td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td></tr>';
+						html += '<tr style="border-bottom:1px solid ' + bfFieldBorder + ';opacity:.55;font-style:italic;"><td style="padding:8px 12px;">' + escapeHtml( pf.label || 'Custom Amount' ) + ' <span style="font-style:normal;font-size:11px;color:' + bfMuted + ';">(' + escapeHtml( 'appears when filled' ) + ')</span></td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td><td style="padding:8px 12px;text-align:right;">1</td><td style="padding:8px 12px;text-align:right;">$' + ca.toFixed(2) + '</td></tr>';
 					}
 				} );
 				html += '</tbody>';
-				html += '<tfoot style="background:#f9fafb;border-top:2px solid #e5e7eb;"><tr><td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600;">Order Total</td><td style="padding:10px 12px;text-align:right;font-weight:700;font-size:15px;">$' + osTotal.toFixed(2) + '</td></tr></tfoot>';
+				html += '<tfoot style="background:' + bfFieldBg + ';border-top:2px solid ' + bfFieldBorder + ';"><tr><td colspan="3" style="padding:10px 12px;text-align:right;font-weight:600;color:' + bfLabelColor + ';">Order Total</td><td style="padding:10px 12px;text-align:right;font-weight:700;font-size:15px;color:' + bfAccent + ';">$' + osTotal.toFixed(2) + '</td></tr></tfoot>';
 				html += '</table>';
 				html += '';
 				html += '</div>';
@@ -1263,11 +1302,15 @@ jQuery(
 				var maxStars = field.max_stars || 5;
 				var defRating = Number( field.default_value ) || 0;
 				var starSize = field.star_size || '20';
-				// Emit --star-color only when the field has a custom color; otherwise
-				// let the CSS fall back to the theme accent (--bf-button-bg).
+				// Emit --star-color (active) / --star-inactive only when set; otherwise the
+				// CSS falls back (active → theme accent --bf-button-bg, inactive → a light
+				// tint of the active colour).
 				var starStyle = '--star-size:' + escapeHtml( starSize ) + 'px';
 				if ( field.star_color ) {
 					starStyle = '--star-color:' + escapeHtml( field.star_color ) + ';' + starStyle;
+				}
+				if ( field.star_inactive_color ) {
+					starStyle = '--star-inactive:' + escapeHtml( field.star_inactive_color ) + ';' + starStyle;
 				}
 				html = '<div class="boldform-canvas-stars" style="' + starStyle + '">';
 				for ( var si = 1; si <= maxStars; si++ ) {
@@ -1463,10 +1506,10 @@ jQuery(
 			} else if ( field.type === 'rich_text' ) {
 				var rteH = Math.max( 80, Math.round( ( field.rte_height || 200 ) * 0.45 ) );
 				// Mockup of the front-end TinyMCE editor (real editor renders on the front end).
-				var rteBtn = 'display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;border:1px solid #e2e8f0;border-radius:4px;background:#fff;color:#475569;font-size:12px;';
-				var rteSep = '<span style="width:1px;height:18px;background:#e2e8f0;margin:0 2px"></span>';
-				html  = '<div style="border:1px solid #d1d5db;border-radius:6px;overflow:hidden;background:#fff">';
-				html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;background:#f8fafc;border-bottom:1px solid #e5e7eb">';
+				var rteBtn = 'display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;border:1px solid ' + bfFieldBorder + ';border-radius:4px;background:' + bfFieldBg + ';color:' + bfFieldText + ';font-size:12px;';
+				var rteSep = '<span style="width:1px;height:18px;background:' + bfFieldBorder + ';margin:0 2px"></span>';
+				html  = '<div style="border:1px solid ' + bfFieldBorder + ';border-radius:' + bfFieldRadius + ';overflow:hidden;background:' + bfFieldBg + '">';
+				html += '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 8px;background:' + bfFieldBg + ';border-bottom:1px solid ' + bfFieldBorder + '">';
 				html += '<span style="' + rteBtn + 'font-weight:700">B</span>';
 				html += '<span style="' + rteBtn + 'font-style:italic">I</span>';
 				html += '<span style="' + rteBtn + 'text-decoration:underline">U</span>';
@@ -1479,7 +1522,7 @@ jQuery(
 				html += '<span style="' + rteBtn + '">&#8634;</span>';
 				html += '<span style="' + rteBtn + '">&#8635;</span>';
 				html += '</div>';
-				html += '<div style="min-height:' + rteH + 'px;padding:10px 12px;color:#9ca3af;font-size:13px">Rich text content…</div>';
+				html += '<div style="min-height:' + rteH + 'px;padding:10px 12px;color:' + bfMuted + ';font-size:13px">Rich text content…</div>';
 				html += '</div>';
 
 			} else if ( field.type === 'date_range' ) {
@@ -1489,11 +1532,21 @@ jQuery(
 				html += '</div>';
 
 			} else if ( field.type === 'nps' ) {
+				// Each zone (detractor 0-6 / passive 7-8 / promoter 9-10) shows its own
+				// colour at rest, derived from the field's zone colours (or the semantic
+				// defaults). Mirrors the front-end .bf-nps-btn--<zone> rest styling.
+				var npsBase = {
+					d:  field.nps_detractor_color || '#ef4444',
+					p:  field.nps_passive_color   || '#f59e0b',
+					pr: field.nps_promoter_color  || '#22c55e'
+				};
 				html = '<div style="display:flex;gap:3px;flex-wrap:wrap">';
 				for ( var npsI = 0; npsI <= 10; npsI++ ) {
-					var npsColor = npsI <= 6 ? '#fee2e2' : ( npsI <= 8 ? '#fef9c3' : '#dcfce7' );
-					var npsBorder = npsI <= 6 ? '#fca5a5' : ( npsI <= 8 ? '#fde047' : '#86efac' );
-					html += '<div style="flex:1;min-width:20px;height:32px;border:1px solid ' + npsBorder + ';border-radius:4px;background:' + npsColor + ';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">' + npsI + '</div>';
+					var npsKey   = npsI <= 6 ? 'd' : ( npsI <= 8 ? 'p' : 'pr' );
+					var npsC     = npsBase[ npsKey ];
+					var npsBg    = 'color-mix(in srgb, ' + npsC + ' 14%, #fff)';
+					var npsBd    = 'color-mix(in srgb, ' + npsC + ' 40%, #fff)';
+					html += '<div style="flex:1;min-width:20px;height:32px;border:1px solid ' + npsBd + ';border-radius:4px;background:' + npsBg + ';color:var(--bf-field-text,#374151);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600">' + npsI + '</div>';
 				}
 				html += '</div>';
 				html += '<div style="display:flex;justify-content:space-between;font-size:11px;color:#9ca3af;margin-top:4px">';
@@ -1515,14 +1568,14 @@ jQuery(
 				// native <input>: a bare input inherits the generic full-width canvas-input
 				// styling and renders as an orange underline instead of a control. Mirrors the
 				// front-end's grey outline (matches the product/choice canvas preview approach).
-				var matMarkStyle = 'display:inline-block;width:16px;height:16px;border:2px solid #cbd5e1;background:#fff;vertical-align:middle;box-sizing:border-box;border-radius:' + ( 'checkbox' === matType ? '4px' : '50%' );
-				html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
-				html += '<thead><tr><th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb"></th>';
-				matCols.forEach( function(c) { html += '<th style="border:1px solid #e5e7eb;padding:4px 6px;background:#f9fafb;text-align:center">' + escapeHtml( c ) + '</th>'; } );
+				var matMarkStyle = 'display:inline-block;width:16px;height:16px;border:2px solid ' + bfFieldBorder + ';background:' + bfFieldBg + ';vertical-align:middle;box-sizing:border-box;border-radius:' + ( 'checkbox' === matType ? '4px' : '50%' );
+				html = '<div style="overflow-x:auto;border:1px solid ' + bfFieldBorder + ';border-radius:' + bfFieldRadius + '"><table style="width:100%;border-collapse:collapse;font-size:12px;color:' + bfFieldText + '">';
+				html += '<thead><tr><th style="border:1px solid ' + bfFieldBorder + ';padding:4px 6px;background:' + bfFieldBg + '"></th>';
+				matCols.forEach( function(c) { html += '<th style="border:1px solid ' + bfFieldBorder + ';padding:4px 6px;background:' + bfFieldBg + ';color:' + bfLabelColor + ';text-align:center">' + escapeHtml( c ) + '</th>'; } );
 				html += '</tr></thead><tbody>';
 				matRows.forEach( function(r) {
-					html += '<tr><td style="border:1px solid #e5e7eb;padding:4px 8px;font-weight:500">' + escapeHtml( r ) + '</td>';
-					matCols.forEach( function() { html += '<td style="border:1px solid #e5e7eb;text-align:center;padding:4px"><span style="' + matMarkStyle + '"></span></td>'; } );
+					html += '<tr><td style="border:1px solid ' + bfFieldBorder + ';padding:4px 8px;font-weight:500;color:' + bfLabelColor + '">' + escapeHtml( r ) + '</td>';
+					matCols.forEach( function() { html += '<td style="border:1px solid ' + bfFieldBorder + ';text-align:center;padding:4px"><span style="' + matMarkStyle + '"></span></td>'; } );
 					html += '</tr>';
 				} );
 				html += '</tbody></table></div>';
@@ -1536,12 +1589,12 @@ jQuery(
 			} else if ( field.type === 'geolocation' ) {
 				html  = '<div style="display:flex;gap:8px;align-items:center">';
 				html += '<input type="text" placeholder="Detecting location…" disabled style="flex:1">';
-				html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:0 10px;height:36px;background:#6366f1;color:#fff;border-radius:5px;font-size:12px;font-weight:500;white-space:nowrap">';
+				html += '<span style="display:inline-flex;align-items:center;gap:4px;padding:0 10px;height:36px;background:' + bfAccent + ';color:var(--bf-button-text,#fff);border-radius:' + bfFieldRadius + ';font-size:12px;font-weight:500;white-space:nowrap">';
 				html += '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg> Detect</span>';
 				html += '</div>';
 				if ( field.geo_show_map ) {
 					var geoMapH = Math.max( 40, Math.round( ( field.geo_map_height || 250 ) * 0.3 ) );
-					html += '<div style="margin-top:6px;height:' + geoMapH + 'px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:12px">Map preview</div>';
+					html += '<div style="margin-top:6px;height:' + geoMapH + 'px;background:' + bfFieldBg + ';border:1px solid ' + bfFieldBorder + ';border-radius:' + bfFieldRadius + ';display:flex;align-items:center;justify-content:center;color:' + bfMuted + ';font-size:12px">Map preview</div>';
 				}
 
 			} else {
@@ -2181,9 +2234,31 @@ jQuery(
 			// Star rating settings.
 			if ( selected.field.type === 'star_rating' ) {
 				optionsMarkup +=
-					'<div class="boldform-setting-group">' +
-						'<label for="boldform-setting-max-stars">' + escapeHtml( boldformLiteBuilder.labels.maxStars || 'Number of Stars' ) + '</label>' +
-						'<input type="number" id="boldform-setting-max-stars" value="' + escapeHtml( selected.field.max_stars || 5 ) + '" min="1" max="10" placeholder="5">' +
+					'<div class="boldform-setting-row">' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-max-stars">' + escapeHtml( boldformLiteBuilder.labels.maxStars || 'Number of Stars' ) + '</label>' +
+							'<input type="number" id="boldform-setting-max-stars" value="' + escapeHtml( selected.field.max_stars || 5 ) + '" min="1" max="10" placeholder="5">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-star-size">' + escapeHtml( boldformLiteBuilder.labels.starSizeField || 'Icon Size (px)' ) + '</label>' +
+							'<input type="number" id="boldform-setting-star-size" value="' + escapeHtml( selected.field.star_size || '20' ) + '" min="12" max="60" placeholder="20">' +
+						'</div>' +
+					'</div>' +
+					'<div class="boldform-setting-row">' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-star-inactive-color" class="boldform-setting-sublabel">' + escapeHtml( boldformLiteBuilder.labels.starColorField || 'Star Color' ) + '</label>' +
+							'<div class="bf-color-reset-wrap">' +
+								'<input type="color" id="boldform-setting-star-inactive-color" value="' + escapeHtml( selected.field.star_inactive_color || '#cbd5e1' ) + '">' +
+								'<button type="button" class="bf-color-reset" data-color-reset="star_inactive_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-star-color" class="boldform-setting-sublabel">' + escapeHtml( boldformLiteBuilder.labels.starActiveColorField || 'Active Color' ) + '</label>' +
+							'<div class="bf-color-reset-wrap">' +
+								'<input type="color" id="boldform-setting-star-color" value="' + escapeHtml( selected.field.star_color || state.formSettings.button_background_color || '#f59e0b' ) + '">' +
+								'<button type="button" class="bf-color-reset" data-color-reset="star_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+							'</div>' +
+						'</div>' +
 					'</div>';
 			}
 
@@ -2688,6 +2763,32 @@ jQuery(
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-nps-high">High end label</label>' +
 							'<input type="text" id="boldform-setting-nps-high" value="' + escapeHtml( selected.field.nps_high_label || 'Extremely likely' ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label>' + escapeHtml( boldformLiteBuilder.labels.npsColors || 'Zone Colors' ) + '</label>' +
+							'<div class="boldform-setting-row boldform-setting-row--3">' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-setting-nps-detractor-color" class="boldform-setting-sublabel">' + escapeHtml( boldformLiteBuilder.labels.npsDetractor || 'Detractors (0–6)' ) + '</label>' +
+									'<div class="bf-color-reset-wrap">' +
+										'<input type="color" id="boldform-setting-nps-detractor-color" value="' + escapeHtml( selected.field.nps_detractor_color || '#ef4444' ) + '">' +
+										'<button type="button" class="bf-color-reset" data-color-reset="nps_detractor_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+									'</div>' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-setting-nps-passive-color" class="boldform-setting-sublabel">' + escapeHtml( boldformLiteBuilder.labels.npsPassive || 'Passives (7–8)' ) + '</label>' +
+									'<div class="bf-color-reset-wrap">' +
+										'<input type="color" id="boldform-setting-nps-passive-color" value="' + escapeHtml( selected.field.nps_passive_color || '#f59e0b' ) + '">' +
+										'<button type="button" class="bf-color-reset" data-color-reset="nps_passive_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+									'</div>' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-setting-nps-promoter-color" class="boldform-setting-sublabel">' + escapeHtml( boldformLiteBuilder.labels.npsPromoter || 'Promoters (9–10)' ) + '</label>' +
+									'<div class="bf-color-reset-wrap">' +
+										'<input type="color" id="boldform-setting-nps-promoter-color" value="' + escapeHtml( selected.field.nps_promoter_color || '#22c55e' ) + '">' +
+										'<button type="button" class="bf-color-reset" data-color-reset="nps_promoter_color" title="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.resetColor || 'Reset to default' ) + '"><span class="dashicons dashicons-image-rotate"></span></button>' +
+									'</div>' +
+								'</div>' +
+							'</div>' +
 						'</div>'
 					: '' ) +
 
@@ -3649,7 +3750,7 @@ jQuery(
 			// → field anatomy (labels, inputs, placeholder) → field types (select,
 			// choice, star, file, terms) → structure (section break) → action (submit)
 			// → messages. Reorder by editing this id list; the definitions stay put.
-			var bfSectionOrder = [ 'container', 'layout', 'labels', 'placeholder', 'inputs', 'select', 'choice', 'star', 'file', 'terms', 'section', 'button', 'error', 'success' ];
+			var bfSectionOrder = [ 'container', 'layout', 'labels', 'placeholder', 'inputs', 'select', 'choice', 'file', 'terms', 'section', 'button', 'error', 'success' ];
 			var bfSections = [
 				{ id: 'container', title: advLabel( 'secContainer' ), controls: [
 					{ type: 'slider', var: '--bf-form-max-width', label: 'maxWidth', min: 0, max: 1400, units: [ 'px', '%' ] },
@@ -3786,18 +3887,6 @@ jQuery(
 					{ type: 'slider', var: '--bf-terms-box-radius', label: 'borderRadius', min: 0, max: 12, units: [ 'px' ] },
 					{ type: 'slider', var: '--bf-terms-gap', label: 'gap', min: 0, max: 30, units: [ 'px' ] },
 					{ type: 'dimension', var: '--bf-terms-margin', label: 'margin' }
-				] },
-				{ id: 'star', title: advLabel( 'secStar' ), controls: [
-					{ type: 'stateTabs', label: 'states', states: [
-						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'color', var: '--bf-star-color', label: 'starColor' }
-						] },
-						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'color', var: '--bf-star-hover', label: 'starColor' }
-						] }
-					] },
-					{ type: 'color', var: '--bf-star-inactive', label: 'starInactive' },
-					{ type: 'slider', var: '--bf-star-size', label: 'starSize', min: 14, max: 60, units: [ 'px' ] }
 				] },
 				{ id: 'file', title: advLabel( 'secFile' ), controls: [
 					{ type: 'stateTabs', label: 'states', states: [
@@ -5394,7 +5483,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-star-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-max-stars, #boldform-setting-star-color, #boldform-setting-star-inactive-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high, #boldform-setting-nps-detractor-color, #boldform-setting-nps-passive-color, #boldform-setting-nps-promoter-color',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -5435,8 +5524,14 @@ jQuery(
 				if ( $( '#boldform-setting-mask-custom' ).length ) {
 					selected.field.mask_pattern = $( '#boldform-setting-mask-custom' ).val();
 				}
+				if ( $( '#boldform-setting-max-stars' ).length ) {
+					selected.field.max_stars = Number( $( '#boldform-setting-max-stars' ).val() ) || 5;
+				}
 				if ( $( '#boldform-setting-star-color' ).length ) {
 					selected.field.star_color = $( '#boldform-setting-star-color' ).val();
+				}
+				if ( $( '#boldform-setting-star-inactive-color' ).length ) {
+					selected.field.star_inactive_color = $( '#boldform-setting-star-inactive-color' ).val();
 				}
 				if ( $( '#boldform-setting-star-size' ).length ) {
 					selected.field.star_size = $( '#boldform-setting-star-size' ).val();
@@ -5559,6 +5654,15 @@ jQuery(
 				if ( $( '#boldform-setting-nps-high' ).length ) {
 					selected.field.nps_high_label = $( '#boldform-setting-nps-high' ).val();
 				}
+				if ( $( '#boldform-setting-nps-detractor-color' ).length ) {
+					selected.field.nps_detractor_color = $( '#boldform-setting-nps-detractor-color' ).val();
+				}
+				if ( $( '#boldform-setting-nps-passive-color' ).length ) {
+					selected.field.nps_passive_color = $( '#boldform-setting-nps-passive-color' ).val();
+				}
+				if ( $( '#boldform-setting-nps-promoter-color' ).length ) {
+					selected.field.nps_promoter_color = $( '#boldform-setting-nps-promoter-color' ).val();
+				}
 
 				// Matrix — convert textareas to JSON arrays.
 				if ( $( '#boldform-setting-matrix-rows' ).length ) {
@@ -5609,7 +5713,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-max-stars, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -5658,10 +5762,6 @@ jQuery(
 					var maskVal = $( '#boldform-setting-mask-pattern' ).val();
 					selected.field.mask_pattern = maskVal === 'custom' ? ( selected.field.mask_pattern || '' ) : maskVal;
 				}
-				if ( $( '#boldform-setting-max-stars' ).length ) {
-					selected.field.max_stars = Number( $( '#boldform-setting-max-stars' ).val() ) || 5;
-				}
-
 				// Hidden field source.
 				if ( $( '#boldform-setting-hidden-source' ).length ) {
 					selected.field.hidden_source = $( '#boldform-setting-hidden-source' ).val();

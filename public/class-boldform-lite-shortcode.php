@@ -1969,13 +1969,18 @@ class BoldForm_Lite_Shortcode {
 		if ( 'star_rating' === $type ) {
 			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
 			$def        = (int) $default;
-			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
-			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
-			// Emit --bf-star-color only for a custom color; otherwise the CSS falls
-			// back to the theme accent (--bf-button-bg).
+			$star_color    = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
+			$star_inactive = ! empty( $field['star_inactive_color'] ) && sanitize_hex_color( (string) $field['star_inactive_color'] ) ? sanitize_hex_color( (string) $field['star_inactive_color'] ) : '';
+			$star_size     = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
+			// Emit each --bf-star-* only for a custom value; otherwise the CSS falls back
+			// (active → theme accent --bf-button-bg, inactive → a tint of the active, and
+			// hover → the active colour since no separate hover var is emitted).
 			$star_style = '--bf-star-size:' . $star_size . 'px';
 			if ( '' !== $star_color ) {
 				$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';' . $star_style;
+			}
+			if ( '' !== $star_inactive ) {
+				$star_style = '--bf-star-inactive:' . esc_attr( $star_inactive ) . ';' . $star_style;
 			}
 			// `required` is intentionally omitted from this hidden input: a hidden
 			// control with `required` is invalid HTML and makes browsers abort submit
