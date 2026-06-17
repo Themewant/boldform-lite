@@ -785,6 +785,119 @@ jQuery(
 			return fields;
 		}
 
+		// --- Calculation formula chip editor helpers -------------------------------
+		// The calculation Formula field is a chip editor: the user sees field LABELS,
+		// while the stored/evaluated formula keeps the stable {field_id} tokens. These
+		// helpers translate between the two. The engine and the saved value never see
+		// labels — chips are purely a builder-display layer.
+
+		// Resolve a field's current label from its id (empty string if not found).
+		function bfCalcLabelById( id ) {
+			var label = '';
+			getAllFields().forEach( function ( f ) {
+				if ( f.id === id ) {
+					label = f.label || f.id;
+				}
+			} );
+			return label;
+		}
+
+		// Build a single token-chip element for a field id.
+		function bfCalcMakeChip( id ) {
+			var label   = bfCalcLabelById( id );
+			var missing = '' === label;
+			var chip    = document.createElement( 'span' );
+			chip.className = 'bfcp-token' + ( missing ? ' bfcp-token--missing' : '' );
+			chip.setAttribute( 'contenteditable', 'false' );
+			chip.setAttribute( 'data-id', id );
+			chip.setAttribute( 'title', '{' + id + '}' );
+			chip.textContent = missing ? ( '(' + id + ')' ) : label;
+			return chip;
+		}
+
+		// Render a stored "{id} * {id2}" formula into chip + text HTML for the editor.
+		function bfCalcFormulaToChips( formula ) {
+			formula = String( formula || '' );
+			var html = '';
+			var re   = /\{([^}]+)\}/g;
+			var last = 0;
+			var m;
+			while ( ( m = re.exec( formula ) ) !== null ) {
+				if ( m.index > last ) {
+					html += escapeHtml( formula.slice( last, m.index ) );
+				}
+				html += bfCalcMakeChip( m[1] ).outerHTML;
+				last = re.lastIndex;
+			}
+			if ( last < formula.length ) {
+				html += escapeHtml( formula.slice( last ) );
+			}
+			return html;
+		}
+
+		// Convert a stored "{id}" formula to a readable "{Label}" string (plain text)
+		// for the canvas preview badge. Falls back to "(id)" for deleted fields.
+		function bfCalcFormulaToLabels( formula ) {
+			return String( formula || '' ).replace( /\{([^}]+)\}/g, function ( match, id ) {
+				var label = bfCalcLabelById( id );
+				return '{' + ( label || ( '(' + id + ')' ) ) + '}';
+			} );
+		}
+
+		// Serialize the editor DOM back to a "{id}" formula string. Normalises any
+		// non-breaking spaces the browser may inject to plain spaces, since the PHP
+		// formula whitelist only accepts ASCII whitespace.
+		function bfCalcChipsToFormula( editor ) {
+			if ( ! editor ) {
+				return '';
+			}
+			var out = '';
+			( function walk( node ) {
+				for ( var i = 0; i < node.childNodes.length; i++ ) {
+					var child = node.childNodes[ i ];
+					if ( 3 === child.nodeType ) {
+						out += child.nodeValue;
+					} else if ( 1 === child.nodeType ) {
+						if ( child.classList && child.classList.contains( 'bfcp-token' ) ) {
+							out += '{' + ( child.getAttribute( 'data-id' ) || '' ) + '}';
+						} else if ( 'BR' === child.nodeName ) {
+							out += ' ';
+						} else {
+							walk( child );
+						}
+					}
+				}
+			}( editor ) );
+			out = out.replace( /\u00A0/g, ' ' );
+			return /^\s*$/.test( out ) ? '' : out;
+		}
+
+		// Insert chip + trailing space at the caret (or end) of the formula editor.
+		function bfCalcInsertChip( editor, id ) {
+			var chip  = bfCalcMakeChip( id );
+			var space = document.createTextNode( ' ' );
+			var sel   = window.getSelection();
+			var range;
+			if ( sel && sel.rangeCount && editor.contains( sel.anchorNode ) ) {
+				range = sel.getRangeAt( 0 );
+				range.deleteContents();
+			} else {
+				range = document.createRange();
+				range.selectNodeContents( editor );
+				range.collapse( false );
+			}
+			var frag = document.createDocumentFragment();
+			frag.appendChild( chip );
+			frag.appendChild( space );
+			range.insertNode( frag );
+			range.setStartAfter( space );
+			range.collapse( true );
+			if ( sel ) {
+				sel.removeAllRanges();
+				sel.addRange( range );
+			}
+		}
+
 		function getColumn( rowIndex, columnIndex ) {
 			var row = getAllRows()[ rowIndex ];
 
@@ -1355,7 +1468,7 @@ jQuery(
 				html = '<div class="boldform-canvas-calculation">';
 				html += '<input type="text" value="' + escapeHtml(calcSample) + '" readonly class="boldform-canvas-calc-input">';
 				if ( calcFormula ) {
-					html += '<div class="boldform-canvas-calc-badge">= ' + escapeHtml(calcFormula) + '</div>';
+					html += '<div class="boldform-canvas-calc-badge">= ' + escapeHtml( bfCalcFormulaToLabels( calcFormula ) ) + '</div>';
 				}
 				html += '</div>';
 
@@ -2502,8 +2615,8 @@ jQuery(
 											refOpts +
 										'</select>' +
 									'</div>' +
-									'<textarea class="bfcp-formula-input ' + valClass + '" id="boldform-calc-formula" rows="3" placeholder="{field_id} * 2">' + escapeHtml( formula ) + '</textarea>' +
-									'<div class="bfcp-formula-help">Use {field_id} to reference a field value. Supports +, -, *, /, ( ).</div>' +
+									'<div class="bfcp-formula-input ' + valClass + '" id="boldform-calc-formula" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="' + escapeHtml( 'e.g. {Price} * {Quantity}' ) + '">' + bfCalcFormulaToChips( formula ) + '</div>' +
+									'<div class="bfcp-formula-help">Pick a field from the dropdown to insert it, then type operators between them. Supports +, -, *, /, ( ).</div>' +
 								'</div>' +
 							'</div>' +
 							'<div class="bfcp-row bfcp-row--inline">' +
@@ -5577,8 +5690,15 @@ jQuery(
 				if ( $( '#boldform-setting-amount-default' ).length ) {
 					selected.field.amount_default = $( '#boldform-setting-amount-default' ).val();
 				}
-				if ( $( '#boldform-calc-formula' ).length ) {
-					selected.field.calc_formula = $( '#boldform-calc-formula' ).val();
+				var calcEditor = document.getElementById( 'boldform-calc-formula' );
+				if ( calcEditor ) {
+					var calcFormulaVal = bfCalcChipsToFormula( calcEditor );
+					selected.field.calc_formula = calcFormulaVal;
+					// Live validity styling without rebuilding the editor (keeps the caret).
+					var calcInvalid = calcFormulaVal && /[^0-9\s\+\-\*\/\(\)\.\{\}a-z0-9_]/i.test( calcFormulaVal );
+					$( calcEditor )
+						.toggleClass( 'bfcp-valid', !! calcFormulaVal && ! calcInvalid )
+						.toggleClass( 'bfcp-invalid', !! calcFormulaVal && !! calcInvalid );
 				}
 				if ( $( '#boldform-calc-decimals' ).length ) {
 					selected.field.calc_decimals = Math.max( 0, Math.min( 10, parseInt( $( '#boldform-calc-decimals' ).val(), 10 ) || 0 ) );
@@ -5889,19 +6009,15 @@ jQuery(
 			frame.open();
 		} );
 
-		// Calculation — insert field reference into formula textarea.
+		// Calculation — insert a field-reference chip into the formula editor.
 		$( document ).on( 'change', '.bfcp-field-insert', function () {
 			var val = $( this ).val();
 			if ( !val ) return;
-			var $textarea = $( '#boldform-calc-formula' );
-			if ( !$textarea.length ) return;
-			var pos = $textarea[0].selectionStart;
-			var current = $textarea.val();
-			var insertion = '{' + val + '}';
-			$textarea.val( current.slice( 0, pos ) + insertion + current.slice( pos ) );
-			var newPos = pos + insertion.length;
-			$textarea[0].setSelectionRange( newPos, newPos );
-			$textarea.trigger( 'input' ).focus();
+			var editor = document.getElementById( 'boldform-calc-formula' );
+			if ( !editor ) return;
+			editor.focus();
+			bfCalcInsertChip( editor, val );
+			$( editor ).trigger( 'input' ); // Sync model + canvas + validity.
 			$( this ).val( '' ); // Reset dropdown.
 		} );
 
