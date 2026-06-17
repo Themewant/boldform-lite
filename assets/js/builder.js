@@ -2475,9 +2475,17 @@ jQuery(
 						var calcField   = selected.field;
 						var allFields   = getAllFields();
 						var refOpts     = '';
+						// Only fields that resolve to a single numeric value can be
+						// referenced in a formula. Structural/text/multi-value fields
+						// are excluded so the picker stays short and meaningful.
+						var calcRefTypes = [ 'number', 'numeric', 'quantity', 'slider_range', 'star_rating', 'nps', 'calculation' ];
 						allFields.forEach( function ( f ) {
-							if ( f.type === 'calculation' || !f.id ) return;
-							refOpts += '<option value="' + escapeHtml( f.id ) + '">' + escapeHtml( f.label || f.id ) + ' — {' + escapeHtml( f.id ) + '}</option>';
+							if ( ! f.id ) return;
+							if ( calcRefTypes.indexOf( f.type ) === -1 ) return;
+							if ( f.id === calcField.id ) return; // never self-reference
+							// Show the label; expose the {token} as a hover tooltip
+							// (a native <select> option cannot render a muted inline hint).
+							refOpts += '<option value="' + escapeHtml( f.id ) + '" title="{' + escapeHtml( f.id ) + '}">' + escapeHtml( f.label || f.id ) + '</option>';
 						} );
 						var formula   = calcField.calc_formula  || '';
 						var decimals  = typeof calcField.calc_decimals === 'number' ? calcField.calc_decimals : 2;
