@@ -3624,7 +3624,23 @@ class BoldForm_Lite_Admin {
 								<div class="boldform-entry-field">
 									<div class="boldform-entry-field__label"><?php echo esc_html( $label ); ?></div>
 									<div class="boldform-entry-field__value">
-										<?php if ( $is_file && ! empty( $value ) ) : ?>
+										<?php
+											// Let an extension render rich HTML for this value on the admin
+											// surface only (e.g. a signature image). Default '' falls through
+											// to the file link / escaped text below, so CSV, email and privacy
+											// export (plain-text boldform_format_field_value) stay unaffected.
+											$value_html = apply_filters( 'boldform_entry_value_admin_html', '', isset( $field['value'] ) ? $field['value'] : '', $type, $field );
+											if ( '' !== (string) $value_html ) :
+												echo wp_kses(
+													(string) $value_html,
+													array(
+														'img'  => array( 'src' => true, 'alt' => true, 'class' => true, 'style' => true, 'width' => true, 'height' => true ),
+														'a'    => array( 'href' => true, 'class' => true, 'download' => true, 'target' => true, 'rel' => true, 'style' => true ),
+														'span' => array( 'class' => true ),
+													),
+													array( 'http', 'https', 'data' )
+												);
+											elseif ( $is_file && ! empty( $value ) ) : ?>
 											<a href="<?php echo esc_url( (string) $value ); ?>" target="_blank" class="boldform-entry-file-link">
 												<span class="dashicons dashicons-media-default"></span>
 												<?php echo esc_html( basename( (string) $value ) ); ?>
