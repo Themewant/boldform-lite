@@ -163,7 +163,8 @@ boldform-lite/
 │   ├── class-boldform-lite-activator.php  # DB schema (forms + entries tables)
 │   ├── class-boldform-lite-email-handler.php
 │   ├── class-boldform-lite-integrations.php   # Mailchimp / Brevo dispatch
-│   └── class-boldform-lite-privacy.php        # GDPR export/erase
+│   ├── class-boldform-lite-privacy.php        # GDPR export/erase
+│   └── appsero/                               # Vendored Appsero SDK (opt-in telemetry)
 │
 ├── admin/                 # wp-admin side: builder, settings, entries, export/import
 │   ├── class-boldform-lite-admin.php

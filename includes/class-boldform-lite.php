@@ -191,6 +191,7 @@ final class BoldForm_Lite {
 	 */
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
+		$this->loader->add_action( 'boldform_entry_created', $this->admin, 'clear_unread_count_cache' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
 		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
 		$this->loader->add_action( 'admin_bar_menu', $this->admin, 'register_admin_bar', 100 );
@@ -280,22 +281,41 @@ final class BoldForm_Lite {
 	 */
 	public static function format_field_value( $value, $type = '' ) {
 		if ( ! is_array( $value ) ) {
-			return is_scalar( $value ) ? (string) $value : '';
+			$formatted = is_scalar( $value ) ? (string) $value : '';
+		} else {
+			$parts = array_filter(
+				array_map(
+					static function ( $part ) {
+						return is_scalar( $part ) ? sanitize_text_field( (string) $part ) : '';
+					},
+					$value
+				),
+				static function ( $part ) {
+					return '' !== trim( (string) $part );
+				}
+			);
+
+			$formatted = implode( 'name' === $type ? ' ' : ', ', $parts );
 		}
 
-		$parts = array_filter(
-			array_map(
-				static function ( $part ) {
-					return is_scalar( $part ) ? sanitize_text_field( (string) $part ) : '';
-				},
-				$value
-			),
-			static function ( $part ) {
-				return '' !== trim( (string) $part );
-			}
-		);
-
-		return implode( 'name' === $type ? ' ' : ', ', $parts );
+		/**
+		 * Filters the human-readable display string for a stored entry value.
+		 *
+		 * Add-ons (e.g. BoldForm Pro) use this to render complex value shapes the
+		 * default flattener cannot express — signature data URIs, repeater row
+		 * sets, geolocation coordinate arrays, image-choice selections. Filtered
+		 * values should be PLAIN TEXT: this helper feeds the admin entry view, CSV
+		 * export, email notifications and the privacy exporter, each of which
+		 * escapes on output, so returning markup here would break CSV/plain-text
+		 * surfaces.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param string $formatted Default flattened display string.
+		 * @param mixed  $value     Raw stored field value (string or array).
+		 * @param string $type      Field type slug.
+		 */
+		return apply_filters( 'boldform_format_field_value', $formatted, $value, $type );
 	}
 
 	/**
@@ -349,5 +369,29 @@ final class BoldForm_Lite {
 	 */
 	public function get_admin() {
 		return $this->admin;
+	}
+
+	/**
+	 * Returns the form-submission handler.
+	 *
+	 * Exposed so an extension can persist an entry itself when it defers the
+	 * default save via the `boldform_should_save_entry` filter.
+	 *
+	 * @return BoldForm_Lite_Form_Handler
+	 */
+	public function get_form_handler() {
+		return $this->form_handler;
+	}
+
+	/**
+	 * Returns the email notifications handler.
+	 *
+	 * Exposed so an extension can dispatch the standard notification emails itself
+	 * after it has deferred them via the `boldform_defer_post_save_actions` filter.
+	 *
+	 * @return BoldForm_Lite_Email_Handler
+	 */
+	public function get_email_handler() {
+		return $this->email_handler;
 	}
 }

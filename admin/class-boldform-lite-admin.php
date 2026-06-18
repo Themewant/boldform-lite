@@ -140,7 +140,7 @@ class BoldForm_Lite_Admin {
 		$this->entries_page_hook = add_submenu_page(
 			'boldform-lite',
 			__( 'Entries', 'boldform-lite' ),
-			__( 'Entries', 'boldform-lite' ),
+			$this->get_entries_menu_title(),
 			'manage_options',
 			'boldform-lite-entries',
 			array( $this, 'render_entries_page' )
@@ -196,6 +196,73 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Builds the "Entries" submenu title, appending an unread-count bubble when
+	 * there are unread entries — mirroring core's "Comments" awaiting-moderation
+	 * badge so it inherits the active admin colour scheme automatically.
+	 *
+	 * @return string Menu title (may contain the count-bubble markup).
+	 */
+	private function get_entries_menu_title() {
+		$title  = __( 'Entries', 'boldform-lite' );
+		$unread = $this->get_unread_entries_count();
+
+		if ( $unread < 1 ) {
+			return $title;
+		}
+
+		return sprintf(
+			'%1$s <span class="awaiting-mod boldform-menu-count count-%2$d"><span class="boldform-unread-count" aria-hidden="true">%3$s</span><span class="screen-reader-text">%4$s</span></span>',
+			$title,
+			$unread,
+			number_format_i18n( $unread ),
+			esc_html(
+				sprintf(
+					/* translators: %s: number of unread entries. */
+					_n( '%s unread entry', '%s unread entries', $unread, 'boldform-lite' ),
+					number_format_i18n( $unread )
+				)
+			)
+		);
+	}
+
+	/**
+	 * Returns the number of unread entries, cached in a short-lived transient to
+	 * keep the count off the critical path of every admin page load. The cache is
+	 * cleared explicitly on every entry mutation (see clear_unread_count_cache),
+	 * with the TTL as a safety net for any path not covered.
+	 *
+	 * @return int Unread entry count.
+	 */
+	private function get_unread_entries_count() {
+		$cached = get_transient( 'boldform_lite_unread_count' );
+
+		if ( false !== $cached ) {
+			return (int) $cached;
+		}
+
+		global $wpdb;
+
+		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
+
+		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		set_transient( 'boldform_lite_unread_count', $count, 5 * MINUTE_IN_SECONDS );
+
+		return $count;
+	}
+
+	/**
+	 * Invalidates the cached unread-entry count. Hooked to entry creation and
+	 * called after every admin-side status/delete mutation so the menu badge
+	 * reflects the change on the next page load.
+	 *
+	 * @return void
+	 */
+	public function clear_unread_count_cache() {
+		delete_transient( 'boldform_lite_unread_count' );
+	}
+
+	/**
 	 * Returns the brand mark as a base64 data-URI for use as the admin-menu icon.
 	 *
 	 * Rendered as a white silhouette so the raw data-URI still degrades to a visible
@@ -236,7 +303,16 @@ class BoldForm_Lite_Admin {
 			. 'background-color:currentColor;'
 			. '-webkit-mask:url("' . $icon . '") center/20px auto no-repeat;'
 			. 'mask:url("' . $icon . '") center/20px auto no-repeat;'
-			. '}';
+			. '}'
+			// Entries unread-count badge. Keep it a visible pill in EVERY state — core's
+			// colour-scheme rules (_admin.scss) flip any .awaiting-mod to its "current"
+			// colours on `li:hover`, which blanks a submenu badge on the dark flyout. The
+			// two-id selector below outranks those rules so our badge stays consistent.
+			. '#adminmenu #toplevel_page_boldform-lite .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite:hover .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite.current .boldform-menu-count,'
+			. '#adminmenu #toplevel_page_boldform-lite.wp-has-current-submenu .boldform-menu-count{'
+			. 'background:#2271b1;color:#fff;}';
 
 		// $css is fully static, developer-authored CSS; the only interpolated value is
 		// a base64 data-URI of our own SVG (base64 alphabet only — no markup-breaking chars).
@@ -642,6 +718,26 @@ class BoldForm_Lite_Admin {
 						'option2'          => __( 'Option 2', 'boldform-lite' ),
 						'termsContent'     => __( 'I agree to the <a href="#">terms and conditions</a>.', 'boldform-lite' ),
 						'sectionDesc'      => __( 'Add a short description for this section.', 'boldform-lite' ),
+						// Default placeholder text, keyed by field type. Pre-filled into a new
+						// field's Placeholder setting so it shows in settings, canvas, preview
+						// and on the front end consistently (the builder bakes it into the
+						// saved value, so it stays editable / clearable per field).
+						'placeholders'     => array(
+							'text'           => __( 'Enter text', 'boldform-lite' ),
+							'email'          => __( 'you@example.com', 'boldform-lite' ),
+							'url'            => __( 'https://example.com', 'boldform-lite' ),
+							'tel'            => __( '+1 (555) 000-0000', 'boldform-lite' ),
+							'number'         => __( 'Enter a number', 'boldform-lite' ),
+							'numeric'        => __( 'Enter a number', 'boldform-lite' ),
+							'textarea'       => __( 'Enter your message', 'boldform-lite' ),
+							'select'         => __( 'Select…', 'boldform-lite' ),
+							'multiselect'    => __( 'Select options…', 'boldform-lite' ),
+							'date'           => __( 'Select a date', 'boldform-lite' ),
+							'time'           => __( 'Select a time', 'boldform-lite' ),
+							'password_field' => __( 'Password', 'boldform-lite' ),
+							'date_range'     => __( 'Select date range', 'boldform-lite' ),
+							'lookup'         => __( 'Type to search…', 'boldform-lite' ),
+						),
 					),
 					'actions'            => array(
 						'duplicate' => __( 'Duplicate', 'boldform-lite' ),
@@ -711,6 +807,14 @@ class BoldForm_Lite_Admin {
 						'userNotifications' => __( 'User Confirmation Email', 'boldform-lite' ),
 						'termsContent' => __( 'Terms text', 'boldform-lite' ),
 						'captchaNotice' => __( 'This field will use the captcha provider selected in global settings.', 'boldform-lite' ),
+						'npsColors'      => __( 'Zone Colors', 'boldform-lite' ),
+						'npsDetractor'   => __( 'Detractors (0–6)', 'boldform-lite' ),
+						'npsPassive'     => __( 'Passives (7–8)', 'boldform-lite' ),
+						'npsPromoter'    => __( 'Promoters (9–10)', 'boldform-lite' ),
+						'resetColor'     => __( 'Reset to default', 'boldform-lite' ),
+						'starSizeField'        => __( 'Icon Size (px)', 'boldform-lite' ),
+						'starColorField'       => __( 'Star Color', 'boldform-lite' ),
+						'starActiveColorField' => __( 'Active Color', 'boldform-lite' ),
 						'fileUploadHint' => __( 'Choose file or drag & drop', 'boldform-lite' ),
 						'allowedTypes'   => __( 'Allowed file types', 'boldform-lite' ),
 						'maxFileSize'    => __( 'Max file size (MB)', 'boldform-lite' ),
@@ -782,7 +886,6 @@ class BoldForm_Lite_Admin {
 						'secChoice'       => __( 'Checkbox & Radio', 'boldform-lite' ),
 						'secSelect'       => __( 'Select Dropdown', 'boldform-lite' ),
 						'secTerms'        => __( 'Terms & Conditions', 'boldform-lite' ),
-						'secStar'         => __( 'Star Rating', 'boldform-lite' ),
 						'secFile'         => __( 'File Upload', 'boldform-lite' ),
 						'secSection'      => __( 'Section Break', 'boldform-lite' ),
 						'secButton'       => __( 'Submit Button', 'boldform-lite' ),
@@ -839,9 +942,6 @@ class BoldForm_Lite_Admin {
 						'copyText'        => __( 'Copy Text', 'boldform-lite' ),
 						'borderWidth'     => __( 'Border Width', 'boldform-lite' ),
 						'borderStyle'     => __( 'Border Style', 'boldform-lite' ),
-						'starColor'       => __( 'Star Color', 'boldform-lite' ),
-						'starInactive'    => __( 'Inactive Star Color', 'boldform-lite' ),
-						'starSize'        => __( 'Star Size', 'boldform-lite' ),
 						'btnBg'           => __( 'Button Background', 'boldform-lite' ),
 						'btnText'         => __( 'Button Text Color', 'boldform-lite' ),
 						'titleColor'      => __( 'Title Color', 'boldform-lite' ),
@@ -3455,6 +3555,8 @@ class BoldForm_Lite_Admin {
 		$wpdb->delete( $entries_table, array( 'form_id' => $form_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$deleted = $wpdb->delete( $forms_table, array( 'id' => $form_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
+		$this->clear_unread_count_cache();
+
 		return false !== $deleted && $deleted > 0;
 	}
 
@@ -3530,6 +3632,7 @@ class BoldForm_Lite_Admin {
 			global $wpdb;
 			$wpdb->update( $this->plugin->get_entries_table_name(), array( 'status' => 'read' ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$entry->status = 'read';
+			$this->clear_unread_count_cache();
 		}
 
 		$decoded      = json_decode( (string) $entry->entry_data_json, true );
@@ -3600,7 +3703,23 @@ class BoldForm_Lite_Admin {
 								<div class="boldform-entry-field">
 									<div class="boldform-entry-field__label"><?php echo esc_html( $label ); ?></div>
 									<div class="boldform-entry-field__value">
-										<?php if ( $is_file && ! empty( $value ) ) : ?>
+										<?php
+											// Let an extension render rich HTML for this value on the admin
+											// surface only (e.g. a signature image). Default '' falls through
+											// to the file link / escaped text below, so CSV, email and privacy
+											// export (plain-text boldform_format_field_value) stay unaffected.
+											$value_html = apply_filters( 'boldform_entry_value_admin_html', '', isset( $field['value'] ) ? $field['value'] : '', $type, $field );
+											if ( '' !== (string) $value_html ) :
+												echo wp_kses(
+													(string) $value_html,
+													array(
+														'img'  => array( 'src' => true, 'alt' => true, 'class' => true, 'style' => true, 'width' => true, 'height' => true ),
+														'a'    => array( 'href' => true, 'class' => true, 'download' => true, 'target' => true, 'rel' => true, 'style' => true ),
+														'span' => array( 'class' => true ),
+													),
+													array( 'http', 'https', 'data' )
+												);
+											elseif ( $is_file && ! empty( $value ) ) : ?>
 											<a href="<?php echo esc_url( (string) $value ); ?>" target="_blank" class="boldform-entry-file-link">
 												<span class="dashicons dashicons-media-default"></span>
 												<?php echo esc_html( basename( (string) $value ) ); ?>
@@ -3735,6 +3854,8 @@ class BoldForm_Lite_Admin {
 
 		$wpdb->update( $table, array( 'status' => $status ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
+		$this->clear_unread_count_cache();
+
 		wp_send_json_success( array( 'status' => $status ) );
 	}
 
@@ -3761,6 +3882,8 @@ class BoldForm_Lite_Admin {
 		$table = $this->plugin->get_entries_table_name();
 
 		$wpdb->delete( $table, array( 'id' => $entry_id ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$this->clear_unread_count_cache();
 
 		wp_safe_redirect( admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_deleted' ) );
 		exit;

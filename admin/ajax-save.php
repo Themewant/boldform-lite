@@ -65,34 +65,14 @@ class BoldForm_Lite_Ajax_Save {
 
 		$prepared_settings = self::normalize_form_settings( $settings_payload );
 
-		if ( empty( $payload['rows'] ) || ! is_array( $payload['rows'] ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Add at least one row with fields before saving.', 'boldform-lite' ),
-				),
-				400
-			);
-		}
-
+		// An empty form (no rows / no fields) is a valid, intentional state: a user
+		// must be able to clear a form down to nothing and have that persist on
+		// reload. Previously the save was rejected here, so the old fields silently
+		// survived in the DB and "came back" after a refresh. prepare_rows()
+		// tolerates a missing/empty `rows` key (returns an empty array), and the
+		// renderer skips a field-less form gracefully (returns ''), so storing an
+		// empty structure is safe.
 		$prepared_rows = self::prepare_rows( $payload );
-
-		if ( ! self::structure_has_fields( $prepared_rows ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Add at least one field before saving.', 'boldform-lite' ),
-				),
-				400
-			);
-		}
-
-		if ( empty( $prepared_rows ) ) {
-			wp_send_json_error(
-				array(
-					'message' => __( 'Invalid form structure supplied.', 'boldform-lite' ),
-				),
-				400
-			);
-		}
 
 		global $wpdb;
 
@@ -345,6 +325,7 @@ class BoldForm_Lite_Ajax_Save {
 							'step_value'      => isset( $field['step_value'] ) ? sanitize_text_field( (string) $field['step_value'] ) : '',
 							'max_stars'       => isset( $field['max_stars'] ) ? absint( $field['max_stars'] ) : 5,
 							'star_color'      => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '',
+							'star_inactive_color' => isset( $field['star_inactive_color'] ) && sanitize_hex_color( $field['star_inactive_color'] ) ? sanitize_hex_color( $field['star_inactive_color'] ) : '',
 							'star_size'       => isset( $field['star_size'] ) ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : 20,
 							'slider_color'    => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
 							'slider_height'   => isset( $field['slider_height'] ) ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',

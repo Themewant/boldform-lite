@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoldForm Lite &mdash; User Guide</title>
+<style>
+:root{--bf-primary:#0f766e;--bf-dark:#0f172a;--bf-text:#334155;--bf-muted:#64748b;--bf-border:#e2e8f0;--bf-bg:#f8fafc;--bf-code-bg:#f1f5f9;--bf-link:#2563eb;--bf-sidebar-w:260px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--bf-text);line-height:1.7;background:#fff}
+a{color:var(--bf-link);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Layout */
+.bf-docs{display:flex;min-height:100vh}
+.bf-sidebar{position:fixed;top:0;left:0;width:var(--bf-sidebar-w);height:100vh;overflow-y:auto;background:var(--bf-dark);color:#fff;padding:24px 0;z-index:10}
+.bf-sidebar::-webkit-scrollbar{width:5px}
+.bf-sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.bf-main{margin-left:var(--bf-sidebar-w);flex:1;max-width:860px;padding:40px 48px 80px}
+
+/* Sidebar */
+.bf-sidebar__brand{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:12px;font-size:17px;font-weight:700;letter-spacing:-.02em}
+.bf-sidebar__brand span{color:var(--bf-primary);font-weight:400}
+.bf-sidebar__nav{}
+.bf-sidebar__group{padding:8px 20px 4px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-top:8px}
+.bf-sidebar__link{display:block;padding:6px 20px 6px 28px;font-size:13px;color:rgba(255,255,255,.7);transition:all .12s}
+.bf-sidebar__link:hover,.bf-sidebar__link.is-active{background:rgba(255,255,255,.06);color:#fff;text-decoration:none}
+.bf-sidebar__link.is-active{border-left:3px solid var(--bf-primary);padding-left:25px}
+
+/* Content */
+h1{font-size:28px;font-weight:800;color:var(--bf-dark);margin-bottom:8px;letter-spacing:-.03em}
+h2{font-size:22px;font-weight:700;color:var(--bf-dark);margin:48px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--bf-border)}
+h3{font-size:17px;font-weight:700;color:var(--bf-dark);margin:32px 0 10px}
+h4{font-size:14px;font-weight:700;color:var(--bf-dark);margin:20px 0 8px}
+p{margin-bottom:14px}
+.bf-subtitle{font-size:15px;color:var(--bf-muted);margin-bottom:32px}
+ul,ol{margin:0 0 16px 24px}
+li{margin-bottom:6px}
+li ul{margin-top:6px}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:16px 0 24px;font-size:13px}
+th,td{padding:10px 14px;text-align:left;border:1px solid var(--bf-border)}
+th{background:var(--bf-bg);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--bf-muted)}
+tr:nth-child(even) td{background:var(--bf-bg)}
+
+/* Code */
+code{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12px;background:var(--bf-code-bg);padding:2px 6px;border-radius:4px;color:#0f172a}
+pre{background:var(--bf-dark);color:#e2e8f0;padding:18px 20px;border-radius:8px;overflow-x:auto;margin:12px 0 20px;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit}
+
+/* Callouts */
+.bf-tip,.bf-note,.bf-warn{padding:14px 18px;border-radius:8px;margin:16px 0 20px;font-size:13px;line-height:1.6}
+.bf-tip{background:#f0fdfa;border-left:4px solid #0f766e;color:#134e4a}
+.bf-note{background:#eff6ff;border-left:4px solid #3b82f6;color:#1e3a5f}
+.bf-warn{background:#fef3c7;border-left:4px solid #f59e0b;color:#78350f}
+
+/* Images */
+.bf-img{max-width:100%;border-radius:8px;border:1px solid var(--bf-border);margin:12px 0 20px}
+
+/* Badge */
+.bf-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bf-badge--free{background:#ecfdf5;color:#065f46}
+.bf-badge--pro{background:#fef3c7;color:#92400e}
+
+/* Responsive */
+@media(max-width:900px){
+  .bf-sidebar{position:relative;width:100%;height:auto;max-height:none}
+  .bf-main{margin-left:0;padding:24px 20px 60px}
+  .bf-docs{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<div class="bf-docs">
+
+<!-- ─── Sidebar ─────────────────────────────────────────────────────── -->
+<nav class="bf-sidebar">
+  <div class="bf-sidebar__brand">BoldForm <span>Lite</span></div>
+  <div class="bf-sidebar__nav">
+    <div class="bf-sidebar__group">Getting Started</div>
+    <a href="#introduction" class="bf-sidebar__link">Introduction</a>
+    <a href="#installation" class="bf-sidebar__link">Installation</a>
+    <a href="#your-first-form" class="bf-sidebar__link">Your First Form</a>
+
+    <div class="bf-sidebar__group">Form Builder</div>
+    <a href="#builder-overview" class="bf-sidebar__link">Builder Overview</a>
+    <a href="#field-types" class="bf-sidebar__link">Field Types</a>
+    <a href="#rows-columns" class="bf-sidebar__link">Rows &amp; Columns</a>
+    <a href="#field-settings" class="bf-sidebar__link">Field Settings</a>
+    <a href="#conditional-logic" class="bf-sidebar__link">Conditional Logic</a>
+    <a href="#templates" class="bf-sidebar__link">Templates</a>
+
+    <div class="bf-sidebar__group">Form Settings</div>
+    <a href="#submission-settings" class="bf-sidebar__link">Form Settings Overview</a>
+    <a href="#email-notifications" class="bf-sidebar__link">Email Notifications</a>
+    <a href="#duplicate-prevention" class="bf-sidebar__link">Duplicate Prevention</a>
+    <a href="#button-customization" class="bf-sidebar__link">Button Customization</a>
+
+    <div class="bf-sidebar__group">Styling</div>
+    <a href="#style-tab" class="bf-sidebar__link">Style Tab</a>
+
+    <div class="bf-sidebar__group">Security &amp; Compliance</div>
+    <a href="#spam-protection" class="bf-sidebar__link">Spam Protection</a>
+    <a href="#privacy-gdpr" class="bf-sidebar__link">Privacy &amp; GDPR</a>
+    <a href="#accessibility" class="bf-sidebar__link">Accessibility</a>
+
+    <div class="bf-sidebar__group">Pro Features</div>
+    <a href="#pro-features" class="bf-sidebar__link">Pro Overview</a>
+
+    <div class="bf-sidebar__group">Display &amp; Embed</div>
+    <a href="#shortcode" class="bf-sidebar__link">Shortcode</a>
+    <a href="#gutenberg-block" class="bf-sidebar__link">Gutenberg Block</a>
+    <a href="#elementor-widget" class="bf-sidebar__link">Elementor Widget</a>
+    <a href="#help-support" class="bf-sidebar__link">Help &amp; Support</a>
+
+    <div class="bf-sidebar__group">Entries &amp; Data</div>
+    <a href="#managing-entries" class="bf-sidebar__link">Managing Entries</a>
+    <a href="#reports" class="bf-sidebar__link">Reports &amp; Analytics</a>
+    <a href="#export-import" class="bf-sidebar__link">Export &amp; Import</a>
+
+    <div class="bf-sidebar__group">Settings</div>
+    <a href="#global-settings" class="bf-sidebar__link">Global Settings</a>
+    <a href="#captcha" class="bf-sidebar__link">Captcha Setup</a>
+    <a href="#smtp" class="bf-sidebar__link">SMTP Configuration</a>
+    <a href="#integrations" class="bf-sidebar__link">Integrations</a>
+
+    <div class="bf-sidebar__group">Advanced</div>
+    <a href="#troubleshooting" class="bf-sidebar__link">Troubleshooting</a>
+    <a href="#multisite" class="bf-sidebar__link">Multisite Support</a>
+
+    <div class="bf-sidebar__group">Reference</div>
+    <a href="#faq" class="bf-sidebar__link">FAQ</a>
+  </div>
+</nav>
+
+<!-- ─── Main Content ───────────────────────────────────────────────── -->
+<main class="bf-main">
+
+<!-- Introduction -->
+<h1 id="introduction">BoldForm Lite &mdash; User Guide</h1>
+<p class="bf-subtitle">A complete guide to building, styling, and managing forms with BoldForm Lite for WordPress.</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.0 · Updated 2026-06-18</p>
+
+<p>BoldForm Lite is a lightweight, drag-and-drop form builder for WordPress. Build contact forms, feedback forms, registration forms, surveys, and more &mdash; with no coding required.</p>
+
+<h3>Key Features</h3>
+<ul>
+  <li>Visual drag-and-drop form builder with live preview</li>
+  <li>25+ field types including text, email, file upload, star rating, address, and more</li>
+  <li>Responsive row &amp; column layouts</li>
+  <li>Conditional logic (show/hide fields based on user input)</li>
+  <li>Pre-built form templates</li>
+  <li>AJAX form submission (no page reload)</li>
+  <li>Entry management with read/unread/starred statuses</li>
+  <li>Gutenberg block &amp; Elementor widget with full styling controls</li>
+  <li>Mailchimp &amp; Brevo integrations</li>
+  <li>Built-in Simple Math captcha, plus Google reCAPTCHA &amp; hCaptcha support</li>
+  <li>SMTP email configuration</li>
+  <li>Export &amp; import forms and entries</li>
+  <li>Full multisite support</li>
+</ul>
+
+<!-- Installation -->
+<h2 id="installation">Installation</h2>
+
+<h3>From WordPress Dashboard</h3>
+<ol>
+  <li>Go to <strong>Plugins &rarr; Add New</strong></li>
+  <li>Search for <strong>"BoldForm"</strong></li>
+  <li>Click <strong>Install Now</strong>, then <strong>Activate</strong></li>
+</ol>
+
+<h3>Manual Upload</h3>
+<ol>
+  <li>Download the <code>boldform-lite.zip</code> file</li>
+  <li>Go to <strong>Plugins &rarr; Add New &rarr; Upload Plugin</strong></li>
+  <li>Choose the zip file and click <strong>Install Now</strong></li>
+  <li>Click <strong>Activate</strong></li>
+</ol>
+
+<p>After activation, a new <strong>BoldForm</strong> menu appears in the WordPress admin sidebar.</p>
+
+<!-- Your First Form -->
+<h2 id="your-first-form">Your First Form</h2>
+
+<ol>
+  <li>Go to <strong>BoldForm &rarr; Add New</strong></li>
+  <li>Choose a <strong>template</strong> (e.g. Contact Form) or start with a <strong>blank form</strong></li>
+  <li>Add fields from the <strong>Field Library</strong> on the left by clicking them</li>
+  <li>Configure each field by clicking it on the canvas</li>
+  <li>Set your submission preferences in the <strong>Settings</strong> tab</li>
+  <li>Click <strong>Save</strong></li>
+  <li>Copy the <strong>shortcode</strong> shown at the top (e.g. <code>[boldform id="1"]</code>) and paste it into any page or post</li>
+</ol>
+
+<div class="bf-tip"><strong>Tip:</strong> You can also embed forms using the Gutenberg block or Elementor widget &mdash; no shortcode needed.</div>
+
+<!-- Builder Overview -->
+<h2 id="builder-overview">Builder Overview</h2>
+
+<p>The form builder has three main tabs at the top:</p>
+
+<table>
+  <thead><tr><th>Tab</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Builder</strong></td><td>Add and arrange fields on the form canvas</td></tr>
+    <tr><td><strong>Style</strong></td><td>Customize colors, sizes, borders, and design themes</td></tr>
+    <tr><td><strong>Settings</strong></td><td>Configure submission behavior, emails, and duplicate prevention</td></tr>
+  </tbody>
+</table>
+
+<h3>Sidebar</h3>
+<p>The left sidebar switches between two panels:</p>
+<ul>
+  <li><strong>Field Library</strong> &mdash; browse and click to add fields to the selected column</li>
+  <li><strong>Field Settings</strong> &mdash; configure the currently selected field (label, placeholder, required, etc.)</li>
+</ul>
+
+<h3>Canvas</h3>
+<p>The center area is the form canvas. Each form is built from <strong>rows</strong>, each row has one or more <strong>columns</strong>, and each column holds <strong>fields</strong>.</p>
+<ul>
+  <li>Click a field to select and edit it</li>
+  <li>Use the <strong>move handle</strong> to drag fields between columns</li>
+  <li>Use the <strong>duplicate</strong> and <strong>delete</strong> buttons on each field</li>
+  <li>Use the row action bar to <strong>move</strong>, <strong>duplicate</strong>, or <strong>delete</strong> entire rows</li>
+</ul>
+
+<!-- Field Types -->
+<h2 id="field-types">Field Types</h2>
+
+<h3>Basic Fields</h3>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Text</td><td>Single-line text input</td></tr>
+    <tr><td>Name</td><td>First / Middle / Last name fields (toggles for middle &amp; last)</td></tr>
+    <tr><td>Email</td><td>Email address with real-time format validation</td></tr>
+    <tr><td>Number</td><td>Numeric input</td></tr>
+    <tr><td>Textarea</td><td>Multi-line text area</td></tr>
+    <tr><td>Date Picker</td><td>Calendar date selector</td></tr>
+    <tr><td>Time Picker</td><td>Time selector</td></tr>
+    <tr><td>Select</td><td>Single-choice dropdown (with optional search)</td></tr>
+    <tr><td>Multi Select</td><td>Multiple-choice dropdown</td></tr>
+    <tr><td>Checkbox</td><td>Multiple-choice checkboxes</td></tr>
+    <tr><td>Radio</td><td>Single-choice radio buttons</td></tr>
+    <tr><td>Phone</td><td>Phone number input</td></tr>
+    <tr><td>URL</td><td>Website URL input</td></tr>
+    <tr><td>Address</td><td>Street, City, State, Zip, Country (configurable fields &amp; order)</td></tr>
+    <tr><td>Country</td><td>Country dropdown</td></tr>
+    <tr><td>Numeric</td><td>Number input with min/max/step constraints</td></tr>
+    <tr><td>Input Mask</td><td>Text input with a formatting mask (phone, date, card, etc.)</td></tr>
+    <tr><td>HTML Editor</td><td>Rich text content block</td></tr>
+    <tr><td>Paragraph</td><td>Static text/content block</td></tr>
+    <tr><td>Star Rating</td><td>Star-based rating (custom stars count, color, size)</td></tr>
+    <tr><td>Slider Range</td><td>Range slider with min/max/step and live value display; supports dual-handle mode for min–max ranges</td></tr>
+  </tbody>
+</table>
+
+<h3>Advanced Fields</h3>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Captcha</td><td>Simple Math (default, no keys), Google reCAPTCHA v2, or hCaptcha (configured in Settings)</td></tr>
+    <tr><td>Section Break</td><td>Visual divider with optional heading and description</td></tr>
+    <tr><td>Terms &amp; Conditions</td><td>Checkbox with custom terms text</td></tr>
+    <tr><td>File Upload</td><td>File upload with configurable allowed types and max size</td></tr>
+    <tr><td>Submit Button</td><td>Draggable submit button (for inline placement)</td></tr>
+  </tbody>
+</table>
+
+<h3>Pro Fields <span class="bf-badge bf-badge--pro">Pro</span></h3>
+<p>Advanced field types available with BoldForm Pro:</p>
+
+<h4>Layout &amp; Structure</h4>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Page Break</strong></td><td>Divide form into multiple steps; shows progress bar and step navigation</td></tr>
+    <tr><td><strong>Repeater</strong></td><td>Allow users to add/remove groups of fields dynamically (e.g., add multiple guests)</td></tr>
+  </tbody>
+</table>
+
+<h4>Advanced Data Fields</h4>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Signature</strong></td><td>Digital signature pad; requires minimum width and HTTPS context for tablet/mobile devices</td></tr>
+    <tr><td><strong>Rich Text</strong></td><td>WYSIWYG editor for formatted text (bold, italics, lists, links)</td></tr>
+    <tr><td><strong>Password / Confirm</strong></td><td>Secure password field with optional confirmation check</td></tr>
+    <tr><td><strong>Hidden Field</strong></td><td>Invisible field with dynamic value from URL, user meta, or custom source</td></tr>
+    <tr><td><strong>Lookup / Autocomplete</strong></td><td>Search and select from a predefined list with autocomplete</td></tr>
+    <tr><td><strong>Date Range</strong></td><td>Dual date pickers for start/end dates (e.g., event duration, booking period)</td></tr>
+    <tr><td><strong>Geolocation</strong></td><td>Detect user location (with HTTPS &amp; permission) or manual map picker for address selection</td></tr>
+  </tbody>
+</table>
+
+<h4>Commerce &amp; Calculations</h4>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Product</strong></td><td>Select a product with price; auto-updates order total</td></tr>
+    <tr><td><strong>Quantity</strong></td><td>Number input linked to product; auto-updates order total</td></tr>
+    <tr><td><strong>Custom Amount</strong></td><td>User-entered price (e.g., donation amount, custom fee)</td></tr>
+    <tr><td><strong>Order Summary</strong></td><td>Displays itemized order with total (read-only; updates live as user selects products)</td></tr>
+    <tr><td><strong>Calculation</strong></td><td>Formula-based field; displays calculated result based on other field values</td></tr>
+  </tbody>
+</table>
+
+<h4>Choice &amp; Rating Fields</h4>
+<table>
+  <thead><tr><th>Field</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Image Choice</strong></td><td>Radio/checkbox with image tiles instead of text (e.g., product images, style options)</td></tr>
+    <tr><td><strong>NPS (Net Promoter Score)</strong></td><td>0–10 scale for satisfaction surveys</td></tr>
+    <tr><td><strong>Matrix</strong></td><td>Grid of rows (questions) and columns (rating scale); rows can be added dynamically</td></tr>
+  </tbody>
+</table>
+
+<!-- Rows & Columns -->
+<h2 id="rows-columns">Rows &amp; Columns</h2>
+
+<p>Click <strong>+ Add Row</strong> at the bottom of the canvas to add a new row. A modal lets you choose the column layout:</p>
+
+<table>
+  <thead><tr><th>Preset</th><th>Layout</th></tr></thead>
+  <tbody>
+    <tr><td>1 Column</td><td>100%</td></tr>
+    <tr><td>2 Columns</td><td>50% / 50%</td></tr>
+    <tr><td>3 Columns</td><td>33% / 33% / 33%</td></tr>
+    <tr><td>4 Columns</td><td>25% / 25% / 25% / 25%</td></tr>
+  </tbody>
+</table>
+
+<h3>Row Actions</h3>
+<ul>
+  <li><strong>Settings</strong> (gear icon) &mdash; open row-level settings</li>
+  <li><strong>Move</strong> (move icon) &mdash; drag to reorder rows</li>
+  <li><strong>Duplicate</strong> (copy icon) &mdash; clone the entire row with all fields</li>
+  <li><strong>Delete</strong> (trash icon) &mdash; remove the row</li>
+</ul>
+
+<!-- Field Settings -->
+<h2 id="field-settings">Field Settings</h2>
+
+<p>Click any field on the canvas to open its settings in the sidebar. Common settings include:</p>
+
+<table>
+  <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Label</td><td>The field label shown above the input</td></tr>
+    <tr><td>Placeholder</td><td>Placeholder text inside the input</td></tr>
+    <tr><td>Default Value</td><td>Pre-filled value</td></tr>
+    <tr><td>Required</td><td>Make the field mandatory</td></tr>
+    <tr><td>Custom Error</td><td>Custom validation error message (appears once Required is enabled)</td></tr>
+    <tr><td>Label Placement</td><td>Top, Left, Right, Below, or Hidden</td></tr>
+    <tr><td>Auto Populate Key</td><td>Pre-fill the field from a URL parameter or logged-in user data</td></tr>
+    <tr><td>CSS Class</td><td>Custom CSS class for the field wrapper</td></tr>
+    <tr><td>Conditional Logic</td><td>Show or hide the field based on another field's value (see <a href="#conditional-logic">Conditional Logic</a>)</td></tr>
+  </tbody>
+</table>
+
+<p class="bf-note">The settings panel has two groups: a <strong>Settings</strong> accordion (Label, Label Placement,
+Placeholder/Default, and any field-specific controls) and an <strong>Advanced</strong> accordion (Required,
+Custom Error, Auto Populate Key, CSS Class, and Conditional Logic). Required, CSS Class, Auto Populate Key,
+and Conditional Logic are available on <strong>every</strong> field type; Placeholder and Default Value appear
+on most input fields, but not on choice fields (checkbox/radio), composite fields (name/address), content
+blocks, or most Pro fields, where they don't apply.</p>
+
+<h3>Field-Specific Settings</h3>
+<p>In addition to the common settings above, many fields add their own controls. The tables below list
+the extra settings each field type exposes when selected on the canvas.</p>
+
+<h4>Basic Fields</h4>
+<table>
+  <thead><tr><th>Field</th><th>Additional settings</th></tr></thead>
+  <tbody>
+    <tr><td>Text, Email, Number, Textarea, Date, Time, Phone, URL, Country</td><td>Placeholder &amp; Default Value only (no field-specific controls)</td></tr>
+    <tr><td>Name</td><td>Show Middle Name toggle; Show Last Name toggle</td></tr>
+    <tr><td>Select</td><td>Options list (drag-reorder, set a default option); Enable search toggle</td></tr>
+    <tr><td>Multi Select</td><td>Options list (drag-reorder, set one or more default options)</td></tr>
+    <tr><td>Checkbox</td><td>Options list (set default checked options); Layout: Stacked or Inline</td></tr>
+    <tr><td>Radio</td><td>Options list (set a default option); Layout: Stacked or Inline</td></tr>
+    <tr><td>Numeric</td><td>Min Value; Max Value; Step</td></tr>
+    <tr><td>Input Mask</td><td>Mask Pattern (Phone, Date, Card, Time, CPF, or Custom); Custom Mask field (9 = digit, A = letter, * = any) when Custom is selected</td></tr>
+    <tr><td>HTML Editor</td><td>Rich-text content editor (bold, italic, underline, alignment, bullet &amp; numbered lists)</td></tr>
+    <tr><td>Paragraph</td><td>Paragraph Text (the static content shown on the form)</td></tr>
+    <tr><td>Address</td><td>Address Fields list &mdash; enable/disable and reorder Street, City, State/Province, ZIP/Postal, Country</td></tr>
+    <tr><td>Star Rating</td><td>Number of Stars; Icon Size; Star Color (inactive); Active Color</td></tr>
+    <tr><td>Slider Range</td><td>Min Value; Max Value; Step; Dual-range (min–max) toggle; Track Color; Track Height</td></tr>
+  </tbody>
+</table>
+
+<h4>Advanced Fields</h4>
+<table>
+  <thead><tr><th>Field</th><th>Additional settings</th></tr></thead>
+  <tbody>
+    <tr><td>Captcha</td><td>No per-field settings &mdash; uses the captcha provider chosen in <a href="#captcha">Settings &rarr; Captcha</a></td></tr>
+    <tr><td>Section Break</td><td>Description (text shown under the section heading)</td></tr>
+    <tr><td>Terms &amp; Conditions</td><td>Terms text (supports a link to your terms page)</td></tr>
+    <tr><td>File Upload</td><td>Allowed file types (e.g. <code>.jpg,.png,.pdf</code>); Max file size</td></tr>
+    <tr><td>Submit Button</td><td>Button Text; Alignment (left/center/right); Icon (none, Dashicon, or custom SVG) with position, gap, size, and color</td></tr>
+  </tbody>
+</table>
+
+<h4>Pro Fields <span class="bf-badge bf-badge--pro">Pro</span></h4>
+<table>
+  <thead><tr><th>Field</th><th>Additional settings</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Page Break</strong></td><td>Step title, Next/Previous button text, and progress-bar style (configured per step)</td></tr>
+    <tr><td><strong>Product</strong></td><td>Product Options list (each row: label + price, drag-reorder); Display Style: Radio buttons or Dropdown</td></tr>
+    <tr><td><strong>Quantity</strong></td><td>Linked Product Field; Min Qty; Max Qty; Default Qty</td></tr>
+    <tr><td><strong>Custom Amount</strong></td><td>Min Amount; Max Amount; Default Amount</td></tr>
+    <tr><td><strong>Order Summary</strong></td><td>No settings &mdash; automatically itemizes products/quantities and shows a live total</td></tr>
+    <tr><td><strong>Calculation</strong></td><td>Formula builder (insert other fields, use +&nbsp;−&nbsp;*&nbsp;/&nbsp;( )); Decimal places; Prefix; Suffix</td></tr>
+    <tr><td><strong>Signature</strong></td><td>Pen Color; Pen Width; Background Color; Height</td></tr>
+    <tr><td><strong>Hidden Field</strong></td><td>Value Source (Static, URL parameter, User ID/email/login, Post ID, or Referrer URL); the Value or URL parameter name</td></tr>
+    <tr><td><strong>Image Choice</strong></td><td>Choices list (image + label + submitted value); Selection: Single or Multiple; Columns (2–6); Image Height</td></tr>
+    <tr><td><strong>Repeater</strong></td><td>Sub-fields list (type + label, with options for choice sub-fields); Columns (1–4); Min rows; Max rows; Add &amp; Remove button text</td></tr>
+    <tr><td><strong>Password / Confirm</strong></td><td>Placeholder; Add confirm-password field toggle</td></tr>
+    <tr><td><strong>Rich Text</strong></td><td>Editor Height</td></tr>
+    <tr><td><strong>Date Range</strong></td><td>Placeholder; Date Format; Separator; Min Days; Max Days</td></tr>
+    <tr><td><strong>NPS</strong></td><td>Low-end label; High-end label; Zone colors for Detractors (0–6), Passives (7–8), and Promoters (9–10)</td></tr>
+    <tr><td><strong>Matrix</strong></td><td>Input Type: Radio (one per row) or Checkbox (multiple per row); Rows (one per line); Columns (one per line)</td></tr>
+    <tr><td><strong>Lookup / Autocomplete</strong></td><td>Placeholder; Options (one per line); Min characters to search; Max results; Allow custom typed values toggle</td></tr>
+    <tr><td><strong>Geolocation</strong></td><td>Show map preview toggle; Map Height; Store format: Lat/Lng + Address, Lat/Lng only, or Address only</td></tr>
+  </tbody>
+</table>
+
+<!-- Conditional Logic -->
+<h2 id="conditional-logic">Conditional Logic</h2>
+
+<p>Show or hide any field based on the value of another field.</p>
+
+<ol>
+  <li>Select a field and open its settings</li>
+  <li>Scroll to the <strong>Conditional Logic</strong> section</li>
+  <li>Toggle it <strong>On</strong></li>
+  <li>Choose an action: <strong>Show</strong> or <strong>Hide</strong> this field</li>
+  <li>Set conditions: select a source field, an operator (is, is not, contains, etc.), and a value</li>
+  <li>Add multiple conditions and choose whether <strong>All</strong> (AND) or <strong>Any</strong> (OR) of them must match</li>
+</ol>
+
+<h4>Available Operators</h4>
+<table>
+  <thead><tr><th>Operator</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>is</td><td>Exact match</td></tr>
+    <tr><td>is not</td><td>Does not match</td></tr>
+    <tr><td>contains</td><td>Value contains the text</td></tr>
+    <tr><td>not contains</td><td>Value does not contain the text</td></tr>
+    <tr><td>not empty</td><td>Field has any value</td></tr>
+    <tr><td>empty</td><td>Field is blank</td></tr>
+    <tr><td>starts with</td><td>Value starts with the text</td></tr>
+    <tr><td>ends with</td><td>Value ends with the text</td></tr>
+    <tr><td>greater than</td><td>Numeric comparison</td></tr>
+    <tr><td>less than</td><td>Numeric comparison</td></tr>
+  </tbody>
+</table>
+
+<!-- Templates -->
+<h2 id="templates">Templates</h2>
+
+<p>BoldForm includes pre-built templates to get you started quickly:</p>
+<ul>
+  <li><strong>Contact Form</strong> &mdash; name, email, subject, message</li>
+  <li><strong>Newsletter Signup</strong> &mdash; email with opt-in</li>
+  <li><strong>Feedback Form</strong> &mdash; rating, comments</li>
+  <li><strong>Registration Form</strong> &mdash; name, email, password fields</li>
+  <li><strong>Lead Capture</strong> &mdash; business-focused lead form</li>
+  <li><strong>Support Ticket</strong> &mdash; issue type, priority, description</li>
+  <li><strong>Event RSVP</strong> &mdash; event registration</li>
+  <li><strong>Job Application</strong> &mdash; resume upload, experience fields</li>
+  <li><strong>Customer Survey</strong> &mdash; rating and feedback fields</li>
+  <li><strong>Booking</strong> &mdash; appointment/booking request</li>
+  <li><strong>Order Form</strong> &mdash; product/service order with quantity</li>
+</ul>
+
+<p>To use a template: click <strong>Choose Template</strong> on the new form screen, preview it, then click <strong>Import Template</strong>.</p>
+
+<!-- Form Settings -->
+<h2 id="submission-settings">Form Settings</h2>
+
+<p>Open the <strong>Settings</strong> view in the builder to configure submission behavior, redirect
+rules, and email notifications for the form. Settings are organized into tabs down the left side:</p>
+
+<table>
+  <thead><tr><th>Tab</th><th>What it controls</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Confirmation</strong></td><td>What happens after submit &mdash; redirect or message</td></tr>
+    <tr><td><strong>Email Notification</strong></td><td>Admin &amp; user confirmation emails</td></tr>
+    <tr><td><strong>Security</strong></td><td>Duplicate-submission prevention</td></tr>
+    <tr><td><strong>Integrations</strong></td><td>Assign a Mailchimp/Brevo connection to this form and map its fields</td></tr>
+    <tr><td><strong>Scheduling</strong> <span class="bf-badge bf-badge--pro">Pro</span></td><td>Automatically open/close the form by date</td></tr>
+    <tr><td><strong>Webhooks</strong> <span class="bf-badge bf-badge--pro">Pro</span></td><td>Send form data to external URLs after each submission</td></tr>
+  </tbody>
+</table>
+<p class="bf-note">Confirmation, Email Notification, Security, and Integrations are part of BoldForm Lite.
+The <strong>Scheduling</strong> and <strong>Webhooks</strong> tabs appear in this panel only when
+BoldForm Pro is installed.</p>
+
+<h3>Confirmation</h3>
+<p>Choose what happens after a visitor submits the form (three options):</p>
+<ul>
+  <li><strong>AJAX submit</strong> (default) &mdash; submits without a page reload and shows a success message inline</li>
+  <li><strong>To a Page</strong> &mdash; redirect the visitor to a WordPress page after submission</li>
+  <li><strong>Custom URL</strong> &mdash; redirect to any URL, including external sites</li>
+</ul>
+
+<h4>Thank you message</h4>
+<p>Shown after a successful <strong>AJAX submit</strong>. Default: <em>"Thanks! Your form was submitted successfully."</em>
+(With <strong>To a Page</strong> or <strong>Custom URL</strong>, the visitor is redirected instead, so the
+thank-you message does not apply.)</p>
+
+<!-- Email Notifications -->
+<h2 id="email-notifications">Email Notifications</h2>
+
+<h3>Admin Email</h3>
+<ul>
+  <li>Toggle admin email notifications on/off</li>
+  <li>Choose <strong>Site Admin</strong> (uses WordPress admin email) or <strong>Custom Email</strong></li>
+  <li>Enter a custom email address when using custom mode</li>
+</ul>
+
+<h3>User Confirmation Email</h3>
+<ul>
+  <li>Toggle user email notifications on/off</li>
+  <li>Sends a confirmation to the email address submitted in the form</li>
+  <li>Requires the form to have an <strong>Email</strong> field</li>
+</ul>
+
+<div class="bf-note"><strong>Note:</strong> For reliable email delivery, configure SMTP in <strong>BoldForm &rarr; Settings &rarr; SMTP</strong>. Without SMTP, emails are sent using WordPress's default <code>wp_mail()</code> function which may not be reliable on all hosts.</div>
+
+<!-- Duplicate Prevention -->
+<h2 id="duplicate-prevention">Duplicate Prevention</h2>
+
+<p>Prevent users from submitting the same form multiple times.</p>
+
+<ol>
+  <li>In the Settings tab, enable <strong>Duplicate Prevention</strong></li>
+  <li>Choose a detection method:
+    <ul>
+      <li><strong>Email</strong> &mdash; blocks duplicate submissions from the same email address</li>
+      <li><strong>IP Address</strong> &mdash; blocks duplicate submissions from the same IP address</li>
+      <li><strong>Custom Field</strong> &mdash; choose any field to check for duplicates</li>
+    </ul>
+  </li>
+  <li>Optionally set a custom error message</li>
+</ol>
+<p>A submission is blocked if a matching value already exists for that form in any previous (non-spam)
+entry. There is no time limit on the check.</p>
+
+<!-- Button Customization -->
+<h2 id="button-customization">Button Customization</h2>
+
+<p>The submit button is configured from the <strong>Submit Button field's settings</strong> &mdash; select the
+submit button on the canvas (in the Builder tab) to open its settings panel:</p>
+<ul>
+  <li><strong>Button Text</strong> &mdash; change the label (default: "Submit")</li>
+  <li><strong>Alignment</strong> &mdash; left, center, or right</li>
+  <li><strong>Icon</strong> &mdash; none, a Dashicon, or a custom SVG icon</li>
+  <li><strong>Icon Position</strong> &mdash; left or right of text</li>
+  <li><strong>Icon Size, Gap &amp; Color</strong> &mdash; fine-tune the icon</li>
+</ul>
+<p>The button's <em>visual</em> styling (background, border, size, hover state) is set separately in the
+<a href="#style-tab">Style tab</a> under the <strong>Submit Button</strong> section.</p>
+
+<!-- Style Tab -->
+<h2 id="style-tab">Style Tab (Expanded in v1.1.0)</h2>
+
+<p>Switch to the <strong>Style</strong> tab in the builder to open the <strong>Form Styling</strong> panel.
+Everything that controls how your form looks lives here in one place &mdash; a single column of collapsible
+sections. <strong>Design Theme is the first of these sections</strong>, followed by per-area sections
+(Form Container, Labels, Input Fields, and so on). Changes preview instantly on the right.</p>
+
+<h3>Live Preview</h3>
+<p>All style changes update instantly in the form preview area. See exactly how your form looks before saving.
+A device switcher (desktop / tablet / mobile) lets you preview each breakpoint.</p>
+
+<h3>Style Sections</h3>
+<p>The Form Styling panel is organized into collapsible sections, each targeting one part of the form.
+Every section has a reset control to revert it to defaults:</p>
+<table>
+  <thead><tr><th>Section</th><th>What it styles</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Design Theme</strong></td><td>Apply a pre-built color theme in one click (the first section &mdash; <a href="#design-themes">details below</a>)</td></tr>
+    <tr><td><strong>Form Container</strong></td><td>The form's outer wrapper &mdash; background, border, radius, shadow, padding</td></tr>
+    <tr><td><strong>Layout &amp; Spacing</strong></td><td>Max width, alignment (left/center/right/full), and row/column gaps between fields</td></tr>
+    <tr><td><strong>Labels</strong></td><td>Field label typography and color, sub-field labels, and the required-indicator color</td></tr>
+    <tr><td><strong>Placeholder</strong></td><td>Placeholder text color and typography inside inputs</td></tr>
+    <tr><td><strong>Input Fields</strong></td><td>Text inputs, textareas &amp; selects &mdash; size, padding/height, border, background, text color, shadow (per state)</td></tr>
+    <tr><td><strong>Select Dropdown</strong></td><td>Styling specific to dropdown (select) fields</td></tr>
+    <tr><td><strong>Checkbox &amp; Radio</strong></td><td>Choice controls, including the checked/selected state</td></tr>
+    <tr><td><strong>File Upload</strong></td><td>The upload field and its drag-and-drop drop-zone (background, border, icon &amp; text)</td></tr>
+    <tr><td><strong>Terms &amp; Conditions</strong></td><td>Styling for the terms-acceptance field</td></tr>
+    <tr><td><strong>Section Break</strong></td><td>The section divider heading and description text</td></tr>
+    <tr><td><strong>Submit Button</strong></td><td>Button size, border, background, text color, and shadow (normal &amp; hover)</td></tr>
+    <tr><td><strong>Error Messages</strong></td><td>Validation error text color, error background, and invalid-field highlight</td></tr>
+    <tr><td><strong>Success Message</strong></td><td>The post-submit success message &mdash; background, text color, border, spacing</td></tr>
+  </tbody>
+</table>
+<p class="bf-note">The subsections below explain the individual sections in more detail, plus the cross-cutting
+concepts (interaction states, gradients, and responsive breakpoints) that apply within many of them.</p>
+
+<h3 id="design-themes">Design Theme</h3>
+<p>The first section in the Form Styling panel. Apply a pre-built color theme with one click &mdash; themes set
+coordinated colors for fields, labels, buttons, focus states, and error messages. After applying a theme you can
+still fine-tune any individual setting in the sections below; the theme is just a starting point.</p>
+
+<h3>State-Based Styling</h3>
+<p>Control the appearance of fields in different user interaction states:</p>
+<ul>
+  <li><strong>Normal</strong> &mdash; default field appearance</li>
+  <li><strong>Hover</strong> &mdash; appearance when the user hovers over a field</li>
+  <li><strong>Focus</strong> &mdash; appearance when the field is active/being edited</li>
+  <li><strong>Checked</strong> &mdash; appearance of selected checkboxes and radio buttons</li>
+</ul>
+
+<h3>Colors, Gradients &amp; Shadows</h3>
+<p>Within the color-based controls (form/input/button backgrounds, etc.) you can use a <strong>solid color
+or a gradient</strong>, and add <strong>box shadows</strong> &mdash; many of these support separate values per
+interaction state (for example, a different button background on hover, or a different input shadow on focus).
+Each section also has a <strong>reset</strong> control to return it to the defaults.</p>
+
+<h3>Responsive Design (Desktop/Tablet/Mobile)</h3>
+<p>Set different style values for each breakpoint:</p>
+<ul>
+  <li><strong>Desktop</strong> &mdash; large screens (1024px+)</li>
+  <li><strong>Tablet</strong> &mdash; medium screens (768px–1023px)</li>
+  <li><strong>Mobile</strong> &mdash; small screens (&lt;768px)</li>
+</ul>
+<p>For example, you can use a larger font on desktop and a smaller font on mobile, or increase padding on desktop while reducing it on mobile for space efficiency.</p>
+
+<!-- Spam Protection -->
+<h2 id="spam-protection">Spam Protection</h2>
+
+<p>BoldForm Lite includes multiple built-in spam protection mechanisms to keep your submission queue clean:</p>
+
+<h3>Honeypot Field</h3>
+<p>A hidden field that catches bots. Bots auto-fill all fields, including invisible ones. If the honeypot is
+filled, the submission is rejected with a <em>"Spam detected."</em> message and <strong>no entry is saved</strong>.
+Enabled by default on all forms.</p>
+
+<h3>Captcha (Simple Math, reCAPTCHA &amp; hCaptcha)</h3>
+<p>Add a human verification challenge:</p>
+<ol>
+  <li>Go to <strong>BoldForm &rarr; Settings &rarr; Captcha</strong></li>
+  <li>Choose a provider: <strong>Simple Math</strong> (default, no keys needed), <strong>Google reCAPTCHA v2</strong>, or <strong>hCaptcha</strong></li>
+  <li>For reCAPTCHA or hCaptcha, enter your <strong>Site Key</strong> and <strong>Secret Key</strong> (Simple Math needs none)</li>
+  <li>Add a <strong>Captcha field</strong> to your form in the builder</li>
+</ol>
+<p>When the form is submitted, the captcha response is verified server-side before the entry is accepted. See <a href="#captcha">Captcha Setup</a> for full details.</p>
+
+<h3>Marking Entries as Spam</h3>
+<p>The <strong>Spam</strong> status is applied <strong>manually</strong> &mdash; honeypot- and captcha-blocked
+submissions are rejected before an entry is saved, so they never appear in the Spam tab. To flag a saved entry
+you believe is spam:</p>
+<ul>
+  <li>Go to <strong>BoldForm &rarr; Entries</strong></li>
+  <li>Click an entry to view details</li>
+  <li>Use the <strong>Mark as Spam</strong> action</li>
+  <li>View all spam entries using the <strong>Spam</strong> filter tab</li>
+</ul>
+
+<h3>Best Practices</h3>
+<ul>
+  <li><strong>Use both honeypot + captcha</strong> for maximum protection (honeypot catches automated bots, captcha catches sophisticated attacks)</li>
+  <li><strong>Monitor the spam tab</strong> to understand attack patterns and adjust field validation if needed</li>
+  <li><strong>Require email field</strong> &mdash; most bots skip forms with required email validation</li>
+  <li><strong>Use conditional logic</strong> to hide optional fields, reducing bot targets</li>
+</ul>
+
+<h3>File Upload Security</h3>
+<p>File uploads are restricted for security:</p>
+<ul>
+  <li><strong>Blocked file types:</strong> SVG and SVGZ files are rejected to prevent script injection attacks</li>
+  <li><strong>MIME type validation:</strong> Files are verified by content, not just extension</li>
+  <li><strong>Configurable allowlist:</strong> In the File Upload field settings, you can choose which file types are allowed (PDF, images, documents, etc.)</li>
+  <li><strong>Safe by default:</strong> Only explicitly allowed types are accepted; any suspicious files are rejected</li>
+</ul>
+
+<!-- Privacy & GDPR -->
+<h2 id="privacy-gdpr">Privacy &amp; GDPR Compliance</h2>
+
+<p>BoldForm Lite respects user privacy and complies with GDPR and similar data protection regulations.</p>
+
+<h3>What Data is Collected</h3>
+<p>When a user submits a form, BoldForm stores:</p>
+<ul>
+  <li><strong>Form Field Data</strong> &mdash; the values the user entered (name, email, message, etc.)</li>
+  <li><strong>User IP Address</strong> &mdash; for duplicate detection and security logging</li>
+  <li><strong>User Agent</strong> &mdash; browser/device information</li>
+  <li><strong>Submission Timestamp</strong> &mdash; when the form was submitted</li>
+  <li><strong>WordPress User ID</strong> &mdash; if the submitter was logged in (optional)</li>
+</ul>
+
+<h3>Data Access &amp; Export</h3>
+<p>Users can request their data via WordPress's built-in privacy tools:</p>
+<ol>
+  <li>Go to <strong>WordPress Admin &rarr; Tools &rarr; Export Personal Data</strong></li>
+  <li>Enter the user's email address</li>
+  <li>Select "BoldForm Lite" from the list</li>
+  <li>The system exports all form entries submitted from that email address as a downloadable file</li>
+</ol>
+
+<h3>Data Deletion (Right to be Forgotten)</h3>
+<p>Users can request deletion of their data:</p>
+<ol>
+  <li>Go to <strong>WordPress Admin &rarr; Tools &rarr; Erase Personal Data</strong></li>
+  <li>Enter the user's email address</li>
+  <li>Select "BoldForm Lite"</li>
+  <li>Confirm the request</li>
+  <li>All form entries submitted from that email are permanently deleted</li>
+</ol>
+
+<h3>Data Retention Policy</h3>
+<p>BoldForm does not automatically delete entries. You are responsible for:</p>
+<ul>
+  <li><strong>Setting a retention policy</strong> &mdash; decide how long to keep submissions (e.g., 1 year for compliance)</li>
+  <li><strong>Regular cleanup</strong> &mdash; periodically delete old entries from <strong>BoldForm &rarr; Entries</strong></li>
+  <li><strong>Documenting your policy</strong> &mdash; mention data retention in your privacy policy and terms of service</li>
+</ul>
+
+<h3>Email Privacy</h3>
+<ul>
+  <li><strong>Submission emails</strong> are sent directly from your server (via SMTP) to your configured address</li>
+  <li><strong>User confirmation emails</strong> can be sent if you enable user notifications in form settings</li>
+  <li><strong>No third-party email tracking</strong> &mdash; emails are not routed through external services</li>
+</ul>
+
+<h3>Integration Privacy</h3>
+<p>If you use integrations (Mailchimp, Brevo):</p>
+<ul>
+  <li><strong>Shared fields only</strong> &mdash; only fields mapped in the integration are sent to the service (e.g., email, first name)</li>
+  <li><strong>Service terms apply</strong> &mdash; those services' privacy policies govern data handled by them</li>
+  <li><strong>You control the mapping</strong> &mdash; choose which form fields map to which integration fields</li>
+</ul>
+
+<h3>Privacy Policy Language</h3>
+<p>Include the following in your site's privacy policy:</p>
+<blockquote style="background:var(--bf-bg);padding:12px 16px;border-left:4px solid var(--bf-primary);font-size:13px;line-height:1.6;margin:16px 0 20px">
+  "Forms on this site collect user submissions including name, email, and message content. This data is stored securely and retained for [your retention period]. Users can request data export or deletion via the privacy tools at [your admin URL]/wp-admin/tools.php?page=export_personal_data."
+</blockquote>
+
+<!-- Accessibility -->
+<h2 id="accessibility">Accessibility</h2>
+
+<p>BoldForm Lite is built with accessibility in mind to ensure all users, including those with disabilities, can submit forms successfully:</p>
+
+<ul>
+  <li><strong>Keyboard Navigation</strong> &mdash; all form fields and buttons are accessible via keyboard Tab, Shift+Tab, and Enter keys</li>
+  <li><strong>Screen Reader Support</strong> &mdash; form labels, error messages, and field descriptions are announced by assistive devices</li>
+  <li><strong>Validation Announcements</strong> &mdash; when a field fails validation, the error is announced to screen readers immediately</li>
+  <li><strong>Star Rating Widget</strong> &mdash; keyboard and screen-reader accessible rating control with arrow key navigation</li>
+  <li><strong>Custom Select Dropdown</strong> &mdash; accessible dropdown with search support, fully navigable via keyboard</li>
+  <li><strong>Focus Indicators</strong> &mdash; clear visual indicators show which field has focus</li>
+  <li><strong>Color Contrast</strong> &mdash; the default styles are designed to meet WCAG AA contrast (verify contrast if you customize colors in the Style tab)</li>
+  <li><strong>Required Field Indicators</strong> &mdash; marked both visually (asterisk) and semantically (aria-required)</li>
+</ul>
+
+<!-- Pro Features Overview -->
+<h2 id="pro-features">Pro Features Overview <span class="bf-badge bf-badge--pro">Pro</span></h2>
+
+<p>BoldForm Pro extends Lite with advanced features for complex forms, payments, and automation:</p>
+
+<h3>Multi-Step Forms</h3>
+<p>Break long forms into multiple steps with progress bar and navigation:</p>
+<ul>
+  <li><strong>Page Break field</strong> — divides form into logical sections</li>
+  <li><strong>Progress bar</strong> — shows user progress through steps</li>
+  <li><strong>Navigation buttons</strong> — Previous/Next buttons to move between steps</li>
+  <li><strong>Conditional step visibility</strong> — show/hide entire steps based on previous answers</li>
+  <li><strong>Per-step validation</strong> — validate each step before advancing</li>
+</ul>
+
+<h3>Payments &amp; Order Management</h3>
+<p>Collect payments and manage orders directly in forms:</p>
+<ul>
+  <li><strong>Product field</strong> — let users select products with prices</li>
+  <li><strong>Quantity field</strong> — adjust order quantities</li>
+  <li><strong>Custom Amount field</strong> — user-entered prices (donations, custom fees)</li>
+  <li><strong>Order Summary field</strong> — displays itemized order with live total</li>
+  <li><strong>Payment gateways</strong> — collect payments via PayPal and Stripe</li>
+</ul>
+
+<h3>Auto-Populate Fields</h3>
+<p>Pre-fill form fields from multiple sources:</p>
+<ul>
+  <li><strong>URL parameters</strong> — extract values from query strings (e.g., <code>?name=John</code>)</li>
+  <li><strong>User data</strong> — auto-fill logged-in user's name, email, etc.</li>
+  <li><strong>User metadata</strong> — pull from custom WordPress user fields</li>
+  <li><strong>Custom sources</strong> — hook into any external data source (database, API)</li>
+</ul>
+
+<h3>Form Scheduling &amp; Limits</h3>
+<p>Control when forms are open and limit submissions:</p>
+<ul>
+  <li><strong>Schedule open/close dates</strong> — automatically enable/disable forms on specific dates</li>
+  <li><strong>Time-based scheduling</strong> — open form only during certain hours</li>
+  <li><strong>Submission limits</strong> — limit total submissions (e.g., max 100 registrations)</li>
+  <li><strong>Per-user limits</strong> — allow only 1 submission per user (per day/week/month)</li>
+  <li><strong>Custom messages</strong> — show "form closed" message when unavailable</li>
+</ul>
+
+<h3>Webhooks &amp; Pro Integrations</h3>
+<p>Send form data to external systems:</p>
+<ul>
+  <li><strong>Webhooks</strong> — POST submission data to external URLs in real time</li>
+  <li><strong>Many more integrations</strong> — beyond Lite's Mailchimp &amp; Brevo, Pro adds services such as ActiveCampaign, ConvertKit, HubSpot, Google Sheets, Slack, Zapier, and Make.com</li>
+  <li><strong>Custom destinations</strong> — hook into your own backend via webhooks or the integration APIs</li>
+</ul>
+
+<h3>Form Analytics</h3>
+<p>Track form performance and user behavior:</p>
+<ul>
+  <li><strong>View count</strong> — how many people opened the form</li>
+  <li><strong>Conversion rate</strong> — what percentage submitted</li>
+  <li><strong>Submission trend</strong> — daily/weekly submission volume</li>
+  <li><strong>Field abandonment</strong> — which fields cause users to drop off</li>
+  <li><strong>Performance reports</strong> — exportable analytics for stakeholders</li>
+</ul>
+
+<!-- Shortcode -->
+<h2 id="shortcode">Shortcode</h2>
+
+<p>Display a form anywhere using the shortcode:</p>
+
+<pre><code>[boldform id="YOUR_FORM_ID"]</code></pre>
+
+<p>The form ID is shown in the builder after saving. You can also copy it from the forms list page.</p>
+
+<!-- Gutenberg Block -->
+<h2 id="gutenberg-block">Gutenberg Block</h2>
+
+<ol>
+  <li>Edit a page/post in the block editor</li>
+  <li>Click <strong>+</strong> to add a block, search for <strong>"BoldForm"</strong></li>
+  <li>Select a form from the dropdown</li>
+</ol>
+
+<h3>Block Settings</h3>
+<p>The BoldForm block keeps styling in the form itself &mdash; the block simply renders the form using the
+design you set on its <a href="#style-tab">Style tab</a>. The block inspector (right sidebar) has a small
+<strong>Form Settings</strong> panel with just these controls:</p>
+<ul>
+  <li><strong>Select Form</strong> &mdash; choose which form to display</li>
+  <li><strong>Edit this form in builder</strong> &mdash; a shortcut link to open the selected form in the builder</li>
+  <li><strong>Hide Labels</strong> &mdash; render the form without field labels</li>
+  <li><strong>Hide Placeholders</strong> &mdash; render the form without placeholder text</li>
+</ul>
+<p class="bf-note">To change colors, spacing, borders, or button styling for a block-embedded form, edit the
+form's <a href="#style-tab">Style tab</a> in the builder. For per-placement visual overrides directly in the
+page editor, use the <a href="#elementor-widget">Elementor widget</a> instead, which exposes the full set of
+style controls.</p>
+
+<!-- Elementor Widget -->
+<h2 id="elementor-widget">Elementor Widget</h2>
+
+<ol>
+  <li>Edit a page with Elementor</li>
+  <li>Search for <strong>"BoldForm"</strong> in the widget panel</li>
+  <li>Drag it to your page and select a form</li>
+</ol>
+
+<h3>Style Sections</h3>
+<p>The Elementor widget provides extensive styling controls:</p>
+<ul>
+  <li><strong>Form Container</strong> &mdash; max width, padding, background (with gradient support), border, radius, box shadow (normal &amp; hover)</li>
+  <li><strong>Layout &amp; Spacing</strong> &mdash; row gap, column gap, field margin, input margin</li>
+  <li><strong>Labels</strong> &mdash; color, typography, margin, required indicator color</li>
+  <li><strong>Input Fields</strong> &mdash; height, padding, background (gradient), colors, border, radius, focus states (border color, background color), box shadow (normal &amp; focus)</li>
+  <li><strong>Placeholder</strong> &mdash; color, typography</li>
+  <li><strong>Checkbox &amp; Radio</strong> &mdash; accent color, size, label color, typography</li>
+  <li><strong>Custom Select</strong> &mdash; trigger styling, dropdown panel, search box, options (normal/hover/active states)</li>
+  <li><strong>Submit Button</strong> &mdash; width, padding, typography, background (gradient), colors (normal &amp; hover tabs), border, radius, icon color, box shadow (normal &amp; hover)</li>
+  <li><strong>Error &amp; Success Messages</strong> &mdash; colors, background (gradient), typography</li>
+</ul>
+
+<!-- Help & Support Page -->
+<h2 id="help-support">Help &amp; Support Page</h2>
+
+<p>BoldForm includes a built-in Help page with quick access to resources and support options:</p>
+
+<h3>Accessing the Help Page</h3>
+<p>Go to <strong>BoldForm &rarr; Help &amp; Support</strong> (or click the Help icon in the admin menu).</p>
+
+<h3>What's on the Help Page</h3>
+<ul>
+  <li><strong>User Guide</strong> &mdash; link to this documentation</li>
+  <li><strong>Developer Guide</strong> &mdash; for developers and custom integrations</li>
+  <li><strong>Support Center</strong> &mdash; community forum and ticketing system</li>
+  <li><strong>Reviews &amp; Ratings</strong> &mdash; rate and review the plugin on WordPress.org</li>
+  <li><strong>Feature Requests</strong> &mdash; suggest new features for future releases</li>
+  <li><strong>Documentation Site</strong> &mdash; comprehensive online documentation at themewant.com</li>
+</ul>
+
+<!-- Managing Entries -->
+<h2 id="managing-entries">Managing Entries</h2>
+
+<p>Go to <strong>BoldForm &rarr; Entries</strong> to view all submissions.</p>
+
+<h3>Entry Statuses</h3>
+<table>
+  <thead><tr><th>Status</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Unread</td><td>New submission, not yet viewed</td></tr>
+    <tr><td>Read</td><td>Submission has been viewed</td></tr>
+    <tr><td>Starred</td><td>Marked as important</td></tr>
+    <tr><td>Spam</td><td>Manually marked as spam from the entry detail view</td></tr>
+  </tbody>
+</table>
+
+<h3>Filtering &amp; Actions</h3>
+<ul>
+  <li>Filter by <strong>status</strong> using the tabs: All, Unread, Read, Starred, Spam (each shows a count)</li>
+  <li>Filter by <strong>form</strong> and by <strong>date range</strong> (All Time, Today, Yesterday, Last 7 Days, Last 30 Days, or a custom range)</li>
+  <li><strong>Star / unstar</strong> an entry directly from the list</li>
+  <li>Click an entry to open its <strong>detail view</strong> &mdash; opening an entry marks it Read</li>
+  <li>From the detail view: mark <strong>Read/Unread</strong>, mark/unmark <strong>Spam</strong>, or <strong>Delete</strong> the entry</li>
+  <li><strong>Export CSV</strong> &mdash; downloads the currently filtered entries (see below)</li>
+</ul>
+<p class="bf-note">Entries are deleted one at a time from the entry detail view. The Entries list does not have
+multi-select or a bulk-delete action.</p>
+
+<!-- Reports -->
+<h2 id="reports">Reports &amp; Analytics</h2>
+
+<p>Go to <strong>BoldForm &rarr; Reports</strong> to see an overview of your form performance.</p>
+
+<ul>
+  <li><strong>Total Forms</strong> &mdash; number of forms (published and draft; excludes trashed)</li>
+  <li><strong>Total Entries</strong> &mdash; total submissions across all forms</li>
+  <li><strong>Unread / Starred</strong> &mdash; entries needing attention</li>
+  <li><strong>Today / This Week</strong> &mdash; recent activity</li>
+  <li><strong>30-Day Chart</strong> &mdash; visual daily submission trend</li>
+  <li><strong>Per-Form Breakdown</strong> &mdash; entries per form with status counts</li>
+  <li><strong>Recent Entries</strong> &mdash; latest 10 submissions</li>
+</ul>
+
+<!-- Export & Import -->
+<h2 id="export-import">Export &amp; Import</h2>
+
+<p>Go to <strong>BoldForm &rarr; Settings &rarr; Tools</strong> for JSON export/import of forms and settings.
+For CSV export of individual entries, see <strong>CSV Entry Export</strong> below (done from the
+<a href="#managing-entries">Entries</a> page).</p>
+
+<h3>JSON Export/Import</h3>
+<ul>
+  <li><strong>All forms + settings</strong> &mdash; downloads everything as a JSON file</li>
+  <li><strong>Single form</strong> &mdash; export a specific form</li>
+  <li><strong>Plugin settings only</strong> &mdash; export global plugin settings</li>
+  <li><strong>Include entries</strong> &mdash; optionally include submission data</li>
+</ul>
+
+<h3>CSV Entry Export</h3>
+<ul>
+  <li>From the <strong>Entries</strong> list page, click <strong>Export CSV</strong> to download all visible entries as a spreadsheet</li>
+  <li>Exported CSV includes all fields and entry metadata</li>
+  <li>Useful for data analysis, reporting, or importing into external tools</li>
+</ul>
+
+<h3>Import</h3>
+<ul>
+  <li>Upload a previously exported <code>.json</code> file</li>
+  <li>Forms are imported with new IDs (original IDs are not overwritten)</li>
+  <li>Settings are merged with existing settings</li>
+</ul>
+
+<!-- Global Settings -->
+<h2 id="global-settings">Global Settings</h2>
+
+<p>Go to <strong>BoldForm &rarr; Settings</strong>. The Settings page has four tabs: <strong>General</strong>,
+<strong>Captcha</strong>, <strong>SMTP</strong>, and <strong>Tools</strong>. (Integrations is a separate
+top-level menu item, not a Settings tab &mdash; see <a href="#integrations">Integrations</a>.)</p>
+
+<h3>General Tab</h3>
+<ul>
+  <li><strong>Form Style Mode</strong> &mdash; "Plugin" (BoldForm styles) or "Theme" (inherit from your WordPress theme)</li>
+  <li><strong>Default email</strong> &mdash; fallback recipient for admin notifications (leave blank to use the site admin email)</li>
+  <li><strong>Validation Messages</strong> &mdash; customize the default error message for each field type</li>
+  <li><strong>Data</strong> &mdash; an opt-in toggle to delete all forms, entries, and settings when the plugin is uninstalled (off by default, so your data is preserved on uninstall)</li>
+</ul>
+
+<!-- Captcha -->
+<h2 id="captcha">Captcha Setup</h2>
+
+<p>Go to <strong>BoldForm &rarr; Settings &rarr; Captcha</strong> and choose one of three providers:</p>
+
+<ul>
+  <li><strong>Simple Math</strong> (default) &mdash; a built-in arithmetic challenge (e.g. &ldquo;3 + 4 = ?&rdquo;). Works out of the box with <em>no</em> API keys and no third-party requests.</li>
+  <li><strong>Google reCAPTCHA v2</strong> &mdash; the &ldquo;I'm not a robot&rdquo; checkbox. Requires a Site Key and Secret Key.</li>
+  <li><strong>hCaptcha</strong> &mdash; a privacy-focused reCAPTCHA alternative. Requires a Site Key and Secret Key.</li>
+</ul>
+
+<p>To set up a key-based provider:</p>
+<ol>
+  <li>Choose <strong>Google reCAPTCHA v2</strong> or <strong>hCaptcha</strong></li>
+  <li>Enter your <strong>Site Key</strong> and <strong>Secret Key</strong></li>
+  <li>Save settings</li>
+  <li>Add a <strong>Captcha</strong> field to your form in the builder</li>
+</ol>
+
+<p>For <strong>Simple Math</strong> there are no keys to enter &mdash; just add a <strong>Captcha</strong>
+field to your form. In every case the response is verified server-side before the entry is accepted.</p>
+
+<div class="bf-tip"><strong>Tip:</strong> Get reCAPTCHA keys at <a href="https://www.google.com/recaptcha/admin" target="_blank">google.com/recaptcha</a> and hCaptcha keys at <a href="https://dashboard.hcaptcha.com" target="_blank">dashboard.hcaptcha.com</a>.</div>
+
+<!-- SMTP -->
+<h2 id="smtp">SMTP Configuration</h2>
+
+<p>Go to <strong>BoldForm &rarr; Settings &rarr; SMTP</strong>.</p>
+
+<p>The SMTP tab has two sub-tabs: <strong>Configuration</strong> (settings below) and <strong>Mail Test</strong>
+(send a test message).</p>
+
+<h3>Configuration</h3>
+<p>The <strong>Sender</strong> details (From Name, From Email, Reply-To) apply to <em>all</em> BoldForm emails,
+even when SMTP is turned off. The remaining settings apply only when SMTP is enabled.</p>
+<table>
+  <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>From Name</td><td>Sender display name (applies even without SMTP)</td></tr>
+    <tr><td>From Email</td><td>Sender email address (applies even without SMTP)</td></tr>
+    <tr><td>Reply-To</td><td>Reply-to email address</td></tr>
+    <tr><td>Enable SMTP</td><td>Yes/No &mdash; route mail through your SMTP server</td></tr>
+    <tr><td>SMTP Host</td><td>Mail server hostname (e.g. <code>smtp.gmail.com</code>)</td></tr>
+    <tr><td>SMTP Port</td><td>Server port (usually 587 for TLS, 465 for SSL)</td></tr>
+    <tr><td>Encryption</td><td>None, TLS, or SSL</td></tr>
+    <tr><td>Authentication</td><td>Enable if the server requires login</td></tr>
+    <tr><td>Username</td><td>SMTP account username (shown when authentication is on)</td></tr>
+    <tr><td>Password</td><td>SMTP account password (shown when authentication is on)</td></tr>
+  </tbody>
+</table>
+
+<h3>Mail Test</h3>
+<p>On the <strong>Mail Test</strong> sub-tab, fill in the To / Subject / Message fields and click
+<strong>Send Test Mail</strong> to verify your configuration.</p>
+
+<div class="bf-warn"><strong>Important:</strong> If your From Email domain doesn't match your site domain, DMARC policies may cause emails to be rejected. In this case, BoldForm automatically sets the custom email as a Reply-To address instead.</div>
+
+<!-- Integrations -->
+<h2 id="integrations">Integrations</h2>
+
+<p>Go to <strong>BoldForm &rarr; Integrations</strong> to connect your forms with email marketing services.
+The page groups providers into category tabs (Newsletter, CRM, Productivity, Automation, Messaging, Storage).
+In BoldForm Lite, <strong>Mailchimp</strong> and <strong>Brevo</strong> are fully functional; the other provider
+cards are previews labelled <em>"Available in BoldForm Pro."</em></p>
+
+<h3>Mailchimp</h3>
+<ol>
+  <li>Click the Mailchimp card and toggle it <strong>On</strong></li>
+  <li>Click the <strong>Settings</strong> (gear) icon</li>
+  <li>Enter your <strong>API Key</strong> (found in Mailchimp &rarr; Account &rarr; API Keys)</li>
+  <li>Click <strong>Test Connection</strong> to load your audiences</li>
+  <li>Select an <strong>Audience</strong></li>
+  <li>Optionally add <strong>Tags</strong> and enable <strong>Double Opt-in</strong></li>
+  <li>Click <strong>Save</strong></li>
+</ol>
+
+<h3>Brevo (Sendinblue)</h3>
+<ol>
+  <li>Click the Brevo card and toggle it <strong>On</strong></li>
+  <li>Click Settings, enter your <strong>API Key</strong></li>
+  <li>Test the connection and select a <strong>Contact List</strong></li>
+  <li>Click <strong>Save</strong></li>
+</ol>
+
+<h3>Per-Form Connection</h3>
+<p>After setting up a global connection, assign it to individual forms in the builder's <strong>Settings</strong> tab under <strong>Integrations</strong>. Map form fields (email, first name, last name) to the integration.</p>
+
+<!-- Troubleshooting -->
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<h3>Form Not Showing on Page</h3>
+<p><strong>Problem:</strong> The form shortcode or block doesn't render.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li>Verify the form ID is correct: <code>[boldform id="1"]</code> (replace "1" with your actual form ID)</li>
+  <li>Check that the form status is <strong>Published</strong> (not Draft) in the Forms list</li>
+  <li>If using a block, ensure you selected a form from the block inspector dropdown</li>
+  <li>Clear your page cache if using a caching plugin</li>
+</ul>
+
+<h3>Styles Look Wrong (Theme Conflicts)</h3>
+<p><strong>Problem:</strong> Form fields are sized oddly, colors are wrong, or layout is broken.</p>
+<p><strong>Solution:</strong> Go to <strong>BoldForm &rarr; Settings &rarr; General</strong> and toggle <strong>Form Style Mode</strong> from "Theme" to "Plugin". This tells BoldForm to use its own CSS instead of inheriting conflicting theme styles. If that fixes it, the issue is theme-related; you can adjust individual field styles in the Style tab to blend with your theme.</p>
+
+<h3>Form Submissions Not Working (AJAX Disabled)</h3>
+<p><strong>Problem:</strong> Form doesn't submit, or page reloads when you click Submit.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li>Check browser console (F12) for JavaScript errors</li>
+  <li>Disable any JavaScript minification/optimization plugins temporarily to rule them out</li>
+  <li>If AJAX is disabled by your hosting, the form will fall back to a classic POST submission (page reloads) — this is normal and still works</li>
+  <li>Verify the nonce is loading: look for <code>boldform_nonce</code> in the page source</li>
+</ul>
+
+<h3>Emails Not Being Delivered</h3>
+<p><strong>Problem:</strong> Admin and user emails are not arriving.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li><strong>Configure SMTP:</strong> Go to <strong>BoldForm &rarr; Settings &rarr; SMTP</strong>. Many hosting providers block PHP's default mail(); you must use SMTP.</li>
+  <li><strong>Use a reputable SMTP service:</strong> Gmail, SendGrid, your host's mail server, or an email marketing service</li>
+  <li><strong>Check spam folder:</strong> DMARC/SPF/DKIM issues may cause emails to be flagged as spam</li>
+  <li><strong>From Email domain mismatch:</strong> If your From Email domain doesn't match your site domain, DMARC may reject it. BoldForm automatically uses it as a Reply-To instead.</li>
+  <li><strong>Send a test email:</strong> Go to the SMTP tab's <strong>Mail Test</strong> sub-tab and use "Send Test Mail" to verify configuration</li>
+</ul>
+
+<h3>Entries Not Saving</h3>
+<p><strong>Problem:</strong> Form submits successfully but no entry appears in the Entries list.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li>Check whether the submission was blocked as a duplicate, or rejected by the honeypot/captcha (rejected submissions are <em>not</em> saved and do not appear in the Spam tab)</li>
+  <li>Verify the form status is <strong>Published</strong></li>
+  <li>Check if a validation hook is rejecting the entry (custom code via `boldform_gate_submission` filter)</li>
+  <li>Check server error logs for database errors</li>
+</ul>
+
+<h3>File Uploads Not Working</h3>
+<p><strong>Problem:</strong> File upload field rejects all files or doesn't upload.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li><strong>Check file type:</strong> SVG and SVGZ files are rejected for security. Allowed types are configured in the field settings.</li>
+  <li><strong>Check file size:</strong> Verify the file is under the max size limit configured in the field</li>
+  <li><strong>Check WordPress upload limit:</strong> Go to <strong>Settings &rarr; Media</strong> and increase "Max upload file size" if needed</li>
+  <li><strong>Check server limits:</strong> Your hosting may have PHP `upload_max_filesize` and `post_max_size` limits; contact your host to increase them</li>
+  <li><strong>Check permissions:</strong> Ensure <code>wp-content/uploads/</code> is writable</li>
+</ul>
+
+<h3>Validation Errors Not Showing</h3>
+<p><strong>Problem:</strong> Invalid entries submit without error messages.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li>Ensure validation rules are enabled in field settings (e.g., "Required", "Email", min/max)</li>
+  <li>Check browser console for JavaScript errors that may prevent validation</li>
+  <li>Verify the custom error message is not empty (leave blank to use the default)</li>
+</ul>
+
+<h3>Duplicate Prevention Not Working</h3>
+<p><strong>Problem:</strong> Users can submit the same form multiple times from the same IP.</p>
+<p><strong>Solutions:</strong></p>
+<ul>
+  <li>In the form's <strong>Settings &rarr; Security</strong> tab, verify Duplicate Prevention is enabled and a detection method (Email, IP Address, or Custom Field) is selected</li>
+  <li>The check has no time limit &mdash; it blocks a submission if a matching value exists in any previous non-spam entry for that form</li>
+  <li>If IP detection isn't reliable (e.g., behind a proxy), switch to the Email or Custom Field method, or add an email uniqueness check with the `boldform_validate_field` filter</li>
+</ul>
+
+<!-- Multisite -->
+<h2 id="multisite">Multisite Support</h2>
+
+<p>BoldForm Lite fully supports WordPress multisite:</p>
+<ul>
+  <li><strong>Network activation</strong> creates database tables for all existing subsites</li>
+  <li><strong>New subsites</strong> automatically get tables when created</li>
+  <li>Each subsite has its own independent forms, entries, and settings</li>
+  <li>A safety net on <code>plugins_loaded</code> ensures tables exist even if activation was missed</li>
+</ul>
+
+<!-- FAQ -->
+<h2 id="faq">Frequently Asked Questions</h2>
+
+<h3>How do I display a form on my page?</h3>
+<p>Use the shortcode <code>[boldform id="X"]</code>, the Gutenberg block, or the Elementor widget.</p>
+
+<h3>Why aren't emails being delivered?</h3>
+<p>Configure SMTP in BoldForm &rarr; Settings &rarr; SMTP. Many hosting providers block default PHP mail. Use an SMTP service like Gmail, SendGrid, or your host's SMTP server.</p>
+
+<h3>Can I have multiple forms on one page?</h3>
+<p>Yes. Each form operates independently with its own submission handling.</p>
+
+<h3>How do I add a file upload field?</h3>
+<p>Add the <strong>File Upload</strong> field from the Advanced section in the Field Library. Configure allowed file types and max file size in the field settings.</p>
+
+<h3>Where are uploaded files stored?</h3>
+<p>Uploaded files are stored in your WordPress uploads directory under <code>wp-content/uploads/boldform/</code>.</p>
+
+<h3>Can I style forms differently per page?</h3>
+<p>Yes. Use the Gutenberg block or Elementor widget &mdash; each instance has its own style overrides that only affect that specific form placement.</p>
+
+<h3>How do I prevent spam?</h3>
+<p>BoldForm includes a built-in honeypot field. For stronger protection, add a Captcha field &mdash; the default Simple Math challenge works with no setup, or switch to reCAPTCHA/hCaptcha after configuring your keys in Settings.</p>
+
+<h3>Does it work with caching plugins?</h3>
+<p>Yes. AJAX submission works with page caching. If you use fragment caching, ensure the form shortcode is excluded from cache.</p>
+
+<h3>How do I export entries as CSV?</h3>
+<p>Go to <strong>BoldForm &rarr; Entries</strong>, view the entries you want to export, and click the <strong>Export CSV</strong> button. All visible entries are exported as a spreadsheet file that you can open in Excel or Google Sheets.</p>
+
+<h3>Can I delete old entries to comply with GDPR?</h3>
+<p>Yes. Open an entry from <strong>BoldForm &rarr; Entries</strong> and use the <strong>Delete</strong> action to remove it. To remove all entries tied to a person, use the WordPress privacy tools at <strong>Tools &rarr; Erase Personal Data</strong>, which delete every entry from a specific email address.</p>
+
+<h3>How do I style the file upload drop-zone?</h3>
+<p>In the <strong>Style</strong> tab, open the <strong>File Upload</strong> section. You can customize the drag-and-drop drop-zone's background color, border, and icon/text color.</p>
+
+<h3>Can I have different styles for different devices (mobile, tablet, desktop)?</h3>
+<p>Yes. In the <strong>Style</strong> tab, every styling control has tabs for Desktop, Tablet, and Mobile. Set different values for each breakpoint. For example, you can use a larger font size on desktop and a smaller one on mobile.</p>
+
+<h3>What's the difference between honeypot and captcha?</h3>
+<p><strong>Honeypot</strong> is invisible and catches automated bots (they auto-fill all fields). <strong>Captcha</strong> is visible and requires human verification (solving a puzzle). Use both for maximum spam protection: honeypot catches bots, captcha catches sophisticated attacks.</p>
+
+<h3>Can I manually mark entries as spam?</h3>
+<p>Yes. Go to <strong>BoldForm &rarr; Entries</strong>, click an entry, and select <strong>Mark as Spam</strong>. You can view all spam entries in the <strong>Spam</strong> filter tab.</p>
+
+<h3>Can I customize validation error messages?</h3>
+<p>Yes. Go to <strong>Settings &rarr; General</strong> to set default error messages for each field type. In the form builder, you can also set custom error messages for individual fields under <strong>Field Settings</strong>.</p>
+
+<hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.0 &mdash; User Guide &mdash; &copy; Themewant</p>
+
+</main>
+</div>
+
+<script>
+// Highlight active sidebar link on scroll
+(function(){
+  var links=document.querySelectorAll('.bf-sidebar__link');
+  var sections=[];
+  links.forEach(function(l){var h=l.getAttribute('href');if(h&&h.charAt(0)==='#'){var el=document.getElementById(h.slice(1));if(el)sections.push({link:l,el:el})}});
+  function update(){var st=window.scrollY+80;sections.forEach(function(s){s.link.classList.remove('is-active')});for(var i=sections.length-1;i>=0;i--){if(sections[i].el.offsetTop<=st){sections[i].link.classList.add('is-active');break}}}
+  window.addEventListener('scroll',update);update();
+})();
+</script>
+
+</body>
+</html>

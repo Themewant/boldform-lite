@@ -393,7 +393,8 @@ Improvements:
 * Improve: Style-tab numeric controls no longer overlap the unit suffix with the spinner arrows; Padding, Margin, and Border-Radius gained a visible stepper, and size and spacing fields show a meaningful placeholder ("Default" or "—") instead of a misleading "0".
 * Improve: The colour reset button now stays disabled until a colour is changed, so it is clear when a value differs from the default.
 * Improve: BoldForm admin screens now show only BoldForm's own notices — promotional banners from other plugins or the active theme are suppressed on our screens.
-* Improve: The Star Rating field settings were trimmed to the options that apply (removed Placeholder, Default Value, Star Color, and Star Size).
+* Improve: Star Rating is now styled per field — Number of Stars, Icon Size, Star Color (resting), and Active Color (hover/selected) live in the field's own settings; the global Star Rating section was removed from the Style tab. Placeholder and Default Value remain hidden as they do not apply.
+* Improve: Each field type now starts with a sensible default placeholder (e.g. "you@example.com" for email, "https://example.com" for URL) shown consistently on the canvas, preview, and front end; it can be edited or cleared per field.
 * Improve: Renamed every admin-visible "Bold Form" to "BoldForm" for consistent product branding.
 * Improve: Moved the Integrations submenu directly above Help & Support in the BoldForm admin menu.
 * Improve: Balanced the Entries list-table column widths so the Submission column no longer crowds the Form, Date, and Status columns.
@@ -416,6 +417,7 @@ Fixes:
 * Fix: A row can no longer be dropped below the Submit or Add Row buttons in the builder canvas.
 * Fix: Removed a leading gap before left- and right-aligned field labels in both the builder and the front-end form.
 * Fix: Removed a duplicate "Add Row" panel-header button and a stray file-input sample from the Style-tab live preview.
+* Fix: The Star Rating "Number of Stars" control no longer loses keyboard focus after each spinner/arrow-key increment.
 
 Compatibility:
 * Update: Tested up to WordPress 7.0; minimum supported version is now WordPress 6.3.
