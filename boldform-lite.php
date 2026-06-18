@@ -196,7 +196,7 @@ function boldform_lite_appsero() {
 	}
 
 	if ( ! class_exists( 'Appsero\Client' ) ) {
-		$sdk = BOLDFORM_LITE_PATH . 'appsero/src/Client.php';
+		$sdk = BOLDFORM_LITE_PATH . 'includes/appsero/Client.php';
 
 		if ( ! is_readable( $sdk ) ) {
 			return;
