@@ -39,6 +39,39 @@
 		return null;
 	}
 
+	/** True when a type def declares a field with the given key. */
+	function defHasField( def, key ) {
+		return !! ( def && Array.isArray( def.fields ) && def.fields.some( function ( f ) {
+			return f && f.key === key;
+		} ) );
+	}
+
+	/** True when a type def has a list_select (dropdown) field. */
+	function defHasListSelect( def ) {
+		return !! ( def && Array.isArray( def.fields ) && def.fields.some( function ( f ) {
+			return f && f.type === 'list_select';
+		} ) );
+	}
+
+	/**
+	 * Keyless integrations have no api_key field — e.g. FluentCRM, which runs
+	 * on the same site and reads lists through its local API. These connect
+	 * (and load lists) without the admin entering any key.
+	 */
+	function isKeylessType( def ) {
+		return !! ( def && ! defHasField( def, 'api_key' ) );
+	}
+
+	/**
+	 * True when a type's lists can load the moment the modal opens — i.e. a
+	 * keyless type with a list dropdown (FluentCRM). Keyless types WITHOUT a
+	 * dropdown (e.g. Google Sheets) still need the admin to fill other required
+	 * fields first, so they wait for an explicit Test Connection click.
+	 */
+	function canAutoLoadOnOpen( def ) {
+		return isKeylessType( def ) && defHasListSelect( def );
+	}
+
 	/** Find connection object for a given type. */
 	function connByType( type ) {
 		for ( var k in connections ) {
@@ -110,8 +143,11 @@
 		$( '#bf-conn-modal-status' ).text( '' ).removeClass( 'is-error is-ok' );
 		$( '#bf-conn-modal-body' ).html( buildModalBody( def, editingConn ) );
 
-		// Pre-load lists if a key is already stored (fetched server-side by conn ID).
-		if ( editingConn && editingConn.has_key ) {
+		// Pre-load lists if a key is already stored (fetched server-side by conn
+		// ID), or for keyless dropdown integrations (e.g. FluentCRM) that need no
+		// input. Keyless types requiring fields first (Google Sheets) wait for a
+		// manual Test Connection.
+		if ( ( editingConn && editingConn.has_key ) || canAutoLoadOnOpen( def ) ) {
 			doFetchLists( false );
 		}
 
@@ -189,8 +225,10 @@
 	function buildListSelectRow( def, conn ) {
 		conn = conn || {};
 		var listLabel = def.list_label || 'List';
+		var keyless   = isKeylessType( def );
 
-		if ( ! conn.has_key ) {
+		// Keyless types (e.g. FluentCRM) auto-load on open, so show the spinner.
+		if ( ! conn.has_key && ! keyless ) {
 			return (
 				'<div class="bf-modal-row" id="bf-list-row">' +
 					'<label class="bf-modal-label">' + escHtml( listLabel ) + '</label>' +
@@ -241,6 +279,7 @@
 		}
 
 		var typedKey = $.trim( $( '#bf-conn-api_key' ).val() || '' );
+		var keyless  = isKeylessType( typeDefBySlug( editingType ) );
 
 		var onDone = function ( res ) {
 			if ( res && res.success ) {
@@ -250,6 +289,7 @@
 			} else {
 				var msg = ( res && res.data && res.data.message ) ? res.data.message : 'Failed.';
 				setStatus( ( i18n.testFail || 'Failed: ' ) + msg, 'is-error' );
+				renderListSelect( [], editingConn ? editingConn.list_id : '' ); // clear the loading spinner
 			}
 		};
 		var onFail   = function () { setStatus( 'Request failed.', 'is-error' ); };
@@ -257,8 +297,9 @@
 			$( '#bf-conn-test-btn' ).prop( 'disabled', false ).text( i18n.test || 'Test Connection' );
 		};
 
-		if ( typedKey ) {
-			// Validate the freshly-typed key.
+		if ( typedKey || keyless ) {
+			// Validate the freshly-typed key, or — for keyless integrations such
+			// as FluentCRM — connect with no key at all (server ignores api_key).
 			$.post( ajaxUrl, {
 				action:  'boldform_connection_test',
 				nonce:   nonce,
