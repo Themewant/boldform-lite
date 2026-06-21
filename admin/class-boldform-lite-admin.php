@@ -1899,7 +1899,7 @@ class BoldForm_Lite_Admin {
 								<?php $this->render_sortable_th( 'entries', 'boldform-col-entries', __( 'Entries', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
 								<th class="boldform-col-status"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
 								<?php $this->render_sortable_th( 'updated', 'boldform-col-date', __( 'Updated', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
-								<th class="boldform-col-actions"></th>
+								<th class="boldform-col-actions"><?php esc_html_e( 'Actions', 'boldform-lite' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>

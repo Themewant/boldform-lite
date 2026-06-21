@@ -675,23 +675,37 @@
 .boldform-page-header .boldform-btn-add {
 	display: inline-flex;
 	align-items: center;
-	gap: 4px;
-	padding: 6px 16px;
+	gap: 7px;
+	padding: 8px 18px;
 	background: #2271b1;
 	color: #fff;
 	border: none;
-	border-radius: 6px;
+	border-radius: 8px;
 	font-size: 13px;
-	font-weight: 500;
+	font-weight: 600;
+	line-height: 1.4;
 	text-decoration: none;
 	cursor: pointer;
-	transition: background 0.15s;
+	box-shadow: 0 1px 2px rgba(34, 113, 177, 0.3);
+	transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
 }
 
 .boldform-page-header .boldform-btn-add:hover,
 .boldform-page-header .boldform-btn-add:focus {
 	background: #135e96;
 	color: #fff;
+	box-shadow: 0 4px 12px rgba(34, 113, 177, 0.35);
+	transform: translateY(-1px);
+}
+
+.boldform-page-header .boldform-btn-add:active {
+	transform: translateY(0);
+	box-shadow: 0 1px 2px rgba(34, 113, 177, 0.3);
+}
+
+.boldform-page-header .boldform-btn-add:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.35);
 }
 
 .boldform-page-header .boldform-btn-add .dashicons {
@@ -1060,7 +1074,7 @@
 .boldform-col-entries { width: 80px; text-align: center; }
 .boldform-col-status { width: 120px; }
 .boldform-col-date { width: 110px; }
-.boldform-col-actions { width: 46px; text-align: center; }
+.boldform-col-actions { width: 90px; text-align: center; white-space: nowrap; }
 
 .boldform-col-cb input[type="checkbox"] {
 	width: 16px;
