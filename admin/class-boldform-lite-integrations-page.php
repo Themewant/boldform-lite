@@ -127,25 +127,34 @@ class BoldForm_Lite_Integrations_Page {
 			1000
 		);
 
+		// Cache-bust by file mtime (fall back to the plugin version) so CSS/JS
+		// edits show without a hard refresh, matching the builder assets.
+		$settings_css = BOLDFORM_LITE_PATH . 'assets/css/settings.css';
+		$int_css      = BOLDFORM_LITE_PATH . 'assets/css/integrations-page.css';
+		$int_js       = BOLDFORM_LITE_PATH . 'assets/js/integrations-page.js';
+		$settings_ver = file_exists( $settings_css ) ? (string) filemtime( $settings_css ) : BOLDFORM_LITE_VERSION;
+		$int_css_ver  = file_exists( $int_css ) ? (string) filemtime( $int_css ) : BOLDFORM_LITE_VERSION;
+		$int_js_ver   = file_exists( $int_js ) ? (string) filemtime( $int_js ) : BOLDFORM_LITE_VERSION;
+
 		wp_enqueue_style(
 			'boldform-lite-admin',
 			BOLDFORM_LITE_URL . 'assets/css/settings.css',
 			array(),
-			BOLDFORM_LITE_VERSION
+			$settings_ver
 		);
 
 		wp_enqueue_style(
 			'boldform-lite-integrations-page',
 			BOLDFORM_LITE_URL . 'assets/css/integrations-page.css',
 			array( 'boldform-lite-admin' ),
-			BOLDFORM_LITE_VERSION
+			$int_css_ver
 		);
 
 		wp_enqueue_script(
 			'boldform-lite-integrations-page',
 			BOLDFORM_LITE_URL . 'assets/js/integrations-page.js',
 			array( 'jquery' ),
-			BOLDFORM_LITE_VERSION,
+			$int_js_ver,
 			true
 		);
 

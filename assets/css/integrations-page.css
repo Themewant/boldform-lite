@@ -39,37 +39,47 @@
 .boldform-int-tabs {
 	display: inline-flex;
 	flex-wrap: wrap;
-	margin-bottom: 14px;
-	border: 1px solid #d0d5dd;
-	border-radius: 6px;
-	overflow: hidden;
+	gap: 5px;
+	margin-bottom: 20px;
+	padding: 5px;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
 }
 
 .boldform-int-tab {
 	display: inline-flex;
 	align-items: center;
-	padding: 7px 14px;
-	border-right: 1px solid #d0d5dd;
-	font-size: 12px;
-	font-weight: 500;
-	color: #50575e;
+	padding: 7px 16px;
+	border: 0;
+	border-radius: 8px;
+	font-size: 12.5px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: #475569;
 	text-decoration: none;
-	background: #fff;
-	transition: background 0.14s, color 0.14s;
-}
-
-.boldform-int-tab:last-child {
-	border-right: 0;
+	background: transparent;
+	transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .boldform-int-tab:hover {
-	background: #f9fafb;
-	color: #1d2327;
+	background: rgba(255, 255, 255, 0.7);
+	color: #1e293b;
+}
+
+.boldform-int-tab:focus {
+	outline: none;
+	box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(34, 113, 177, 0.35);
 }
 
 .boldform-int-tab.is-active {
-	background: #2271b1;
-	color: #fff;
+	background: #fff;
+	color: #2271b1;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12), 0 1px 1px rgba(15, 23, 42, 0.04);
+}
+
+.boldform-int-tab.is-active:hover {
+	background: #fff;
 }
 
 /* ── Grid ─────────────────────────────────────────────────────────────────── */
@@ -99,8 +109,8 @@
 }
 
 .bf-int-card.is-on {
-	border-color: #16a34a;
-	background: #f8fdf9;
+	border-color: #2271b1;
+	background: #f0f6fc;
 }
 
 /* Icon */
@@ -235,7 +245,7 @@
 }
 
 .bf-int-toggle input:checked + .bf-int-toggle__track {
-	background: #16a34a;
+	background: #2271b1;
 }
 
 .bf-int-toggle input:checked + .bf-int-toggle__track::after {
@@ -264,87 +274,96 @@
 .bf-conn-modal__backdrop {
 	position: absolute;
 	inset: 0;
-	background: rgba(0, 0, 0, 0.5);
+	background: rgba(15, 23, 42, 0.55);
+	-webkit-backdrop-filter: blur(2px);
+	backdrop-filter: blur(2px);
 }
 
 .bf-conn-modal__dialog {
 	position: relative;
 	z-index: 1;
 	background: #fff;
-	border-radius: 8px;
-	width: 520px;
+	border-radius: 14px;
+	width: 540px;
 	max-width: calc(100vw - 40px);
 	max-height: calc(100vh - 80px);
 	display: flex;
 	flex-direction: column;
-	box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+	box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28), 0 4px 12px rgba(15, 23, 42, 0.1);
 	overflow: hidden;
+	animation: bf-modal-in 0.18s ease;
+}
+
+@keyframes bf-modal-in {
+	from { opacity: 0; transform: translateY(10px) scale(0.985); }
+	to   { opacity: 1; transform: none; }
 }
 
 .bf-conn-modal__head {
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	padding: 16px 20px;
-	border-bottom: 1px solid #e2e4e7;
-	background: #f8f9fa;
+	padding: 18px 24px;
+	border-bottom: 1px solid #e2e8f0;
+	background: #fff;
 }
 
 .bf-conn-modal__title {
 	flex: 1;
-	font-size: 15px;
-	font-weight: 600;
-	color: #1d2327;
+	font-size: 16px;
+	font-weight: 700;
+	color: #1e293b;
+	letter-spacing: -0.01em;
 }
 
 .bf-conn-modal__close {
-	width: 28px;
-	height: 28px;
+	width: 30px;
+	height: 30px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: none;
-	border: 1px solid #d0d5dd;
-	border-radius: 4px;
-	font-size: 16px;
+	background: #f1f5f9;
+	border: 0;
+	border-radius: 8px;
+	font-size: 18px;
 	line-height: 1;
-	color: #667085;
+	color: #64748b;
 	cursor: pointer;
 	padding: 0;
-	transition: all 0.12s;
+	transition: background 0.14s, color 0.14s;
 }
 
 .bf-conn-modal__close:hover {
-	color: #1d2327;
-	border-color: #98a2b3;
+	background: #e2e8f0;
+	color: #1e293b;
 }
 
 .bf-conn-modal__body {
-	padding: 20px;
+	padding: 22px 24px;
 	overflow-y: auto;
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 16px;
 }
 
 .bf-conn-modal__foot {
-	padding: 14px 20px;
-	border-top: 1px solid #e2e4e7;
+	padding: 16px 24px;
+	border-top: 1px solid #e2e8f0;
 	display: flex;
 	align-items: center;
 	gap: 10px;
-	background: #f8f9fa;
+	background: #f8fafc;
 }
 
 .bf-conn-modal__status {
 	flex: 1;
 	font-size: 12px;
-	color: #667085;
+	color: #64748b;
 }
 
 .bf-conn-modal__status.is-ok {
-	color: #166534;
+	color: #15803d;
 	font-weight: 600;
 }
 
@@ -354,15 +373,31 @@
 
 .bf-conn-modal__actions {
 	display: flex;
-	gap: 6px;
+	gap: 8px;
 	flex-shrink: 0;
+}
+
+/* Footer buttons: round to match the modal; keep WP primary/secondary colors. */
+.bf-conn-modal__foot .button {
+	min-height: 36px;
+	height: auto;
+	padding: 5px 16px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.5;
+	display: inline-flex;
+	align-items: center;
+	/* WP core buttons don't transition by default, so bg/border/color/shadow
+	   snapped on hover/focus. Animate them for a smooth state change. */
+	transition: background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, box-shadow 0.14s ease;
 }
 
 /* ── Modal form rows ──────────────────────────────────────────────────────── */
 .bf-modal-row {
 	display: flex;
 	flex-direction: column;
-	gap: 5px;
+	gap: 6px;
 }
 
 .bf-modal-row--inline {
@@ -372,43 +407,43 @@
 }
 
 .bf-modal-label {
-	font-size: 12px;
+	font-size: 12.5px;
 	font-weight: 600;
-	color: #344054;
+	color: #475569;
 }
 
 .bf-modal-req {
-	color: #d63638;
+	color: #dc2626;
 }
 
 .bf-modal-hint {
 	font-weight: 400;
-	color: #98a2b3;
+	color: #94a3b8;
 }
 
 .bf-modal-check-label {
 	display: flex;
 	align-items: center;
-	gap: 7px;
+	gap: 8px;
 	font-size: 13px;
-	color: #344054;
+	color: #334155;
 	cursor: pointer;
 }
 
 .bf-modal-section-title {
 	font-size: 11px;
 	font-weight: 700;
-	color: #98a2b3;
+	color: #94a3b8;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	padding-top: 10px;
-	border-top: 1px solid #f0f0f1;
+	letter-spacing: 0.06em;
+	padding-top: 14px;
+	border-top: 1px solid #f1f5f9;
 	margin-top: 4px;
 }
 
 .bf-modal-hint-text {
 	font-size: 12px;
-	color: #98a2b3;
+	color: #94a3b8;
 	margin: 0;
 	line-height: 1.5;
 }
@@ -420,20 +455,41 @@
 /* Modal inputs */
 .bf-conn-modal__body .regular-text,
 .bf-conn-modal__body .large-text,
+.bf-conn-modal__body input[type="text"],
+.bf-conn-modal__body input[type="password"],
 .bf-conn-modal__body select {
-	border: 1px solid #d0d5dd;
-	border-radius: 6px;
-	padding: 7px 10px;
+	width: 100%;
+	max-width: unset;
+	box-sizing: border-box;
+	min-height: 40px;
+	border: 1px solid #cbd5e1;
+	border-radius: 9px;
+	padding: 9px 12px;
 	font-size: 13px;
-	color: #1d2327;
+	color: #1e293b;
+	background-color: #fff;
 	transition: border-color 0.14s, box-shadow 0.14s;
+}
+
+.bf-conn-modal__body select {
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	padding-right: 34px;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 14px;
+	cursor: pointer;
 }
 
 .bf-conn-modal__body .regular-text:focus,
 .bf-conn-modal__body .large-text:focus,
+.bf-conn-modal__body input[type="text"]:focus,
+.bf-conn-modal__body input[type="password"]:focus,
 .bf-conn-modal__body select:focus {
 	border-color: #2271b1;
-	box-shadow: 0 0 0 1px #2271b1;
+	box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.14);
 	outline: none;
 }
 

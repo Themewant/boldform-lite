@@ -1148,7 +1148,7 @@ class BoldForm_Lite_Admin {
 				'boldform-lite-admin',
 				BOLDFORM_LITE_URL . 'assets/css/settings.css',
 				array(),
-				BOLDFORM_LITE_VERSION
+				$this->asset_version( 'assets/css/settings.css' )
 			);
 
 			// Shared admin JS handle — inline scripts for each page are attached below.
@@ -1890,6 +1890,7 @@ class BoldForm_Lite_Admin {
 
 				<form method="post" id="boldform-bulk-form" action="<?php echo esc_url( $form_action_url ); ?>">
 					<?php wp_nonce_field( 'boldform_lite_bulk_action', 'boldform_bulk_nonce' ); ?>
+					<div class="boldform-table-scroll">
 					<table class="boldform-forms-table">
 						<thead>
 							<tr>
@@ -1899,7 +1900,7 @@ class BoldForm_Lite_Admin {
 								<?php $this->render_sortable_th( 'entries', 'boldform-col-entries', __( 'Entries', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
 								<th class="boldform-col-status"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
 								<?php $this->render_sortable_th( 'updated', 'boldform-col-date', __( 'Updated', 'boldform-lite' ), $orderby, $order, $sort_base_url ); ?>
-								<th class="boldform-col-actions"></th>
+								<th class="boldform-col-actions"><?php esc_html_e( 'Actions', 'boldform-lite' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -1999,6 +2000,7 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</tbody>
 					</table>
+					</div>
 				</form>
 			</div>
 
@@ -2371,7 +2373,8 @@ class BoldForm_Lite_Admin {
 			</div>
 
 			<div class="boldform-table-card">
-				<table class="widefat fixed striped boldform-entries-table">
+				<div class="boldform-table-scroll">
+				<table class="widefat fixed boldform-entries-table">
 					<thead>
 						<tr>
 							<th style="width:40px;">&nbsp;</th>
@@ -2417,6 +2420,7 @@ class BoldForm_Lite_Admin {
 						<?php endif; ?>
 					</tbody>
 				</table>
+				</div>
 
 				<?php if ( $total_pages > 1 ) : ?>
 					<div class="boldform-pagination">
