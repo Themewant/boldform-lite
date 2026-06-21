@@ -292,7 +292,23 @@
 	font-weight: 600;
 	color: #1d2327;
 	margin: 0 0 16px;
-	padding: 0;
+	padding: 0 0 14px;
+	border-bottom: 1px solid #e9e9ed;
+}
+
+/* When an intro paragraph follows the title, the title hugs it and the
+   separator moves below the paragraph instead (so the whole header block —
+   title + intro — sits above one divider). */
+.boldform-card h3:has(+ .boldform-tab-description) {
+	margin-bottom: 6px;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.boldform-card > .boldform-tab-description {
+	margin: 0 0 16px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid #e9e9ed;
 }
 
 /* ── Field rows ── */
