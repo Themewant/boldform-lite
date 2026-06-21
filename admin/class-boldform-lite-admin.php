@@ -1148,7 +1148,7 @@ class BoldForm_Lite_Admin {
 				'boldform-lite-admin',
 				BOLDFORM_LITE_URL . 'assets/css/settings.css',
 				array(),
-				BOLDFORM_LITE_VERSION
+				$this->asset_version( 'assets/css/settings.css' )
 			);
 
 			// Shared admin JS handle — inline scripts for each page are attached below.
@@ -2371,7 +2371,7 @@ class BoldForm_Lite_Admin {
 			</div>
 
 			<div class="boldform-table-card">
-				<table class="widefat fixed striped boldform-entries-table">
+				<table class="widefat fixed boldform-entries-table">
 					<thead>
 						<tr>
 							<th style="width:40px;">&nbsp;</th>
