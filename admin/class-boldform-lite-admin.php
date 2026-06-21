@@ -1890,6 +1890,7 @@ class BoldForm_Lite_Admin {
 
 				<form method="post" id="boldform-bulk-form" action="<?php echo esc_url( $form_action_url ); ?>">
 					<?php wp_nonce_field( 'boldform_lite_bulk_action', 'boldform_bulk_nonce' ); ?>
+					<div class="boldform-table-scroll">
 					<table class="boldform-forms-table">
 						<thead>
 							<tr>
@@ -1999,6 +2000,7 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</tbody>
 					</table>
+					</div>
 				</form>
 			</div>
 
@@ -2371,6 +2373,7 @@ class BoldForm_Lite_Admin {
 			</div>
 
 			<div class="boldform-table-card">
+				<div class="boldform-table-scroll">
 				<table class="widefat fixed boldform-entries-table">
 					<thead>
 						<tr>
@@ -2417,6 +2420,7 @@ class BoldForm_Lite_Admin {
 						<?php endif; ?>
 					</tbody>
 				</table>
+				</div>
 
 				<?php if ( $total_pages > 1 ) : ?>
 					<div class="boldform-pagination">
