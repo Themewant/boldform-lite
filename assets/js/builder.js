@@ -243,13 +243,33 @@ jQuery(
 				country: typeof field.address_fields.country === 'undefined' ? true : !! field.address_fields.country
 			} : { street: true, city: true, state: true, zip: true, country: true };
 			normalized.address_order = field && Array.isArray( field.address_order ) && field.address_order.length ? field.address_order : [ 'street', 'city', 'state', 'zip', 'country' ];
-			normalized.conditional = field && field.conditional ? {
-				enabled: !! field.conditional.enabled,
-				action: field.conditional.action || 'show',
-				field_id: field.conditional.field_id || '',
-				operator: field.conditional.operator || 'is',
-				value: field.conditional.value || ''
-			} : { enabled: false, action: 'show', field_id: '', operator: 'is', value: '' };
+			if ( field && field.conditional ) {
+				var rawCond = field.conditional;
+				// Preserve the saved multi-condition structure; fall back to the
+				// legacy flat { field_id, operator, value } shape for old forms.
+				var condList = Array.isArray( rawCond.conditions ) && rawCond.conditions.length
+					? rawCond.conditions.map( function ( c ) {
+						c = c || {};
+						return {
+							field_id: c.field_id || '',
+							operator: c.operator || 'is',
+							value: typeof c.value !== 'undefined' && c.value !== null ? c.value : ''
+						};
+					} )
+					: [ {
+						field_id: rawCond.field_id || '',
+						operator: rawCond.operator || 'is',
+						value: rawCond.value || ''
+					} ];
+				normalized.conditional = {
+					enabled: !! rawCond.enabled,
+					action: rawCond.action || 'show',
+					logic: 'OR' === String( rawCond.logic || '' ).toUpperCase() ? 'OR' : 'AND',
+					conditions: condList
+				};
+			} else {
+				normalized.conditional = { enabled: false, action: 'show', logic: 'AND', conditions: [ { field_id: '', operator: 'is', value: '' } ] };
+			}
 			normalized.select_searchable = !! ( field && field.select_searchable );
 			normalized.select_multiple = !! ( field && field.select_multiple );
 			normalized.mask_pattern = field && typeof field.mask_pattern !== 'undefined' ? field.mask_pattern : '';
