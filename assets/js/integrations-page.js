@@ -21,6 +21,13 @@
 	var editingConn = null;
 	var fetchedLists = [];
 
+	// Set to a type slug when the admin clicked the Enable toggle on an
+	// unconfigured integration: the toggle was refused (needs_setup) and we
+	// opened the settings modal instead. After a successful Save we consume
+	// this intent and flip the integration on automatically, so a single
+	// Enable click doesn't require a second click after saving.
+	var pendingEnableType = null;
+
 	// =====================================================================
 	// Helpers
 	// =====================================================================
@@ -113,6 +120,8 @@
 				// Enabling was refused because no API key is stored yet — open the
 				// settings modal so the admin can add credentials first.
 				if ( res && res.data && 'needs_setup' === res.data.code ) {
+					// Remember the admin wanted this ON so Save can enable it for them.
+					pendingEnableType = type;
 					$( '.bf-settings-btn[data-type="' + type + '"]' ).trigger( 'click' );
 				}
 			}
@@ -161,9 +170,12 @@
 
 	function closeModal() {
 		$( '#bf-conn-modal' ).attr( 'hidden', true );
-		editingType  = null;
-		editingConn  = null;
-		fetchedLists = [];
+		editingType       = null;
+		editingConn       = null;
+		fetchedLists      = [];
+		// Drop any pending enable intent; doSave reads it before calling this,
+		// so a Cancel/Escape close correctly abandons the auto-enable.
+		pendingEnableType = null;
 	}
 
 	function buildModalBody( def, conn ) {
@@ -340,7 +352,19 @@
 				var $row = $( '.bf-int-card[data-type="' + saved.type + '"]' );
 				$row.attr( 'data-conn-id', saved.id );
 
+				// If the admin reached this modal by clicking Enable on an
+				// unconfigured integration, honour that intent now: flip the
+				// toggle on so they don't have to click it a second time.
+				var enableNow = ( pendingEnableType === saved.type );
+
 				closeModal();
+
+				if ( enableNow ) {
+					var $cb = $row.find( '.bf-toggle-input' );
+					if ( $cb.length && ! $cb.is( ':checked' ) ) {
+						$cb.prop( 'checked', true ).trigger( 'change' );
+					}
+				}
 			} else {
 				setStatus( ( res && res.data && res.data.message ) || 'Save failed.', 'is-error' );
 			}
