@@ -208,8 +208,11 @@ class BoldForm_Lite_Integrations_Page {
 			<hr class="wp-header-end">
 
 			<div class="boldform-int-header">
-				<h1><?php esc_html_e( 'Integrations', 'boldform-lite' ); ?></h1>
-				<p><?php esc_html_e( 'Connect your forms to email marketing, CRMs, and apps.', 'boldform-lite' ); ?></p>
+				<div class="boldform-int-header__titles">
+					<h1><?php esc_html_e( 'Integrations', 'boldform-lite' ); ?></h1>
+					<p><?php esc_html_e( 'Connect your forms to email marketing, CRMs, and apps.', 'boldform-lite' ); ?></p>
+				</div>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<!-- Tabs -->
@@ -343,6 +346,26 @@ class BoldForm_Lite_Integrations_Page {
 				<?php endforeach; ?>
 			</nav>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the "Upgrade to Pro" CTA for the Integrations page header.
+	 *
+	 * Mirrors BoldForm_Lite_Admin::render_header_upgrade(); duplicated here because
+	 * this page is a separate class. Shown only when Pro is not active.
+	 *
+	 * @return void
+	 */
+	private function render_header_upgrade(): void {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+			return;
+		}
+		?>
+		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+			<span class="dashicons dashicons-star-filled" aria-hidden="true"></span>
+			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+		</a>
 		<?php
 	}
 

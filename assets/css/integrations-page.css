@@ -20,6 +20,14 @@
 	   double the top gap. Bottom spacing unchanged. */
 	padding: 0 0 14px;
 	margin-bottom: 14px;
+	/* Title block on the left, Upgrade-to-Pro CTA pushed to the right. */
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.boldform-int-header__titles {
+	min-width: 0;
 }
 
 .boldform-int-header h1 {
