@@ -193,6 +193,45 @@ class BoldForm_Lite_Admin {
 		 * @param BoldForm_Lite_Admin $admin The admin instance.
 		 */
 		do_action( 'boldform_admin_menu', $this );
+
+		// Highlighted "Upgrade to Pro" as the final submenu item (Lite only — hidden
+		// when Pro is active). A full URL in the slug makes core render it as a plain
+		// external link (wp-admin/menu-header.php), and the inline-styled span gives it
+		// the familiar green "go pro" accent without needing a separate stylesheet.
+		if ( apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+			global $submenu;
+			if ( isset( $submenu['boldform-lite'] ) ) {
+				$submenu['boldform-lite'][] = array(
+					'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
+					'manage_options',
+					'https://themewant.com/plugins/boldform/',
+				);
+			}
+		}
+	}
+
+	/**
+	 * Adds an "Upgrade to Pro" link to the plugin's row on the Plugins screen.
+	 *
+	 * Hooked to plugin_action_links_{basename}. Shown only when BoldForm Pro is
+	 * not active (a Pro presence check via the boldform_show_upgrade_cta filter —
+	 * Lite never depends on Pro behaviour).
+	 *
+	 * @param array<string, string> $links Existing action links.
+	 * @return array<string, string>
+	 */
+	public function add_plugin_action_links( $links ) {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+			return $links;
+		}
+
+		$links['boldform_upgrade'] = sprintf(
+			'<a href="%1$s" target="_blank" rel="noopener noreferrer" style="color:#d63638;font-weight:700;">%2$s</a>',
+			esc_url( 'https://themewant.com/plugins/boldform/' ),
+			esc_html__( 'Upgrade to Pro', 'boldform-lite' )
+		);
+
+		return $links;
 	}
 
 	/**
@@ -312,7 +351,30 @@ class BoldForm_Lite_Admin {
 			. '#adminmenu #toplevel_page_boldform-lite:hover .boldform-menu-count,'
 			. '#adminmenu #toplevel_page_boldform-lite.current .boldform-menu-count,'
 			. '#adminmenu #toplevel_page_boldform-lite.wp-has-current-submenu .boldform-menu-count{'
-			. 'background:#2271b1;color:#fff;}';
+			. 'background:#2271b1;color:#fff;}'
+			// Active submenu item mirrors the hover treatment — accent text + a left
+			// accent bar — so "you are here" matches the hover affordance. Defined for
+			// hover/focus/current together so they look identical (2 IDs out-rank core).
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li a:hover,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li a:focus,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a:hover,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a:focus{'
+			. 'color:#2271b1;box-shadow:inset 3px 0 0 #2271b1;}'
+			// The active item stays semi-bold to reinforce "you are here".
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a:hover,'
+			. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a:focus{'
+			. 'font-weight:600;}';
+
+		// "Upgrade to Pro" submenu item (Lite only): red text always (set inline on the
+		// span), and a RED left accent bar that appears ONLY on hover/focus — overriding
+		// the generic blue bar above with higher specificity ([attr] adds a class level).
+		if ( apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+			$css .= '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:hover,'
+				. '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:focus{'
+				. 'box-shadow:inset 3px 0 0 #ff6d6d;}';
+		}
 
 		// $css is fully static, developer-authored CSS; the only interpolated value is
 		// a base64 data-URI of our own SVG (base64 alphabet only — no markup-breaking chars).
@@ -1716,6 +1778,26 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Renders the "Upgrade to Pro" call-to-action used in page-title headers.
+	 *
+	 * Shown only when BoldForm Pro is not active. This is a Pro *presence* check
+	 * (via the boldform_show_upgrade_cta filter); Lite never depends on Pro
+	 * behaviour. Pro can also force the CTA off through the same filter.
+	 *
+	 * @return void
+	 */
+	public function render_header_upgrade() {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+			return;
+		}
+		?>
+		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+		</a>
+		<?php
+	}
+
+	/**
 	 * Registers BoldForm nodes in the WordPress admin bar.
 	 *
 	 * Adds a top-level "BoldForm" node with dropdown children for each nav item.
@@ -1846,6 +1928,7 @@ class BoldForm_Lite_Admin {
 				<?php endif; ?>
 				<?php // Notice carries the `inline` class so WordPress does not relocate it; it sits in the header row, after the Add New button. ?>
 				<?php $this->render_admin_notice( $notice ); ?>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<div class="boldform-forms-tabs">
@@ -2101,6 +2184,7 @@ class BoldForm_Lite_Admin {
 			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Help &amp; Support', 'boldform-lite' ); ?></h1>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:4px;">
@@ -2263,6 +2347,7 @@ class BoldForm_Lite_Admin {
 						<?php esc_html_e( 'Export CSV', 'boldform-lite' ); ?>
 					</a>
 				<?php endif; ?>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<?php if ( 'entry_deleted' === $notice ) : ?>
@@ -2497,7 +2582,10 @@ class BoldForm_Lite_Admin {
 		?>
 		<div class="wrap">
 			<hr class="wp-header-end"><?php // Keep relocated notices above the header (see Forms list for rationale). ?>
-			<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
+			<div class="boldform-page-header">
+				<h1 class="wp-heading-inline"><?php esc_html_e( 'BoldForm Settings', 'boldform-lite' ); ?></h1>
+				<?php $this->render_header_upgrade(); ?>
+			</div>
 
 			<div class="boldform-settings-wrap">
 				<nav class="boldform-settings-sidebar">
@@ -4660,6 +4748,7 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Reports', 'boldform-lite' ); ?></h1>
 				<span class="boldform-page-header__badge"><?php esc_html_e( 'Overview', 'boldform-lite' ); ?></span>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<!-- Overview Stat Cards -->

@@ -47,8 +47,16 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
 				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
 			</div>
+			<?php
+			/** Documented in BoldForm_Lite_Admin::render_topbar(). */
+			if ( apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) :
+				?>
+				<a class="boldform-setup-header__upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+				</a>
+			<?php endif; ?>
 		</div>
-		
+
 		<div class="boldform-setup-body">
 			<?php // New-form marker: relocates the notice here — below the dark header bar, above "Create a New Form". ?>
 			<?php if ( $boldform_lite_is_new_form ) : ?>
