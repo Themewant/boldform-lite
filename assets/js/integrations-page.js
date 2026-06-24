@@ -21,6 +21,13 @@
 	var editingConn = null;
 	var fetchedLists = [];
 
+	// Set to a type slug when the admin clicked the Enable toggle on an
+	// unconfigured integration: the toggle was refused (needs_setup) and we
+	// opened the settings modal instead. After a successful Save we consume
+	// this intent and flip the integration on automatically, so a single
+	// Enable click doesn't require a second click after saving.
+	var pendingEnableType = null;
+
 	// =====================================================================
 	// Helpers
 	// =====================================================================
@@ -37,6 +44,39 @@
 			if ( typeDefs[ i ].type === type ) return typeDefs[ i ];
 		}
 		return null;
+	}
+
+	/** True when a type def declares a field with the given key. */
+	function defHasField( def, key ) {
+		return !! ( def && Array.isArray( def.fields ) && def.fields.some( function ( f ) {
+			return f && f.key === key;
+		} ) );
+	}
+
+	/** True when a type def has a list_select (dropdown) field. */
+	function defHasListSelect( def ) {
+		return !! ( def && Array.isArray( def.fields ) && def.fields.some( function ( f ) {
+			return f && f.type === 'list_select';
+		} ) );
+	}
+
+	/**
+	 * Keyless integrations have no api_key field — e.g. FluentCRM, which runs
+	 * on the same site and reads lists through its local API. These connect
+	 * (and load lists) without the admin entering any key.
+	 */
+	function isKeylessType( def ) {
+		return !! ( def && ! defHasField( def, 'api_key' ) );
+	}
+
+	/**
+	 * True when a type's lists can load the moment the modal opens — i.e. a
+	 * keyless type with a list dropdown (FluentCRM). Keyless types WITHOUT a
+	 * dropdown (e.g. Google Sheets) still need the admin to fill other required
+	 * fields first, so they wait for an explicit Test Connection click.
+	 */
+	function canAutoLoadOnOpen( def ) {
+		return isKeylessType( def ) && defHasListSelect( def );
 	}
 
 	/** Find connection object for a given type. */
@@ -80,6 +120,8 @@
 				// Enabling was refused because no API key is stored yet — open the
 				// settings modal so the admin can add credentials first.
 				if ( res && res.data && 'needs_setup' === res.data.code ) {
+					// Remember the admin wanted this ON so Save can enable it for them.
+					pendingEnableType = type;
 					$( '.bf-settings-btn[data-type="' + type + '"]' ).trigger( 'click' );
 				}
 			}
@@ -110,8 +152,11 @@
 		$( '#bf-conn-modal-status' ).text( '' ).removeClass( 'is-error is-ok' );
 		$( '#bf-conn-modal-body' ).html( buildModalBody( def, editingConn ) );
 
-		// Pre-load lists if a key is already stored (fetched server-side by conn ID).
-		if ( editingConn && editingConn.has_key ) {
+		// Pre-load lists if a key is already stored (fetched server-side by conn
+		// ID), or for keyless dropdown integrations (e.g. FluentCRM) that need no
+		// input. Keyless types requiring fields first (Google Sheets) wait for a
+		// manual Test Connection.
+		if ( ( editingConn && editingConn.has_key ) || canAutoLoadOnOpen( def ) ) {
 			doFetchLists( false );
 		}
 
@@ -125,9 +170,12 @@
 
 	function closeModal() {
 		$( '#bf-conn-modal' ).attr( 'hidden', true );
-		editingType  = null;
-		editingConn  = null;
-		fetchedLists = [];
+		editingType       = null;
+		editingConn       = null;
+		fetchedLists      = [];
+		// Drop any pending enable intent; doSave reads it before calling this,
+		// so a Cancel/Escape close correctly abandons the auto-enable.
+		pendingEnableType = null;
 	}
 
 	function buildModalBody( def, conn ) {
@@ -189,8 +237,10 @@
 	function buildListSelectRow( def, conn ) {
 		conn = conn || {};
 		var listLabel = def.list_label || 'List';
+		var keyless   = isKeylessType( def );
 
-		if ( ! conn.has_key ) {
+		// Keyless types (e.g. FluentCRM) auto-load on open, so show the spinner.
+		if ( ! conn.has_key && ! keyless ) {
 			return (
 				'<div class="bf-modal-row" id="bf-list-row">' +
 					'<label class="bf-modal-label">' + escHtml( listLabel ) + '</label>' +
@@ -241,6 +291,7 @@
 		}
 
 		var typedKey = $.trim( $( '#bf-conn-api_key' ).val() || '' );
+		var keyless  = isKeylessType( typeDefBySlug( editingType ) );
 
 		var onDone = function ( res ) {
 			if ( res && res.success ) {
@@ -250,6 +301,7 @@
 			} else {
 				var msg = ( res && res.data && res.data.message ) ? res.data.message : 'Failed.';
 				setStatus( ( i18n.testFail || 'Failed: ' ) + msg, 'is-error' );
+				renderListSelect( [], editingConn ? editingConn.list_id : '' ); // clear the loading spinner
 			}
 		};
 		var onFail   = function () { setStatus( 'Request failed.', 'is-error' ); };
@@ -257,8 +309,9 @@
 			$( '#bf-conn-test-btn' ).prop( 'disabled', false ).text( i18n.test || 'Test Connection' );
 		};
 
-		if ( typedKey ) {
-			// Validate the freshly-typed key.
+		if ( typedKey || keyless ) {
+			// Validate the freshly-typed key, or — for keyless integrations such
+			// as FluentCRM — connect with no key at all (server ignores api_key).
 			$.post( ajaxUrl, {
 				action:  'boldform_connection_test',
 				nonce:   nonce,
@@ -299,7 +352,19 @@
 				var $row = $( '.bf-int-card[data-type="' + saved.type + '"]' );
 				$row.attr( 'data-conn-id', saved.id );
 
+				// If the admin reached this modal by clicking Enable on an
+				// unconfigured integration, honour that intent now: flip the
+				// toggle on so they don't have to click it a second time.
+				var enableNow = ( pendingEnableType === saved.type );
+
 				closeModal();
+
+				if ( enableNow ) {
+					var $cb = $row.find( '.bf-toggle-input' );
+					if ( $cb.length && ! $cb.is( ':checked' ) ) {
+						$cb.prop( 'checked', true ).trigger( 'change' );
+					}
+				}
 			} else {
 				setStatus( ( res && res.data && res.data.message ) || 'Save failed.', 'is-error' );
 			}

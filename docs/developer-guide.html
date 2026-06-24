@@ -8,6 +8,10 @@
 :root{--bf-primary:#0f766e;--bf-dark:#0f172a;--bf-text:#334155;--bf-muted:#64748b;--bf-border:#e2e8f0;--bf-bg:#f8fafc;--bf-code-bg:#f1f5f9;--bf-link:#2563eb;--bf-sidebar-w:260px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--bf-text);line-height:1.7;background:#fff}
+/* Smooth-scroll for in-page hash links; offset targets from the top edge */
+html{scroll-behavior:smooth}
+:where(h1,h2,h3,h4,[id]){scroll-margin-top:24px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 a{color:var(--bf-link);text-decoration:none}
 a:hover{text-decoration:underline}
 .bf-docs{display:flex;min-height:100vh}
@@ -95,7 +99,7 @@ pre code{background:none;padding:0;color:inherit}
 
 <h1 id="introduction">BoldForm Lite &mdash; Developer Guide</h1>
 <p class="bf-subtitle">Extend, customize, and integrate with BoldForm using hooks, filters, and the plugin's architecture.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.0 · Updated 2026-06-18</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.1 · Updated 2026-06-24</p>
 
 <p>BoldForm Lite is designed with extensibility in mind. Every major operation &mdash; rendering, saving, validation, email &mdash; passes through WordPress filters and actions. This guide covers the public API surface available to developers.</p>
 
@@ -1047,7 +1051,7 @@ initializer so it only runs once per form element:</p>
     developer-guide.html  # This file</code></pre>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.0 &mdash; Developer Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.1 &mdash; Developer Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>

@@ -938,30 +938,32 @@ class BoldForm_Lite_Integrations_Page {
 		}
 
 		if ( $enable ) {
-			// Refuse to activate a connection that has no API key — it would show
-			// as "on" while every dispatch silently no-ops. Tell the UI to open
-			// the settings modal instead so the admin can add credentials first.
-			if ( empty( $found['api_key'] ) ) {
+			// Refuse to activate an unconfigured connection — it would show as "on"
+			// while every dispatch silently no-ops. Tell the UI to open the settings
+			// modal so the admin can finish setup first.
+			if ( ! $found ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Add your API key in settings before enabling this integration.', 'boldform-lite' ),
+						'message' => __( 'Configure this integration in settings before enabling it.', 'boldform-lite' ),
 						'code'    => 'needs_setup',
 					)
 				);
 			}
 
-			// Likewise refuse to activate when the type requires a list/audience that has
-			// not been chosen yet — same silent-no-op failure mode as a missing API key.
+			// Gate on the type's REQUIRED fields rather than hardcoding api_key, so
+			// keyless integrations work too: API-key types need their key, Google
+			// Sheets needs its service-account JSON + spreadsheet ID, FluentCRM needs
+			// a chosen list. Any empty required field is the same silent-no-op risk.
 			$def = $this->get_type_defs()[ $type ] ?? array();
 			foreach ( ( $def['fields'] ?? array() ) as $def_field ) {
-				if ( 'list_select' !== ( $def_field['type'] ?? '' ) || empty( $def_field['required'] ) ) {
+				if ( empty( $def_field['required'] ) ) {
 					continue;
 				}
 				$field_key = (string) ( $def_field['key'] ?? '' );
 				if ( '' !== $field_key && empty( $found[ $field_key ] ) ) {
 					wp_send_json_error(
 						array(
-							'message' => __( 'Choose a list before enabling this integration.', 'boldform-lite' ),
+							'message' => __( 'Complete the required settings before enabling this integration.', 'boldform-lite' ),
 							'code'    => 'needs_setup',
 						)
 					);
