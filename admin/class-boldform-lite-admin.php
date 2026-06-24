@@ -1792,7 +1792,6 @@ class BoldForm_Lite_Admin {
 		}
 		?>
 		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
-			<span class="dashicons dashicons-star-filled" aria-hidden="true"></span>
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
 		<?php
