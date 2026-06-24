@@ -325,6 +325,16 @@ class BoldForm_Lite_Integrations_Page {
 			array( 'slug' => 'boldform-lite-settings#tools', 'label' => __( 'Tools', 'boldform-lite' ),       'icon' => 'dashicons-admin-tools',   'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ) ),
 		);
 		$nav_items = apply_filters( 'boldform_admin_topbar_items', $nav_items, 'boldform-lite-integrations' );
+
+		// "Upgrade to Pro" as the final nav item (see BoldForm_Lite_Admin::render_admin_topbar()).
+		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			$nav_items[] = array(
+				'slug'  => 'boldform-lite-upgrade',
+				'label' => __( 'Upgrade', 'boldform-lite' ),
+				'icon'  => 'dashicons-star-filled',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-upgrade' ),
+			);
+		}
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">

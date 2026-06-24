@@ -87,6 +87,14 @@ class BoldForm_Lite_Admin {
 	private $docs_page_hook = '';
 
 	/**
+	 * Upgrade ("Pro") promo page hook suffix. Only registered while no callback has
+	 * turned the boldform_show_upgrade_cta filter off (i.e. Pro is not active).
+	 *
+	 * @var string
+	 */
+	private $upgrade_page_hook = '';
+
+	/**
 	 * AJAX handler.
 	 *
 	 * @var BoldForm_Lite_Ajax_Save
@@ -194,19 +202,19 @@ class BoldForm_Lite_Admin {
 		 */
 		do_action( 'boldform_admin_menu', $this );
 
-		// Highlighted "Upgrade to Pro" as the final submenu item. Shown by default;
-		// hidden when a boldform_show_upgrade_cta callback returns false. A full URL in
-		// the slug makes core render it as a plain external link (wp-admin/menu-header.php),
-		// and the inline-styled span gives it the familiar accent without a separate stylesheet.
+		// Highlighted "Upgrade to Pro" as the final submenu item, opening an in-dashboard
+		// Free-vs-Pro comparison page. Shown by default; hidden when a
+		// boldform_show_upgrade_cta callback returns false. The inline-styled span gives
+		// the menu label its red accent without needing a separate stylesheet.
 		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
-			global $submenu;
-			if ( isset( $submenu['boldform-lite'] ) ) {
-				$submenu['boldform-lite'][] = array(
-					'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
-					'manage_options',
-					'https://themewant.com/plugins/boldform/',
-				);
-			}
+			$this->upgrade_page_hook = add_submenu_page(
+				'boldform-lite',
+				__( 'Upgrade to Pro', 'boldform-lite' ),
+				'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
+				'manage_options',
+				'boldform-lite-upgrade',
+				array( $this, 'render_upgrade_page' )
+			);
 		}
 	}
 
@@ -368,11 +376,13 @@ class BoldForm_Lite_Admin {
 			. 'font-weight:600;}';
 
 		// "Upgrade to Pro" submenu item (Lite only): red text always (set inline on the
-		// span), and a RED left accent bar that appears ONLY on hover/focus — overriding
-		// the generic blue bar above with higher specificity ([attr] adds a class level).
+		// span), plus a RED left accent bar on hover/focus AND when it's the current page
+		// — overriding the generic blue bar above with higher specificity ([attr] adds a
+		// class level, so it beats the generic li.current/li a:hover rules).
 		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
-			$css .= '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:hover,'
-				. '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:focus{'
+			$css .= '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="page=boldform-lite-upgrade"]:hover,'
+				. '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="page=boldform-lite-upgrade"]:focus,'
+				. '#adminmenu #toplevel_page_boldform-lite .wp-submenu li.current a[href*="page=boldform-lite-upgrade"]{'
 				. 'box-shadow:inset 3px 0 0 #ff6d6d;}';
 		}
 
@@ -694,6 +704,7 @@ class BoldForm_Lite_Admin {
 			$this->reports_page_hook,
 			$this->preview_page_hook,
 			$this->docs_page_hook,
+			$this->upgrade_page_hook,
 		);
 
 		if ( in_array( $hook_suffix, $all_pages, true ) ) {
@@ -1203,7 +1214,7 @@ class BoldForm_Lite_Admin {
 			);
 		}
 
-		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook, $this->docs_page_hook );
+		$admin_pages = array( $this->settings_page_hook, $this->list_page_hook, $this->entries_page_hook, $this->reports_page_hook, $this->docs_page_hook, $this->upgrade_page_hook );
 
 		if ( in_array( $hook_suffix, $admin_pages, true ) ) {
 			wp_enqueue_style(
@@ -1753,6 +1764,18 @@ class BoldForm_Lite_Admin {
 		 * @param string                            $active_page Currently active page slug.
 		 */
 		$nav_items = apply_filters( 'boldform_admin_topbar_items', $nav_items, $active_page );
+
+		// "Upgrade to Pro" as the final nav item, linking to the in-dashboard comparison
+		// page. Shown by default; hidden when a boldform_show_upgrade_cta callback returns
+		// false. Appended after the filter so it always sits last.
+		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			$nav_items[] = array(
+				'slug'  => 'boldform-lite-upgrade',
+				'label' => __( 'Upgrade', 'boldform-lite' ),
+				'icon'  => 'dashicons-star-filled',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-upgrade' ),
+			);
+		}
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
@@ -1794,6 +1817,90 @@ class BoldForm_Lite_Admin {
 		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
+		<?php
+	}
+
+	/**
+	 * Renders the in-dashboard "Upgrade to Pro" promo / comparison page.
+	 *
+	 * A marketing page that lives entirely in Lite — it lists Pro's features as
+	 * copy (no code dependency on Pro). The page is only registered while the
+	 * boldform_show_upgrade_cta filter is true, so it disappears once Pro is active.
+	 *
+	 * @return void
+	 */
+	public function render_upgrade_page() {
+		// Destination for the buy buttons. Filterable so resellers can repoint it.
+		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://themewant.com/plugins/boldform/' );
+
+		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
+		// or a string (a short qualifier shown as text).
+		$features = array(
+			array( 'label' => __( 'Drag & drop form builder', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
+			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Conditional logic', 'boldform-lite' ),                                 'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Anti-spam: reCAPTCHA & hCaptcha', 'boldform-lite' ),                   'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),                     'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Integrations', 'boldform-lite' ),                                      'lite' => __( 'Mailchimp & Brevo', 'boldform-lite' ), 'pro' => __( '35+ apps', 'boldform-lite' ) ),
+			array( 'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),                           'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Payments — Stripe & PayPal', 'boldform-lite' ),                        'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)', 'boldform-lite' ), 'lite' => false,    'pro' => true ),
+			array( 'label' => __( 'Webhooks', 'boldform-lite' ),                                          'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Form scheduling (open / close dates)', 'boldform-lite' ),              'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Auto-populate & hidden data', 'boldform-lite' ),                       'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Advanced analytics (views & conversions)', 'boldform-lite' ),          'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Priority support & automatic updates', 'boldform-lite' ),             'lite' => false,                                 'pro' => true ),
+		);
+
+		$render_cell = static function ( $value ) {
+			if ( true === $value ) {
+				return '<span class="boldform-up-yes dashicons dashicons-yes" aria-label="' . esc_attr__( 'Included', 'boldform-lite' ) . '"></span>';
+			}
+			if ( false === $value ) {
+				return '<span class="boldform-up-no" aria-label="' . esc_attr__( 'Not included', 'boldform-lite' ) . '">—</span>';
+			}
+			return '<span class="boldform-up-text">' . esc_html( $value ) . '</span>';
+		};
+		?>
+		<?php $this->render_admin_topbar( 'boldform-lite-upgrade' ); ?>
+		<div class="wrap boldform-upgrade-page">
+			<hr class="wp-header-end">
+
+			<div class="boldform-up-hero">
+				<span class="boldform-up-badge"><?php esc_html_e( 'BoldForm Pro', 'boldform-lite' ); ?></span>
+				<h1><?php esc_html_e( 'Do more with BoldForm Pro', 'boldform-lite' ); ?></h1>
+				<p><?php esc_html_e( 'Unlock multi-page forms, payments, advanced fields, 35+ integrations and more — all inside the same drag-and-drop builder you already know.', 'boldform-lite' ); ?></p>
+				<a class="boldform-up-btn" href="<?php echo esc_url( $buy_url ); ?>" target="_blank" rel="noopener noreferrer">
+					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+				</a>
+			</div>
+
+			<div class="boldform-up-table-card">
+				<table class="boldform-up-table">
+					<thead>
+						<tr>
+							<th class="boldform-up-feat"><?php esc_html_e( 'Feature', 'boldform-lite' ); ?></th>
+							<th class="boldform-up-col-lite"><?php esc_html_e( 'Lite (Free)', 'boldform-lite' ); ?></th>
+							<th class="boldform-up-col-pro">
+								<?php esc_html_e( 'Pro', 'boldform-lite' ); ?>
+								<span class="boldform-up-col-pro__tag"><?php esc_html_e( 'Recommended', 'boldform-lite' ); ?></span>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $features as $row ) : ?>
+							<tr>
+								<th scope="row"><?php echo esc_html( $row['label'] ); ?></th>
+								<td><?php echo wp_kses_post( $render_cell( $row['lite'] ) ); ?></td>
+								<td class="boldform-up-col-pro"><?php echo wp_kses_post( $render_cell( $row['pro'] ) ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+		</div>
 		<?php
 	}
 

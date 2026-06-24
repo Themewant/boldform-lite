@@ -2990,3 +2990,185 @@
 		flex-wrap: wrap;
 	}
 }
+
+/* ===================================================================
+   Upgrade ("Pro") promo / comparison page (?page=boldform-lite-upgrade)
+   Shown only while no callback turns boldform_show_upgrade_cta off.
+   =================================================================== */
+.boldform-upgrade-page {
+	max-width: 920px;
+	margin: 0 auto;
+}
+
+/* ── Hero ── */
+.boldform-up-hero {
+	text-align: center;
+	padding: 44px 24px 40px;
+	margin: 20px 0 28px;
+	border-radius: 16px;
+	background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
+	color: #fff;
+	box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
+
+.boldform-up-badge {
+	display: inline-block;
+	padding: 5px 14px;
+	margin-bottom: 16px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: #93c5fd;
+	background: rgba(96, 165, 250, 0.14);
+	border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.boldform-up-hero h1 {
+	margin: 0 0 12px;
+	padding: 0;
+	font-size: 30px;
+	font-weight: 800;
+	line-height: 1.2;
+	color: #fff;
+}
+
+.boldform-up-hero p {
+	max-width: 620px;
+	margin: 0 auto 24px;
+	font-size: 15px;
+	line-height: 1.65;
+	color: #cbd5e1;
+}
+
+/* ── Buy button ── */
+.boldform-up-btn {
+	display: inline-flex;
+	align-items: center;
+	padding: 12px 28px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 1;
+	color: #fff;
+	text-decoration: none;
+	border-radius: 10px;
+	background: #2563eb;
+	box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+	transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.boldform-up-btn:hover {
+	color: #fff;
+	background: #1d4ed8;
+	transform: translateY(-1px);
+	box-shadow: 0 7px 20px rgba(37, 99, 235, 0.5);
+}
+
+/* Keep the focus ring as a box-shadow (always follows border-radius) and kill the
+   default outline so the corners never look squared on focus. Dark offset matches
+   the hero background. */
+.boldform-up-btn:focus {
+	color: #fff;
+	background: #1d4ed8;
+	outline: none;
+	box-shadow: 0 0 0 2px #0f172a, 0 0 0 4px rgba(37, 99, 235, 0.6);
+}
+
+/* ── Comparison table ── */
+.boldform-up-table-card {
+	background: #fff;
+	border: 1px solid #e2e4e7;
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.boldform-up-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.boldform-up-table thead th {
+	padding: 16px 20px;
+	text-align: center;
+	font-size: 13px;
+	font-weight: 700;
+	color: #1d2327;
+	background: #f6f7f7;
+	border-bottom: 1px solid #e2e4e7;
+}
+
+.boldform-up-table thead th.boldform-up-feat {
+	text-align: left;
+}
+
+.boldform-up-table thead th.boldform-up-col-pro,
+.boldform-up-table td.boldform-up-col-pro {
+	background: #eff6ff;
+}
+
+.boldform-up-col-pro__tag {
+	display: block;
+	margin-top: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: #2563eb;
+}
+
+.boldform-up-table tbody th[scope="row"] {
+	padding: 14px 20px;
+	text-align: left;
+	font-weight: 500;
+	color: #1d2327;
+}
+
+.boldform-up-table tbody td {
+	padding: 14px 20px;
+	text-align: center;
+	width: 150px;
+}
+
+.boldform-up-table tbody tr + tr th,
+.boldform-up-table tbody tr + tr td {
+	border-top: 1px solid #f0f0f1;
+}
+
+.boldform-up-yes {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	color: #16a34a;
+}
+
+.boldform-up-no {
+	color: #c3c4c7;
+	font-weight: 700;
+}
+
+.boldform-up-text {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: #475569;
+}
+
+.boldform-up-table td.boldform-up-col-pro .boldform-up-text {
+	color: #1d4ed8;
+}
+
+@media screen and (max-width: 600px) {
+	.boldform-up-hero h1 {
+		font-size: 24px;
+	}
+	.boldform-up-table tbody td {
+		width: auto;
+	}
+	.boldform-up-table thead th,
+	.boldform-up-table tbody th[scope="row"],
+	.boldform-up-table tbody td {
+		padding: 12px 12px;
+	}
+}
