@@ -58,6 +58,18 @@ pre code{background:none;padding:0;color:inherit}
 /* Images */
 .bf-img{max-width:100%;border-radius:8px;border:1px solid var(--bf-border);margin:12px 0 20px}
 
+/* Figures (screenshots) */
+.bf-fig{margin:14px 0 24px}
+.bf-fig .bf-img{display:block;margin:0 0 8px;position:relative;min-height:128px;object-fit:contain}
+.bf-fig figcaption{font-size:12px;color:var(--bf-muted);line-height:1.5}
+.bf-fig figcaption strong{color:var(--bf-text)}
+/* Missing/broken screenshot -> tidy placeholder. Pure CSS: pseudo-elements on an
+   <img> render ONLY when the image fails to load, so loaded shots are untouched. */
+.bf-fig .bf-img::before{content:"";position:absolute;inset:-1px;background:var(--bf-bg);border:1px dashed #cbd5e1;border-radius:8px}
+.bf-fig .bf-img::after{content:"\1F5BC\00A0\00A0Screenshot coming soon";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 14px;color:#94a3b8;font-weight:600;font-size:13px}
+.bf-shots{display:flex;flex-wrap:wrap;gap:18px;margin:14px 0 24px}
+.bf-shots .bf-fig{flex:1 1 280px;min-width:0;margin:0}
+
 /* Badge */
 .bf-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .bf-badge--free{background:#ecfdf5;color:#065f46}
@@ -125,6 +137,7 @@ pre code{background:none;padding:0;color:inherit}
     <a href="#captcha" class="bf-sidebar__link">Captcha Setup</a>
     <a href="#smtp" class="bf-sidebar__link">SMTP Configuration</a>
     <a href="#integrations" class="bf-sidebar__link">Integrations</a>
+    <a href="#integrations-pro-reference" class="bf-sidebar__link">Pro Integration Reference</a>
 
     <div class="bf-sidebar__group">Advanced</div>
     <a href="#troubleshooting" class="bf-sidebar__link">Troubleshooting</a>
@@ -1042,32 +1055,679 @@ even when SMTP is turned off. The remaining settings apply only when SMTP is ena
 <!-- Integrations -->
 <h2 id="integrations">Integrations</h2>
 
-<p>Go to <strong>BoldForm &rarr; Integrations</strong> to connect your forms with email marketing services.
-The page groups providers into category tabs (Newsletter, CRM, Productivity, Automation, Messaging, Storage).
-In BoldForm Lite, <strong>Mailchimp</strong> and <strong>Brevo</strong> are fully functional; the other provider
-cards are previews labelled <em>"Available in BoldForm Pro."</em></p>
+<p>Go to <strong>BoldForm &rarr; Integrations</strong> to connect your forms to email-marketing tools, CRMs,
+spreadsheets, chat apps, and automation platforms. Each service appears as a card, grouped into category tabs:
+<strong>Newsletter</strong>, <strong>CRM</strong>, <strong>Productivity</strong>, <strong>Automation</strong>,
+<strong>Messaging</strong>, and <strong>Storage</strong>.</p>
 
-<h3>Mailchimp</h3>
+<p>In <strong>BoldForm Lite</strong>, <strong>Mailchimp</strong> and <strong>Brevo</strong> are fully functional.
+Every other service requires <strong>BoldForm Pro</strong> <span class="bf-badge bf-badge--pro">Pro</span>. The
+connection flow is the same for all of them: open the service card's <strong>Settings</strong> (gear) icon, paste
+the values that service needs, click <strong>Test Connection</strong>, choose a list (if asked), and click
+<strong>Save</strong>. The card turns <strong>On</strong> automatically once a valid configuration is saved. The
+steps below show exactly where to find each required value inside that provider's account.</p>
+
+<div class="bf-tip"><strong>Tip:</strong> A connection is global &mdash; set it up once, then assign it to any
+number of forms. See <a href="#integrations-per-form">Assigning a Connection to a Form</a> below.</div>
+
+<h3 id="integrations-mailchimp">Mailchimp <span class="bf-badge bf-badge--free">Free</span></h3>
+<p><strong>You need:</strong> an API Key.</p>
 <ol>
-  <li>Click the Mailchimp card and toggle it <strong>On</strong></li>
-  <li>Click the <strong>Settings</strong> (gear) icon</li>
-  <li>Enter your <strong>API Key</strong> (found in Mailchimp &rarr; Account &rarr; API Keys)</li>
-  <li>Click <strong>Test Connection</strong> to load your audiences</li>
-  <li>Select an <strong>Audience</strong></li>
-  <li>Optionally add <strong>Tags</strong> and enable <strong>Double Opt-in</strong></li>
-  <li>Click <strong>Save</strong></li>
+  <li>Log in to Mailchimp and go to <strong>Account &amp; billing &rarr; Extras &rarr; API keys</strong>.</li>
+  <li>Click <strong>Create A Key</strong> and copy it (it ends in a data-center suffix such as <code>-us6</code>).</li>
+  <li>In BoldForm, open the <strong>Mailchimp</strong> card's <strong>Settings</strong> (gear) and paste the <strong>API Key</strong>.</li>
+  <li>Click <strong>Test Connection</strong>, then select an <strong>Audience</strong>.</li>
+  <li>Optionally add <strong>Tags</strong> (comma-separated) and enable <strong>Double opt-in</strong>.</li>
+  <li>Click <strong>Save</strong>.</li>
 </ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/mailchimp-key.png" alt="Mailchimp -> Account & billing -> Extras -> API keys - copy your API key" loading="lazy" />
+  <figcaption>Mailchimp &rarr; Account &amp; billing &rarr; Extras &rarr; API keys &mdash; copy your API key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/mailchimp-success.png" alt="BoldForm - Mailchimp connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Mailchimp</strong> connection successful</figcaption>
+</figure>
+</div>
 
-<h3>Brevo (Sendinblue)</h3>
+<h3 id="integrations-brevo">Brevo (formerly Sendinblue) <span class="bf-badge bf-badge--free">Free</span></h3>
+<p><strong>You need:</strong> an API Key.</p>
 <ol>
-  <li>Click the Brevo card and toggle it <strong>On</strong></li>
-  <li>Click Settings, enter your <strong>API Key</strong></li>
-  <li>Test the connection and select a <strong>Contact List</strong></li>
-  <li>Click <strong>Save</strong></li>
+  <li>Log in to Brevo and open the <strong>profile menu (top-right) &rarr; SMTP &amp; API &rarr; API Keys</strong>.</li>
+  <li>Click <strong>Generate a new API key</strong> and copy it (it begins with <code>xkeysib-</code>).</li>
+  <li>In BoldForm, open the <strong>Brevo</strong> card's <strong>Settings</strong> and paste the <strong>API Key</strong>.</li>
+  <li>Click <strong>Test Connection</strong>, then select a <strong>Contact List</strong>.</li>
+  <li>Click <strong>Save</strong>.</li>
 </ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/brevo-key.png" alt="Brevo -> SMTP & API -> API Keys - copy your xkeysib- key" loading="lazy" />
+  <figcaption>Brevo &rarr; SMTP &amp; API &rarr; API Keys &mdash; copy your <code>xkeysib-</code> key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/brevo-success.png" alt="BoldForm - Brevo connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Brevo</strong> connection successful</figcaption>
+</figure>
+</div>
 
-<h3>Per-Form Connection</h3>
-<p>After setting up a global connection, assign it to individual forms in the builder's <strong>Settings</strong> tab under <strong>Integrations</strong>. Map form fields (email, first name, last name) to the integration.</p>
+<h2 id="integrations-pro-reference">Pro Integrations <span class="bf-badge bf-badge--pro">Pro</span></h2>
+<p>The services below require <strong>BoldForm Pro</strong>. Each follows the same connect flow as above
+(card &rarr; <strong>Settings</strong> gear &rarr; paste values &rarr; <strong>Test Connection</strong> &rarr;
+<strong>Save</strong>); the steps focus on where to get each required value from the provider.</p>
+
+<!-- ── Newsletter ── -->
+<h3 id="integrations-activecampaign">ActiveCampaign</h3>
+<p><strong>You need:</strong> Account URL + API Key.</p>
+<ol>
+  <li>Log in to ActiveCampaign and go to <strong>Settings &rarr; Developer</strong>.</li>
+  <li>Copy the <strong>URL</strong> (e.g. <code>https://youraccount.api-us1.com</code>) and the <strong>Key</strong>.</li>
+  <li>In BoldForm, paste both into the ActiveCampaign settings.</li>
+  <li>Click <strong>Test Connection</strong>, optionally choose a <strong>List</strong> and add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/activecampaign-api.png" alt="ActiveCampaign -> Settings -> Developer - copy the API URL & Key" loading="lazy" />
+  <figcaption>ActiveCampaign &rarr; Settings &rarr; Developer &mdash; copy the API URL &amp; Key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/activecampaign-modal.png" alt="BoldForm - ActiveCampaign connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>ActiveCampaign</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-convertkit">Kit (ConvertKit)</h3>
+<p><strong>You need:</strong> API Key (plus API Secret if you want tagging).</p>
+<ol>
+  <li>Log in to Kit and open <strong>Settings &rarr; Developer</strong> (left sidebar).</li>
+  <li>Under <strong>V3 Key</strong> <em>(Legacy)</em>, click <strong>Copy</strong> next to <strong>Your API Key</strong>. For tagging, also <strong>Show</strong> and copy the <strong>API Secret</strong>. <em>(Use the V3 key &mdash; that's the one third-party integrations need.)</em></li>
+  <li>In BoldForm, paste the API Key (and Secret, optional).</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>Form</strong>, optionally add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/convertkit-api.png" alt="Kit -> Settings -> Developer -> V3 Key (Legacy) - copy the API Key & Secret" loading="lazy" />
+  <figcaption>Kit &rarr; Settings &rarr; Developer &rarr; V3 Key (Legacy) &mdash; copy the API Key &amp; Secret</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/convertkit-modal.png" alt="BoldForm - Kit (ConvertKit) connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Kit (ConvertKit)</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-aweber">AWeber</h3>
+<p><strong>You need:</strong> an access token.</p>
+<ol>
+  <li>Log in to AWeber and open your account's developer / OAuth area (<strong>My Apps</strong>).</li>
+  <li>Authorize access and copy the generated <strong>access token</strong>.</li>
+  <li>In BoldForm, paste it as the <strong>API Key</strong>.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>List</strong>, optionally add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/aweber-key.png" alt="AWeber developer / OAuth area - copy your access token" loading="lazy" />
+  <figcaption>AWeber developer / OAuth area &mdash; copy your access token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/aweber-success.png" alt="BoldForm - AWeber connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>AWeber</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-getresponse">GetResponse</h3>
+<p><strong>You need:</strong> an API Key.</p>
+<ol>
+  <li>Log in to GetResponse and go to <strong>Menu &rarr; Integrations &amp; API &rarr; API</strong>.</li>
+  <li>Click <strong>Generate API key</strong> and copy it.</li>
+  <li>In BoldForm, paste the API Key.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>Campaign</strong>, optionally add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/getresponse-api.png" alt="GetResponse -> Integrations & API -> API" loading="lazy" />
+  <figcaption>GetResponse &rarr; Integrations &amp; API &rarr; API</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/getresponse-api2.png" alt="Generate & copy the API key" loading="lazy" />
+  <figcaption>Generate &amp; copy the API key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/getresponse-modal.png" alt="BoldForm - GetResponse connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>GetResponse</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-mailerlite">MailerLite</h3>
+<p><strong>You need:</strong> an API Key.</p>
+<ol>
+  <li>Log in to MailerLite and go to <strong>Integrations &rarr; Developer API</strong> (API tokens).</li>
+  <li>Click <strong>Generate new token</strong> and copy it.</li>
+  <li>In BoldForm, paste the API Key.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>Group</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/mailerlite-api.png" alt="MailerLite -> Integrations -> API" loading="lazy" />
+  <figcaption>MailerLite &rarr; Integrations &rarr; API</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/dashboard-api.png" alt="Create a new API token & copy it" loading="lazy" />
+  <figcaption>Create a new API token &amp; copy it</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/mailerlite-modal.png" alt="BoldForm - MailerLite connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>MailerLite</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-constantcontact">Constant Contact</h3>
+<p><strong>You need:</strong> an access token.</p>
+<ol>
+  <li>In the Constant Contact developer portal (V3 API), create an app and generate an <strong>OAuth access token</strong>.</li>
+  <li>Copy the access token.</li>
+  <li>In BoldForm, paste it as the <strong>Access Token</strong>.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>List</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/constantcontact-key.png" alt="Constant Contact developer portal - copy the OAuth access token" loading="lazy" />
+  <figcaption>Constant Contact developer portal &mdash; copy the OAuth access token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/constantcontact-success.png" alt="BoldForm - Constant Contact connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Constant Contact</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-drip">Drip</h3>
+<p><strong>You need:</strong> API Token + Account ID.</p>
+<ol>
+  <li>Get your <strong>API Token</strong>: click your account menu &rarr; <strong>User Settings</strong> (<code>getdrip.com/user/edit</code>), then under <strong>API Token</strong> click the <strong>copy</strong> icon.</li>
+  <li>Get your <strong>Account ID</strong>: it's the numeric id in your Drip URL (e.g. <code>getdrip.com/<strong>9241015</strong>/&hellip;</code>), also shown at <strong>Settings &rarr; General</strong> as <em>Account ID</em>.</li>
+  <li>In BoldForm, paste the API Token and Account ID.</li>
+  <li>Click <strong>Test Connection</strong>, optionally add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/drip-api.png" alt="Drip -> User Settings - copy the API Token" loading="lazy" />
+  <figcaption>Drip &rarr; User Settings &mdash; copy the API Token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/drip-account-id.png" alt="Drip -> Settings -> General - your numeric Account ID" loading="lazy" />
+  <figcaption>Drip &rarr; Settings &rarr; General &mdash; your numeric Account ID</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/drip-modal.png" alt="BoldForm - Drip connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Drip</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-moosend">Moosend</h3>
+<p><strong>You need:</strong> an API Key.</p>
+<ol>
+  <li>Log in to Moosend and go to <strong>Settings &rarr; API Key</strong>.</li>
+  <li>Copy your <strong>API Key</strong>.</li>
+  <li>In BoldForm, paste the API Key.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>Mailing List</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/moosend-api.png" alt="Moosend -> Settings -> API Key - copy your API key" loading="lazy" />
+  <figcaption>Moosend &rarr; Settings &rarr; API Key &mdash; copy your API key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/moosend-modal.png" alt="BoldForm - Moosend connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Moosend</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<!-- ── CRM ── -->
+<h3 id="integrations-hubspot">HubSpot</h3>
+<p><strong>You need:</strong> a Private App Token.</p>
+<ol>
+  <li>Log in to HubSpot and go to <strong>Settings &rarr; Integrations &rarr; Private Apps</strong>.</li>
+  <li>Click <strong>Create a private app</strong>, grant the CRM scopes, and create it.</li>
+  <li>Copy the token (it starts with <code>pat-</code>).</li>
+  <li>In BoldForm, paste it as the <strong>Private App Token</strong>, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/hubspot-api.png" alt="HubSpot -> Settings -> Integrations -> Private Apps - copy the pat- token" loading="lazy" />
+  <figcaption>HubSpot &rarr; Settings &rarr; Integrations &rarr; Private Apps &mdash; copy the <code>pat-</code> token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/hubspot-modal.png" alt="BoldForm - HubSpot connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>HubSpot</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-zoho">Zoho CRM</h3>
+<p><strong>You need:</strong> an OAuth Token + your Data Center.</p>
+<ol>
+  <li>In the <strong>Zoho API Console</strong>, create a client and generate an <strong>OAuth token</strong> with CRM scope.</li>
+  <li>Note your <strong>Data Center</strong> domain &mdash; <code>zoho.com</code>, <code>zoho.eu</code>, <code>zoho.in</code>, etc. (match where you log in).</li>
+  <li>In BoldForm, paste the OAuth Token and set the Data Center.</li>
+  <li>Click <strong>Test Connection</strong>, optionally choose a <strong>Module</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/zoho-api.png" alt="Zoho API Console - generate the OAuth token" loading="lazy" />
+  <figcaption>Zoho API Console &mdash; generate the OAuth token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/zoho-modal.png" alt="BoldForm - Zoho CRM connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Zoho CRM</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-helpscout">Help Scout</h3>
+<p><strong>You need:</strong> an API Key.</p>
+<ol>
+  <li>Log in to Help Scout and go to <strong>Your Profile &rarr; API Keys</strong>.</li>
+  <li>Copy your <strong>API Key</strong>.</li>
+  <li>In BoldForm, paste the API Key.</li>
+  <li>Click <strong>Test Connection</strong>, select a <strong>Mailbox</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/helpscout-key.png" alt="Help Scout -> Your Profile -> API Keys - copy your API key" loading="lazy" />
+  <figcaption>Help Scout &rarr; Your Profile &rarr; API Keys &mdash; copy your API key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/helpscout-success.png" alt="BoldForm - Help Scout connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Help Scout</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-fluentcrm">FluentCRM</h3>
+<p><strong>You need:</strong> nothing &mdash; FluentCRM runs on this same site, so no API key is required.</p>
+<ol>
+  <li>Install and activate the <strong>FluentCRM</strong> plugin on this site.</li>
+  <li>In BoldForm, open the FluentCRM settings &mdash; your lists load automatically.</li>
+  <li>Select a <strong>List</strong>, optionally add <strong>Tags</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/fluentcrm-api.png" alt="FluentCRM runs on this site - no API key; just pick a list" loading="lazy" />
+  <figcaption>FluentCRM runs on this site &mdash; no API key; just pick a list</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/fluentcrm-modal.png" alt="BoldForm - FluentCRM connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>FluentCRM</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-salesforce">Salesforce</h3>
+<p><strong>You need:</strong> your Instance URL + an Access Token.</p>
+<ol>
+  <li>In Salesforce <strong>Setup</strong>, create a <strong>Connected App</strong> (enable OAuth) and obtain an <strong>access token</strong>.</li>
+  <li>Note your <strong>Instance URL</strong> (e.g. <code>https://yourorg.my.salesforce.com</code>).</li>
+  <li>In BoldForm, paste the Instance URL and Access Token.</li>
+  <li>Click <strong>Test Connection</strong>, optionally choose an <strong>Object</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/salesforce-key.png" alt="Salesforce Connected App - copy the Instance URL & access token" loading="lazy" />
+  <figcaption>Salesforce Connected App &mdash; copy the Instance URL &amp; access token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/salesforce-success.png" alt="BoldForm - Salesforce connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Salesforce</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-pipedrive">Pipedrive</h3>
+<p><strong>You need:</strong> API Token + Company Domain.</p>
+<ol>
+  <li>Log in to Pipedrive and go to <strong>Settings &rarr; Personal preferences &rarr; API</strong> &mdash; copy your <strong>API token</strong>.</li>
+  <li>Your <strong>Company Domain</strong> is just the subdomain (e.g. <code>yourcompany</code>), <em>not</em> the full URL.</li>
+  <li>In BoldForm, paste the API Token and Company Domain.</li>
+  <li>Click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/pipedrive-api.png" alt="Pipedrive -> Settings -> Personal preferences -> API - copy your API token" loading="lazy" />
+  <figcaption>Pipedrive &rarr; Settings &rarr; Personal preferences &rarr; API &mdash; copy your API token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/pipedrive-modal.png" alt="BoldForm - Pipedrive connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Pipedrive</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-freshsales">Freshsales</h3>
+<p><strong>You need:</strong> API Key + Domain.</p>
+<ol>
+  <li>Log in to Freshsales and go to <strong>Settings &rarr; API Settings</strong> &mdash; copy your <strong>API key</strong>.</li>
+  <li>Your <strong>Domain</strong> is your full host, e.g. <code>yourdomain.myfreshworks.com</code>.</li>
+  <li>In BoldForm, paste the API Key and Domain.</li>
+  <li>Click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/freshsales-api.png" alt="Freshsales -> Settings -> API Settings - copy your API key" loading="lazy" />
+  <figcaption>Freshsales &rarr; Settings &rarr; API Settings &mdash; copy your API key</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/feshsale-modal.png" alt="BoldForm - Freshsales connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Freshsales</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-monday">Monday.com</h3>
+<p><strong>You need:</strong> API Token + Board ID.</p>
+<ol>
+  <li>In Monday, click your <strong>avatar &rarr; Developers &rarr; My Access Tokens</strong> and copy a token.</li>
+  <li>Open your board &mdash; the <strong>Board ID</strong> is the number in the board URL.</li>
+  <li>In BoldForm, paste the API Token and Board ID (optionally a <strong>Group ID</strong> like <code>new_group</code>).</li>
+  <li>Click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/monday.com-api.png" alt="Monday -> Developers -> My Access Tokens - copy a token" loading="lazy" />
+  <figcaption>Monday &rarr; Developers &rarr; My Access Tokens &mdash; copy a token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/monday.com-board.png" alt="Open your board - the Board ID is in the URL" loading="lazy" />
+  <figcaption>Open your board &mdash; the Board ID is in the URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/monday.com-modal.png" alt="BoldForm - Monday.com connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Monday.com</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<!-- ── Productivity ── -->
+<h3 id="integrations-notion">Notion</h3>
+<p><strong>You need:</strong> an Integration Token + Database ID.</p>
+<ol>
+  <li>Go to <strong>notion.so/my-integrations</strong>, click <strong>New integration</strong>, and copy the <strong>Internal Integration Secret</strong> (starts with <code>secret_</code> / <code>ntn_</code>).</li>
+  <li>Open your database in Notion &mdash; the <strong>Database ID</strong> is the 32-character hex string in its URL.</li>
+  <li><strong>Important:</strong> in the database, click <strong>&hellip; &rarr; Connections</strong> and add your integration, or writes will fail.</li>
+  <li>In BoldForm, paste the Integration Token and Database ID, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/notion-api.png" alt="notion.so/my-integrations - copy the Internal Integration Secret" loading="lazy" />
+  <figcaption>notion.so/my-integrations &mdash; copy the Internal Integration Secret</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/notion-database.png" alt="Open the database - the Database ID is in the URL (share the DB with your integration)" loading="lazy" />
+  <figcaption>Open the database &mdash; the Database ID is in the URL (share the DB with your integration)</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/notion-modal.png" alt="BoldForm - Notion connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Notion</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-airtable">Airtable</h3>
+<p><strong>You need:</strong> a Personal Access Token + Base ID + Table Name.</p>
+<ol>
+  <li>Go to <strong>airtable.com/create/tokens</strong>, create a token with the <code>data.records:write</code> scope, and add your base to its access list.</li>
+  <li>Find your <strong>Base ID</strong> (<code>appXXXXXXXXXXXXXX</code>) at <strong>airtable.com/api</strong> &mdash; open your base there.</li>
+  <li>Note the exact <strong>Table Name</strong> (the tab name, e.g. <code>Form Submissions</code>).</li>
+  <li>In BoldForm, paste the token, Base ID, and Table Name, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/airtable-api.png" alt="airtable.com/create/tokens - create a token with data.records:write & copy it (+ Base ID & Table Name)" loading="lazy" />
+  <figcaption>airtable.com/create/tokens &mdash; create a token with data.records:write &amp; copy it (+ Base ID &amp; Table Name)</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/airtable-modal.png" alt="BoldForm - Airtable connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Airtable</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-trello">Trello</h3>
+<p><strong>You need:</strong> API Key + Token + List ID.</p>
+<ol>
+  <li>Go to <strong>trello.com/app-key</strong> and copy your <strong>API Key</strong>.</li>
+  <li>On the same page, click the link to manually generate a <strong>Token</strong> and copy it.</li>
+  <li>Find the <strong>List ID</strong>: open your board and append <code>.json</code> to its URL, then locate the list's <code>id</code>.</li>
+  <li>In BoldForm, paste all three, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/trello-api.png" alt="trello.com/app-key - copy the API Key and generate a Token" loading="lazy" />
+  <figcaption>trello.com/app-key &mdash; copy the API Key and generate a Token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/trello-modal.png" alt="BoldForm - Trello connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Trello</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-asana">Asana</h3>
+<p><strong>You need:</strong> a Personal Access Token + Project ID.</p>
+<ol>
+  <li>In Asana, go to <strong>Settings &rarr; Apps &rarr; Developer apps &rarr; Personal access tokens</strong> and create one.</li>
+  <li>Open your project &mdash; the <strong>Project ID</strong> is the number in its URL.</li>
+  <li>In BoldForm, paste the token and Project ID, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/asana-token.png" alt="Asana -> Settings -> Apps -> Personal access tokens - copy a token" loading="lazy" />
+  <figcaption>Asana &rarr; Settings &rarr; Apps &rarr; Personal access tokens &mdash; copy a token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/asana-modal.png" alt="BoldForm - Asana connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Asana</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<!-- ── Automation ── -->
+<h3 id="integrations-zapier">Zapier</h3>
+<p><strong>You need:</strong> a Webhook URL.</p>
+<ol>
+  <li>In Zapier, create a Zap with the <strong>Webhooks by Zapier &rarr; Catch Hook</strong> trigger.</li>
+  <li>Copy the custom webhook URL it gives you (<code>https://hooks.zapier.com/hooks/catch/&hellip;</code>).</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong> and click <strong>Save</strong>.</li>
+  <li>Submit a test entry, then finish mapping the fields inside Zapier.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/zapier-webhook.png" alt="Zapier -> Catch Hook trigger - copy the webhook URL" loading="lazy" />
+  <figcaption>Zapier &rarr; Catch Hook trigger &mdash; copy the webhook URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/zapier-modal.png" alt="BoldForm - Zapier connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Zapier</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-make">Make (Integromat)</h3>
+<p><strong>You need:</strong> a Webhook URL.</p>
+<ol>
+  <li>In Make, add a <strong>Custom Webhook</strong> module to a scenario.</li>
+  <li>Click <strong>Add</strong>, then copy the generated address (<code>https://hook.eu1.make.com/&hellip;</code>).</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong> and click <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/make-webhook.png" alt="Make -> Custom Webhook module - copy the webhook address" loading="lazy" />
+  <figcaption>Make &rarr; Custom Webhook module &mdash; copy the webhook address</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/make-modal.png" alt="BoldForm - Make connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Make</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-pabbly">Pabbly Connect</h3>
+<p><strong>You need:</strong> a Webhook URL.</p>
+<ol>
+  <li>In Pabbly Connect, start a workflow with the <strong>Webhook</strong> trigger.</li>
+  <li>Copy the webhook URL (<code>https://connect.pabbly.com/workflow/&hellip;</code>).</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong> and click <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/pabbly-webhook.png" alt="Pabbly Connect -> Webhook trigger - copy the webhook URL" loading="lazy" />
+  <figcaption>Pabbly Connect &rarr; Webhook trigger &mdash; copy the webhook URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/pabbly-modal.png" alt="BoldForm - Pabbly Connect connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Pabbly Connect</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<!-- ── Messaging ── -->
+<h3 id="integrations-slack">Slack</h3>
+<p><strong>You need:</strong> an Incoming Webhook URL.</p>
+<ol>
+  <li>Go to <strong>api.slack.com/apps</strong> and create (or open) an app for your workspace.</li>
+  <li>Enable <strong>Incoming Webhooks</strong>, click <strong>Add New Webhook to Workspace</strong>, and choose a channel.</li>
+  <li>Copy the webhook URL (<code>https://hooks.slack.com/services/&hellip;</code>).</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong>, optionally edit the <strong>Message Template</strong> (use merge tags like <code>{{email}}</code>), then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/slack-api.png" alt="Slack app -> Incoming Webhooks - copy the webhook URL" loading="lazy" />
+  <figcaption>Slack app &rarr; Incoming Webhooks &mdash; copy the webhook URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/slack-modal.png" alt="BoldForm - Slack connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Slack</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-discord">Discord</h3>
+<p><strong>You need:</strong> a Webhook URL.</p>
+<ol>
+  <li>In Discord, open the target channel's <strong>Edit Channel &rarr; Integrations &rarr; Webhooks</strong>.</li>
+  <li>Click <strong>New Webhook</strong>, then <strong>Copy Webhook URL</strong>.</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong>, optionally edit the <strong>Message Template</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/discord-webhook.png" alt="Discord channel -> Integrations -> Webhooks - copy the webhook URL" loading="lazy" />
+  <figcaption>Discord channel &rarr; Integrations &rarr; Webhooks &mdash; copy the webhook URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/disord-modal.png" alt="BoldForm - Discord connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Discord</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-telegram">Telegram</h3>
+<p><strong>You need:</strong> a Bot Token + Chat ID.</p>
+<ol>
+  <li>In Telegram, message <strong>@BotFather</strong>, send <code>/newbot</code>, and copy the <strong>Bot Token</strong> (<code>123456:ABC-DEF&hellip;</code>).</li>
+  <li>Get the <strong>Chat ID</strong>: message <strong>@userinfobot</strong> (for a personal chat), or add your bot to a group and read the <code>chat.id</code> from its <code>getUpdates</code> response.</li>
+  <li>In BoldForm, paste the Bot Token and Chat ID, optionally edit the <strong>Message Template</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/boldform_userid.png" alt="@BotFather bot token, verified via the getMe URL (+ chat ID from @userinfobot)" loading="lazy" />
+  <figcaption>@BotFather bot token, verified via the <code>getMe</code> URL (+ chat ID from @userinfobot)</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/telegram-modal.png" alt="BoldForm - Telegram connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Telegram</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-msteams">Microsoft Teams</h3>
+<p><strong>You need:</strong> a Webhook URL.</p>
+<ol>
+  <li>In Teams, open the target channel's <strong>&hellip; &rarr; Connectors</strong> and add an <strong>Incoming Webhook</strong> (or use a Workflows webhook).</li>
+  <li>Name it and copy the generated URL.</li>
+  <li>In BoldForm, paste it as the <strong>Webhook URL</strong>, optionally edit the <strong>Message Template</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/msteams-key.png" alt="Teams channel -> Connectors -> Incoming Webhook - copy the URL" loading="lazy" />
+  <figcaption>Teams channel &rarr; Connectors &rarr; Incoming Webhook &mdash; copy the URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/msteams-success.png" alt="BoldForm - Microsoft Teams connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Microsoft Teams</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<!-- ── Storage ── -->
+<h3 id="integrations-googlesheets">Google Sheets</h3>
+<p><strong>You need:</strong> a Service Account JSON key + Spreadsheet ID.</p>
+<ol>
+  <li>In the <strong>Google Cloud Console</strong>, create/select a project and enable the <strong>Google Sheets API</strong>.</li>
+  <li>Go to <strong>IAM &amp; Admin &rarr; Service Accounts</strong>, create a service account, then <strong>Keys &rarr; Add Key &rarr; JSON</strong> and download the file.</li>
+  <li>Open your spreadsheet, click <strong>Share</strong>, and give the service account's <code>client_email</code> (inside the JSON) <strong>Editor</strong> access.</li>
+  <li>Copy the <strong>Spreadsheet ID</strong> from the sheet URL (between <code>/d/</code> and <code>/edit</code>).</li>
+  <li>In BoldForm, paste the full JSON and the Spreadsheet ID, optionally set a <strong>Sheet/Tab Name</strong>, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/google-sheet-api.png" alt="Google Cloud - service account JSON key (+ Spreadsheet ID, shared with client_email)" loading="lazy" />
+  <figcaption>Google Cloud &mdash; service account JSON key (+ Spreadsheet ID, shared with client_email)</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/google-sheet-modal.png" alt="BoldForm - Google Sheets connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Google Sheets</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-dropbox">Dropbox</h3>
+<p><strong>You need:</strong> an Access Token.</p>
+<ol>
+  <li>Go to <strong>dropbox.com/developers/apps</strong> and create an app (Scoped access, with <code>files.content.write</code> permission).</li>
+  <li>On the app's <strong>Settings</strong> tab, click <strong>Generate</strong> under <em>Generated access token</em> and copy it.</li>
+  <li>In BoldForm, paste it as the <strong>Access Token</strong>, optionally set an <strong>Upload Folder</strong> (e.g. <code>/BoldForm/Submissions</code>), click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/dropbox-api.png" alt="dropbox.com/developers/apps -> Settings - generate & copy the access token" loading="lazy" />
+  <figcaption>dropbox.com/developers/apps &rarr; Settings &mdash; generate &amp; copy the access token</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/dropbox-modal.png" alt="BoldForm - Dropbox connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Dropbox</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<h3 id="integrations-googledrive">Google Drive</h3>
+<p><strong>You need:</strong> a Service Account JSON key + Folder ID.</p>
+<ol>
+  <li>In the <strong>Google Cloud Console</strong>, enable the <strong>Google Drive API</strong> for your project.</li>
+  <li>Create a <strong>Service Account</strong> and download its <strong>JSON</strong> key (<strong>Keys &rarr; Add Key &rarr; JSON</strong>).</li>
+  <li>In Google Drive, open the target folder, click <strong>Share</strong>, and give the service account's <code>client_email</code> <strong>Editor</strong> access.</li>
+  <li>Copy the <strong>Folder ID</strong> from the folder URL (after <code>/folders/</code>).</li>
+  <li>In BoldForm, paste the full JSON and Folder ID, click <strong>Test Connection</strong>, then <strong>Save</strong>.</li>
+</ol>
+<div class="bf-shots">
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/google-drive-key.png" alt="Google Cloud - service account JSON key (shared with client_email)" loading="lazy" />
+  <figcaption>Google Cloud &mdash; service account JSON key (shared with client_email)</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/google-drive-folderid.png" alt="Open the Drive folder - the Folder ID is in the URL" loading="lazy" />
+  <figcaption>Open the Drive folder &mdash; the Folder ID is in the URL</figcaption>
+</figure>
+<figure class="bf-fig">
+  <img class="bf-img" src="images/integrations/google-drive-modal.png" alt="BoldForm - Google Drive connection successful" loading="lazy" />
+  <figcaption>BoldForm &mdash; <strong>Google Drive</strong> connection successful</figcaption>
+</figure>
+</div>
+
+<div class="bf-note"><strong>Note:</strong> Google Sheets and Google Drive both require their API to be
+<em>enabled</em> in the Google Cloud project <strong>and</strong> the target sheet/folder <em>shared</em> with the
+service account's email address. If a connection tests successfully but nothing is written, the share step is
+almost always the missing piece.</div>
+
+<h3 id="integrations-per-form">Assigning a Connection to a Form (Field Mapping)</h3>
+<p>A saved connection is global; you choose which forms use it. In the form builder, open the
+<strong>Settings</strong> view and select the <strong>Integrations</strong> tab:</p>
+<ol>
+  <li>Enable the integration you configured on the Integrations page.</li>
+  <li><strong>Map your form fields</strong> to the service's fields &mdash; e.g. point the service's
+  <em>Email</em> at your form's email field, <em>First Name</em> at your name field, and so on.</li>
+  <li>Save the form. From now on, every submission is sent to that service in the background, immediately after
+  the entry is stored.</li>
+</ol>
+<div class="bf-tip"><strong>Tip:</strong> An integration only receives the fields you map &mdash; unmapped form
+fields are never sent. This lets you share just an email and name with a newsletter, while keeping the rest of
+the submission private. See <a href="#privacy-gdpr">Privacy &amp; GDPR</a> for details.</div>
 
 <!-- Troubleshooting -->
 <h2 id="troubleshooting">Troubleshooting</h2>
