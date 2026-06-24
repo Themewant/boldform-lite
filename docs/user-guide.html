@@ -8,6 +8,10 @@
 :root{--bf-primary:#0f766e;--bf-dark:#0f172a;--bf-text:#334155;--bf-muted:#64748b;--bf-border:#e2e8f0;--bf-bg:#f8fafc;--bf-code-bg:#f1f5f9;--bf-link:#2563eb;--bf-sidebar-w:260px}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:var(--bf-text);line-height:1.7;background:#fff}
+/* Smooth-scroll for in-page hash links; offset targets from the top edge */
+html{scroll-behavior:smooth}
+:where(h1,h2,h3,h4,[id]){scroll-margin-top:24px}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 a{color:var(--bf-link);text-decoration:none}
 a:hover{text-decoration:underline}
 
