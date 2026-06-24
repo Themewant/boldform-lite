@@ -194,11 +194,11 @@ class BoldForm_Lite_Admin {
 		 */
 		do_action( 'boldform_admin_menu', $this );
 
-		// Highlighted "Upgrade to Pro" as the final submenu item (Lite only — hidden
-		// when Pro is active). A full URL in the slug makes core render it as a plain
-		// external link (wp-admin/menu-header.php), and the inline-styled span gives it
-		// the familiar green "go pro" accent without needing a separate stylesheet.
-		if ( apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+		// Highlighted "Upgrade to Pro" as the final submenu item. Shown by default;
+		// hidden when a boldform_show_upgrade_cta callback returns false. A full URL in
+		// the slug makes core render it as a plain external link (wp-admin/menu-header.php),
+		// and the inline-styled span gives it the familiar accent without a separate stylesheet.
+		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			global $submenu;
 			if ( isset( $submenu['boldform-lite'] ) ) {
 				$submenu['boldform-lite'][] = array(
@@ -213,15 +213,15 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Adds an "Upgrade to Pro" link to the plugin's row on the Plugins screen.
 	 *
-	 * Hooked to plugin_action_links_{basename}. Shown only when BoldForm Pro is
-	 * not active (a Pro presence check via the boldform_show_upgrade_cta filter —
-	 * Lite never depends on Pro behaviour).
+	 * Hooked to plugin_action_links_{basename}. Shown by default; the
+	 * boldform_show_upgrade_cta filter defaults to true. A callback returning false
+	 * on that filter hides this (and every other) CTA.
 	 *
 	 * @param array<string, string> $links Existing action links.
 	 * @return array<string, string>
 	 */
 	public function add_plugin_action_links( $links ) {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			return $links;
 		}
 
@@ -370,7 +370,7 @@ class BoldForm_Lite_Admin {
 		// "Upgrade to Pro" submenu item (Lite only): red text always (set inline on the
 		// span), and a RED left accent bar that appears ONLY on hover/focus — overriding
 		// the generic blue bar above with higher specificity ([attr] adds a class level).
-		if ( apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			$css .= '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:hover,'
 				. '#adminmenu #toplevel_page_boldform-lite .wp-submenu a[href*="themewant.com/plugins/boldform"]:focus{'
 				. 'box-shadow:inset 3px 0 0 #ff6d6d;}';
@@ -1780,14 +1780,14 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders the "Upgrade to Pro" call-to-action used in page-title headers.
 	 *
-	 * Shown only when BoldForm Pro is not active. This is a Pro *presence* check
-	 * (via the boldform_show_upgrade_cta filter); Lite never depends on Pro
-	 * behaviour. Pro can also force the CTA off through the same filter.
+	 * The boldform_show_upgrade_cta filter defaults to true, so the CTA shows. A
+	 * callback returning false on that filter hides this and every other CTA — that
+	 * is the supported way for any add-on or developer to suppress them.
 	 *
 	 * @return void
 	 */
 	public function render_header_upgrade() {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			return;
 		}
 		?>

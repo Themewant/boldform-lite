@@ -353,12 +353,13 @@ class BoldForm_Lite_Integrations_Page {
 	 * Renders the "Upgrade to Pro" CTA for the Integrations page header.
 	 *
 	 * Mirrors BoldForm_Lite_Admin::render_header_upgrade(); duplicated here because
-	 * this page is a separate class. Shown only when Pro is not active.
+	 * this page is a separate class. Shown by default; hidden when a callback on
+	 * boldform_show_upgrade_cta returns false.
 	 *
 	 * @return void
 	 */
 	private function render_header_upgrade(): void {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', ! defined( 'BOLDFORM_PRO_VERSION' ) ) ) {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			return;
 		}
 		?>
