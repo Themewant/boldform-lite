@@ -347,12 +347,18 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 == Changelog ==
 
 = 1.1.1 =
+Improvements:
+* Improve: Redesigned the Integrations settings dialog, and a connection now switches on immediately after you save it — no second click needed.
+* Improve: The Forms and Entries list tables stay usable on small screens — wide tables scroll within their card instead of stretching or breaking the page layout.
+* Improve: The Entries admin menu now shows an unread-submissions count badge (like the Comments menu) so new entries are visible at a glance.
+* Improve: Expanded the User Guide and Developer Guide with step-by-step setup instructions and screenshots for every integration, plus smooth in-page navigation.
+
 Fixes:
 * Fix: Conditional Logic rules now save reliably — multi-condition rules and the ALL/ANY match mode are preserved when a form is reopened in the builder.
-* Fix: The Integrations screen now reliably enables a connection right after you save its settings, and the "Test connection" result is reported correctly.
 
-Improvements:
-* Improve: Expanded, step-by-step integration documentation in the User Guide, with per-service setup screenshots and smooth in-page navigation.
+Developer:
+* Developer: New extension hooks for add-ons — boldform_defer_post_save_actions (hold the entry-created action and notification emails until an entry is finalised), boldform_auto_populate_value (resolve any auto-populate key through a single filter), and boldform_entry_value_admin_html (return rich HTML for an entry value on the admin detail screen only). A boldform_form_reset event now fires on the document after a successful AJAX submit so custom field widgets can re-sync.
+* Developer: The bundled Appsero SDK now lives under includes/appsero/, and tag source archives strip development-only files via .gitattributes.
 
 = 1.1.0 =
 New features:
@@ -453,7 +459,7 @@ Developer:
 == Upgrade Notice ==
 
 = 1.1.1 =
-Fixes reliable saving of Conditional Logic rules and the Integrations connection/test-connection flow. Recommended for all users.
+Fixes Conditional Logic rule saving, improves the Integrations connect-and-enable flow, makes the Forms and Entries tables mobile-friendly, and adds an unread-entries menu badge. Recommended for all users.
 
 = 1.1.0 =
 Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.
