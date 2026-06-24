@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -346,6 +346,14 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.1 =
+Fixes:
+* Fix: Conditional Logic rules now save reliably — multi-condition rules and the ALL/ANY match mode are preserved when a form is reopened in the builder.
+* Fix: The Integrations screen now reliably enables a connection right after you save its settings, and the "Test connection" result is reported correctly.
+
+Improvements:
+* Improve: Expanded, step-by-step integration documentation in the User Guide, with per-service setup screenshots and smooth in-page navigation.
+
 = 1.1.0 =
 New features:
 * New: Dual-handle range slider — an opt-in "Dual range (min–max)" mode renders two handles with a filled track and validates the selected range on submit.
@@ -443,6 +451,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Fixes reliable saving of Conditional Logic rules and the Integrations connection/test-connection flow. Recommended for all users.
 
 = 1.1.0 =
 Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.
