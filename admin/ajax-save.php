@@ -223,8 +223,14 @@ class BoldForm_Lite_Ajax_Save {
 				$width  = isset( $column['width'] ) ? sanitize_text_field( (string) $column['width'] ) : '100%';
 				$fields = array();
 
-				// Restrict column widths to the layout presets the builder offers.
-				if ( ! in_array( $width, array( '100%', '75%', '66.66%', '50%', '33.33%', '25%' ), true ) ) {
+				// The builder's "Column N Width" is a free-text input, so accept any
+				// percentage from 1% to 100% (e.g. 60%), not only the layout presets —
+				// otherwise a custom width is silently reset to 100% on save and "lost"
+				// after reload. Anything malformed or out of range falls back to 100%.
+				if ( preg_match( '/^(\d{1,3}(?:\.\d+)?)%$/', $width, $w_match ) ) {
+					$w_num = (float) $w_match[1];
+					$width = ( $w_num > 0 && $w_num <= 100 ) ? $w_match[1] . '%' : '100%';
+				} else {
 					$width = '100%';
 				}
 
@@ -478,7 +484,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_icon_size'     => isset( $settings_payload['button_icon_size'] ) ? max( 10, min( 60, absint( $settings_payload['button_icon_size'] ) ) ) : 18,
 			'button_icon_color'    => isset( $settings_payload['button_icon_color'] ) && sanitize_hex_color( $settings_payload['button_icon_color'] ) ? sanitize_hex_color( $settings_payload['button_icon_color'] ) : '',
 			'button_color'      => isset( $settings_payload['button_color'] ) && in_array( $settings_payload['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $settings_payload['button_color'] : $defaults['button_color'],
-			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none' ), true ) ? $settings_payload['field_style'] : '',
+			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $settings_payload['field_style'] : '',
 			'field_size'        => isset( $settings_payload['field_size'] ) && in_array( $settings_payload['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $settings_payload['field_size'] : '',
 			'field_focus_color' => isset( $settings_payload['field_focus_color'] ) && in_array( $settings_payload['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $settings_payload['field_focus_color'] : '',
 			'field_border_width'=> isset( $settings_payload['field_border_width'] ) && '' !== $settings_payload['field_border_width'] ? max( 0, min( 10, absint( $settings_payload['field_border_width'] ) ) ) : '',

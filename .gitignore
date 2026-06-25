@@ -69,7 +69,6 @@ claude.md
 # the public GitHub landing page (it is still stripped from the distributable zip).
 *.md
 !README.md
-.distignore
 
 # Git
 .git/

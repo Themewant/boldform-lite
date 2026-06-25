@@ -60,7 +60,7 @@ jQuery(
 			var adminEmail = settings && settings.admin_email ? settings.admin_email : '';
 			var adminEmailType = settings && settings.admin_email_type ? settings.admin_email_type : ( adminEmail ? 'custom' : 'site_admin' );
 
-			return {
+			var normalized = {
 				submission_type: submissionType,
 				enable_ajax: 'ajax' === submissionType,
 				enable_redirect: 'redirect' === submissionType,
@@ -109,6 +109,13 @@ jQuery(
 				dup_message:  settings && settings.dup_message  ? settings.dup_message  : '',
 				style: normalizeStyleSettings( settings && settings.style ),
 			};
+
+			// Preserve any extra keys (e.g. Pro module settings like Scheduling's
+			// schedule_*) that Lite localizes but doesn't model above, so their builder
+			// panes can repopulate saved values on reload. The core keys normalized
+			// above always win; unknown keys pass through untouched. Pro re-collects its
+			// own live values on boldform:before_save, so this is purely a read passthrough.
+			return $.extend( {}, settings, normalized );
 		}
 
 		// Advanced per-device style vars written by the Style tab. Shape:
