@@ -1298,6 +1298,8 @@ class BoldForm_Lite_Admin {
 					'boldformAdminEntries',
 					array(
 						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+						'exportUrl'        => admin_url( 'admin.php?page=boldform-lite-entries' ),
+						'exportNonce'      => wp_create_nonce( 'boldform_lite_csv_export' ),
 						'selectedText'     => __( 'selected', 'boldform-lite' ),
 						/* translators: %d: number of selected entries to delete. */
 						'confirmDelete'    => __( 'Permanently delete %d selected entries? This cannot be undone.', 'boldform-lite' ),
@@ -1344,12 +1346,24 @@ class BoldForm_Lite_Admin {
 						function refreshBulkBar(){
 							var ids=selectedIds(),n=ids.length;
 							var $count=$("#boldform-bulk-count");
-							// Bar stays put; only the count text shows once something is selected.
-							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");}
-							else{$count.attr("hidden",true);}
+							// Bar stays put; the count text + Export Selected button show once something is selected.
+							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");$("#boldform-bulk-export").removeAttr("hidden");}
+							else{$count.attr("hidden",true);$("#boldform-bulk-export").attr("hidden",true);}
 							var total=$(".boldform-entry-checkbox").length;
 							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
 						}
+						// Export Selected — POST the chosen ids to the CSV endpoint (a POST form, not a
+						// GET URL, so any number of selected ids works without hitting URL length limits).
+						$("#boldform-bulk-export").on("click",function(){
+							var ids=selectedIds();
+							if(!ids.length)return;
+							var $f=$("<form>",{method:"post",action:boldformAdminEntries.exportUrl,style:"display:none"});
+							$f.append($("<input>",{type:"hidden",name:"boldform_export_csv",value:"1"}));
+							$f.append($("<input>",{type:"hidden",name:"_wpnonce",value:boldformAdminEntries.exportNonce}));
+							ids.forEach(function(id){$f.append($("<input>",{type:"hidden",name:"entry_ids[]",value:id}));});
+							$("body").append($f);
+							$f.trigger("submit");
+						});
 						$("#boldform-cb-all").on("change",function(){
 							$(".boldform-entry-checkbox").prop("checked",$(this).is(":checked"));
 							refreshBulkBar();
@@ -2610,6 +2624,10 @@ class BoldForm_Lite_Admin {
 						<option value="delete"><?php esc_html_e( 'Delete permanently', 'boldform-lite' ); ?></option>
 					</select>
 					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
+					<button type="button" class="boldform-bulk-bar__export" id="boldform-bulk-export" hidden>
+						<span class="dashicons dashicons-download"></span>
+						<?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?>
+					</button>
 				</div>
 			<?php endif; ?>
 
@@ -4203,7 +4221,10 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	private function maybe_export_csv() {
-		if ( empty( $_GET['boldform_export_csv'] ) ) {
+		// Fires for the header "Export CSV" link (GET, filter-scoped) and the bulk-bar
+		// "Export Selected" button (POST with entry_ids). Runs on admin_init (before any
+		// output) so streaming the download is safe.
+		if ( empty( $_GET['boldform_export_csv'] ) && empty( $_POST['boldform_export_csv'] ) ) {
 			return;
 		}
 
@@ -4213,13 +4234,23 @@ class BoldForm_Lite_Admin {
 
 		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		// Honor the same filters the Entries screen passes in the export link (form/status/date).
-		$filters = array(
-			'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0,
-			'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '',
-			'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
-			'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
-		);
+		// Selected-rows export (POST) takes precedence and exports exactly those ids,
+		// ignoring the status/date tab filters. Otherwise honor the screen filters.
+		$selected_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] )
+			? array_values( array_unique( array_filter( array_map( 'absint', wp_unslash( $_POST['entry_ids'] ) ) ) ) )
+			: array();
+
+		if ( ! empty( $selected_ids ) ) {
+			$filters = array( 'ids' => $selected_ids );
+		} else {
+			// Honor the same filters the Entries screen passes in the export link (form/status/date).
+			$filters = array(
+				'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0,
+				'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '',
+				'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
+				'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
+			);
+		}
 		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
 		$base_query = "SELECT id, form_id, created_at, entry_data_json FROM `{$safe_table}` {$where} ORDER BY created_at DESC";
 		$batch_size = 500;
@@ -4359,6 +4390,16 @@ class BoldForm_Lite_Admin {
 		global $wpdb;
 
 		$clauses = array();
+
+		// Explicit id list (selected-rows export) — restrict to exactly these entries.
+		if ( ! empty( $filters['ids'] ) && is_array( $filters['ids'] ) ) {
+			$ids = array_values( array_unique( array_filter( array_map( 'absint', $filters['ids'] ) ) ) );
+			if ( ! empty( $ids ) ) {
+				$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$clauses[] = $wpdb->prepare( "id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			}
+		}
 
 		if ( ! empty( $filters['form_id'] ) ) {
 			$clauses[] = $wpdb->prepare( 'form_id = %d', absint( $filters['form_id'] ) );
