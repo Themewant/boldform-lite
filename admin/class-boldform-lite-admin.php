@@ -4349,7 +4349,7 @@ class BoldForm_Lite_Admin {
 			? $decoded['admin_email_type']
 			: ( $admin_email ? 'custom' : 'site_admin' );
 
-		return array(
+		$settings = array(
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
@@ -4403,6 +4403,22 @@ class BoldForm_Lite_Admin {
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
 			'style'               => $this->extract_style_from_record_settings( $decoded ),
 		);
+
+		/**
+		 * Re-merge any Pro-persisted extra settings back into the builder's
+		 * formSettings on reload, so Pro module panes (Scheduling, etc.) repopulate
+		 * their saved values. This reuses the same `boldform_form_settings_extra`
+		 * contract used on save: persist callbacks read the same key names from the
+		 * decoded settings as they do from the save payload, so passing $decoded here
+		 * round-trips their values back out. Lite stays decoupled — it names no Pro
+		 * key; core keys above always win over the extras.
+		 *
+		 * @param array<string, mixed> $extra   Extra settings (start empty).
+		 * @param array<string, mixed> $decoded Decoded saved settings_json.
+		 */
+		$extra = (array) apply_filters( 'boldform_form_settings_extra', array(), $decoded );
+
+		return array_merge( $extra, $settings );
 	}
 
 	/**
