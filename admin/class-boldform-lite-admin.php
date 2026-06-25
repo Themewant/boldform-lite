@@ -4162,7 +4162,8 @@ class BoldForm_Lite_Admin {
 		}
 
 		$action  = isset( $_POST['bulk_action'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : '';
-		$raw_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] ) ? wp_unslash( $_POST['entry_ids'] ) : array();
+		// Each element is cast with absint() on the next line, so the raw array is safe.
+		$raw_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] ) ? wp_unslash( $_POST['entry_ids'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		// Cast to a unique list of positive ints; drop anything else.
 		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
@@ -4178,13 +4179,14 @@ class BoldForm_Lite_Admin {
 		$safe_table   = esc_sql( $this->plugin->get_entries_table_name() );
 		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
 
+		// $safe_table is esc_sql()'d above; $placeholders is a generated run of %d
+		// placeholders bound by $wpdb->prepare(), so the query is fully prepared. The
+		// sniffs below can't see the dynamic placeholders and are safely ignored.
 		if ( 'delete' === $action ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$sql = $wpdb->prepare( "DELETE FROM `{$safe_table}` WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sql = $wpdb->prepare( "DELETE FROM `{$safe_table}` WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		} else {
 			$params = array_merge( array( $action ), $ids );
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		$affected = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -4410,8 +4412,8 @@ class BoldForm_Lite_Admin {
 			$ids = array_values( array_unique( array_filter( array_map( 'absint', $filters['ids'] ) ) ) );
 			if ( ! empty( $ids ) ) {
 				$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
-				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$clauses[] = $wpdb->prepare( "id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				// $placeholders is a generated run of %d placeholders bound by prepare().
+				$clauses[] = $wpdb->prepare( "id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 			}
 		}
 
