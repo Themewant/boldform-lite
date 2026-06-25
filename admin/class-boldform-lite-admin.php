@@ -1298,6 +1298,10 @@ class BoldForm_Lite_Admin {
 					'boldformAdminEntries',
 					array(
 						'entryStatusNonce' => wp_create_nonce( 'boldform_lite_entry_status' ),
+						'selectedText'     => __( 'selected', 'boldform-lite' ),
+						/* translators: %d: number of selected entries to delete. */
+						'confirmDelete'    => __( 'Permanently delete %d selected entries? This cannot be undone.', 'boldform-lite' ),
+						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
 					)
 				);
 				wp_add_inline_script(
@@ -1331,6 +1335,35 @@ class BoldForm_Lite_Admin {
 							$(".boldform-dropdown").removeClass("is-open");
 							$("#boldform-custom-dates").removeAttr("hidden");
 							$("#boldform-custom-dates input[type=\'date\']:first").focus();
+						});
+
+						// ── Bulk selection + actions ──────────────────────────
+						function selectedIds(){
+							return $(".boldform-entry-checkbox:checked").map(function(){return $(this).val();}).get();
+						}
+						function refreshBulkBar(){
+							var ids=selectedIds(),n=ids.length;
+							var $count=$("#boldform-bulk-count");
+							// Bar stays put; only the count text shows once something is selected.
+							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");}
+							else{$count.attr("hidden",true);}
+							var total=$(".boldform-entry-checkbox").length;
+							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
+						}
+						$("#boldform-cb-all").on("change",function(){
+							$(".boldform-entry-checkbox").prop("checked",$(this).is(":checked"));
+							refreshBulkBar();
+						});
+						$(document).on("change",".boldform-entry-checkbox",refreshBulkBar);
+						$("#boldform-bulk-apply").on("click",function(){
+							var ids=selectedIds(),action=$("#boldform-bulk-action").val();
+							if(!ids.length||!action)return;
+							if(action==="delete"&&!window.confirm(boldformAdminEntries.confirmDelete.replace("%d",ids.length)))return;
+							var $btn=$(this).prop("disabled",true);
+							$.post(ajaxurl,{action:"boldform_lite_bulk_entry_action",_ajax_nonce:nonce,bulk_action:action,entry_ids:ids},function(r){
+								if(r&&r.success){location.reload();}
+								else{$btn.prop("disabled",false);window.alert((r&&r.data&&r.data.message)||boldformAdminEntries.errorText);}
+							}).fail(function(){$btn.prop("disabled",false);window.alert(boldformAdminEntries.errorText);});
 						});
 					});'
 				);
@@ -2564,14 +2597,33 @@ class BoldForm_Lite_Admin {
 				</form>
 			</div>
 
+			<!-- Bulk actions bar (always visible; only the count text appears once rows are selected) -->
+			<?php if ( ! empty( $entries ) ) : ?>
+				<div class="boldform-bulk-bar" id="boldform-bulk-bar">
+					<span class="boldform-bulk-bar__count" id="boldform-bulk-count" hidden></span>
+					<select id="boldform-bulk-action" class="boldform-bulk-bar__select">
+						<option value=""><?php esc_html_e( 'Bulk actions', 'boldform-lite' ); ?></option>
+						<option value="read"><?php esc_html_e( 'Mark as Read', 'boldform-lite' ); ?></option>
+						<option value="unread"><?php esc_html_e( 'Mark as Unread', 'boldform-lite' ); ?></option>
+						<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
+						<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
+						<option value="delete"><?php esc_html_e( 'Delete permanently', 'boldform-lite' ); ?></option>
+					</select>
+					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
+				</div>
+			<?php endif; ?>
+
 			<div class="boldform-table-card">
 				<div class="boldform-table-scroll">
 				<table class="widefat fixed boldform-entries-table">
 					<thead>
 						<tr>
+							<th style="width:34px;" class="boldform-entry-cb">
+								<input type="checkbox" id="boldform-cb-all" title="<?php esc_attr_e( 'Select all', 'boldform-lite' ); ?>">
+							</th>
 							<th style="width:40px;">&nbsp;</th>
 							<th style="width:60px;"><?php esc_html_e( 'ID', 'boldform-lite' ); ?></th>
-							<th style="width:48%;"><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
+							<th style="width:46%;"><?php esc_html_e( 'Submission', 'boldform-lite' ); ?></th>
 							<th style="width:12%;"><?php esc_html_e( 'Form', 'boldform-lite' ); ?></th>
 							<th style="width:18%;"><?php esc_html_e( 'Date', 'boldform-lite' ); ?></th>
 							<th style="width:12%;"><?php esc_html_e( 'Status', 'boldform-lite' ); ?></th>
@@ -2580,7 +2632,7 @@ class BoldForm_Lite_Admin {
 					<tbody>
 						<?php if ( empty( $entries ) ) : ?>
 							<tr class="boldform-empty-row">
-								<td colspan="6"><?php esc_html_e( 'No entries found.', 'boldform-lite' ); ?></td>
+								<td colspan="7"><?php esc_html_e( 'No entries found.', 'boldform-lite' ); ?></td>
 							</tr>
 						<?php else : ?>
 							<?php foreach ( $entries as $entry ) : ?>
@@ -2593,6 +2645,9 @@ class BoldForm_Lite_Admin {
 								$form_title   = $form ? ( $form->title ? (string) $form->title : '#' . absint( $form->id ) ) : '#' . absint( $entry->form_id );
 								?>
 								<tr class="<?php echo $is_unread ? 'boldform-entry--unread' : ''; ?>">
+									<td class="boldform-entry-cb">
+										<input type="checkbox" class="boldform-entry-checkbox" value="<?php echo absint( $entry->id ); ?>" aria-label="<?php esc_attr_e( 'Select entry', 'boldform-lite' ); ?>">
+									</td>
 									<td class="boldform-entry-star">
 										<button type="button" class="boldform-star-btn<?php echo $is_starred ? ' is-starred' : ''; ?>" data-entry-id="<?php echo absint( $entry->id ); ?>" title="<?php esc_attr_e( 'Star', 'boldform-lite' ); ?>">
 											<span class="dashicons <?php echo $is_starred ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
@@ -4056,6 +4111,60 @@ class BoldForm_Lite_Admin {
 		$this->clear_unread_count_cache();
 
 		wp_send_json_success( array( 'status' => $status ) );
+	}
+
+	/**
+	 * Handles a bulk action on the Entries list (status change or delete).
+	 *
+	 * Mirrors the security of the single-entry handler: same nonce, the same
+	 * `manage_options` gate, ids cast to ints. Status changes and deletes run as a
+	 * single prepared `IN (...)` query rather than a per-row loop.
+	 *
+	 * @return void
+	 */
+	public function ajax_bulk_entry_action() {
+		check_ajax_referer( 'boldform_lite_entry_status' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
+		}
+
+		$action  = isset( $_POST['bulk_action'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : '';
+		$raw_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] ) ? wp_unslash( $_POST['entry_ids'] ) : array();
+
+		// Cast to a unique list of positive ints; drop anything else.
+		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
+
+		$is_status = in_array( $action, array( 'unread', 'read', 'starred', 'spam' ), true );
+
+		if ( empty( $ids ) || ( ! $is_status && 'delete' !== $action ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'boldform-lite' ) ) );
+		}
+
+		global $wpdb;
+
+		$safe_table   = esc_sql( $this->plugin->get_entries_table_name() );
+		$placeholders = implode( ', ', array_fill( 0, count( $ids ), '%d' ) );
+
+		if ( 'delete' === $action ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sql = $wpdb->prepare( "DELETE FROM `{$safe_table}` WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		} else {
+			$params = array_merge( array( $action ), $ids );
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		}
+
+		$affected = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$this->clear_unread_count_cache();
+
+		wp_send_json_success(
+			array(
+				'action'   => $action,
+				'affected' => (int) $affected,
+			)
+		);
 	}
 
 	/**

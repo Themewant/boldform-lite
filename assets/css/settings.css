@@ -1959,6 +1959,53 @@
 }
 
 /* ── Entries list ── */
+/* Bulk actions bar — appears above the table when one or more rows are checked. */
+.boldform-bulk-bar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+	padding: 10px 14px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+/* The bar is always visible; only the "N selected" count toggles via the [hidden]
+   attribute (the JS sets/removes it). Re-assert none in case a display value is ever
+   added to the count, so an explicit display can't beat the UA [hidden] rule. */
+.boldform-bulk-bar__count[hidden] {
+	display: none;
+}
+
+.boldform-bulk-bar__count {
+	font-weight: 600;
+	color: #1d2327;
+	font-size: 13px;
+}
+
+.boldform-bulk-bar__select {
+	min-width: 170px;
+	height: 34px;
+}
+
+.boldform-bulk-bar #boldform-bulk-apply {
+	height: 34px;
+}
+
+/* Checkbox column — keep the select cells tight and centred. */
+.boldform-entries-table th.boldform-entry-cb,
+.boldform-entries-table td.boldform-entry-cb {
+	text-align: center;
+	vertical-align: middle;
+}
+
+.boldform-entries-table td.boldform-entry-cb input,
+.boldform-entries-table th.boldform-entry-cb input {
+	margin: 0;
+}
+
 /* Unread entries: bold text + a light blue row tint + a blue left accent bar so
    they clearly stand out from read rows (email-client style). The tint is set on
    the TD so it paints over the white-row rule; the accent uses an inset shadow on
