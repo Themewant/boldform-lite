@@ -223,8 +223,14 @@ class BoldForm_Lite_Ajax_Save {
 				$width  = isset( $column['width'] ) ? sanitize_text_field( (string) $column['width'] ) : '100%';
 				$fields = array();
 
-				// Restrict column widths to the layout presets the builder offers.
-				if ( ! in_array( $width, array( '100%', '75%', '66.66%', '50%', '33.33%', '25%' ), true ) ) {
+				// The builder's "Column N Width" is a free-text input, so accept any
+				// percentage from 1% to 100% (e.g. 60%), not only the layout presets —
+				// otherwise a custom width is silently reset to 100% on save and "lost"
+				// after reload. Anything malformed or out of range falls back to 100%.
+				if ( preg_match( '/^(\d{1,3}(?:\.\d+)?)%$/', $width, $w_match ) ) {
+					$w_num = (float) $w_match[1];
+					$width = ( $w_num > 0 && $w_num <= 100 ) ? $w_match[1] . '%' : '100%';
+				} else {
 					$width = '100%';
 				}
 
