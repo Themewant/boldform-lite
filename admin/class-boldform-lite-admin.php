@@ -2784,6 +2784,7 @@ class BoldForm_Lite_Admin {
 
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=general' ) ); ?>">
 							<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
+							<input type="hidden" name="boldform_settings_tab" value="general">
 
 							<div class="boldform-card">
 								<h3><?php esc_html_e( 'Form Style', 'boldform-lite' ); ?></h3>
@@ -2866,6 +2867,7 @@ class BoldForm_Lite_Admin {
 
 						<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=captcha' ) ); ?>">
 							<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
+							<input type="hidden" name="boldform_settings_tab" value="captcha">
 
 							<div class="boldform-card">
 								<h3><?php esc_html_e( 'Provider', 'boldform-lite' ); ?></h3>
@@ -2960,6 +2962,7 @@ class BoldForm_Lite_Admin {
 						<?php if ( 'config' === $smtp_sub ) : ?>
 							<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp&smtp_tab=config' ) ); ?>">
 								<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
+								<input type="hidden" name="boldform_settings_tab" value="smtp">
 
 								<div class="boldform-card">
 									<h3><?php esc_html_e( 'Sender', 'boldform-lite' ); ?></h3>
@@ -3169,47 +3172,58 @@ class BoldForm_Lite_Admin {
 
 		$settings = $this->get_global_settings();
 
-		$form_style_mode                  = isset( $_POST['boldform_form_style_mode'] ) ? sanitize_key( wp_unslash( $_POST['boldform_form_style_mode'] ) ) : 'plugin';
-		$settings['form_style_mode']      = in_array( $form_style_mode, array( 'plugin', 'theme' ), true ) ? $form_style_mode : 'plugin';
-		$settings['default_email']        = isset( $_POST['boldform_default_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_default_email'] ) ) : '';
-		$settings['uninstall_data']       = ! empty( $_POST['boldform_uninstall_data'] );
+		// Each settings tab is its own <form> and only submits its own fields. Branch on
+		// the tab sentinel so saving one tab never nulls out the keys owned by the others
+		// (absent-from-POST keys would otherwise be reset to their defaults). Fall back to
+		// 'general' for legacy/no-sentinel posts.
+		$active_tab = isset( $_POST['boldform_settings_tab'] ) ? sanitize_key( wp_unslash( $_POST['boldform_settings_tab'] ) ) : 'general';
 
-		// Validation messages.
-		$msg_types = array( 'text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'time' );
-		foreach ( $msg_types as $msg_type ) {
-			$msg_key = 'required_msg_' . $msg_type;
-			$settings[ $msg_key ] = isset( $_POST[ 'boldform_' . $msg_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'boldform_' . $msg_key ] ) ) : '';
+		if ( 'general' === $active_tab ) {
+			$form_style_mode                  = isset( $_POST['boldform_form_style_mode'] ) ? sanitize_key( wp_unslash( $_POST['boldform_form_style_mode'] ) ) : 'plugin';
+			$settings['form_style_mode']      = in_array( $form_style_mode, array( 'plugin', 'theme' ), true ) ? $form_style_mode : 'plugin';
+			$settings['default_email']        = isset( $_POST['boldform_default_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_default_email'] ) ) : '';
+			$settings['uninstall_data']       = ! empty( $_POST['boldform_uninstall_data'] );
+
+			// Validation messages.
+			$msg_types = array( 'text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'time' );
+			foreach ( $msg_types as $msg_type ) {
+				$msg_key = 'required_msg_' . $msg_type;
+				$settings[ $msg_key ] = isset( $_POST[ 'boldform_' . $msg_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'boldform_' . $msg_key ] ) ) : '';
+			}
 		}
 
-		$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
-		$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
-		$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
-		$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
+		if ( 'captcha' === $active_tab ) {
+			$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
+			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
+			$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
+			$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
 
-		// Secret keys are masked on render (value=""); only overwrite when a new value is
-		// submitted, so re-saving the page with a blank field preserves the stored key.
-		if ( isset( $_POST['boldform_recaptcha_secret_key'] ) && '' !== $_POST['boldform_recaptcha_secret_key'] ) {
-			$settings['recaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_secret_key'] ) );
+			// Secret keys are masked on render (value=""); only overwrite when a new value is
+			// submitted, so re-saving the page with a blank field preserves the stored key.
+			if ( isset( $_POST['boldform_recaptcha_secret_key'] ) && '' !== $_POST['boldform_recaptcha_secret_key'] ) {
+				$settings['recaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_secret_key'] ) );
+			}
+			if ( isset( $_POST['boldform_hcaptcha_secret_key'] ) && '' !== $_POST['boldform_hcaptcha_secret_key'] ) {
+				$settings['hcaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) );
+			}
 		}
-		if ( isset( $_POST['boldform_hcaptcha_secret_key'] ) && '' !== $_POST['boldform_hcaptcha_secret_key'] ) {
-			$settings['hcaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) );
-		}
 
-		// SMTP settings.
-		$settings['smtp_enabled']    = ! empty( $_POST['boldform_smtp_enabled'] );
-		$settings['smtp_from_email'] = isset( $_POST['boldform_smtp_from_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_from_email'] ) ) : '';
-		$settings['smtp_from_name']  = isset( $_POST['boldform_smtp_from_name'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_from_name'] ) ) : '';
-		$settings['smtp_reply_to']   = isset( $_POST['boldform_smtp_reply_to'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_reply_to'] ) ) : '';
-		$settings['smtp_host']       = isset( $_POST['boldform_smtp_host'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_host'] ) ) : '';
-		$smtp_encryption             = isset( $_POST['boldform_smtp_encryption'] ) ? sanitize_key( wp_unslash( $_POST['boldform_smtp_encryption'] ) ) : 'none';
-		$settings['smtp_encryption'] = in_array( $smtp_encryption, array( 'none', 'tls', 'ssl' ), true ) ? $smtp_encryption : 'none';
-		$settings['smtp_port']       = isset( $_POST['boldform_smtp_port'] ) ? absint( $_POST['boldform_smtp_port'] ) : '';
-		$settings['smtp_auth']       = ! empty( $_POST['boldform_smtp_auth'] );
-		$settings['smtp_username']   = isset( $_POST['boldform_smtp_username'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_username'] ) ) : '';
+		if ( 'smtp' === $active_tab ) {
+			$settings['smtp_enabled']    = ! empty( $_POST['boldform_smtp_enabled'] );
+			$settings['smtp_from_email'] = isset( $_POST['boldform_smtp_from_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_from_email'] ) ) : '';
+			$settings['smtp_from_name']  = isset( $_POST['boldform_smtp_from_name'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_from_name'] ) ) : '';
+			$settings['smtp_reply_to']   = isset( $_POST['boldform_smtp_reply_to'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_reply_to'] ) ) : '';
+			$settings['smtp_host']       = isset( $_POST['boldform_smtp_host'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_host'] ) ) : '';
+			$smtp_encryption             = isset( $_POST['boldform_smtp_encryption'] ) ? sanitize_key( wp_unslash( $_POST['boldform_smtp_encryption'] ) ) : 'none';
+			$settings['smtp_encryption'] = in_array( $smtp_encryption, array( 'none', 'tls', 'ssl' ), true ) ? $smtp_encryption : 'none';
+			$settings['smtp_port']       = isset( $_POST['boldform_smtp_port'] ) ? absint( $_POST['boldform_smtp_port'] ) : '';
+			$settings['smtp_auth']       = ! empty( $_POST['boldform_smtp_auth'] );
+			$settings['smtp_username']   = isset( $_POST['boldform_smtp_username'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_smtp_username'] ) ) : '';
 
-		// Only update password if a new value was provided (preserve existing on empty).
-		if ( isset( $_POST['boldform_smtp_password'] ) && '' !== $_POST['boldform_smtp_password'] ) {
-			$settings['smtp_password'] = sanitize_text_field( wp_unslash( $_POST['boldform_smtp_password'] ) );
+			// Only update password if a new value was provided (preserve existing on empty).
+			if ( isset( $_POST['boldform_smtp_password'] ) && '' !== $_POST['boldform_smtp_password'] ) {
+				$settings['smtp_password'] = sanitize_text_field( wp_unslash( $_POST['boldform_smtp_password'] ) );
+			}
 		}
 
 		// autoload=false: this option holds secrets (SMTP password, captcha secret keys) and
@@ -4503,6 +4517,9 @@ class BoldForm_Lite_Admin {
 			'submission_type'   => $submission_type,
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
+			'redirect_type'     => isset( $decoded['redirect_type'] ) && in_array( $decoded['redirect_type'], array( 'page', 'custom' ), true )
+				? $decoded['redirect_type']
+				: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' ),
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
 			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
@@ -4551,6 +4568,10 @@ class BoldForm_Lite_Admin {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'dup_enabled'         => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'          => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'         => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
 			'style'               => $this->extract_style_from_record_settings( $decoded ),
 		);
 

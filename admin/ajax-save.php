@@ -484,7 +484,7 @@ class BoldForm_Lite_Ajax_Save {
 			'button_icon_size'     => isset( $settings_payload['button_icon_size'] ) ? max( 10, min( 60, absint( $settings_payload['button_icon_size'] ) ) ) : 18,
 			'button_icon_color'    => isset( $settings_payload['button_icon_color'] ) && sanitize_hex_color( $settings_payload['button_icon_color'] ) ? sanitize_hex_color( $settings_payload['button_icon_color'] ) : '',
 			'button_color'      => isset( $settings_payload['button_color'] ) && in_array( $settings_payload['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $settings_payload['button_color'] : $defaults['button_color'],
-			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none' ), true ) ? $settings_payload['field_style'] : '',
+			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $settings_payload['field_style'] : '',
 			'field_size'        => isset( $settings_payload['field_size'] ) && in_array( $settings_payload['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $settings_payload['field_size'] : '',
 			'field_focus_color' => isset( $settings_payload['field_focus_color'] ) && in_array( $settings_payload['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $settings_payload['field_focus_color'] : '',
 			'field_border_width'=> isset( $settings_payload['field_border_width'] ) && '' !== $settings_payload['field_border_width'] ? max( 0, min( 10, absint( $settings_payload['field_border_width'] ) ) ) : '',
