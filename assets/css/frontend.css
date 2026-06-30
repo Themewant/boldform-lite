@@ -1014,6 +1014,16 @@ input[data-boldform-picker] {
 	cursor: pointer;
 }
 
+/* WebKit paints the visible track via the runnable-track pseudo-element, so the
+   height var must be applied here too (the input rule above only covers the box
+   height + Firefox). Without this, --bf-slider-height has no effect in Chrome. */
+.boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-runnable-track {
+	height: var(--bf-slider-height, 8px);
+	background: #e5e7eb; /* fallback where color-mix is unsupported */
+	background: color-mix(in srgb, var(--bf-slider-color, var(--bf-button-bg, var(--bf-focus-color, #0f766e))) 20%, #e5e7eb);
+	border-radius: 999px;
+}
+
 .boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb {
 	-webkit-appearance: none;
 	width: 22px;
@@ -1024,6 +1034,8 @@ input[data-boldform-picker] {
 	box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
 	cursor: pointer;
 	transition: box-shadow 0.14s ease;
+	/* Centre the 22px thumb on the variable-height runnable track (border-box). */
+	margin-top: calc( ( var(--bf-slider-height, 8px) - 22px ) / 2 );
 }
 
 .boldform-lite-slider:not( .boldform-lite-slider--dual ) input[type="range"]::-webkit-slider-thumb:hover {
