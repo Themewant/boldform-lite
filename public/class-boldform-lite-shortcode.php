@@ -820,7 +820,18 @@ class BoldForm_Lite_Shortcode {
 		 * @param string $value Empty string by default.
 		 * @param string $key   The auto-populate key.
 		 */
-		return (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+		$value = (string) apply_filters( 'boldform_auto_populate_' . $key, '' );
+
+		/**
+		 * Generic auto-populate filter that passes the key as a second argument.
+		 *
+		 * Lets an extension resolve any key with a single registered filter instead
+		 * of hooking the dynamic per-key tag above (avoids the `all`-hook anti-pattern).
+		 *
+		 * @param string $value Resolved value so far ('' if nothing matched yet).
+		 * @param string $key   The auto-populate key.
+		 */
+		return (string) apply_filters( 'boldform_auto_populate_value', $value, $key );
 	}
 
 	/**
@@ -1259,6 +1270,204 @@ class BoldForm_Lite_Shortcode {
 	 *
 	 * @return array<string, array<string, bool>>
 	 */
+	/**
+	 * Renders a BoldForm custom dropdown: the hidden native <select> (for submit)
+	 * plus the `.bf-select` widget markup that Lite's frontend JS upgrades.
+	 *
+	 * This is the single source of truth for the custom select so add-ons (BoldForm
+	 * Pro — payment "product" selects, repeater sub-selects) render an identical,
+	 * theme-consistent control instead of a bare native <select>. Static so callers
+	 * need no shortcode instance. Output is the same markup Lite's own select fields
+	 * emit, so it must be echoed through the same `get_field_kses_allowed()` allowlist.
+	 *
+	 * @param array<string, mixed> $args {
+	 *     @type string       $id          Element id for the native <select>.
+	 *     @type string       $name        Submit name (without trailing []; added when multiple).
+	 *     @type array|string $options     Option values (trimmed; empties dropped).
+	 *     @type string|array $selected    Selected value(s); CSV string or array.
+	 *     @type string       $placeholder Placeholder text.
+	 *     @type bool         $multiple    Multi-select.
+	 *     @type bool         $searchable  Show the in-panel search box (single only).
+	 *     @type bool         $required    Convey required-ness via aria-required on the trigger.
+	 *     @type string       $labelledby  Visible-label id for aria-labelledby (preferred).
+	 *     @type string       $aria_label  Fallback accessible name when no visible label.
+	 * }
+	 * @return string
+	 */
+	public static function render_custom_select( array $args ) {
+		$args = wp_parse_args(
+			$args,
+			array(
+				'id'          => '',
+				'name'        => '',
+				'options'     => array(),
+				'selected'    => '',
+				'placeholder' => '',
+				'multiple'    => false,
+				'searchable'  => false,
+				'required'    => false,
+				'labelledby'  => '',
+				'aria_label'  => '',
+			)
+		);
+
+		$id            = (string) $args['id'];
+		$name          = (string) $args['name'];
+		$placeholder   = (string) $args['placeholder'];
+		$is_multiple   = (bool) $args['multiple'];
+		$is_searchable = (bool) $args['searchable'];
+		$required      = (bool) $args['required'];
+
+		if ( is_array( $args['selected'] ) ) {
+			$default_values = array_map( 'trim', array_map( 'strval', $args['selected'] ) );
+		} else {
+			$default_values = $is_multiple
+				? array_map( 'trim', explode( ',', (string) $args['selected'] ) )
+				: array( (string) $args['selected'] );
+		}
+
+		// Normalize options to { value, label } pairs. Accepts flat strings
+		// (value === label, as Lite's own fields pass) OR
+		// array( 'value' => …, 'label' => … ) entries (e.g. Pro payment products
+		// that submit a plain value but display "Plan — $29.00").
+		$opts       = array();
+		$opt_values = array();
+		$opt_labels = array();
+		foreach ( (array) $args['options'] as $option ) {
+			if ( is_array( $option ) ) {
+				$ov = trim( (string) ( $option['value'] ?? '' ) );
+				$ol = (string) ( $option['label'] ?? $ov );
+			} else {
+				$ov = trim( (string) $option );
+				$ol = $ov;
+			}
+			if ( '' === $ov ) {
+				continue;
+			}
+			$opts[]            = array( 'value' => $ov, 'label' => $ol );
+			$opt_values[]      = $ov;
+			$opt_labels[ $ov ] = $ol;
+		}
+
+		$select_name = $is_multiple ? $name . '[]' : $name;
+		$extra_attrs = ' data-boldform-select="1"';
+		if ( $is_multiple ) {
+			$extra_attrs .= ' multiple data-multiple="1"';
+		}
+		if ( $is_searchable ) {
+			$extra_attrs .= ' data-searchable="1"';
+		}
+
+		// Hidden native <select> for form submission. `required` is intentionally
+		// omitted (a display:none required control aborts submit with no message);
+		// required-ness is on the trigger via aria-required + enforced server-side.
+		$html = sprintf(
+			'<select id="%1$s" name="%2$s"%3$s style="display:none">',
+			esc_attr( $id ),
+			esc_attr( $select_name ),
+			$extra_attrs
+		);
+
+		if ( ! $is_multiple ) {
+			$html .= sprintf( '<option value="">%1$s</option>', esc_html( $placeholder ) );
+		}
+
+		foreach ( $opts as $o ) {
+			$is_selected = in_array( $o['value'], $default_values, true ) ? ' selected' : '';
+			$html       .= sprintf(
+				'<option value="%1$s"%2$s>%3$s</option>',
+				esc_attr( $o['value'] ),
+				$is_selected,
+				esc_html( $o['label'] )
+			);
+		}
+
+		$html .= '</select>';
+
+		// Custom select UI (PHP-rendered so it works in Gutenberg SSR / Elementor editor / frontend).
+		$wrap_class = 'bf-select' . ( $is_multiple ? ' bf-select--multi' : '' );
+		$data_attrs = ' data-boldform-custom-select="1"';
+		if ( $is_multiple ) {
+			$data_attrs .= ' data-multiple="1"';
+		}
+		if ( $is_searchable ) {
+			$data_attrs .= ' data-searchable="1"';
+		}
+
+		$listbox_id = $id . '_listbox';
+		$html      .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
+
+		$arrow            = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
+		$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
+
+		if ( '' !== (string) $args['labelledby'] ) {
+			$trigger_name_attr = ' aria-labelledby="' . esc_attr( (string) $args['labelledby'] ) . '"';
+		} else {
+			$al                = '' !== (string) $args['aria_label'] ? (string) $args['aria_label'] : ( $is_multiple ? __( 'Select options', 'boldform-lite' ) : __( 'Select', 'boldform-lite' ) );
+			$trigger_name_attr = ' aria-label="' . esc_attr( $al ) . '"';
+		}
+		$trigger_aria_attrs = $trigger_name_attr . ' aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
+		if ( $required ) {
+			$trigger_aria_attrs .= ' aria-required="true"';
+		}
+
+		if ( $is_multiple ) {
+			$selected_opts = array_filter(
+				$default_values,
+				function ( $v ) use ( $opt_values ) {
+					return '' !== $v && in_array( $v, $opt_values, true );
+				}
+			);
+			if ( empty( $selected_opts ) ) {
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+			} else {
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__tags">';
+				foreach ( $selected_opts as $v ) {
+					$tag_label = isset( $opt_labels[ $v ] ) ? $opt_labels[ $v ] : $v;
+					$html     .= '<span class="bf-select__tag">' . esc_html( $tag_label ) . '<button type="button" class="bf-select__tag-x" data-val="' . esc_attr( $v ) . '" aria-label="' . esc_attr__( 'Remove', 'boldform-lite' ) . '">&times;</button></span>';
+				}
+				$html .= '</span>' . $arrow . '</div>';
+			}
+		} else {
+			$selected_val = ! empty( $default_values[0] ) && in_array( $default_values[0], $opt_values, true ) ? $default_values[0] : '';
+			if ( $selected_val ) {
+				$selected_label = isset( $opt_labels[ $selected_val ] ) ? $opt_labels[ $selected_val ] : $selected_val;
+				$html          .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__value">' . esc_html( $selected_label ) . '</span>' . $arrow . '</div>';
+			} else {
+				$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
+			}
+		}
+
+		$html .= '<div class="bf-select__panel">';
+
+		if ( $is_searchable ) {
+			$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+			$html      .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off" aria-label="' . esc_attr__( 'Search', 'boldform-lite' ) . '"></div>';
+		}
+
+		$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+		$html .= '<div class="bf-select__list" role="listbox" id="' . esc_attr( $listbox_id ) . '">';
+		foreach ( $opts as $o ) {
+			$is_active    = in_array( $o['value'], $default_values, true );
+			$active_class = $is_active ? ' is-active' : '';
+			$html        .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $o['value'] ) . '">';
+			if ( $is_multiple ) {
+				$html .= '<span class="bf-select__check">' . ( $is_active ? $check_svg : '' ) . '</span>';
+			}
+			$html .= '<span class="bf-select__option-text">' . esc_html( $o['label'] ) . '</span>';
+			if ( ! $is_multiple && $is_active ) {
+				$html .= '<span class="bf-select__active-mark">' . $check_svg . '</span>';
+			}
+			$html .= '</div>';
+		}
+		$html .= '</div>'; // .bf-select__list
+		$html .= '</div>'; // .bf-select__panel
+		$html .= '</div>'; // .bf-select
+
+		return $html;
+	}
+
 	private function get_field_kses_allowed() {
 		$global_attrs = array(
 			'id'               => true,
@@ -1278,6 +1487,7 @@ class BoldForm_Lite_Shortcode {
 			'aria-invalid'     => true,
 			'aria-required'    => true,
 			'aria-live'        => true,
+			'aria-multiline'   => true,
 			'role'             => true,
 			'tabindex'         => true,
 			'hidden'           => true,
@@ -1286,7 +1496,7 @@ class BoldForm_Lite_Shortcode {
 			'dir'              => true,
 		);
 
-		return array(
+		$allowed = array(
 			'div'      => $global_attrs,
 			'span'     => $global_attrs,
 			'p'        => $global_attrs,
@@ -1385,6 +1595,21 @@ class BoldForm_Lite_Shortcode {
 			'rect'     => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'fill' => true, 'stroke' => true ),
 			'g'        => array( 'fill' => true, 'stroke' => true, 'transform' => true ),
 		);
+
+		/**
+		 * Filters the tags/attributes allowed in rendered field-control HTML.
+		 *
+		 * Lets add-ons (e.g. BoldForm Pro) permit markup their custom field
+		 * types need — such as <canvas> (signature pad), table tags (matrix
+		 * grids), or a `contenteditable` attribute (rich-text editor) — which
+		 * would otherwise be stripped by wp_kses() when the control HTML is
+		 * echoed. The array uses the standard wp_kses() allowed-HTML format.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param array<string, array<string, bool>> $allowed Allowed tags => attributes map.
+		 */
+		return apply_filters( 'boldform_field_kses_allowed', $allowed );
 	}
 
 	/**
@@ -1493,147 +1718,20 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'select' === $type || 'multiselect' === $type ) {
-			$is_multiple    = 'multiselect' === $type;
-			$is_searchable  = ! $is_multiple && ! empty( $field['select_searchable'] );
-			$select_name    = $is_multiple ? $field_name . '[]' : $field_name;
-			$default_values = $is_multiple ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
-			$extra_attrs    = ' data-boldform-select="1"';
-
-			if ( $is_multiple ) {
-				// The real `multiple` attribute is required: without it the hidden
-				// native <select> is a single control that auto-selects its first
-				// option (no empty placeholder option is emitted for multiselects),
-				// which both pre-selects option 1 and prevents multiple values from
-				// being submitted. `data-multiple` is only a hook for the JS UI.
-				$extra_attrs .= ' multiple data-multiple="1"';
-			}
-			if ( $is_searchable ) {
-				$extra_attrs .= ' data-searchable="1"';
-			}
-
-			// Hidden native <select> for form submission. The `required` attribute is
-			// intentionally omitted: the element is display:none, and a `required`
-			// control that cannot be focused makes browsers abort submit with no
-			// visible message. Required-ness is conveyed via aria-required on the
-			// visible trigger and enforced server-side in the form handler.
-			$html = sprintf(
-				'<select id="%1$s" name="%2$s"%3$s style="display:none">',
-				esc_attr( $field_id_attr ),
-				esc_attr( $select_name ),
-				$extra_attrs
+			return self::render_custom_select(
+				array(
+					'id'          => $field_id_attr,
+					'name'        => $field_name,
+					'options'     => $options,
+					'selected'    => $default,
+					'placeholder' => $placeholder,
+					'multiple'    => 'multiselect' === $type,
+					'searchable'  => 'multiselect' !== $type && ! empty( $field['select_searchable'] ),
+					'required'    => (bool) $required,
+					'labelledby'  => $has_visible_label ? $label_id : '',
+					'aria_label'  => isset( $field['label'] ) ? (string) $field['label'] : '',
+				)
 			);
-
-			// Always emit an empty option for single selects (even with no placeholder)
-			// so the hidden native <select> defaults to an empty value instead of
-			// auto-selecting option #1. This keeps the submitted value in sync with the
-			// visible custom trigger (which shows "Select…" when nothing is chosen) and
-			// makes server-side "required" enforce on a genuinely empty submission.
-			if ( ! $is_multiple ) {
-				$html .= sprintf(
-					'<option value="">%1$s</option>',
-					esc_html( $placeholder )
-				);
-			}
-
-			$normalized_options = $this->normalize_options( $options );
-
-			foreach ( $normalized_options as $option ) {
-				$is_selected = in_array( $option, $default_values, true ) ? ' selected' : '';
-				$html       .= sprintf(
-					'<option value="%1$s"%2$s>%3$s</option>',
-					esc_attr( $option ),
-					$is_selected,
-					esc_html( $option )
-				);
-			}
-
-			$html .= '</select>';
-
-			// Custom select UI rendered in PHP so it works in Gutenberg SSR, Elementor editor, and normal frontend.
-			$wrap_class = 'bf-select' . ( $is_multiple ? ' bf-select--multi' : '' );
-			$data_attrs = ' data-boldform-custom-select="1"';
-			if ( $is_multiple ) {
-				$data_attrs .= ' data-multiple="1"';
-			}
-			if ( $is_searchable ) {
-				$data_attrs .= ' data-searchable="1"';
-			}
-
-			$listbox_id = $field_id_attr . '_listbox';
-			$html .= '<div class="' . esc_attr( $wrap_class ) . '"' . $data_attrs . '>';
-
-			// Trigger.
-			$arrow = '<span class="bf-select__arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>';
-			$placeholder_text = '' !== $placeholder ? $placeholder : ( $is_multiple ? esc_html__( 'Select options&hellip;', 'boldform-lite' ) : esc_html__( 'Select&hellip;', 'boldform-lite' ) );
-
-			// Prepare accessible name for the operable trigger. The native <select>
-			// is display:none, so its visible <label for=…> targets a hidden control;
-			// point the trigger at that same visible <label> via aria-labelledby so the
-			// name is announced once (not duplicated by a redundant aria-label). When no
-			// visible label is rendered, fall back to an aria-label.
-			$field_label = isset( $field['label'] ) ? (string) $field['label'] : '';
-			if ( $has_visible_label ) {
-				$trigger_name_attr = ' aria-labelledby="' . esc_attr( $label_id ) . '"';
-			} else {
-				$trigger_aria_label = $field_label && '' !== $field_label ? esc_attr( $field_label ) : ( $is_multiple ? esc_attr__( 'Select options', 'boldform-lite' ) : esc_attr__( 'Select', 'boldform-lite' ) );
-				$trigger_name_attr  = ' aria-label="' . $trigger_aria_label . '"';
-			}
-			$trigger_aria_attrs = $trigger_name_attr . ' aria-haspopup="listbox" aria-controls="' . esc_attr( $listbox_id ) . '"';
-			if ( $required ) {
-				$trigger_aria_attrs .= ' aria-required="true"';
-			}
-
-			if ( $is_multiple ) {
-				$selected_opts = array_filter( $default_values, function ( $v ) use ( $normalized_options ) {
-					return '' !== $v && in_array( $v, $normalized_options, true );
-				} );
-				if ( empty( $selected_opts ) ) {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
-				} else {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__tags">';
-					foreach ( $selected_opts as $v ) {
-						$html .= '<span class="bf-select__tag">' . esc_html( $v ) . '<button type="button" class="bf-select__tag-x" data-val="' . esc_attr( $v ) . '" aria-label="' . esc_attr__( 'Remove', 'boldform-lite' ) . '">&times;</button></span>';
-					}
-					$html .= '</span>' . $arrow . '</div>';
-				}
-			} else {
-				$selected_val = ! empty( $default_values[0] ) && in_array( $default_values[0], $normalized_options, true ) ? $default_values[0] : '';
-				if ( $selected_val ) {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__value">' . esc_html( $selected_val ) . '</span>' . $arrow . '</div>';
-				} else {
-					$html .= '<div class="bf-select__trigger" tabindex="0" role="combobox" aria-expanded="false"' . $trigger_aria_attrs . '><span class="bf-select__placeholder">' . esc_html( $placeholder_text ) . '</span>' . $arrow . '</div>';
-				}
-			}
-
-			// Panel.
-			$html .= '<div class="bf-select__panel">';
-
-			if ( $is_searchable ) {
-				$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
-				$html .= '<div class="bf-select__search-wrap">' . $search_svg . '<input type="text" class="bf-select__panel-search" placeholder="' . esc_attr__( 'Search&hellip;', 'boldform-lite' ) . '" autocomplete="off" aria-label="' . esc_attr__( 'Search', 'boldform-lite' ) . '"></div>';
-			}
-
-			$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-
-			$html .= '<div class="bf-select__list" role="listbox" id="' . esc_attr( $listbox_id ) . '">';
-			foreach ( $normalized_options as $option ) {
-				$is_active = in_array( $option, $default_values, true );
-				$active_class = $is_active ? ' is-active' : '';
-				$html .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $option ) . '">';
-				if ( $is_multiple ) {
-					$html .= '<span class="bf-select__check">' . ( $is_active ? $check_svg : '' ) . '</span>';
-				}
-				$html .= '<span class="bf-select__option-text">' . esc_html( $option ) . '</span>';
-				if ( ! $is_multiple && $is_active ) {
-					$html .= '<span class="bf-select__active-mark">' . $check_svg . '</span>';
-				}
-				$html .= '</div>';
-			}
-			$html .= '</div>'; // .bf-select__list
-			$html .= '</div>'; // .bf-select__panel
-			$html .= '</div>'; // .bf-select
-
-			return $html;
 		}
 
 		if ( 'checkbox' === $type || 'radio' === $type ) {
@@ -1882,13 +1980,18 @@ class BoldForm_Lite_Shortcode {
 		if ( 'star_rating' === $type ) {
 			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
 			$def        = (int) $default;
-			$star_color = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
-			$star_size  = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
-			// Emit --bf-star-color only for a custom color; otherwise the CSS falls
-			// back to the theme accent (--bf-button-bg).
+			$star_color    = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
+			$star_inactive = ! empty( $field['star_inactive_color'] ) && sanitize_hex_color( (string) $field['star_inactive_color'] ) ? sanitize_hex_color( (string) $field['star_inactive_color'] ) : '';
+			$star_size     = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
+			// Emit each --bf-star-* only for a custom value; otherwise the CSS falls back
+			// (active → theme accent --bf-button-bg, inactive → a tint of the active, and
+			// hover → the active colour since no separate hover var is emitted).
 			$star_style = '--bf-star-size:' . $star_size . 'px';
 			if ( '' !== $star_color ) {
 				$star_style = '--bf-star-color:' . esc_attr( $star_color ) . ';' . $star_style;
+			}
+			if ( '' !== $star_inactive ) {
+				$star_style = '--bf-star-inactive:' . esc_attr( $star_inactive ) . ';' . $star_style;
 			}
 			// `required` is intentionally omitted from this hidden input: a hidden
 			// control with `required` is invalid HTML and makes browsers abort submit

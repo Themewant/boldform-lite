@@ -540,6 +540,14 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'field_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form__field textarea',
+			)
+		);
+
 		$this->add_control(
 			'field_states_heading',
 			array(
@@ -1521,6 +1529,77 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->end_controls_tab();
 
 		$this->end_controls_tabs();
+
+		$this->end_controls_section();
+
+		// ── Style: Range Slider ──
+		$this->start_controls_section(
+			'section_style_slider',
+			array(
+				'label' => __( 'Range Slider', 'boldform-lite' ),
+				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		// NOTE: the slider markup carries the per-field builder values as INLINE
+		// custom properties (style="--bf-slider-color/-height"), and inline styles
+		// outrank a stylesheet rule. So these two declarations use !important to let
+		// an explicitly-set Elementor value override the form's baked-in default.
+		// When left unset, Elementor emits no rule and the field default still wins.
+		$this->add_control(
+			'slider_color',
+			array(
+				'label'     => __( 'Slider Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-slider' => '--bf-slider-color: {{VALUE}} !important;',
+				),
+			)
+		);
+
+		$this->add_responsive_control(
+			'slider_track_height',
+			array(
+				'label'      => __( 'Track Height', 'boldform-lite' ),
+				'type'       => \Elementor\Controls_Manager::SLIDER,
+				'size_units' => array( 'px' ),
+				'range'      => array( 'px' => array( 'min' => 2, 'max' => 24 ) ),
+				'selectors'  => array(
+					'{{WRAPPER}} .boldform-lite-slider' => '--bf-slider-height: {{SIZE}}{{UNIT}} !important;',
+				),
+			)
+		);
+
+		$this->add_control(
+			'slider_value_color',
+			array(
+				'label'     => __( 'Value Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'separator' => 'before',
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-slider__value' => 'color: {{VALUE}};',
+				),
+			)
+		);
+
+		$this->add_group_control(
+			\Elementor\Group_Control_Typography::get_type(),
+			array(
+				'name'     => 'slider_value_typography',
+				'selector' => '{{WRAPPER}} .boldform-lite-slider__value',
+			)
+		);
+
+		$this->add_control(
+			'slider_labels_color',
+			array(
+				'label'     => __( 'Min / Max Labels Color', 'boldform-lite' ),
+				'type'      => \Elementor\Controls_Manager::COLOR,
+				'selectors' => array(
+					'{{WRAPPER}} .boldform-lite-slider__labels' => 'color: {{VALUE}};',
+				),
+			)
+		);
 
 		$this->end_controls_section();
 

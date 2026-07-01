@@ -4,7 +4,7 @@ Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -346,6 +346,20 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.1 =
+Improvements:
+* Improve: Redesigned the Integrations settings dialog, and a connection now switches on immediately after you save it — no second click needed.
+* Improve: The Forms and Entries list tables stay usable on small screens — wide tables scroll within their card instead of stretching or breaking the page layout.
+* Improve: The Entries admin menu now shows an unread-submissions count badge (like the Comments menu) so new entries are visible at a glance.
+* Improve: Expanded the User Guide and Developer Guide with step-by-step setup instructions and screenshots for every integration, plus smooth in-page navigation.
+
+Fixes:
+* Fix: Conditional Logic rules now save reliably — multi-condition rules and the ALL/ANY match mode are preserved when a form is reopened in the builder.
+
+Developer:
+* Developer: New extension hooks for add-ons — boldform_defer_post_save_actions (hold the entry-created action and notification emails until an entry is finalised), boldform_auto_populate_value (resolve any auto-populate key through a single filter), and boldform_entry_value_admin_html (return rich HTML for an entry value on the admin detail screen only). A boldform_form_reset event now fires on the document after a successful AJAX submit so custom field widgets can re-sync.
+* Developer: The bundled Appsero SDK now lives under includes/appsero/, and tag source archives strip development-only files via .gitattributes.
+
 = 1.1.0 =
 New features:
 * New: Dual-handle range slider — an opt-in "Dual range (min–max)" mode renders two handles with a filled track and validates the selected range on submit.
@@ -393,7 +407,8 @@ Improvements:
 * Improve: Style-tab numeric controls no longer overlap the unit suffix with the spinner arrows; Padding, Margin, and Border-Radius gained a visible stepper, and size and spacing fields show a meaningful placeholder ("Default" or "—") instead of a misleading "0".
 * Improve: The colour reset button now stays disabled until a colour is changed, so it is clear when a value differs from the default.
 * Improve: BoldForm admin screens now show only BoldForm's own notices — promotional banners from other plugins or the active theme are suppressed on our screens.
-* Improve: The Star Rating field settings were trimmed to the options that apply (removed Placeholder, Default Value, Star Color, and Star Size).
+* Improve: Star Rating is now styled per field — Number of Stars, Icon Size, Star Color (resting), and Active Color (hover/selected) live in the field's own settings; the global Star Rating section was removed from the Style tab. Placeholder and Default Value remain hidden as they do not apply.
+* Improve: Each field type now starts with a sensible default placeholder (e.g. "you@example.com" for email, "https://example.com" for URL) shown consistently on the canvas, preview, and front end; it can be edited or cleared per field.
 * Improve: Renamed every admin-visible "Bold Form" to "BoldForm" for consistent product branding.
 * Improve: Moved the Integrations submenu directly above Help & Support in the BoldForm admin menu.
 * Improve: Balanced the Entries list-table column widths so the Submission column no longer crowds the Form, Date, and Status columns.
@@ -416,6 +431,7 @@ Fixes:
 * Fix: A row can no longer be dropped below the Submit or Add Row buttons in the builder canvas.
 * Fix: Removed a leading gap before left- and right-aligned field labels in both the builder and the front-end form.
 * Fix: Removed a duplicate "Add Row" panel-header button and a stray file-input sample from the Style-tab live preview.
+* Fix: The Star Rating "Number of Stars" control no longer loses keyboard focus after each spinner/arrow-key increment.
 
 Compatibility:
 * Update: Tested up to WordPress 7.0; minimum supported version is now WordPress 6.3.
@@ -441,6 +457,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Fixes Conditional Logic rule saving, improves the Integrations connect-and-enable flow, makes the Forms and Entries tables mobile-friendly, and adds an unread-entries menu badge. Recommended for all users.
 
 = 1.1.0 =
 Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.

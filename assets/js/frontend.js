@@ -322,6 +322,15 @@ jQuery(
 								.text( message );
 
 							$form.trigger( 'reset' );
+
+							// A native reset reverts inputs to their HTML defaults but
+							// leaves custom widgets (e.g. Pro calculation/payment
+							// displays, signature pads, date-range/NPS visuals,
+							// image-choice tiles, extra repeater rows) showing their
+							// stale state. Announce the reset so those widgets can
+							// re-sync. Lite stays Pro-agnostic — it only fires the
+							// event; each field type handles its own re-sync.
+							$( document ).trigger( 'boldform_form_reset', [ $form ] );
 						}
 					)
 					.fail(

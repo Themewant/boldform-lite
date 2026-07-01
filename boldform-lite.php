@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       BoldForm Lite
  * Description:       Lightweight drag and drop form builder for WordPress.
- * Version:           1.1.0
+ * Version:           1.1.1
  * Requires at least: 6.3
  * Tested up to:      7.0
  * Requires PHP:      7.4
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BOLDFORM_LITE_VERSION', '1.1.0' );
+define( 'BOLDFORM_LITE_VERSION', '1.1.1' );
 define( 'BOLDFORM_LITE_DB_VERSION', '1.0.0' );
 define( 'BOLDFORM_LITE_FILE', __FILE__ );
 define( 'BOLDFORM_LITE_PATH', plugin_dir_path( __FILE__ ) );
@@ -196,7 +196,7 @@ function boldform_lite_appsero() {
 	}
 
 	if ( ! class_exists( 'Appsero\Client' ) ) {
-		$sdk = BOLDFORM_LITE_PATH . 'appsero/src/Client.php';
+		$sdk = BOLDFORM_LITE_PATH . 'includes/appsero/Client.php';
 
 		if ( ! is_readable( $sdk ) ) {
 			return;

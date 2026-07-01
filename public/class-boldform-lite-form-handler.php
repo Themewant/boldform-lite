@@ -319,7 +319,8 @@ class BoldForm_Lite_Form_Handler {
 			/**
 			 * Fires immediately after a new entry is saved to the database.
 			 *
-			 * Pro can use this to trigger integrations (CRM, webhooks, Zapier, Slack).
+			 * Always fires on save (even when post-save side effects are deferred),
+			 * so persistence-level listeners can run.
 			 *
 			 * @param int                                 $form_id    Form ID.
 			 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
@@ -327,11 +328,31 @@ class BoldForm_Lite_Form_Handler {
 			 * @param array<string, mixed>                $settings   Form settings.
 			 */
 			do_action( 'boldform_entry_saved', $form_id, $validation['entry_data'], $form_record, $settings );
+		}
 
+		/**
+		 * Filter whether post-save side effects (the boldform_entry_created action and
+		 * the notification emails) should run now.
+		 *
+		 * Defaults to false (run immediately). An extension may return true to DEFER
+		 * them when the entry is not yet final, then re-run them itself later by firing
+		 * boldform_entry_created and dispatching notifications via the handler returned
+		 * by BoldForm_Lite::get_email_handler().
+		 *
+		 * @param bool                                $defer      Whether to defer post-save side effects.
+		 * @param int                                 $form_id    Form ID.
+		 * @param int                                 $entry_id   Saved entry ID (0 if not saved).
+		 * @param array<string, mixed>                $settings   Form settings.
+		 * @param array<string, array<string, mixed>> $entry_data Saved entry data.
+		 */
+		$defer_actions = (bool) apply_filters( 'boldform_defer_post_save_actions', false, $form_id, $entry_id, $settings, $validation['entry_data'] );
+
+		if ( $should_save && ! $defer_actions ) {
 			/**
-			 * Fires after entry is saved, passing the new entry ID.
+			 * Fires after an entry is saved, passing the new entry ID.
 			 *
-			 * Pro payment module uses this to link the transaction record to the entry.
+			 * Extensions use this to trigger post-save integrations (CRM, webhooks,
+			 * Zapier, Slack) or to attach related records to the entry.
 			 *
 			 * @param int                                 $entry_id   Newly inserted entry ID.
 			 * @param int                                 $form_id    Form ID.
@@ -339,9 +360,7 @@ class BoldForm_Lite_Form_Handler {
 			 * @param array<string, mixed>                $settings   Form settings.
 			 */
 			do_action( 'boldform_entry_created', $entry_id, $form_id, $validation['entry_data'], $settings );
-		}
 
-		if ( $should_save ) {
 			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
 		}
 
@@ -1080,6 +1099,27 @@ class BoldForm_Lite_Form_Handler {
 	 * @return string|array<int, string>
 	 */
 	private function sanitize_field_value( $type, $raw ) {
+		/**
+		 * Short-circuits field-value sanitization for a given field type.
+		 *
+		 * Returning a non-null value fully replaces Lite's built-in sanitization,
+		 * letting add-ons (BoldForm Pro) correctly handle custom field types whose
+		 * values Lite's generic text sanitizer would otherwise damage — e.g. array
+		 * values (matrix grids, geolocation, multi image-choice) coerced to '', or
+		 * HTML (rich text) that would be tag-stripped. Implementations MUST return
+		 * an already-sanitized value, or null to defer to Lite.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param mixed  $pre  Null to defer to Lite; any other value short-circuits.
+		 * @param string $type Field type slug.
+		 * @param mixed  $raw  Raw submitted value (string or array).
+		 */
+		$pre = apply_filters( 'boldform_pre_sanitize_field_value', null, $type, $raw );
+		if ( null !== $pre ) {
+			return $pre;
+		}
+
 		if ( 'checkbox' === $type || 'multiselect' === $type ) {
 			if ( ! is_array( $raw ) ) {
 				return is_scalar( $raw ) && '' !== (string) $raw ? array( sanitize_text_field( (string) $raw ) ) : array();

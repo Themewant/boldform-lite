@@ -1,13 +1,12 @@
 {
   "name": "boldform-lite",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Build tooling for the BoldForm Lite WordPress plugin (dev-only; not part of the shipped plugin).",
   "private": true,
   "license": "GPL-2.0-or-later",
   "author": "Themewant",
   "files": [
     "admin",
-    "appsero",
     "assets",
     "blocks",
     "includes",

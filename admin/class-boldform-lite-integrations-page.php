@@ -127,25 +127,34 @@ class BoldForm_Lite_Integrations_Page {
 			1000
 		);
 
+		// Cache-bust by file mtime (fall back to the plugin version) so CSS/JS
+		// edits show without a hard refresh, matching the builder assets.
+		$settings_css = BOLDFORM_LITE_PATH . 'assets/css/settings.css';
+		$int_css      = BOLDFORM_LITE_PATH . 'assets/css/integrations-page.css';
+		$int_js       = BOLDFORM_LITE_PATH . 'assets/js/integrations-page.js';
+		$settings_ver = file_exists( $settings_css ) ? (string) filemtime( $settings_css ) : BOLDFORM_LITE_VERSION;
+		$int_css_ver  = file_exists( $int_css ) ? (string) filemtime( $int_css ) : BOLDFORM_LITE_VERSION;
+		$int_js_ver   = file_exists( $int_js ) ? (string) filemtime( $int_js ) : BOLDFORM_LITE_VERSION;
+
 		wp_enqueue_style(
 			'boldform-lite-admin',
 			BOLDFORM_LITE_URL . 'assets/css/settings.css',
 			array(),
-			BOLDFORM_LITE_VERSION
+			$settings_ver
 		);
 
 		wp_enqueue_style(
 			'boldform-lite-integrations-page',
 			BOLDFORM_LITE_URL . 'assets/css/integrations-page.css',
 			array( 'boldform-lite-admin' ),
-			BOLDFORM_LITE_VERSION
+			$int_css_ver
 		);
 
 		wp_enqueue_script(
 			'boldform-lite-integrations-page',
 			BOLDFORM_LITE_URL . 'assets/js/integrations-page.js',
 			array( 'jquery' ),
-			BOLDFORM_LITE_VERSION,
+			$int_js_ver,
 			true
 		);
 
@@ -199,8 +208,11 @@ class BoldForm_Lite_Integrations_Page {
 			<hr class="wp-header-end">
 
 			<div class="boldform-int-header">
-				<h1><?php esc_html_e( 'Integrations', 'boldform-lite' ); ?></h1>
-				<p><?php esc_html_e( 'Connect your forms to email marketing, CRMs, and apps.', 'boldform-lite' ); ?></p>
+				<div class="boldform-int-header__titles">
+					<h1><?php esc_html_e( 'Integrations', 'boldform-lite' ); ?></h1>
+					<p><?php esc_html_e( 'Connect your forms to email marketing, CRMs, and apps.', 'boldform-lite' ); ?></p>
+				</div>
+				<?php $this->render_header_upgrade(); ?>
 			</div>
 
 			<!-- Tabs -->
@@ -313,6 +325,16 @@ class BoldForm_Lite_Integrations_Page {
 			array( 'slug' => 'boldform-lite-settings#tools', 'label' => __( 'Tools', 'boldform-lite' ),       'icon' => 'dashicons-admin-tools',   'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ) ),
 		);
 		$nav_items = apply_filters( 'boldform_admin_topbar_items', $nav_items, 'boldform-lite-integrations' );
+
+		// "Upgrade to Pro" as the final nav item (see BoldForm_Lite_Admin::render_admin_topbar()).
+		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			$nav_items[] = array(
+				'slug'  => 'boldform-lite-upgrade',
+				'label' => __( 'Upgrade', 'boldform-lite' ),
+				'icon'  => 'dashicons-star-filled',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-upgrade' ),
+			);
+		}
 		?>
 		<div class="boldform-admin-topbar">
 			<div class="boldform-admin-topbar__brand">
@@ -334,6 +356,26 @@ class BoldForm_Lite_Integrations_Page {
 				<?php endforeach; ?>
 			</nav>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the "Upgrade to Pro" CTA for the Integrations page header.
+	 *
+	 * Mirrors BoldForm_Lite_Admin::render_header_upgrade(); duplicated here because
+	 * this page is a separate class. Shown by default; hidden when a callback on
+	 * boldform_show_upgrade_cta returns false.
+	 *
+	 * @return void
+	 */
+	private function render_header_upgrade(): void {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return;
+		}
+		?>
+		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+		</a>
 		<?php
 	}
 
@@ -929,30 +971,32 @@ class BoldForm_Lite_Integrations_Page {
 		}
 
 		if ( $enable ) {
-			// Refuse to activate a connection that has no API key — it would show
-			// as "on" while every dispatch silently no-ops. Tell the UI to open
-			// the settings modal instead so the admin can add credentials first.
-			if ( empty( $found['api_key'] ) ) {
+			// Refuse to activate an unconfigured connection — it would show as "on"
+			// while every dispatch silently no-ops. Tell the UI to open the settings
+			// modal so the admin can finish setup first.
+			if ( ! $found ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Add your API key in settings before enabling this integration.', 'boldform-lite' ),
+						'message' => __( 'Configure this integration in settings before enabling it.', 'boldform-lite' ),
 						'code'    => 'needs_setup',
 					)
 				);
 			}
 
-			// Likewise refuse to activate when the type requires a list/audience that has
-			// not been chosen yet — same silent-no-op failure mode as a missing API key.
+			// Gate on the type's REQUIRED fields rather than hardcoding api_key, so
+			// keyless integrations work too: API-key types need their key, Google
+			// Sheets needs its service-account JSON + spreadsheet ID, FluentCRM needs
+			// a chosen list. Any empty required field is the same silent-no-op risk.
 			$def = $this->get_type_defs()[ $type ] ?? array();
 			foreach ( ( $def['fields'] ?? array() ) as $def_field ) {
-				if ( 'list_select' !== ( $def_field['type'] ?? '' ) || empty( $def_field['required'] ) ) {
+				if ( empty( $def_field['required'] ) ) {
 					continue;
 				}
 				$field_key = (string) ( $def_field['key'] ?? '' );
 				if ( '' !== $field_key && empty( $found[ $field_key ] ) ) {
 					wp_send_json_error(
 						array(
-							'message' => __( 'Choose a list before enabling this integration.', 'boldform-lite' ),
+							'message' => __( 'Complete the required settings before enabling this integration.', 'boldform-lite' ),
 							'code'    => 'needs_setup',
 						)
 					);
