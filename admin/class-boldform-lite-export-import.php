@@ -49,37 +49,45 @@ class BoldForm_Lite_Export_Import {
 	public function render_tools_tab( $settings ) {
 		global $wpdb;
 
-		$tools_sub = isset( $_GET['tools_tab'] ) ? sanitize_key( wp_unslash( $_GET['tools_tab'] ) ) : 'export'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$tools_sub = in_array( $tools_sub, array( 'export', 'import' ), true ) ? $tools_sub : 'export';
+		$tools_sub = isset( $_GET['tools_tab'] ) ? sanitize_key( wp_unslash( $_GET['tools_tab'] ) ) : 'forms'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// Back-compat: legacy export/import deep-links now live under the Forms tab.
+		if ( in_array( $tools_sub, array( 'export', 'import' ), true ) ) {
+			$tools_sub = 'forms';
+		}
+		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries' ), true ) ? $tools_sub : 'forms';
 
 		$notice = '';
 
 		if ( isset( $_GET['boldform_imported'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$count    = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$tools_sub = 'import';
-			$notice   = sprintf(
+			$count     = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$tools_sub = 'forms';
+			$notice    = sprintf(
 				/* translators: %d: number of forms imported */
 				_n( '%d form imported successfully.', '%d forms imported successfully.', $count, 'boldform-lite' ),
 				$count
 			);
 		}
+
+		$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
+		$forms       = $wpdb->get_results( $wpdb->prepare( "SELECT id, title FROM `{$forms_table}` WHERE status != %s ORDER BY title ASC", 'trash' ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		?>
 
 		<div class="boldform-smtp-subtabs">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=export' ) ); ?>" class="<?php echo 'export' === $tools_sub ? 'active' : ''; ?>">
-				<?php esc_html_e( 'Export', 'boldform-lite' ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' ) ); ?>" class="<?php echo 'forms' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Forms', 'boldform-lite' ); ?>
 			</a>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=import' ) ); ?>" class="<?php echo 'import' === $tools_sub ? 'active' : ''; ?>">
-				<?php esc_html_e( 'Import', 'boldform-lite' ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=entries' ) ); ?>" class="<?php echo 'entries' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Entries', 'boldform-lite' ); ?>
 			</a>
 		</div>
 
-		<?php if ( 'export' === $tools_sub ) : ?>
+		<?php if ( 'forms' === $tools_sub ) : ?>
 
-			<?php
-			$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
-			$forms       = $wpdb->get_results( $wpdb->prepare( "SELECT id, title FROM `{$forms_table}` WHERE status != %s ORDER BY title ASC", 'trash' ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			?>
+			<?php if ( $notice ) : ?>
+				<div class="boldform-card boldform-card--success">
+					<p><?php echo esc_html( $notice ); ?></p>
+				</div>
+			<?php endif; ?>
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Export Forms & Settings', 'boldform-lite' ); ?></h3>
@@ -148,9 +156,10 @@ class BoldForm_Lite_Export_Import {
 						var formSelect=document.getElementById("boldform-export-form-select");
 						var entriesRow=document.getElementById("boldform-export-entries-row");
 						function toggle(){
-							var val=document.querySelector("input[name=\'boldform_export_scope\']:checked").value;
-							if(formSelect)formSelect.style.display=val==="single"?"":"none";
-							if(entriesRow)entriesRow.style.display=val==="settings_only"?"none":"";
+							var checked=document.querySelector("input[name=\'boldform_export_scope\']:checked");
+							if(!checked)return;
+							if(formSelect)formSelect.style.display=checked.value==="single"?"":"none";
+							if(entriesRow)entriesRow.style.display=checked.value==="settings_only"?"none":"";
 						}
 						for(var i=0;i<radios.length;i++)radios[i].addEventListener("change",toggle);
 						toggle();
@@ -158,14 +167,6 @@ class BoldForm_Lite_Export_Import {
 				);
 				?>
 			</div>
-
-		<?php else : ?>
-
-			<?php if ( $notice ) : ?>
-				<div class="boldform-card boldform-card--success">
-					<p><?php echo esc_html( $notice ); ?></p>
-				</div>
-			<?php endif; ?>
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Import Forms & Settings', 'boldform-lite' ); ?></h3>
@@ -186,6 +187,72 @@ class BoldForm_Lite_Export_Import {
 						<button type="submit" name="boldform_import" class="button button-primary"><?php esc_html_e( 'Upload & Import', 'boldform-lite' ); ?></button>
 					</div>
 				</form>
+			</div>
+
+		<?php else : ?>
+
+			<div class="boldform-card boldform-card--spaced">
+				<h3><?php esc_html_e( 'Export Entries', 'boldform-lite' ); ?></h3>
+				<p class="boldform-tab-description"><?php esc_html_e( 'Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen.', 'boldform-lite' ); ?></p>
+
+				<form method="post">
+					<?php wp_nonce_field( 'boldform_lite_export', 'boldform_export_nonce' ); ?>
+					<input type="hidden" name="boldform_export_scope" value="entries_only">
+
+					<div class="boldform-field-row">
+						<div class="boldform-field-label"><?php esc_html_e( 'Which entries', 'boldform-lite' ); ?></div>
+						<div class="boldform-field-control">
+							<div class="boldform-radio-list">
+								<label>
+									<input type="radio" name="boldform_entries_scope" value="all" checked>
+									<?php esc_html_e( 'All forms', 'boldform-lite' ); ?>
+								</label>
+								<label>
+									<input type="radio" name="boldform_entries_scope" value="single">
+									<?php esc_html_e( 'Single form', 'boldform-lite' ); ?>
+								</label>
+							</div>
+						</div>
+					</div>
+
+					<div class="boldform-field-row" id="boldform-entries-form-select" style="display:none;">
+						<div class="boldform-field-label"><label for="boldform-entries-form-id"><?php esc_html_e( 'Select form', 'boldform-lite' ); ?></label></div>
+						<div class="boldform-field-control">
+							<select id="boldform-entries-form-id" name="boldform_export_form_id" style="max-width:100%;">
+								<option value="0"><?php esc_html_e( '-- Select --', 'boldform-lite' ); ?></option>
+								<?php foreach ( $forms as $form ) : ?>
+									<option value="<?php echo absint( $form['id'] ); ?>">
+										<?php
+										/* translators: %d: form ID number */
+										echo esc_html( $form['title'] ? $form['title'] : sprintf( __( 'Form #%d', 'boldform-lite' ), (int) $form['id'] ) );
+										?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+					</div>
+
+					<div class="boldform-submit-area">
+						<button type="submit" name="boldform_export" class="button button-primary"><?php esc_html_e( 'Download Export File', 'boldform-lite' ); ?></button>
+					</div>
+				</form>
+
+				<?php
+				wp_add_inline_script(
+					'boldform-lite-admin',
+					'(function(){
+						var radios=document.querySelectorAll("input[name=\'boldform_entries_scope\']");
+						var formSelect=document.getElementById("boldform-entries-form-select");
+						function toggle(){
+							var checked=document.querySelector("input[name=\'boldform_entries_scope\']:checked");
+							if(!checked)return;
+							if(formSelect)formSelect.style.display=checked.value==="single"?"":"none";
+						}
+						for(var i=0;i<radios.length;i++)radios[i].addEventListener("change",toggle);
+						toggle();
+					})();'
+				);
+				?>
 			</div>
 
 		<?php endif; ?>
@@ -233,6 +300,13 @@ class BoldForm_Lite_Export_Import {
 		} elseif ( 'settings_only' === $scope ) {
 			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
+		} elseif ( 'entries_only' === $scope ) {
+			if ( $form_id > 0 ) {
+				$data['entries'] = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$entries_table}` WHERE form_id = %d ORDER BY id ASC", $form_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			} else {
+				$data['entries'] = $wpdb->get_results( "SELECT * FROM `{$entries_table}` ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			}
+
 		} else {
 			$data['forms'] = $wpdb->get_results( "SELECT * FROM `{$forms_table}` WHERE status != 'trash' ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
@@ -243,7 +317,7 @@ class BoldForm_Lite_Export_Import {
 			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 		}
 
-		$filename = 'boldform-export-' . gmdate( 'Y-m-d' ) . '.json';
+		$filename = ( 'entries_only' === $scope ? 'boldform-entries-' : 'boldform-export-' ) . gmdate( 'Y-m-d' ) . '.json';
 
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
@@ -330,7 +404,7 @@ class BoldForm_Lite_Export_Import {
 
 		$imported = $this->import_data( $data );
 
-		wp_safe_redirect( add_query_arg( 'boldform_imported', $imported, admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=import' ) ) );
+		wp_safe_redirect( add_query_arg( 'boldform_imported', $imported, admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' ) ) );
 		exit;
 	}
 

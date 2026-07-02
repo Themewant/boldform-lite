@@ -625,7 +625,8 @@
 }
 
 .boldform-toggle input[type="checkbox"]:checked::before {
-	transform: translateX(16px);
+	top: 4px;
+	transform: translateX(18px);
 }
 
 .boldform-toggle span {
