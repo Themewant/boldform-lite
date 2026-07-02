@@ -52,10 +52,8 @@ phpunit.xml
 phpcs.xml
 .phpcs.xml
 
-# CI/CD — ignore everything in .github EXCEPT the workflows we ship
-/.github/*
-!/.github/workflows/
-!/.github/workflows/*.yml
+# CI/CD
+.github/
 .gitlab-ci.yml
 .travis.yml
 
