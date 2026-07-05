@@ -1,6 +1,6 @@
 {
   "name": "boldform-lite",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Build tooling for the BoldForm Lite WordPress plugin (dev-only; not part of the shipped plugin).",
   "private": true,
   "license": "GPL-2.0-or-later",
@@ -12,8 +12,6 @@
     "includes",
     "languages",
     "public",
-    "templates",
-    "uninstall",
     "boldform-lite.php",
     "readme.txt",
     "uninstall.php",

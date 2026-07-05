@@ -1,10 +1,10 @@
-=== BoldForm Lite ===
+=== BoldForm - Drag & Drop Form Builder ===
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.1
+Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -346,6 +346,24 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.2 =
+Improvements:
+* Improve: Added an "Upgrade to Pro" page and CTAs comparing Free vs Pro features, so it's easy to see what BoldForm Pro adds.
+* Improve: The Entries list now supports bulk actions — select multiple submissions and mark them Read, Unread, Starred, or Spam, or delete them in one step.
+* Improve: Added an "Export Selected" button on the Entries list to export just the checked submissions to CSV.
+* Improve: Reorganised the Tools screen into separate Forms and Entries tabs, and added a standalone Entries export so you can download submissions on their own.
+* Improve: Added a Documentation menu to the admin toolbar with quick links to the User and Developer guides.
+* Improve: Expanded the Elementor widget with a Range Slider styling section and typography controls for input text.
+
+Fixes:
+* Fix: Several form and settings values no longer reset to their defaults after saving and reopening — page-redirect type, duplicate-submission prevention, and field style are all preserved.
+* Fix: Saving one Settings tab (General, Captcha, or SMTP) no longer clears the settings on the other tabs.
+* Fix: Custom column widths in the form builder are now kept when a form is saved.
+* Fix: Resolved a form scheduling issue so scheduled open/close windows behave correctly.
+
+Maintenance:
+* Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
+
 = 1.1.1 =
 Improvements:
 * Improve: Redesigned the Integrations settings dialog, and a connection now switches on immediately after you save it — no second click needed.
@@ -457,6 +475,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.2 =
+Adds Entries bulk actions and selective CSV export, a reorganised Tools screen with standalone entry export, an Upgrade to Pro comparison page, Elementor styling additions, and fixes for settings and column widths resetting after save. Recommended for all users.
 
 = 1.1.1 =
 Fixes Conditional Logic rule saving, improves the Integrations connect-and-enable flow, makes the Forms and Entries tables mobile-friendly, and adds an unread-entries menu badge. Recommended for all users.
