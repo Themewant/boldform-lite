@@ -2548,6 +2548,29 @@ class BoldForm_Lite_Admin {
 						<span class="dashicons dashicons-download"></span>
 						<?php esc_html_e( 'Export CSV', 'boldform-lite' ); ?>
 					</a>
+					<?php
+					/**
+					 * Fires beside the Entries screen's "Export CSV" button so add-ons can
+					 * offer additional export formats (such as Excel and PDF). Only
+					 * fires when the current filtered view has entries. Handlers should render
+					 * their own filter-scoped, nonce-protected export links/buttons.
+					 *
+					 * @since 1.1.2
+					 *
+					 * @param array<string, mixed> $filter_context The current screen filters:
+					 *        'form_id', 'status', 'date_range', 'date_from', 'date_to'.
+					 */
+					do_action(
+						'boldform_entries_export_actions',
+						array(
+							'form_id'    => $filter_form,
+							'status'     => $filter_status,
+							'date_range' => $filter_date,
+							'date_from'  => $filter_from,
+							'date_to'    => $filter_to,
+						)
+					);
+					?>
 				<?php endif; ?>
 				<?php $this->render_header_upgrade(); ?>
 			</div>
@@ -2676,6 +2699,17 @@ class BoldForm_Lite_Admin {
 						<span class="dashicons dashicons-download"></span>
 						<?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?>
 					</button>
+					<?php
+					/**
+					 * Fires inside the Entries bulk-action bar, after the "Export Selected"
+					 * (CSV) button, so add-ons can offer more selected-rows export formats
+					 * (such as Excel and PDF). Handlers own their button markup and
+					 * the JS that collects the checked entry ids and posts to their endpoint.
+					 *
+					 * @since 1.1.2
+					 */
+					do_action( 'boldform_entries_bulk_export_actions' );
+					?>
 				</div>
 			<?php endif; ?>
 
@@ -4324,27 +4358,101 @@ class BoldForm_Lite_Admin {
 
 		check_admin_referer( 'boldform_lite_csv_export' );
 
-		global $wpdb;
+		$filters = $this->get_entries_export_filters();
 
-		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
+		$filename = 'boldform-entries-' . gmdate( 'Y-m-d' ) . '.csv';
 
-		// Selected-rows export (POST) takes precedence and exports exactly those ids,
-		// ignoring the status/date tab filters. Otherwise honor the screen filters.
-		$selected_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] )
-			? array_values( array_unique( array_filter( array_map( 'absint', wp_unslash( $_POST['entry_ids'] ) ) ) ) )
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+
+		$output = fopen( 'php://output', 'w' );
+
+		// Delegate the query, column-union and value formatting to the shared exporter so
+		// this CSV path and any add-on export format can never drift apart.
+		// The closures are non-static so they keep this class's scope and can reach the
+		// private csv_escape_cell() (formula-injection guard) exactly as before.
+		$this->stream_entries_export(
+			$filters,
+			function ( $columns ) use ( $output ) {
+				fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) ) );
+			},
+			function ( $row ) use ( $output ) {
+				fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
+			}
+		);
+
+		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- writing to php://output stream, not a filesystem file.
+		exit;
+	}
+
+	/**
+	 * Resolves the entries-export filter set from the current request.
+	 *
+	 * A selected-rows export (the bulk bar POSTs `entry_ids`) takes precedence and
+	 * exports exactly those ids, ignoring the status/date tab filters. Otherwise the
+	 * screen filters passed in the header export link (form/status/date) are honored.
+	 * Both the built-in CSV export and add-on exporters (such as Excel/PDF)
+	 * call this so every format scopes an export identically. The caller is
+	 * responsible for the nonce/capability check before invoking an export.
+	 *
+	 * @since 1.1.2
+	 *
+	 * @return array<string, mixed> Filter set for {@see self::stream_entries_export()}.
+	 */
+	public function get_entries_export_filters() {
+		$selected_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] ) // phpcs:ignore WordPress.Security.NonceVerification.Missing -- caller verifies the nonce before dispatch.
+			? array_values( array_unique( array_filter( array_map( 'absint', wp_unslash( $_POST['entry_ids'] ) ) ) ) ) // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			: array();
 
 		if ( ! empty( $selected_ids ) ) {
-			$filters = array( 'ids' => $selected_ids );
-		} else {
-			// Honor the same filters the Entries screen passes in the export link (form/status/date).
-			$filters = array(
-				'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0,
-				'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '',
-				'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '',
-				'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '',
-			);
+			return array( 'ids' => $selected_ids );
 		}
+
+		// Honor the same filters the Entries screen passes in the export link (form/status/date).
+		return array(
+			'form_id'   => isset( $_GET['form_id'] ) ? absint( wp_unslash( $_GET['form_id'] ) ) : 0, // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'status'    => isset( $_GET['status'] ) ? sanitize_key( wp_unslash( $_GET['status'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'date_from' => isset( $_GET['date_from'] ) ? sanitize_text_field( wp_unslash( $_GET['date_from'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			'date_to'   => isset( $_GET['date_to'] ) ? sanitize_text_field( wp_unslash( $_GET['date_to'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		);
+	}
+
+	/**
+	 * Streams the entries export dataset to caller-supplied callbacks, batched to
+	 * bound memory.
+	 *
+	 * This is the single source of truth for every entry export format: Lite's
+	 * built-in CSV export and any add-on format (for example an Excel
+	 * or PDF exporter) all iterate the same query, share the same column set — the
+	 * union of field labels across the filtered entries, in first-seen order — and
+	 * run every value through {@see BoldForm_Lite::format_field_value()}, so no two
+	 * export formats can ever drift apart. Rows are read in bounded batches so peak
+	 * memory stays flat no matter how many entries match.
+	 *
+	 * The callbacks receive already-assembled data; the caller only serializes it
+	 * for its target file type (a CSV cell, an XLSX row, a PDF table cell). No output
+	 * is produced by this method itself.
+	 *
+	 * @since 1.1.2
+	 *
+	 * @param array<string, mixed> $filters    Query filters. Accepts 'ids' (int[],
+	 *                                          exact entry ids — takes precedence) or
+	 *                                          'form_id', 'status', 'date_from',
+	 *                                          'date_to' (screen filters).
+	 * @param callable             $on_columns Called once, after the column set is
+	 *                                          known: fn( string[] $columns ): void.
+	 * @param callable             $on_row     Called once per entry, in display order:
+	 *                                          fn( array $row, array $meta ): void.
+	 *                                          $row is flat: [ id, form_id, created_at,
+	 *                                          <one cell per column> ]. $meta carries
+	 *                                          'id', 'form_id', 'created_at'.
+	 * @return void
+	 */
+	public function stream_entries_export( array $filters, callable $on_columns, callable $on_row ) {
+		global $wpdb;
+
+		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
 		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
 		$base_query = "SELECT id, form_id, created_at, entry_data_json FROM `{$safe_table}` {$where} ORDER BY created_at DESC";
 		$batch_size = 500;
@@ -4383,16 +4491,7 @@ class BoldForm_Lite_Admin {
 			$offset += $batch_size;
 		} while ( count( $batch ) === $batch_size );
 
-		$filename = 'boldform-entries-' . gmdate( 'Y-m-d' ) . '.csv';
-
-		nocache_headers();
-		header( 'Content-Type: text/csv; charset=utf-8' );
-		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
-
-		$output = fopen( 'php://output', 'w' );
-
-		// Header row.
-		fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), array_merge( array( 'Entry ID', 'Form ID', 'Date' ), $columns ) ) );
+		call_user_func( $on_columns, $columns );
 
 		// Pass 2: stream the rows in the same order, batched to bound memory.
 		$offset = 0;
@@ -4430,14 +4529,19 @@ class BoldForm_Lite_Admin {
 					$row[] = isset( $field_map[ $col ] ) ? $field_map[ $col ] : '';
 				}
 
-				fputcsv( $output, array_map( array( $this, 'csv_escape_cell' ), $row ) );
+				call_user_func(
+					$on_row,
+					$row,
+					array(
+						'id'         => $entry['id'],
+						'form_id'    => $entry['form_id'],
+						'created_at' => $entry['created_at'],
+					)
+				);
 			}
 
 			$offset += $batch_size;
 		} while ( count( $batch ) === $batch_size );
-
-		fclose( $output ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- writing to php://output stream, not a filesystem file.
-		exit;
 	}
 
 	/**
