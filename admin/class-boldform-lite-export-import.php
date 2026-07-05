@@ -193,11 +193,39 @@ class BoldForm_Lite_Export_Import {
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Export Entries', 'boldform-lite' ); ?></h3>
-				<p class="boldform-tab-description"><?php esc_html_e( 'Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen.', 'boldform-lite' ); ?></p>
+				<p class="boldform-tab-description">
+					<?php
+					echo esc_html(
+						/**
+						 * Filters the Tools → Entries export panel description. An add-on
+						 * can replace it when it adds CSV/Excel/PDF format choices to this panel.
+						 *
+						 * @since 1.1.2
+						 *
+						 * @param string $description Default panel description.
+						 */
+						apply_filters(
+							'boldform_tools_entries_export_description',
+							__( 'Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen.', 'boldform-lite' )
+						)
+					);
+					?>
+				</p>
 
 				<form method="post">
 					<?php wp_nonce_field( 'boldform_lite_export', 'boldform_export_nonce' ); ?>
 					<input type="hidden" name="boldform_export_scope" value="entries_only">
+					<?php
+					/**
+					 * Fires at the top of the Tools → Entries export form so add-ons can add
+					 * export options (such as a CSV/Excel/PDF format selector). Runs
+					 * inside the form, before the "Which entries" scope control, so a handler's
+					 * inputs post together with the export.
+					 *
+					 * @since 1.1.2
+					 */
+					do_action( 'boldform_tools_entries_export_fields' );
+					?>
 
 					<div class="boldform-field-row">
 						<div class="boldform-field-label"><?php esc_html_e( 'Which entries', 'boldform-lite' ); ?></div>
