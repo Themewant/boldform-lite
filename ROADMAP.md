@@ -1,6 +1,6 @@
 # BoldForm — Product Roadmap (Lite + Pro)
 
-_Last updated: 2026-07-01 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
+_Last updated: 2026-07-05 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
 
 > **In one line:** BoldForm Lite is our free WordPress form builder; BoldForm Pro is the paid add-on. This roadmap says **what we build next, in what order, and why** — for both.
 
@@ -26,10 +26,9 @@ _Last updated: 2026-07-01 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
 _At-a-glance board view (matches our public roadmap columns). Numbering is per-column. Details for each live in §5 below._
 
 ### 🟢 Progress — building now
-1. **Cloudflare Turnstile** — Protect forms from spam and bots with Cloudflare's privacy-friendly, no-puzzle CAPTCHA — a seamless alternative to traditional challenges. (Included in the free version.)
-2. **Save & Resume** — Let visitors save their progress and return later through a secure private link, significantly reducing drop-off on longer forms.
-3. **Draft Auto-Save** — Automatically save a visitor's progress as they fill out a form to prevent lost work.
-4. **Excel & PDF Export** — Export form entries as Excel or PDF files for reporting, sharing, and record-keeping.
+1. **Save & Resume** — Let visitors save their progress and return later through a secure private link, significantly reducing drop-off on longer forms.
+2. **Draft Auto-Save** — Automatically save a visitor's progress as they fill out a form to prevent lost work.
+3. **Excel & PDF Export** — Export form entries as Excel or PDF files for reporting, sharing, and record-keeping.
 
 ### 🔵 UpComing — planned next (in release order)
 
@@ -91,27 +90,28 @@ _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐
 9. **Spam Protection** — 🆓 Free — Guard forms with reCAPTCHA, hCaptcha, and honeypot protection.
 10. **GDPR Tools** — 🆓 Free — Export and erase personal data to support privacy compliance.
 11. **Template Library** — 🆓 Free — Start from 11 ready-made forms organized by category (General, Business, Events & Booking, HR & Surveys) and import any of them into the builder with a single click.
+12. **Cloudflare Turnstile** — 🆓 Free — Protect forms from spam and bots with Cloudflare's privacy-friendly, no-puzzle CAPTCHA — a seamless alternative to traditional challenges.
 
 **Pro (paid) — shipped**
-12. **Multi-Step Forms** — ⭐ Pro — Break long forms into multiple steps with a progress indicator.
-13. **Payments** — ⭐ Pro — Accept one-time payments through Stripe and PayPal.
-14. **Rich Text Field** — ⭐ Pro — Provide a full WYSIWYG editor for long-form input.
-15. **Signature Field** — ⭐ Pro — Capture handwritten signatures directly on the form.
-16. **Repeater Field** — ⭐ Pro — Let users add repeatable groups of fields as needed.
-17. **Date Range Field** — ⭐ Pro — Select a start and end date together in a single field.
-18. **Calculation Field** — ⭐ Pro — Automatically calculate values based on other field inputs.
-19. **Geolocation Field** — ⭐ Pro — Detect or select a location on a map.
-20. **NPS Field** — ⭐ Pro — Measure customer sentiment with a 0–10 Net Promoter Score scale.
-21. **Matrix Field** — ⭐ Pro — Collect grid-based responses across rows and columns.
-22. **Image Choice Field** — ⭐ Pro — Let users choose from visual, image-based options.
-23. **Lookup Field** — ⭐ Pro — Search and select values from a data source as the user types.
-24. **Password Field** — ⭐ Pro — Collect masked password input securely, with optional confirm-and-match validation.
-25. **30+ Integrations** — ⭐ Pro — Connect forms to popular CRM, email, storage, and messaging services.
-26. **Webhooks** — ⭐ Pro — Send submission data to any external URL in real time.
-27. **Form Scheduling** — ⭐ Pro — Automatically open and close forms on set dates.
-28. **Auto-Populate & Merge Tags** — ⭐ Pro — Pre-fill fields and reuse submitted values dynamically.
-29. **Hidden Field** — ⭐ Pro — Pass hidden, pre-filled values through a form without showing them to the visitor.
-30. **Analytics** — ⭐ Pro — Track form views and conversion performance.
+13. **Multi-Step Forms** — ⭐ Pro — Break long forms into multiple steps with a progress indicator.
+14. **Payments** — ⭐ Pro — Accept one-time payments through Stripe and PayPal.
+15. **Rich Text Field** — ⭐ Pro — Provide a full WYSIWYG editor for long-form input.
+16. **Signature Field** — ⭐ Pro — Capture handwritten signatures directly on the form.
+17. **Repeater Field** — ⭐ Pro — Let users add repeatable groups of fields as needed.
+18. **Date Range Field** — ⭐ Pro — Select a start and end date together in a single field.
+19. **Calculation Field** — ⭐ Pro — Automatically calculate values based on other field inputs.
+20. **Geolocation Field** — ⭐ Pro — Detect or select a location on a map.
+21. **NPS Field** — ⭐ Pro — Measure customer sentiment with a 0–10 Net Promoter Score scale.
+22. **Matrix Field** — ⭐ Pro — Collect grid-based responses across rows and columns.
+23. **Image Choice Field** — ⭐ Pro — Let users choose from visual, image-based options.
+24. **Lookup Field** — ⭐ Pro — Search and select values from a data source as the user types.
+25. **Password Field** — ⭐ Pro — Collect masked password input securely, with optional confirm-and-match validation.
+26. **30+ Integrations** — ⭐ Pro — Connect forms to popular CRM, email, storage, and messaging services.
+27. **Webhooks** — ⭐ Pro — Send submission data to any external URL in real time.
+28. **Form Scheduling** — ⭐ Pro — Automatically open and close forms on set dates.
+29. **Auto-Populate & Merge Tags** — ⭐ Pro — Pre-fill fields and reuse submitted values dynamically.
+30. **Hidden Field** — ⭐ Pro — Pass hidden, pre-filled values through a form without showing them to the visitor.
+31. **Analytics** — ⭐ Pro — Track form views and conversion performance.
 
 ---
 
@@ -148,11 +148,11 @@ Newer rivals — especially **FormGent** — give away a lot for free (multi-ste
 
 ## 4. Free version (Lite) plan — small and deliberate
 
-We are **not** adding paid features to free. For the **next release**, Lite gets exactly one new extra — and it takes nothing from Pro.
+We are **not** adding paid features to free. Lite's one planned new extra — which takes nothing from Pro — has now **shipped**.
 
-| Item | What it is | Why | Priority | Effort |
-|---|---|---|---|---|
-| **Cloudflare Turnstile** | One more free spam-protection option (we already offer reCAPTCHA + hCaptcha free) | Modern, no-puzzle captcha users increasingly expect | High | S |
+| Item | What it is | Why | Priority | Effort | Status |
+|---|---|---|---|---|---|
+| **Cloudflare Turnstile** | One more free spam-protection option (we already offer reCAPTCHA + hCaptcha free) | Modern, no-puzzle captcha users increasingly expect | High | S | ✅ Shipped (Lite) |
 
 > **Note:** CSV export stays free. **Excel and PDF export are Pro** (see below). No other free-tier features are planned right now.
 
@@ -257,7 +257,7 @@ Reuse hooks/systems that already exist; live entirely in Pro or use proven patte
 - **From Pro 1.1:** Entry Editing · Import Entries · Entry Notes · Entry Limit & Cooldown · Form Locking · Akismet · Color Picker Field · Excel & PDF Export
 - **From Pro 1.2:** Custom Email Editor _(the override filters already exist — only the UI is new)_ · Conditional Email Routing · PDF Attachment · Conditional Logic on Pages · Custom Thank-You Page · Draft Auto-Save · Abandonment Tracking · Marketing Tracking · Scheduled Export
 - **From Pro 2.0:** User Submission Portal · Embed Modes · Country & IP Blocking · REST API & WP-CLI · Advanced Actions · WooCommerce · AI Response Tools · Google Places · Mailchimp Tags & Groups · ActiveCampaign Deals · Premium Template Packs
-- **Free (Lite):** Cloudflare Turnstile
+- **Free (Lite):** Cloudflare Turnstile ✅ _shipped_
 
 ### Wave 2 — Needs a deliberate migration or careful design (plan before coding) · risk: MEDIUM
 Achievable and backward-safe, but each has one specific thing to get right first.
@@ -325,7 +325,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Custom entry statuses | 🆕 → 📅 | Pro 1.1 |
 | CSV / Excel scheduled export | 📅 | Pro 1.2 (manual Excel/PDF 📅 Pro 1.1; CSV ✅ free) |
 | Entry approval workflow | 📅 | Pro 1.1 |
-| Turnstile captcha | 📅 | **Lite (free)** next release |
+| Turnstile captcha | ✅ Shipped (Free/Lite) | **Lite (free)** — no-puzzle Cloudflare CAPTCHA |
 | Akismet | 📅 | Pro 1.1 |
 | Country / IP blocking | 📅 | Pro 2.0 |
 | Form token / one-time links | ⏸ | covered by Save & Resume |
