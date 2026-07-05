@@ -16,7 +16,7 @@ Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg b
 
 Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Join the Pro Waitlist](https://themewant.com/waitlist/)
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://themewant.com/plugins/boldform/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://themewant.com/plugins/boldform/)
 
 ---
 
