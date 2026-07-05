@@ -1936,7 +1936,7 @@ class BoldForm_Lite_Admin {
 			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
 			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Conditional logic', 'boldform-lite' ),                                 'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Anti-spam: reCAPTCHA & hCaptcha', 'boldform-lite' ),                   'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),                     'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Integrations', 'boldform-lite' ),                                      'lite' => __( 'Mailchimp & Brevo', 'boldform-lite' ), 'pro' => __( '35+ apps', 'boldform-lite' ) ),
 			array( 'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),                           'lite' => false,                                 'pro' => true ),
@@ -2930,6 +2930,11 @@ class BoldForm_Lite_Admin {
 										<span class="boldform-captcha-card__title"><?php esc_html_e( 'hCaptcha', 'boldform-lite' ); ?></span>
 										<span class="boldform-captcha-card__description"><?php esc_html_e( 'Privacy-focused captcha alternative.', 'boldform-lite' ); ?></span>
 									</label>
+									<label class="boldform-captcha-card<?php echo 'turnstile' === $settings['captcha_provider'] ? ' is-selected' : ''; ?>">
+										<input type="radio" name="boldform_captcha_provider" value="turnstile"<?php checked( $settings['captcha_provider'], 'turnstile' ); ?>>
+										<span class="boldform-captcha-card__title"><?php esc_html_e( 'Cloudflare Turnstile', 'boldform-lite' ); ?></span>
+										<span class="boldform-captcha-card__description"><?php esc_html_e( 'Modern, no-puzzle captcha from Cloudflare.', 'boldform-lite' ); ?></span>
+									</label>
 									<label class="boldform-captcha-card<?php echo 'simple_math' === $settings['captcha_provider'] ? ' is-selected' : ''; ?>">
 										<input type="radio" name="boldform_captcha_provider" value="simple_math"<?php checked( $settings['captcha_provider'], 'simple_math' ); ?>>
 										<span class="boldform-captcha-card__title"><?php esc_html_e( 'Simple Math', 'boldform-lite' ); ?></span>
@@ -2971,6 +2976,25 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['hcaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
 											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: hCaptcha URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="boldform-captcha-panel" data-captcha-panel="turnstile"<?php echo 'turnstile' === $settings['captcha_provider'] ? '' : ' hidden'; ?>>
+								<div class="boldform-card">
+									<h3><?php esc_html_e( 'Turnstile Keys', 'boldform-lite' ); ?></h3>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-turnstile-site-key"><?php esc_html_e( 'Site key', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="text" id="boldform-turnstile-site-key" name="boldform_turnstile_site_key" value="<?php echo esc_attr( $settings['turnstile_site_key'] ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: Cloudflare Turnstile dashboard URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
@@ -3168,6 +3192,8 @@ class BoldForm_Lite_Admin {
 			'recaptcha_secret_key' => '',
 			'hcaptcha_site_key'    => '',
 			'hcaptcha_secret_key'  => '',
+			'turnstile_site_key'   => '',
+			'turnstile_secret_key' => '',
 			'required_msg_text'     => '',
 			'required_msg_email'    => '',
 			'required_msg_number'   => '',
@@ -3242,9 +3268,10 @@ class BoldForm_Lite_Admin {
 
 		if ( 'captcha' === $active_tab ) {
 			$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
-			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
+			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
 			$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
 			$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
+			$settings['turnstile_site_key']   = isset( $_POST['boldform_turnstile_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_site_key'] ) ) : '';
 
 			// Secret keys are masked on render (value=""); only overwrite when a new value is
 			// submitted, so re-saving the page with a blank field preserves the stored key.
@@ -3253,6 +3280,9 @@ class BoldForm_Lite_Admin {
 			}
 			if ( isset( $_POST['boldform_hcaptcha_secret_key'] ) && '' !== $_POST['boldform_hcaptcha_secret_key'] ) {
 				$settings['hcaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) );
+			}
+			if ( isset( $_POST['boldform_turnstile_secret_key'] ) && '' !== $_POST['boldform_turnstile_secret_key'] ) {
+				$settings['turnstile_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_secret_key'] ) );
 			}
 		}
 

@@ -114,6 +114,7 @@ Tables are created automatically for each new subsite when the plugin is network
 * **Honeypot** — Invisible hidden field catches bots automatically, no setup required
 * **Google reCAPTCHA v2** — Checkbox challenge; requires a site key and secret key from Google
 * **hCaptcha** — Privacy-friendly alternative to reCAPTCHA; requires keys from hCaptcha
+* **Cloudflare Turnstile** — Modern, no-puzzle captcha from Cloudflare; requires keys from the Cloudflare dashboard
 * **Math Captcha** — Simple arithmetic challenge, works out of the box with no API keys
 
 ---
@@ -222,7 +223,7 @@ Admin notifications are included in the Lite version. User (submitter) notificat
 
 = How do I enable spam protection? =
 
-Go to **BoldForm > Settings > Captcha**. Choose your preferred provider (Honeypot is always active). Enter API keys for reCAPTCHA or hCaptcha if you select those.
+Go to **BoldForm > Settings > Captcha**. Choose your preferred provider (Honeypot is always active). Enter API keys for reCAPTCHA, hCaptcha, or Cloudflare Turnstile if you select those.
 
 = Is BoldForm multisite compatible? =
 
@@ -297,6 +298,19 @@ When a page with an hCaptcha-enabled form is loaded, the hCaptcha script is load
 * Service provider: Intuition Machines, Inc.
 * Terms of Service: https://www.hcaptcha.com/terms
 * Privacy Policy: https://www.hcaptcha.com/privacy
+
+= Cloudflare Turnstile =
+
+Modern, privacy-friendly spam protection with no visual puzzles.
+
+When a page with a Turnstile-enabled form is loaded, the Turnstile script is loaded from Cloudflare's servers. On submission, the token and visitor IP are sent to Cloudflare's verification API.
+
+* Data sent: Turnstile response token, visitor IP address
+* When: Each form submission with Turnstile enabled
+* Condition: Only when "Cloudflare Turnstile" is selected in BoldForm > Settings > Captcha and valid keys are entered
+* Service provider: Cloudflare, Inc.
+* Terms of Service: https://www.cloudflare.com/website-terms/
+* Privacy Policy: https://www.cloudflare.com/privacypolicy/
 
 = Mailchimp =
 

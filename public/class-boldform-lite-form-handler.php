@@ -804,12 +804,13 @@ class BoldForm_Lite_Form_Handler {
 		$saved = is_array( $saved ) ? $saved : array();
 
 		$provider = isset( $saved['captcha_provider'] ) ? sanitize_key( (string) $saved['captcha_provider'] ) : 'simple_math';
-		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $provider : 'simple_math';
+		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $provider : 'simple_math';
 
 		return array(
 			'provider'             => $provider,
 			'recaptcha_secret_key' => isset( $saved['recaptcha_secret_key'] ) ? sanitize_text_field( (string) $saved['recaptcha_secret_key'] ) : '',
 			'hcaptcha_secret_key'  => isset( $saved['hcaptcha_secret_key'] ) ? sanitize_text_field( (string) $saved['hcaptcha_secret_key'] ) : '',
+			'turnstile_secret_key' => isset( $saved['turnstile_secret_key'] ) ? sanitize_text_field( (string) $saved['turnstile_secret_key'] ) : '',
 		);
 	}
 
@@ -825,7 +826,7 @@ class BoldForm_Lite_Form_Handler {
 			return $this->validate_simple_math_captcha( $request );
 		}
 
-		if ( 'recaptcha' !== $captcha['provider'] && 'hcaptcha' !== $captcha['provider'] ) {
+		if ( 'recaptcha' !== $captcha['provider'] && 'hcaptcha' !== $captcha['provider'] && 'turnstile' !== $captcha['provider'] ) {
 			return array(
 				'success' => true,
 				'message' => '',
@@ -836,6 +837,10 @@ class BoldForm_Lite_Form_Handler {
 			$secret = $captcha['recaptcha_secret_key'];
 			$token  = isset( $request['g-recaptcha-response'] ) ? sanitize_text_field( wp_unslash( $request['g-recaptcha-response'] ) ) : '';
 			$api    = 'https://www.google.com/recaptcha/api/siteverify';
+		} elseif ( 'turnstile' === $captcha['provider'] ) {
+			$secret = $captcha['turnstile_secret_key'];
+			$token  = isset( $request['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $request['cf-turnstile-response'] ) ) : '';
+			$api    = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 		} else {
 			$secret = $captcha['hcaptcha_secret_key'];
 			$token  = isset( $request['h-captcha-response'] ) ? sanitize_text_field( wp_unslash( $request['h-captcha-response'] ) ) : '';

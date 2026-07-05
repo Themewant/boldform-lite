@@ -26,10 +26,10 @@ _Last updated: 2026-07-01 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
 _At-a-glance board view (matches our public roadmap columns). Numbering is per-column. Details for each live in §5 below._
 
 ### 🟢 Progress — building now
-1. **Save & Resume** — Let visitors save their progress and return later through a secure private link, significantly reducing drop-off on longer forms.
-2. **Cloudflare Turnstile** — Protect forms from spam and bots with Cloudflare's privacy-friendly, no-puzzle CAPTCHA — a seamless alternative to traditional challenges. (Included in the free version.)
-3. **Excel & PDF Export** — Export form entries as Excel or PDF files for reporting, sharing, and record-keeping.
-4. **Draft Auto-Save** — Automatically save a visitor's progress as they fill out a form to prevent lost work.
+1. **Cloudflare Turnstile** — Protect forms from spam and bots with Cloudflare's privacy-friendly, no-puzzle CAPTCHA — a seamless alternative to traditional challenges. (Included in the free version.)
+2. **Save & Resume** — Let visitors save their progress and return later through a secure private link, significantly reducing drop-off on longer forms.
+3. **Draft Auto-Save** — Automatically save a visitor's progress as they fill out a form to prevent lost work.
+4. **Excel & PDF Export** — Export form entries as Excel or PDF files for reporting, sharing, and record-keeping.
 
 ### 🔵 UpComing — planned next (in release order)
 
