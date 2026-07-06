@@ -4209,7 +4209,7 @@
 	border-radius: 10px;
 	background: transparent;
 	color: #64748b;
-	font-size: 13px;
+	font-size: 12px;
 	font-weight: 600;
 	cursor: pointer;
 	transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
@@ -4224,7 +4224,7 @@
 .boldform-options-repeater__add .dashicons {
 	width: 16px;
 	height: 16px;
-	font-size: 16px;
+	font-size: 14px;
 	line-height: 16px;
 }
 
@@ -5491,7 +5491,6 @@
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-	margin-bottom: 8px;
 }
 
 .boldform-product-option-row {
