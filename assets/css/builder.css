@@ -2810,6 +2810,14 @@
 	margin-top: 12px;
 }
 
+/* A single-column control that follows a two-column row (e.g. Quantity's
+   "Default Qty" after the Min/Max row) must keep the panel's standard 14px
+   vertical rhythm — the row carries no bottom margin, so without this the
+   next field collapses tight against it and looks misaligned with the rest. */
+.boldform-setting-row + .boldform-setting-group {
+	margin-top: 14px;
+}
+
 /* Three-up variant (e.g. NPS zone colour pickers). */
 .boldform-setting-row--3 {
 	grid-template-columns: 1fr 1fr 1fr;
@@ -2873,6 +2881,15 @@
 }
 
 .boldform-switch-item + .boldform-switch-item {
+	padding-top: 0;
+}
+
+/* A toggle row directly after a field group (e.g. Select's "Enable search"
+   after the Options list + Add Option button) would otherwise stack the
+   group's 14px bottom margin ON TOP OF this row's 6px top padding, reading as
+   an oversized ~20px gap. Drop the extra top padding so it keeps the panel's
+   standard 14px rhythm, consistent with every other field transition. */
+.boldform-setting-group + .boldform-switch-item {
 	padding-top: 0;
 }
 
@@ -4186,7 +4203,7 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	margin-top: 4px;
+	margin-top: 8px;
 	padding: 6px 14px;
 	border: 1px dashed #e2e8f0;
 	border-radius: 10px;
