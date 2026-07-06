@@ -368,12 +368,16 @@ Improvements:
 * Improve: Reorganised the Tools screen into separate Forms and Entries tabs, and added a standalone Entries export so you can download submissions on their own.
 * Improve: Added a Documentation menu to the admin toolbar with quick links to the User and Developer guides.
 * Improve: Expanded the Elementor widget with a Range Slider styling section and typography controls for input text.
+* Improve: Exporting a form now bundles the submit button's custom SVG icon inside the export file, so the icon is recreated on the destination site and keeps working after the form is imported on another website.
 
 Fixes:
 * Fix: Several form and settings values no longer reset to their defaults after saving and reopening — page-redirect type, duplicate-submission prevention, and field style are all preserved.
 * Fix: Saving one Settings tab (General, Captcha, or SMTP) no longer clears the settings on the other tabs.
 * Fix: Custom column widths in the form builder are now kept when a form is saved.
 * Fix: Resolved a form scheduling issue so scheduled open/close windows behave correctly.
+* Fix: The submit button's Icon Color now applies reliably to both Dashicon and custom SVG icons — in the builder preview and on the front end — and the colour swatch updates live as you pick.
+* Fix: An icon-only submit button (an icon with no button text) is no longer reset to "Submit" after saving and reopening the form.
+* Fix: Tidied spacing and sizing across the form builder's field settings panel, so controls align consistently — the Quantity field's Min/Max/Default inputs, the "Enable search" toggle, the option and repeater "Add" buttons, and the payment product option rows.
 
 Maintenance:
 * Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
