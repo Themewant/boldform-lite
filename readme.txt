@@ -378,6 +378,7 @@ Fixes:
 * Fix: The submit button's Icon Color now applies reliably to both Dashicon and custom SVG icons — in the builder preview and on the front end — and the colour swatch updates live as you pick.
 * Fix: An icon-only submit button (an icon with no button text) is no longer reset to "Submit" after saving and reopening the form.
 * Fix: Tidied spacing and sizing across the form builder's field settings panel, so controls align consistently — the Quantity field's Min/Max/Default inputs, the "Enable search" toggle, the option and repeater "Add" buttons, and the payment product option rows.
+* Fix: The Documentation menu now also appears in the toolbar on the Integrations page, so the admin navigation is consistent across every screen.
 
 Maintenance:
 * Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
