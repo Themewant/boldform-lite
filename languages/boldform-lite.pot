@@ -48,7 +48,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:122
 #: admin/class-boldform-lite-admin.php:1854
 #: admin/class-boldform-lite-admin.php:2063
-#: admin/class-boldform-lite-integrations-page.php:342
+#: admin/class-boldform-lite-integrations-page.php:353
 #: includes/class-boldform-lite-email-handler.php:123
 #: includes/class-boldform-lite-email-handler.php:131
 #: includes/class-boldform-lite-email-handler.php:170
@@ -65,7 +65,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:239
 #: admin/class-boldform-lite-admin.php:1913
 #: admin/class-boldform-lite-admin.php:1971
-#: admin/class-boldform-lite-integrations-page.php:377
+#: admin/class-boldform-lite-integrations-page.php:412
 msgid "Upgrade to Pro"
 msgstr ""
 
@@ -1765,19 +1765,22 @@ msgid "Tools"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1804
+#: admin/class-boldform-lite-integrations-page.php:328
 msgid "Documentation"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1811
+#: admin/class-boldform-lite-integrations-page.php:333
 msgid "User Documentation"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1817
+#: admin/class-boldform-lite-integrations-page.php:334
 msgid "Admin Documentation"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1845
-#: admin/class-boldform-lite-integrations-page.php:333
+#: admin/class-boldform-lite-integrations-page.php:344
 msgid "Upgrade"
 msgstr ""
 
@@ -1927,7 +1930,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:2727
 #: admin/class-boldform-lite-admin.php:4123
 #: admin/class-boldform-lite-admin.php:5329
-#: admin/class-boldform-lite-integrations-page.php:550
+#: admin/class-boldform-lite-integrations-page.php:585
 #: includes/class-boldform-lite-privacy.php:387
 #: assets/js/block-form.js:101
 msgid "Form"
@@ -2524,11 +2527,11 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:4183
 #: admin/class-boldform-lite-admin.php:4209
 #: admin/class-boldform-lite-admin.php:4243
-#: admin/class-boldform-lite-integrations-page.php:912
-#: admin/class-boldform-lite-integrations-page.php:939
-#: admin/class-boldform-lite-integrations-page.php:953
-#: admin/class-boldform-lite-integrations-page.php:1025
-#: admin/class-boldform-lite-integrations-page.php:1048
+#: admin/class-boldform-lite-integrations-page.php:947
+#: admin/class-boldform-lite-integrations-page.php:974
+#: admin/class-boldform-lite-integrations-page.php:988
+#: admin/class-boldform-lite-integrations-page.php:1060
+#: admin/class-boldform-lite-integrations-page.php:1083
 msgid "Unauthorized."
 msgstr ""
 
@@ -3024,264 +3027,264 @@ msgstr ""
 msgid "Cancel"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:503
+#: admin/class-boldform-lite-integrations-page.php:538
 msgid "Sync subscribers to a Mailchimp audience."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:504
+#: admin/class-boldform-lite-integrations-page.php:539
 msgid "Audience"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:519
+#: admin/class-boldform-lite-integrations-page.php:554
 msgid "Add contacts to a Brevo contact list."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:520
+#: admin/class-boldform-lite-integrations-page.php:555
 msgid "Contact List"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:537
+#: admin/class-boldform-lite-integrations-page.php:572
 msgid "Add contacts and apply tags in ActiveCampaign."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:538
-#: admin/class-boldform-lite-integrations-page.php:562
-#: admin/class-boldform-lite-integrations-page.php:635
-#: admin/class-boldform-lite-integrations-page.php:684
-#: admin/class-boldform-lite-integrations-page.php:794
+#: admin/class-boldform-lite-integrations-page.php:573
+#: admin/class-boldform-lite-integrations-page.php:597
+#: admin/class-boldform-lite-integrations-page.php:670
+#: admin/class-boldform-lite-integrations-page.php:719
+#: admin/class-boldform-lite-integrations-page.php:829
 msgid "List"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:549
+#: admin/class-boldform-lite-integrations-page.php:584
 msgid "Subscribe to a Kit form or sequence."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:561
+#: admin/class-boldform-lite-integrations-page.php:596
 msgid "Add subscribers to an AWeber list."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:573
+#: admin/class-boldform-lite-integrations-page.php:608
 msgid "Add contacts to a GetResponse campaign."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:574
-#: admin/class-boldform-lite-integrations-page.php:696
+#: admin/class-boldform-lite-integrations-page.php:609
+#: admin/class-boldform-lite-integrations-page.php:731
 msgid "Campaign"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:585
+#: admin/class-boldform-lite-integrations-page.php:620
 msgid "Add subscribers to a MailerLite group."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:586
+#: admin/class-boldform-lite-integrations-page.php:621
 msgid "Group"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:598
+#: admin/class-boldform-lite-integrations-page.php:633
 msgid "Create or update HubSpot CRM contacts."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:599
+#: admin/class-boldform-lite-integrations-page.php:634
 msgid "Portal"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:610
+#: admin/class-boldform-lite-integrations-page.php:645
 msgid "Push leads and contacts to Zoho CRM."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:611
+#: admin/class-boldform-lite-integrations-page.php:646
 msgid "Module"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:622
+#: admin/class-boldform-lite-integrations-page.php:657
 msgid "Create conversations in Help Scout."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:623
+#: admin/class-boldform-lite-integrations-page.php:658
 msgid "Mailbox"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:634
+#: admin/class-boldform-lite-integrations-page.php:669
 msgid "Add contacts and tags in FluentCRM."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:646
+#: admin/class-boldform-lite-integrations-page.php:681
 msgid "Append each submission as a new row."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:647
+#: admin/class-boldform-lite-integrations-page.php:682
 msgid "Spreadsheet"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:658
+#: admin/class-boldform-lite-integrations-page.php:693
 msgid "Upload file submissions to Dropbox."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:659
-#: admin/class-boldform-lite-integrations-page.php:893
+#: admin/class-boldform-lite-integrations-page.php:694
+#: admin/class-boldform-lite-integrations-page.php:928
 msgid "Folder"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:670
+#: admin/class-boldform-lite-integrations-page.php:705
 msgid "Post a notification to a Slack channel."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:671
-#: admin/class-boldform-lite-integrations-page.php:856
-#: admin/class-boldform-lite-integrations-page.php:880
+#: admin/class-boldform-lite-integrations-page.php:706
+#: admin/class-boldform-lite-integrations-page.php:891
+#: admin/class-boldform-lite-integrations-page.php:915
 msgid "Channel"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:683
+#: admin/class-boldform-lite-integrations-page.php:718
 msgid "Add contacts to a Constant Contact list."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:695
+#: admin/class-boldform-lite-integrations-page.php:730
 msgid "Subscribe to a Drip campaign."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:707
+#: admin/class-boldform-lite-integrations-page.php:742
 msgid "Add subscribers to a Moosend mailing list."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:708
+#: admin/class-boldform-lite-integrations-page.php:743
 msgid "Mailing List"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:720
+#: admin/class-boldform-lite-integrations-page.php:755
 msgid "Create leads or contacts in Salesforce."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:721
+#: admin/class-boldform-lite-integrations-page.php:756
 msgid "Object"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:732
+#: admin/class-boldform-lite-integrations-page.php:767
 msgid "Create deals and contacts in Pipedrive."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:733
+#: admin/class-boldform-lite-integrations-page.php:768
 msgid "Pipeline"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:744
+#: admin/class-boldform-lite-integrations-page.php:779
 msgid "Create leads in Freshsales CRM."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:745
+#: admin/class-boldform-lite-integrations-page.php:780
 msgid "View"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:756
+#: admin/class-boldform-lite-integrations-page.php:791
 msgid "Create items on a Monday.com board."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:757
+#: admin/class-boldform-lite-integrations-page.php:792
 msgid "Board"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:769
+#: admin/class-boldform-lite-integrations-page.php:804
 msgid "Add entries to a Notion database."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:770
+#: admin/class-boldform-lite-integrations-page.php:805
 msgid "Database"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:781
+#: admin/class-boldform-lite-integrations-page.php:816
 msgid "Create records in an Airtable base."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:782
+#: admin/class-boldform-lite-integrations-page.php:817
 msgid "Table"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:793
+#: admin/class-boldform-lite-integrations-page.php:828
 msgid "Create cards on a Trello board."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:805
+#: admin/class-boldform-lite-integrations-page.php:840
 msgid "Create tasks in an Asana project."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:806
+#: admin/class-boldform-lite-integrations-page.php:841
 msgid "Project"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:818
+#: admin/class-boldform-lite-integrations-page.php:853
 msgid "Trigger a Zapier webhook on submission."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:819
+#: admin/class-boldform-lite-integrations-page.php:854
 msgid "Zap"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:830
+#: admin/class-boldform-lite-integrations-page.php:865
 msgid "Trigger a Make scenario via webhook."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:831
+#: admin/class-boldform-lite-integrations-page.php:866
 msgid "Scenario"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:842
+#: admin/class-boldform-lite-integrations-page.php:877
 msgid "Trigger a Pabbly Connect workflow."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:843
+#: admin/class-boldform-lite-integrations-page.php:878
 msgid "Workflow"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:855
+#: admin/class-boldform-lite-integrations-page.php:890
 msgid "Post notifications to a Discord channel."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:867
+#: admin/class-boldform-lite-integrations-page.php:902
 msgid "Send messages to a Telegram chat."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:868
+#: admin/class-boldform-lite-integrations-page.php:903
 msgid "Chat"
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:879
+#: admin/class-boldform-lite-integrations-page.php:914
 msgid "Post notifications to a Teams channel."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:892
+#: admin/class-boldform-lite-integrations-page.php:927
 msgid "Upload file submissions to Google Drive."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:918
+#: admin/class-boldform-lite-integrations-page.php:953
 msgid "Type is required."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:960
+#: admin/class-boldform-lite-integrations-page.php:995
 msgid "Missing type."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:980
+#: admin/class-boldform-lite-integrations-page.php:1015
 msgid "Configure this integration in settings before enabling it."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:999
+#: admin/class-boldform-lite-integrations-page.php:1034
 msgid "Complete the required settings before enabling this integration."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:1035
+#: admin/class-boldform-lite-integrations-page.php:1070
 msgid "Unknown integration type."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:1055
+#: admin/class-boldform-lite-integrations-page.php:1090
 msgid "Connection not found."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:1111
+#: admin/class-boldform-lite-integrations-page.php:1146
 msgid "API key is missing a valid data-center suffix (for example, -us6)."
 msgstr ""
 
-#: admin/class-boldform-lite-integrations-page.php:1130
-#: admin/class-boldform-lite-integrations-page.php:1151
+#: admin/class-boldform-lite-integrations-page.php:1165
+#: admin/class-boldform-lite-integrations-page.php:1186
 msgid "Invalid API key."
 msgstr ""
 
