@@ -283,6 +283,20 @@ class BoldForm_Lite_Export_Import {
 				?>
 			</div>
 
+			<?php
+			/**
+			 * Fires after the Tools → Entries "Export Entries" card so an add-on can
+			 * render its own card in this tab — for example an "Import Entries" card
+			 * that attaches a BoldForm entries export onto a chosen form.
+			 *
+			 * @since 1.1.2
+			 *
+			 * @param array<int, array<string, mixed>> $forms Non-trashed forms as { id, title },
+			 *        so a handler can offer a target-form selector without a second query.
+			 */
+			do_action( 'boldform_tools_entries_after', $forms );
+			?>
+
 		<?php endif; ?>
 		<?php
 	}
