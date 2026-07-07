@@ -1422,6 +1422,19 @@ class BoldForm_Lite_Admin {
 						});
 					});'
 				);
+
+				/**
+				 * Fires when admin assets are enqueued for the single-entry detail screen.
+				 *
+				 * Lets an add-on enqueue its own CSS/JS for the entry-detail view — e.g. a
+				 * notes panel rendered via `boldform_entry_detail_sidebar`. Mirrors
+				 * `boldform_builder_enqueue_assets` for the builder screen.
+				 *
+				 * @since 1.1.3
+				 *
+				 * @param int $entry_id The entry being viewed.
+				 */
+				do_action( 'boldform_entry_detail_enqueue_assets', $entry_id );
 			}
 
 			// ── Settings page ─────────────────────────────────────────────────────
@@ -4145,6 +4158,20 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</div>
 					</div>
+
+					<?php
+					/**
+					 * Fires inside the entry-detail sidebar, after the Details card.
+					 *
+					 * Lets an add-on append its own sidebar card to the entry-detail view — e.g.
+					 * a private admin-notes panel. Receives the full entry row object.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object $entry The entry row object (id, form_id, status, created_at, …).
+					 */
+					do_action( 'boldform_entry_detail_sidebar', $entry );
+					?>
 				</div>
 			</div>
 
