@@ -314,7 +314,7 @@ msgstr ""
 #: admin/ajax-save.php:420
 #: admin/class-boldform-lite-admin.php:788
 #: admin/class-boldform-lite-admin.php:4623
-#: public/class-boldform-lite-form-handler.php:686
+#: public/class-boldform-lite-form-handler.php:719
 #: public/class-boldform-lite-shortcode.php:443
 msgid "Thanks! Your form was submitted successfully."
 msgstr ""
@@ -322,7 +322,7 @@ msgstr ""
 #: admin/ajax-save.php:421
 #: admin/class-boldform-lite-admin.php:789
 #: admin/class-boldform-lite-admin.php:4624
-#: public/class-boldform-lite-form-handler.php:687
+#: public/class-boldform-lite-form-handler.php:720
 #: public/class-boldform-lite-shortcode.php:444
 #: public/class-boldform-lite-shortcode.php:1050
 #: public/class-boldform-lite-shortcode.php:1066
@@ -357,7 +357,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:2233
 #: admin/class-boldform-lite-admin.php:2273
 #: admin/class-boldform-lite-admin.php:2545
-#: admin/class-boldform-lite-admin.php:5330
+#: admin/class-boldform-lite-admin.php:5332
 #: admin/class-boldform-lite-export-import.php:80
 #: admin/class-boldform-lite-integrations-page.php:320
 msgid "Entries"
@@ -367,7 +367,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:169
 #: admin/class-boldform-lite-admin.php:1774
 #: admin/class-boldform-lite-admin.php:2029
-#: admin/class-boldform-lite-admin.php:5197
+#: admin/class-boldform-lite-admin.php:5199
 #: admin/class-boldform-lite-integrations-page.php:321
 msgid "Reports"
 msgstr ""
@@ -1929,7 +1929,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:2183
 #: admin/class-boldform-lite-admin.php:2727
 #: admin/class-boldform-lite-admin.php:4123
-#: admin/class-boldform-lite-admin.php:5329
+#: admin/class-boldform-lite-admin.php:5331
 #: admin/class-boldform-lite-integrations-page.php:585
 #: includes/class-boldform-lite-privacy.php:387
 #: assets/js/block-form.js:101
@@ -2080,19 +2080,19 @@ msgid "All"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2593
-#: admin/class-boldform-lite-admin.php:5228
-#: admin/class-boldform-lite-admin.php:5364
+#: admin/class-boldform-lite-admin.php:5230
+#: admin/class-boldform-lite-admin.php:5366
 msgid "Unread"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2596
-#: admin/class-boldform-lite-admin.php:5365
+#: admin/class-boldform-lite-admin.php:5367
 msgid "Read"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2599
-#: admin/class-boldform-lite-admin.php:5237
-#: admin/class-boldform-lite-admin.php:5366
+#: admin/class-boldform-lite-admin.php:5239
+#: admin/class-boldform-lite-admin.php:5368
 msgid "Starred"
 msgstr ""
 
@@ -2105,7 +2105,7 @@ msgid "All Time"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2641
-#: admin/class-boldform-lite-admin.php:5246
+#: admin/class-boldform-lite-admin.php:5248
 msgid "Today"
 msgstr ""
 
@@ -2118,7 +2118,7 @@ msgid "Last 7 Days"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2644
-#: admin/class-boldform-lite-admin.php:5292
+#: admin/class-boldform-lite-admin.php:5294
 msgid "Last 30 Days"
 msgstr ""
 
@@ -2296,8 +2296,8 @@ msgstr ""
 #. translators: %s: field type label (e.g. "Email field")
 #. translators: %s: field label
 #: admin/class-boldform-lite-admin.php:2925
-#: public/class-boldform-lite-form-handler.php:1048
-#: public/class-boldform-lite-form-handler.php:1336
+#: public/class-boldform-lite-form-handler.php:1081
+#: public/class-boldform-lite-form-handler.php:1369
 #: public/class-boldform-lite-shortcode.php:921
 #, php-format
 msgid "%s is required."
@@ -2753,77 +2753,77 @@ msgstr ""
 msgid "Slider Range"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5198
+#: admin/class-boldform-lite-admin.php:5200
 msgid "Overview"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5210
+#: admin/class-boldform-lite-admin.php:5212
 msgid "Total Forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5219
+#: admin/class-boldform-lite-admin.php:5221
 msgid "Total Entries"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5255
+#: admin/class-boldform-lite-admin.php:5257
 msgid "This Week"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5291
+#: admin/class-boldform-lite-admin.php:5293
 msgid "Submissions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5322
+#: admin/class-boldform-lite-admin.php:5324
 msgid "Entries by Form"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5331
+#: admin/class-boldform-lite-admin.php:5333
 msgid "Breakdown"
 msgstr ""
 
 #. translators: %d: unread count
-#: admin/class-boldform-lite-admin.php:5352
+#: admin/class-boldform-lite-admin.php:5354
 #, php-format
 msgid "Unread: %d"
 msgstr ""
 
 #. translators: %d: read count
-#: admin/class-boldform-lite-admin.php:5353
+#: admin/class-boldform-lite-admin.php:5355
 #, php-format
 msgid "Read: %d"
 msgstr ""
 
 #. translators: %d: starred count
-#: admin/class-boldform-lite-admin.php:5354
+#: admin/class-boldform-lite-admin.php:5356
 #, php-format
 msgid "Starred: %d"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5374
+#: admin/class-boldform-lite-admin.php:5376
 msgid "No forms found. Create your first form to see reports."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5382
+#: admin/class-boldform-lite-admin.php:5384
 msgid "Recent Entries"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5383
+#: admin/class-boldform-lite-admin.php:5385
 msgid "View All"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5405
+#: admin/class-boldform-lite-admin.php:5407
 msgid "Entry"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5410
+#: admin/class-boldform-lite-admin.php:5412
 msgid "ago"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5424
+#: admin/class-boldform-lite-admin.php:5426
 msgid "No entries yet. Entries will appear here once forms are submitted."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5438
+#: admin/class-boldform-lite-admin.php:5440
 msgid "entries"
 msgstr ""
 
@@ -3547,91 +3547,91 @@ msgstr ""
 msgid "Please correct the highlighted fields and try again."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:268
+#: public/class-boldform-lite-form-handler.php:299
 msgid "You have already submitted this form."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:314
+#: public/class-boldform-lite-form-handler.php:345
 msgid "Unable to save your submission right now."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:848
+#: public/class-boldform-lite-form-handler.php:881
 msgid "Captcha is enabled but not configured correctly."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:855
+#: public/class-boldform-lite-form-handler.php:888
 msgid "Please complete the captcha challenge."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:874
-#: public/class-boldform-lite-form-handler.php:883
+#: public/class-boldform-lite-form-handler.php:907
+#: public/class-boldform-lite-form-handler.php:916
 msgid "Captcha verification failed. Please try again."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:907
-#: public/class-boldform-lite-form-handler.php:914
+#: public/class-boldform-lite-form-handler.php:940
+#: public/class-boldform-lite-form-handler.php:947
 msgid "Captcha verification failed. Please refresh the page and try again."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:925
+#: public/class-boldform-lite-form-handler.php:958
 msgid "Please solve the math captcha correctly."
 msgstr ""
 
 #. translators: %s: field label
-#: public/class-boldform-lite-form-handler.php:1033
+#: public/class-boldform-lite-form-handler.php:1066
 #, php-format
 msgid "%s must be a valid email address."
 msgstr ""
 
 #. translators: %s: field label
-#: public/class-boldform-lite-form-handler.php:1034
-#: public/class-boldform-lite-form-handler.php:1049
-#: public/class-boldform-lite-form-handler.php:1059
-#: public/class-boldform-lite-form-handler.php:1337
+#: public/class-boldform-lite-form-handler.php:1067
+#: public/class-boldform-lite-form-handler.php:1082
+#: public/class-boldform-lite-form-handler.php:1092
+#: public/class-boldform-lite-form-handler.php:1370
 #: public/class-boldform-lite-shortcode.php:921
 msgid "This field"
 msgstr ""
 
 #. translators: %s: field label
-#: public/class-boldform-lite-form-handler.php:1058
+#: public/class-boldform-lite-form-handler.php:1091
 #, php-format
 msgid "%s contains an invalid value."
 msgstr ""
 
 #. translators: %s: field label
-#: public/class-boldform-lite-form-handler.php:1355
+#: public/class-boldform-lite-form-handler.php:1388
 #, php-format
 msgid "%s could not be uploaded. Please try again."
 msgstr ""
 
-#: public/class-boldform-lite-form-handler.php:1356
-#: public/class-boldform-lite-form-handler.php:1372
-#: public/class-boldform-lite-form-handler.php:1402
-#: public/class-boldform-lite-form-handler.php:1430
-#: public/class-boldform-lite-form-handler.php:1446
+#: public/class-boldform-lite-form-handler.php:1389
+#: public/class-boldform-lite-form-handler.php:1405
+#: public/class-boldform-lite-form-handler.php:1435
+#: public/class-boldform-lite-form-handler.php:1463
+#: public/class-boldform-lite-form-handler.php:1479
 msgid "File"
 msgstr ""
 
 #. translators: 1: field label, 2: blocked file extension
-#: public/class-boldform-lite-form-handler.php:1371
+#: public/class-boldform-lite-form-handler.php:1404
 #, php-format
 msgid "%1$s: .%2$s files are not allowed."
 msgstr ""
 
 #. translators: 1: field label, 2: max file size in MB
-#: public/class-boldform-lite-form-handler.php:1401
+#: public/class-boldform-lite-form-handler.php:1434
 #, php-format
 msgid "%1$s exceeds the maximum file size of %2$d MB."
 msgstr ""
 
 #. translators: 1: field label, 2: allowed extensions list
-#: public/class-boldform-lite-form-handler.php:1429
+#: public/class-boldform-lite-form-handler.php:1462
 #, php-format
 msgid "%1$s must be one of: %2$s"
 msgstr ""
 
 #. translators: %s: field label
-#: public/class-boldform-lite-form-handler.php:1445
+#: public/class-boldform-lite-form-handler.php:1478
 #, php-format
 msgid "%s: this file type is not allowed."
 msgstr ""
