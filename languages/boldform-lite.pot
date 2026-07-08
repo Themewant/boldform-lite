@@ -9,7 +9,6 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-07T12:28:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: boldform-lite\n"
@@ -2906,7 +2905,7 @@ msgid "Import Forms & Settings"
 msgstr ""
 
 #: admin/class-boldform-lite-export-import.php:184
-msgid "Upload a full BoldForm export to restore forms, their entries, and settings."
+msgid "Upload a full form export to restore forms, their entries, and settings."
 msgstr ""
 
 #: admin/class-boldform-lite-export-import.php:190
