@@ -9,6 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-07T12:28:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: boldform-lite\n"
@@ -358,7 +359,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:2273
 #: admin/class-boldform-lite-admin.php:2545
 #: admin/class-boldform-lite-admin.php:5330
-#: admin/class-boldform-lite-export-import.php:80
+#: admin/class-boldform-lite-export-import.php:91
 #: admin/class-boldform-lite-integrations-page.php:320
 msgid "Entries"
 msgstr ""
@@ -1735,7 +1736,7 @@ msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1761
 #: admin/class-boldform-lite-admin.php:2124
-#: admin/class-boldform-lite-export-import.php:77
+#: admin/class-boldform-lite-export-import.php:88
 #: admin/class-boldform-lite-integrations-page.php:319
 msgid "Forms"
 msgstr ""
@@ -2827,117 +2828,125 @@ msgstr ""
 msgid "entries"
 msgstr ""
 
+#. translators: 1: number of forms imported, 2: number of entries imported
+#: admin/class-boldform-lite-export-import.php:69
+#, php-format
+msgid "%1$d form and %2$d entries imported successfully."
+msgid_plural "%1$d forms and %2$d entries imported successfully."
+msgstr[0] ""
+msgstr[1] ""
+
 #. translators: %d: number of forms imported
-#: admin/class-boldform-lite-export-import.php:66
+#: admin/class-boldform-lite-export-import.php:76
 #, php-format
 msgid "%d form imported successfully."
 msgid_plural "%d forms imported successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/class-boldform-lite-export-import.php:93
+#: admin/class-boldform-lite-export-import.php:104
 msgid "Export Forms & Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:94
-msgid "Download a JSON file to migrate forms and settings to another site."
+#: admin/class-boldform-lite-export-import.php:105
+msgid "Download a JSON file to migrate forms and settings — optionally with their entries — to another site."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:100
+#: admin/class-boldform-lite-export-import.php:111
 msgid "What to export"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:105
+#: admin/class-boldform-lite-export-import.php:116
 msgid "All forms + settings"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:109
-#: admin/class-boldform-lite-export-import.php:240
+#: admin/class-boldform-lite-export-import.php:120
+#: admin/class-boldform-lite-export-import.php:251
 msgid "Single form"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:113
+#: admin/class-boldform-lite-export-import.php:124
 msgid "Plugin settings only"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:120
-#: admin/class-boldform-lite-export-import.php:247
+#: admin/class-boldform-lite-export-import.php:131
+#: admin/class-boldform-lite-export-import.php:258
 msgid "Select form"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:123
-#: admin/class-boldform-lite-export-import.php:250
+#: admin/class-boldform-lite-export-import.php:134
+#: admin/class-boldform-lite-export-import.php:261
 msgid "-- Select --"
 msgstr ""
 
 #. translators: %d: form ID number
-#: admin/class-boldform-lite-export-import.php:128
-#: admin/class-boldform-lite-export-import.php:255
+#: admin/class-boldform-lite-export-import.php:139
+#: admin/class-boldform-lite-export-import.php:266
 #: public/class-boldform-lite-block.php:320
 #: public/class-boldform-lite-elementor-widget.php:2338
 #, php-format
 msgid "Form #%d"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:137
+#: admin/class-boldform-lite-export-import.php:148
 msgid "Include entries"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:141
+#: admin/class-boldform-lite-export-import.php:152
 msgid "Include form submission entries in the export"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:147
-#: admin/class-boldform-lite-export-import.php:264
+#: admin/class-boldform-lite-export-import.php:158
+#: admin/class-boldform-lite-export-import.php:275
 msgid "Download Export File"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:172
+#: admin/class-boldform-lite-export-import.php:183
 msgid "Import Forms & Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:173
-msgid "Upload a previously exported JSON file to restore forms, entries, and settings."
+#: admin/class-boldform-lite-export-import.php:184
+msgid "Upload a full BoldForm export to restore forms, their entries, and settings."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:179
+#: admin/class-boldform-lite-export-import.php:190
 msgid "JSON File"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:182
+#: admin/class-boldform-lite-export-import.php:193
 msgid "Only .json files exported from BoldForm are accepted."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:187
+#: admin/class-boldform-lite-export-import.php:198
 msgid "Upload & Import"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:195
+#: admin/class-boldform-lite-export-import.php:206
 msgid "Export Entries"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:209
+#: admin/class-boldform-lite-export-import.php:220
 msgid "Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:231
+#: admin/class-boldform-lite-export-import.php:242
 msgid "Which entries"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:236
+#: admin/class-boldform-lite-export-import.php:247
 msgid "All forms"
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:626
-#: admin/class-boldform-lite-export-import.php:637
+#: admin/class-boldform-lite-export-import.php:651
+#: admin/class-boldform-lite-export-import.php:662
 msgid "Unable to read the import file."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:631
+#: admin/class-boldform-lite-export-import.php:656
 msgid "The import file is empty or too large."
 msgstr ""
 
-#: admin/class-boldform-lite-export-import.php:643
+#: admin/class-boldform-lite-export-import.php:668
 msgid "Invalid BoldForm export file."
 msgstr ""
 

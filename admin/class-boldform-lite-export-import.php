@@ -59,13 +59,24 @@ class BoldForm_Lite_Export_Import {
 		$notice = '';
 
 		if ( isset( $_GET['boldform_imported'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$count     = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$tools_sub = 'forms';
-			$notice    = sprintf(
-				/* translators: %d: number of forms imported */
-				_n( '%d form imported successfully.', '%d forms imported successfully.', $count, 'boldform-lite' ),
-				$count
-			);
+			$forms_count   = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$entries_count = isset( $_GET['boldform_entries_imported'] ) ? absint( $_GET['boldform_entries_imported'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$tools_sub     = 'forms';
+
+			if ( $entries_count > 0 ) {
+				$notice = sprintf(
+					/* translators: 1: number of forms imported, 2: number of entries imported */
+					_n( '%1$d form and %2$d entries imported successfully.', '%1$d forms and %2$d entries imported successfully.', $forms_count, 'boldform-lite' ),
+					$forms_count,
+					$entries_count
+				);
+			} else {
+				$notice = sprintf(
+					/* translators: %d: number of forms imported */
+					_n( '%d form imported successfully.', '%d forms imported successfully.', $forms_count, 'boldform-lite' ),
+					$forms_count
+				);
+			}
 		}
 
 		$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
@@ -91,7 +102,7 @@ class BoldForm_Lite_Export_Import {
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Export Forms & Settings', 'boldform-lite' ); ?></h3>
-				<p class="boldform-tab-description"><?php esc_html_e( 'Download a JSON file to migrate forms and settings to another site.', 'boldform-lite' ); ?></p>
+				<p class="boldform-tab-description"><?php esc_html_e( 'Download a JSON file to migrate forms and settings — optionally with their entries — to another site.', 'boldform-lite' ); ?></p>
 
 				<form method="post">
 					<?php wp_nonce_field( 'boldform_lite_export', 'boldform_export_nonce' ); ?>
@@ -170,7 +181,7 @@ class BoldForm_Lite_Export_Import {
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Import Forms & Settings', 'boldform-lite' ); ?></h3>
-				<p class="boldform-tab-description"><?php esc_html_e( 'Upload a previously exported JSON file to restore forms, entries, and settings.', 'boldform-lite' ); ?></p>
+				<p class="boldform-tab-description"><?php esc_html_e( 'Upload a full form export to restore forms, their entries, and settings.', 'boldform-lite' ); ?></p>
 
 				<form method="post" enctype="multipart/form-data">
 					<?php wp_nonce_field( 'boldform_lite_import', 'boldform_import_nonce' ); ?>
@@ -659,7 +670,15 @@ class BoldForm_Lite_Export_Import {
 
 		$imported = $this->import_data( $data );
 
-		wp_safe_redirect( add_query_arg( 'boldform_imported', $imported, admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' ) ) );
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'boldform_imported'         => (int) $imported['forms'],
+					'boldform_entries_imported' => (int) $imported['entries'],
+				),
+				admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' )
+			)
+		);
 		exit;
 	}
 
@@ -667,7 +686,7 @@ class BoldForm_Lite_Export_Import {
 	 * Imports parsed export data into the database.
 	 *
 	 * @param array<string, mixed> $data Parsed JSON data.
-	 * @return int Number of forms imported.
+	 * @return array{forms:int,entries:int} Count of forms and entries imported.
 	 */
 	private function import_data( $data ) {
 		global $wpdb;
@@ -680,8 +699,9 @@ class BoldForm_Lite_Export_Import {
 			require_once BOLDFORM_LITE_PATH . 'admin/ajax-save.php';
 		}
 
-		$forms_imported = 0;
-		$id_map         = array();
+		$forms_imported   = 0;
+		$entries_imported = 0;
+		$id_map           = array();
 
 		// Recreate any bundled SVG icons as local files first, so each form's icon URL
 		// can be rewritten to the new local copy (keeping the icon working post-import).
@@ -738,11 +758,15 @@ class BoldForm_Lite_Export_Import {
 				$old_form_id = isset( $entry['form_id'] ) ? (int) $entry['form_id'] : 0;
 				$new_form_id = isset( $id_map[ $old_form_id ] ) ? $id_map[ $old_form_id ] : $old_form_id;
 
-				$wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 					$entries_table,
 					array(
 						'form_id'         => $new_form_id,
-						'entry_data_json' => $this->sanitize_entry_data_json( isset( $entry['entry_data_json'] ) ? wp_unslash( (string) $entry['entry_data_json'] ) : '' ),
+						// NOT wp_unslash()'d: the value comes from a json_decode()'d file, which
+						// WordPress never slashes. Unslashing would strip the legitimate \" escapes
+						// inside serialized/nested-JSON field values and break the whole blob's
+						// decode, dropping every field in the entry.
+						'entry_data_json' => $this->sanitize_entry_data_json( isset( $entry['entry_data_json'] ) ? (string) $entry['entry_data_json'] : '' ),
 						'submission_key'  => isset( $entry['submission_key'] ) ? sanitize_text_field( (string) $entry['submission_key'] ) : '',
 						'user_id'         => isset( $entry['user_id'] ) ? absint( $entry['user_id'] ) : 0,
 						'user_ip'         => isset( $entry['user_ip'] ) ? sanitize_text_field( (string) $entry['user_ip'] ) : '',
@@ -752,6 +776,10 @@ class BoldForm_Lite_Export_Import {
 					),
 					array( '%d', '%s', '%s', '%d', '%s', '%s', '%s', '%s' )
 				);
+
+				if ( $inserted ) {
+					++$entries_imported;
+				}
 			}
 		}
 
@@ -776,7 +804,10 @@ class BoldForm_Lite_Export_Import {
 			update_option( 'boldform_lite_settings', array_merge( $existing, $imported_settings ), false );
 		}
 
-		return $forms_imported;
+		return array(
+			'forms'   => $forms_imported,
+			'entries' => $entries_imported,
+		);
 	}
 
 	/**
@@ -802,10 +833,12 @@ class BoldForm_Lite_Export_Import {
 				continue;
 			}
 
+			$type = isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : '';
+
 			$entry = array(
 				'label' => isset( $item['label'] ) ? sanitize_text_field( (string) $item['label'] ) : '',
-				'type'  => isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : '',
-				'value' => isset( $item['value'] ) ? $this->sanitize_entry_value( $item['value'] ) : '',
+				'type'  => $type,
+				'value' => isset( $item['value'] ) ? $this->sanitize_entry_value( $item['value'], $type ) : '',
 			);
 
 			if ( isset( $item['path'] ) ) {
@@ -821,22 +854,51 @@ class BoldForm_Lite_Export_Import {
 	/**
 	 * Recursively sanitizes a single entry value (scalar, list, or assoc map).
 	 *
-	 * @param mixed $value Raw value.
-	 * @return string|array<int|string, mixed>
+	 * @param mixed  $value Raw value.
+	 * @param string $type  The field type, passed through so add-ons can preserve
+	 *                      richer content for their own field types.
+	 * @return string|int|float|bool|array<int|string, mixed>
 	 */
-	private function sanitize_entry_value( $value ) {
+	private function sanitize_entry_value( $value, $type = '' ) {
 		if ( is_array( $value ) ) {
 			$out = array();
 
 			foreach ( $value as $key => $sub ) {
 				$out_key         = is_int( $key ) ? $key : sanitize_key( (string) $key );
-				$out[ $out_key ] = $this->sanitize_entry_value( $sub );
+				$out[ $out_key ] = $this->sanitize_entry_value( $sub, $type );
 			}
 
 			return $out;
 		}
 
-		return is_scalar( $value ) ? sanitize_text_field( (string) $value ) : '';
+		// Preserve numeric and boolean scalars exactly. Casting them to string (as
+		// sanitize_text_field requires) would change their JSON type and, for floats,
+		// silently truncate precision. Numbers and booleans cannot carry injection.
+		if ( is_int( $value ) || is_float( $value ) || is_bool( $value ) ) {
+			return $value;
+		}
+
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
+
+		$sanitized = sanitize_text_field( (string) $value );
+
+		/**
+		 * Filters an imported entry field's sanitized value.
+		 *
+		 * The default strips all HTML via sanitize_text_field(). Add-ons can hook
+		 * this to preserve richer content for their own field types (for example an
+		 * HTML-capable field) by returning a value sanitized appropriately for that
+		 * type. Return the given default to leave the value unchanged.
+		 *
+		 * @since 1.1.2
+		 *
+		 * @param string $sanitized The default-sanitized (tag-stripped) value.
+		 * @param mixed  $value     The raw value from the import file.
+		 * @param string $type      The field type key.
+		 */
+		return apply_filters( 'boldform_import_entry_value', $sanitized, $value, $type );
 	}
 
 	/**

@@ -355,6 +355,7 @@ Improvements:
 * Improve: Added a Documentation menu to the admin toolbar with quick links to the User and Developer guides.
 * Improve: Expanded the Elementor widget with a Range Slider styling section and typography controls for input text.
 * Improve: Exporting a form now bundles the submit button's custom SVG icon inside the export file, so the icon is recreated on the destination site and keeps working after the form is imported on another website.
+* Improve: Importing an export that includes entries now reports how many entries were imported (not just forms), and the Tools export/import descriptions make clear that entries can travel with a full export.
 
 Fixes:
 * Fix: Several form and settings values no longer reset to their defaults after saving and reopening — page-redirect type, duplicate-submission prevention, and field style are all preserved.
@@ -365,6 +366,7 @@ Fixes:
 * Fix: An icon-only submit button (an icon with no button text) is no longer reset to "Submit" after saving and reopening the form.
 * Fix: Tidied spacing and sizing across the form builder's field settings panel, so controls align consistently — the Quantity field's Min/Max/Default inputs, the "Enable search" toggle, the option and repeater "Add" buttons, and the payment product option rows.
 * Fix: The Documentation menu now also appears in the toolbar on the Integrations page, so the admin navigation is consistent across every screen.
+* Fix: Importing an export that includes entries no longer loses or alters submission data — values with structured or nested content are preserved intact and numbers keep their full precision.
 
 Maintenance:
 * Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
