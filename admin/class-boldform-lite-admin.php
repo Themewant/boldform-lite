@@ -4115,6 +4115,22 @@ class BoldForm_Lite_Admin {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
+
+					<?php
+					/**
+					 * Fires in the entry-detail main column, after the read-only submitted-data list.
+					 *
+					 * Lets an add-on render an inline editor for the submitted values (or any other
+					 * main-column UI). Receives the entry row object and the decoded entry-data map
+					 * ( $field_id => array{ label, type, value, path? } ) so it need not re-query.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object                             $entry   The entry row object.
+					 * @param array<string, array<string, mixed>> $decoded Decoded entry_data_json map.
+					 */
+					do_action( 'boldform_entry_detail_after_data', $entry, is_array( $decoded ) ? $decoded : array() );
+					?>
 				</div>
 
 				<!-- Sidebar: Meta -->
