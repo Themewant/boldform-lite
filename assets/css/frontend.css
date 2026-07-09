@@ -598,7 +598,6 @@ input[data-boldform-picker] {
 
 .boldform-lite-form__terms .boldform-lite-form__choice-control {
 	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
-	margin-top: 2px;
 	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));

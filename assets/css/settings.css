@@ -130,6 +130,84 @@
 	opacity: 1;
 }
 
+/* Nav item with a hover dropdown (e.g. Documentation) */
+.boldform-admin-topbar__item--has-children {
+	position: relative;
+	display: inline-flex;
+}
+
+.boldform-admin-topbar__caret {
+	width: 14px !important;
+	height: 14px !important;
+	font-size: 14px !important;
+	line-height: 14px !important;
+	margin-left: -2px;
+	opacity: 0.6;
+	transition: transform 0.18s ease;
+}
+
+.boldform-admin-topbar__item--has-children:hover .boldform-admin-topbar__caret,
+.boldform-admin-topbar__item--has-children:focus-within .boldform-admin-topbar__caret {
+	transform: rotate(180deg);
+	opacity: 1;
+}
+
+.boldform-admin-topbar__dropdown {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	min-width: 210px;
+	padding: 6px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: #1e293b;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+	opacity: 0;
+	visibility: hidden;
+	transform: translateY(-4px);
+	transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+	z-index: 100;
+}
+
+.boldform-admin-topbar__item--has-children:hover .boldform-admin-topbar__dropdown,
+.boldform-admin-topbar__item--has-children:focus-within .boldform-admin-topbar__dropdown {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+}
+
+.boldform-admin-topbar__dropdown-link {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 12px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #cbd5e1;
+	text-decoration: none;
+	border-radius: 7px;
+	white-space: nowrap;
+	transition: color 0.15s ease, background 0.15s ease;
+}
+
+.boldform-admin-topbar__dropdown-link:hover,
+.boldform-admin-topbar__dropdown-link:focus {
+	color: #fff;
+	background: rgba(96, 165, 250, 0.15);
+	outline: none;
+}
+
+.boldform-admin-topbar__dropdown-link .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	opacity: 0.75;
+}
+
 /* Upgrade-to-Pro call-to-action — lives in the page-title header, pushed flush
    right (margin-left:auto). A clean, flat solid-blue pill (no gradient, no icon)
    in the spirit of FormGent/FluentCRM's upgrade buttons, in a vivid royal blue so
@@ -547,7 +625,8 @@
 }
 
 .boldform-toggle input[type="checkbox"]:checked::before {
-	transform: translateX(16px);
+	top: 4px;
+	transform: translateX(18px);
 }
 
 .boldform-toggle span {
