@@ -323,17 +323,6 @@ class BoldForm_Lite_Integrations_Page {
 			array( 'slug' => 'boldform-lite-settings',      'label' => __( 'Settings', 'boldform-lite' ),     'icon' => 'dashicons-admin-generic', 'url' => admin_url( 'admin.php?page=boldform-lite-settings' ) ),
 			array( 'slug' => 'boldform-lite-settings#smtp',  'label' => __( 'SMTP', 'boldform-lite' ),        'icon' => 'dashicons-email',         'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ) ),
 			array( 'slug' => 'boldform-lite-settings#tools', 'label' => __( 'Tools', 'boldform-lite' ),       'icon' => 'dashicons-admin-tools',   'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ) ),
-			array(
-				'slug'     => 'boldform-lite-docs',
-				'label'    => __( 'Documentation', 'boldform-lite' ),
-				'icon'     => 'dashicons-book',
-				'url'      => 'https://documentation.themewant.com/docs/boldform-user-guide/',
-				'external' => true,
-				'children' => array(
-					array( 'label' => __( 'User Documentation', 'boldform-lite' ), 'icon' => 'dashicons-admin-users', 'url' => 'https://documentation.themewant.com/docs/boldform-user-guide/', 'external' => true ),
-					array( 'label' => __( 'Admin Documentation', 'boldform-lite' ), 'icon' => 'dashicons-admin-tools', 'url' => 'https://documentation.themewant.com/docs/bold-form-developer-guide/', 'external' => true ),
-				),
-			),
 		);
 		$nav_items = apply_filters( 'boldform_admin_topbar_items', $nav_items, 'boldform-lite-integrations' );
 
@@ -355,39 +344,15 @@ class BoldForm_Lite_Integrations_Page {
 			</div>
 			<nav class="boldform-admin-topbar__nav">
 				<?php foreach ( $nav_items as $item ) : ?>
-					<?php
-					$is_active   = 'boldform-lite-integrations' === $item['slug'];
-					$target_attr = ! empty( $item['external'] ) ? ' target="_blank" rel="noopener noreferrer"' : '';
-					?>
-					<?php if ( ! empty( $item['children'] ) ) : ?>
-						<div class="boldform-admin-topbar__item boldform-admin-topbar__item--has-children">
-							<a href="<?php echo esc_url( $item['url'] ); ?>" class="boldform-admin-topbar__link<?php echo $is_active ? ' is-active' : ''; ?>" aria-haspopup="true"<?php echo $target_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static attribute string. ?>>
-								<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
-								<?php echo esc_html( $item['label'] ); ?>
-								<span class="dashicons dashicons-arrow-down-alt2 boldform-admin-topbar__caret"></span>
-							</a>
-							<div class="boldform-admin-topbar__dropdown" role="menu">
-								<?php foreach ( $item['children'] as $child ) : ?>
-									<?php $child_target = ! empty( $child['external'] ) ? ' target="_blank" rel="noopener noreferrer"' : ''; ?>
-									<a href="<?php echo esc_url( $child['url'] ); ?>" class="boldform-admin-topbar__dropdown-link" role="menuitem"<?php echo $child_target; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static attribute string. ?>>
-										<?php if ( ! empty( $child['icon'] ) ) : ?>
-											<span class="dashicons <?php echo esc_attr( $child['icon'] ); ?>"></span>
-										<?php endif; ?>
-										<?php echo esc_html( $child['label'] ); ?>
-									</a>
-								<?php endforeach; ?>
-							</div>
-						</div>
-					<?php else : ?>
-						<a href="<?php echo esc_url( $item['url'] ); ?>" class="boldform-admin-topbar__link<?php echo $is_active ? ' is-active' : ''; ?>"<?php echo $target_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static attribute string. ?>>
-							<?php if ( ! empty( $item['brand'] ) ) : ?>
-								<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-							<?php else : ?>
-								<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
-							<?php endif; ?>
-							<?php echo esc_html( $item['label'] ); ?>
-						</a>
-					<?php endif; ?>
+					<a href="<?php echo esc_url( $item['url'] ); ?>"
+					   class="boldform-admin-topbar__link<?php echo 'boldform-lite-integrations' === $item['slug'] ? ' is-active' : ''; ?>">
+						<?php if ( ! empty( $item['brand'] ) ) : ?>
+							<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
+						<?php else : ?>
+							<span class="dashicons <?php echo esc_attr( $item['icon'] ); ?>"></span>
+						<?php endif; ?>
+						<?php echo esc_html( $item['label'] ); ?>
+					</a>
 				<?php endforeach; ?>
 			</nav>
 		</div>
