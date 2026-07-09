@@ -1087,18 +1087,24 @@ class BoldForm_Lite_Shortcode {
 			}
 			$icon = '<span class="dashicons ' . esc_attr( $settings['button_icon_dashicon'] ) . '"' . $icon_style_attr . '></span>';
 		} elseif ( 'svg' === $icon_type && ! empty( $settings['button_icon_svg'] ) ) {
-			$img_w       = ( $icon_size && 18 !== $icon_size ) ? $icon_size : 18;
-			$svg_url     = $settings['button_icon_svg'];
-			$svg_style   = 'width:' . $img_w . 'px;height:' . $img_w . 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
+			$img_w   = ( $icon_size && 18 !== $icon_size ) ? $icon_size : 18;
+			$svg_url = $settings['button_icon_svg'];
+
 			if ( $icon_color ) {
-				$svg_style .= 'fill:' . esc_attr( $icon_color ) . ';color:' . esc_attr( $icon_color ) . ';';
-			}
-			// Try to inline the SVG so fill/color CSS applies.
-			$inline_svg = $this->get_inline_svg( $svg_url, $img_w, $icon_color );
-			if ( $inline_svg ) {
-				$icon = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true">' . $inline_svg . '</span>';
+				// Tint a monochrome SVG to the chosen colour via a CSS mask: the SVG
+				// shape masks a solid background-color, so it recolours reliably no
+				// matter how the file declares its own fills (a root fill override only
+				// works when every shape inherits fill). Matches the builder preview.
+				$mask_ref  = "url('" . esc_url( $svg_url ) . "') center / contain no-repeat";
+				$svg_style = 'display:inline-block;vertical-align:middle;flex-shrink:0;'
+					. 'width:' . $img_w . 'px;height:' . $img_w . 'px;'
+					. 'background-color:' . $icon_color . ';'
+					. '-webkit-mask:' . $mask_ref . ';mask:' . $mask_ref . ';';
+				$icon = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true"></span>';
 			} else {
-				$icon = '<img src="' . esc_url( $svg_url ) . '" class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" alt="">';
+				// No colour override — show the SVG's own colours via <img>.
+				$svg_style = 'width:' . $img_w . 'px;height:' . $img_w . 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
+				$icon      = '<img src="' . esc_url( $svg_url ) . '" class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" alt="">';
 			}
 		}
 
