@@ -5159,16 +5159,18 @@ class BoldForm_Lite_Admin {
 
 		// Overview stats.
 		$total_forms   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Spam entries are excluded from every reporting stat below — they are not
+		// genuine submissions and would skew totals, per-form counts, and the trend chart.
+		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Today's entries.
-		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// This week entries.
 		$week_start  = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
-		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Entries per form.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
@@ -5178,7 +5180,7 @@ class BoldForm_Lite_Admin {
 				SUM(CASE WHEN e.status = 'read' THEN 1 ELSE 0 END) AS is_read,
 				SUM(CASE WHEN e.status = 'starred' THEN 1 ELSE 0 END) AS starred
 			FROM `{$forms_table}` f
-			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id
+			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id AND e.status != 'spam'
 			WHERE f.status != 'trash'
 			GROUP BY f.id
 			ORDER BY total DESC"
@@ -5191,7 +5193,7 @@ class BoldForm_Lite_Admin {
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS entry_date, COUNT(*) AS total
 				FROM `{$entries_table}`
-				WHERE created_at >= %s
+				WHERE status != 'spam' AND created_at >= %s
 				GROUP BY DATE(created_at)
 				ORDER BY entry_date ASC",
 				wp_date( 'Y-m-d', strtotime( '-30 days' ) ) . ' 00:00:00'
