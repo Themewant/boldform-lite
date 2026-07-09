@@ -1422,6 +1422,19 @@ class BoldForm_Lite_Admin {
 						});
 					});'
 				);
+
+				/**
+				 * Fires when admin assets are enqueued for the single-entry detail screen.
+				 *
+				 * Lets an add-on enqueue its own CSS/JS for the entry-detail view — e.g. a
+				 * notes panel rendered via `boldform_entry_detail_sidebar`. Mirrors
+				 * `boldform_builder_enqueue_assets` for the builder screen.
+				 *
+				 * @since 1.1.3
+				 *
+				 * @param int $entry_id The entry being viewed.
+				 */
+				do_action( 'boldform_entry_detail_enqueue_assets', $entry_id );
 			}
 
 			// ── Settings page ─────────────────────────────────────────────────────
@@ -4102,6 +4115,22 @@ class BoldForm_Lite_Admin {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
+
+					<?php
+					/**
+					 * Fires in the entry-detail main column, after the read-only submitted-data list.
+					 *
+					 * Lets an add-on render an inline editor for the submitted values (or any other
+					 * main-column UI). Receives the entry row object and the decoded entry-data map
+					 * ( $field_id => array{ label, type, value, path? } ) so it need not re-query.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object                             $entry   The entry row object.
+					 * @param array<string, array<string, mixed>> $decoded Decoded entry_data_json map.
+					 */
+					do_action( 'boldform_entry_detail_after_data', $entry, is_array( $decoded ) ? $decoded : array() );
+					?>
 				</div>
 
 				<!-- Sidebar: Meta -->
@@ -4145,6 +4174,20 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</div>
 					</div>
+
+					<?php
+					/**
+					 * Fires inside the entry-detail sidebar, after the Details card.
+					 *
+					 * Lets an add-on append its own sidebar card to the entry-detail view — e.g.
+					 * a private admin-notes panel. Receives the full entry row object.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object $entry The entry row object (id, form_id, status, created_at, …).
+					 */
+					do_action( 'boldform_entry_detail_sidebar', $entry );
+					?>
 				</div>
 			</div>
 
