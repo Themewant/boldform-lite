@@ -1,6 +1,6 @@
 === BoldForm - Drag & Drop Form Builder ===
 Contributors: themewant, maha25
-Tags: contact form, form builder, forms, drag and drop, gutenberg
+Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
@@ -8,197 +8,235 @@ Stable tag: 1.1.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Lightweight drag-and-drop WordPress form builder — contact forms and more with a shortcode, Gutenberg block, Elementor widget, and email integrations.
+Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg block, Elementor widget, AJAX submissions, and email integrations.
 
 == Description ==
 
-**BoldForm** is a fast, lightweight drag-and-drop form builder for WordPress. Build any form you need in a visual editor — no code — then embed it anywhere with a shortcode, a Gutenberg block, or an Elementor widget. Every submission is stored safely in your WordPress database and managed right from your dashboard.
+**BoldForm Lite** is a powerful yet lightweight form builder for WordPress. Build any kind of form using a visual drag-and-drop editor, embed it anywhere with a shortcode, Gutenberg block, or Elementor widget, and manage every submission right inside your WordPress dashboard.
 
-From a simple contact form to a form with conditional logic, spam protection, and email-marketing sync, BoldForm gives you the tools professional forms need — without the bloat that slows your site down.
+Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
 
 * [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://themewant.com/plugins/boldform/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://themewant.com/plugins/boldform/)
 
-https://www.youtube.com/watch?v=EWum_aGDAMc
+---
 
-= Why BoldForm? =
+= Core Features =
 
-* **Drag & drop** — build and reorder fields visually, configure each one instantly, and watch your styling update live as you work.
-* **Lightweight by design** — assets load only where a form appears, the analytics chart uses the browser's native canvas (no charting library), and each form is queried once per request.
-* **No lock-in** — export and import your forms, entries, and settings as JSON at any time.
-* **Yours to control** — submissions live in your own database, with built-in tools to export or erase personal data on request.
-* **Extend anywhere** — a clean, documented action/filter API lets add-ons and developers hook into every stage of the form lifecycle.
+**Drag & Drop Form Builder**
+Build forms visually without writing a single line of code. Drag fields from the sidebar, reorder them, and configure each one instantly.
 
-Perfect for contact forms, quote requests, registrations, feedback forms, surveys, job applications, event sign-ups, and newsletter opt-ins.
+**AJAX Form Submission**
+Forms submit without a full page reload, giving visitors a smooth, fast experience.
 
-= Drag & Drop Form Builder =
+**Entries Management**
+Every submission is stored in your WordPress database. View, filter, read, and delete entries from the BoldForm > Entries page. Mark entries as read, unread, or spam.
 
-Build forms visually without writing a single line of code. Drag fields from the sidebar, drop them into multi-column rows, reorder with a handle, and configure every field in its own settings panel.
+**Email Notifications**
+Automatically send an admin notification on every submission. Configure a custom "From" name, reply-to address, subject, and message body. Test email delivery directly from the settings panel.
 
-* **Multi-column layouts** — arrange fields in flexible rows and columns with adjustable widths.
-* **Live Style tab** — field, label, and button styling updates instantly beside the controls, with Normal / Hover / Focus / Checked states, selectable design themes, gradient backgrounds, and per-device (desktop / tablet / mobile) responsive values.
-* **Custom submit button** — set your own text, a Dashicon or custom SVG icon, and the icon colour.
-* **Form templates** — start from a ready-made template (Contact, Lead Capture, Feedback, Newsletter) instead of a blank canvas, then customise from there.
+**Reports & Analytics**
+A built-in reports dashboard shows total forms, total entries, and per-form performance stats using the browser's native HTML5 Canvas chart — no external library required.
 
-= All the Fields You Need =
+**Export & Import**
+Export all forms, a single form with its entries, or global settings as a JSON file. Import everything back with one click — great for moving between environments.
 
-**Standard**
-* Text, Email, URL, Phone, Number, Numeric, Textarea
+**Multi-Step Forms**
+Divide long forms into steps using the Section Break field. Display a progress bar, step indicators, or headings. Fully style the Next/Previous buttons and progress colors.
 
-**Choice**
-* Select (single or multi-select custom dropdown), Multi Select, Checkbox, Radio, Country
+**Conditional Logic**
+Show or hide any field based on the visitor's previous answers. Supports AND/OR logic rules per field.
+
+**Form Templates**
+Start from a pre-built template instead of a blank form. Pick a template during form creation and customise from there.
+
+**Translation Ready**
+All strings are internationalised using the `boldform-lite` text domain, ready for translation with any standard WordPress translation workflow.
+
+**Multisite Compatible**
+Tables are created automatically for each new subsite when the plugin is network-activated.
+
+---
+
+= Form Fields =
+
+**Standard Fields**
+* Text
+* Email
+* Number
+* Textarea
+* Phone
+* URL
+* Numeric
+
+**Choice Fields**
+* Select (single or multi-select with custom dropdown)
+* Multi Select
+* Checkbox
+* Radio Button
+* Country
 
 **Date & Time**
-* Date picker and Time picker (powered by the bundled Flatpickr)
+* Date picker (powered by Flatpickr)
+* Time picker
 
 **Rating & Range**
-* Star Rating (per-field colours and size), Slider / Range (with an optional dual-handle min–max mode)
+* Star Rating
+* Slider / Range
 
-**Advanced input**
-* Input Mask for formatted text entry
-* File Upload with a configurable size cap, stored in your WordPress uploads
+**Input Helpers**
+* Input Mask (formatted text input)
 
-**Identity & address**
-* Name (structured first / middle / last)
-* Address (structured multi-line address)
+**Layout & Content**
+* Section Break (multi-step divider)
+* Paragraph / Static Text
+* HTML Editor
+* Terms & Conditions
 
-**Layout & content**
-* Section Break (heading + description divider), Paragraph / Static Text, HTML Editor, Terms & Conditions
+**File & Media**
+* File Upload (configurable max size, stored in WordPress uploads)
 
-= Smart Form Features =
+**Address & Identity**
+* Name (structured first / middle / last name)
+* Address (structured address field)
 
-* **Conditional Logic** — show or hide any field based on the visitor's previous answers, with AND / OR rules per field.
-* **AJAX Submission** — forms submit without a full page reload for a smooth, fast experience.
-* **Duplicate Prevention** — optionally block repeat submissions based on a chosen field, such as email address.
+---
 
-= Entries Management =
+= Embedding Options =
 
-Every submission is saved to a custom database table — a permanent record, independent of email delivery.
+* **Shortcode** — `[boldform id="123"]`
+* **Gutenberg Block** — Insert the BoldForm block in any page or post
+* **Elementor Widget** — Full widget with rich styling controls in the Elementor editor
 
-* View, filter, and read submissions from **BoldForm → Entries**.
-* Mark entries **Read, Unread, Starred, or Spam**, with a dedicated Spam tab.
-* **Bulk actions** — update the status of, or delete, many entries at once.
-* **CSV export** — export all entries, or just the ones you select.
-* **Reports & Analytics** — a dashboard of total forms, total entries, and per-form stats, charted with the browser's native HTML5 Canvas (no external library loaded).
+---
 
 = Spam Protection =
 
-* **Honeypot** — an invisible field that catches bots automatically, with zero setup.
-* **Math Captcha** — a simple arithmetic challenge that works out of the box, no API keys.
-* **Google reCAPTCHA v2** — checkbox challenge (requires your site and secret keys).
-* **hCaptcha** — a privacy-friendly alternative (requires your hCaptcha keys).
+* **Honeypot** — Invisible hidden field catches bots automatically, no setup required
+* **Google reCAPTCHA v2** — Checkbox challenge; requires a site key and secret key from Google
+* **hCaptcha** — Privacy-friendly alternative to reCAPTCHA; requires keys from hCaptcha
+* **Math Captcha** — Simple arithmetic challenge, works out of the box with no API keys
 
-= Email Notifications & Marketing Integrations =
+---
 
-* **Email Notifications** — send an admin notification on every submission, with a custom "From" name, reply-to, subject, and message body. Test delivery straight from the settings panel.
-* **SMTP** — route outgoing mail through your own SMTP server for reliable delivery.
-* **Mailchimp** — add contacts to any audience list with email, first-name, and last-name mapping.
-* **Brevo (formerly Sendinblue)** — add contacts to any Brevo list with field mapping.
+= Email Marketing Integrations =
 
-Configure connections under **BoldForm → Settings → Integrations**, then assign one to each form.
+Connect forms to email marketing platforms and automatically add subscribers on submission.
 
-= Embed Anywhere =
+* **Mailchimp** — Add contacts to any audience list with email, first name, and last name mapping
+* **Brevo (formerly Sendinblue)** — Add contacts to any Brevo list with field mapping
 
-* **Shortcode** — `[boldform id="123"]`
-* **Gutenberg Block** — insert the BoldForm block in any page or post (Block API v3, with a styled in-editor preview).
-* **Elementor Widget** — a native widget with full styling controls for fields, labels, buttons, and more, editable right in the Elementor panel.
+Configure connections under **BoldForm > Settings > Integrations**, then assign a connection to each form.
 
-= Import, Export & Tools =
 
-Move your work between sites with one click. From **BoldForm → Tools**, export all forms, a single form together with its entries, or your global settings as a JSON file, and import them back on any other site.
+---
 
-= Developer Friendly =
+= BoldForm Pro — Coming Soon =
 
-BoldForm ships a documented action/filter API so add-ons and custom code can hook into validation, submission, entry storage, integrations, and rendering — without touching core. Register custom field types, resolve auto-populate keys, defer post-save actions, and render rich entry values in the admin.
+BoldForm Pro extends Lite with advanced features for professionals and agencies:
 
-= Privacy & GDPR Ready =
+**Advanced Form Fields**
+* Signature field
+* Image Choice field
+* Repeater field (multi-instance rows)
+* Calculation field
+* Auto-Populate field
+* Geolocation field
+* Product, Quantity, Custom Amount, and Order Summary fields
 
-* Submissions stay in **your** database; nothing is sent anywhere unless you configure one of the external services listed below.
-* A personal-data **exporter and eraser** are registered with WordPress's privacy tools, keyed on the submitter's email address.
-* Optional "remove all data on uninstall" cleanup.
-
-= Translation & Multisite =
-
-* Every string uses the `boldform-lite` text domain and is ready for translation.
-* Network-activate on multisite and tables are created automatically for each new subsite.
-
-= Meet BoldForm Pro =
-
-Ready for more? **[BoldForm Pro](https://themewant.com/plugins/boldform/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
-
-**Advanced form building**
-
-* **Multi-page (step) forms** with progress indicators
-* **Advanced fields** — Rich Text, Signature, Repeater, Calculation, Geolocation, NPS and more
-* **Auto-populate & hidden data** fields
-* **Form scheduling** with open / close dates
-* **Advanced analytics** — form views and conversion tracking
-* **Webhooks** to send form data to any external URL
+**Multi-Page Forms**
+Advanced multi-step forms with save-and-resume, step validation, and conditional page routing.
 
 **Payments**
+Accept one-time and recurring payments directly inside your forms:
+* Stripe (credit/debit cards)
+* PayPal (checkout redirect)
+* Payment calculator with custom pricing rules
 
-* **Stripe** and **PayPal** — accept one-time and recurring payments right inside your forms.
+**Advanced Analytics**
+Detailed per-form analytics: submission trends, field abandonment rates, conversion tracking.
 
-**30+ integrations** — connect a form to the apps you already use:
+**Scheduling**
+Open and close forms automatically on a date/time schedule.
 
-* **Email marketing** — ActiveCampaign, Kit (formerly ConvertKit), AWeber, GetResponse, MailerLite, Constant Contact, Drip, and Moosend (in addition to Mailchimp and Brevo from Lite).
-* **CRM** — HubSpot, Salesforce, Zoho CRM, Pipedrive, Freshsales, FluentCRM, Help Scout, and monday.com.
-* **Automation** — Zapier, Make, and Pabbly Connect.
-* **Productivity** — Notion, Airtable, Trello, and Asana.
-* **Storage** — Google Sheets, Google Drive, and Dropbox.
-* **Messaging & notifications** — Slack, Discord, Telegram, and Microsoft Teams.
+**Webhooks**
+Send form data to any external URL via HTTP POST on each submission.
 
-Plus **priority support and automatic updates**.
+**Automation Integrations**
+* Zapier
+* Make (formerly Integromat)
+* Pabbly Connect
 
-[See everything in BoldForm Pro →](https://themewant.com/plugins/boldform/)
+**CRM & Email Marketing (Pro)**
+* ActiveCampaign
+* ConvertKit
+* AWeber
+* GetResponse
+* MailerLite
+* HubSpot
+* Zoho CRM
+* FluentCRM
+* Help Scout
+
+**Productivity & Storage**
+* Google Sheets — Append a row to any spreadsheet on each submission
+* Google Drive — Save uploaded files directly to a Drive folder
+* Dropbox — Save uploaded files to a Dropbox folder
+
+**Messaging & Notifications**
+* Slack — Post a rich message to any channel via incoming webhook
+* Discord — Post to a Discord channel
+* Telegram — Send a message to a bot or channel
+* Microsoft Teams — Post a card to a Teams channel
+
+**Conditional Logic (Pro)**
+Advanced conditional rules with multi-field dependencies, page-level conditions, and email routing logic.
+
+---
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/boldform-lite/`, or install it directly through **Plugins → Add New** in the WordPress admin.
+1. Upload the plugin files to `/wp-content/plugins/boldform-lite/`, or install via **Plugins > Add New** in the WordPress admin.
 2. Activate the plugin through the **Plugins** screen.
 3. Go to **BoldForm** in the admin sidebar and create your first form.
-4. Copy the shortcode shown in the form editor and paste it on any page, or add the form with the Gutenberg block or Elementor widget.
+4. Copy the shortcode shown in the form editor and paste it on any page, or use the Gutenberg block / Elementor widget.
+
+---
 
 == Frequently Asked Questions ==
 
 = How do I display a form? =
 
-You have three options: paste `[boldform id="123"]` into any page or post, insert the **BoldForm** Gutenberg block, or drag the **BoldForm** widget into any Elementor layout.
+Three options: paste `[boldform id="123"]` into any page or post, use the **BoldForm** Gutenberg block, or drag the **BoldForm** widget into any Elementor layout.
 
-= Where do I see form submissions? =
+= Where can I see form submissions? =
 
-Go to **BoldForm → Entries** in the WordPress admin. Click any row to open the full submission detail. You can mark entries as read, unread, starred, or spam, run bulk actions, and export to CSV.
+Go to **BoldForm > Entries** in the WordPress admin. Click any row to see the full submission detail.
 
-= Does BoldForm store submissions in the database? =
+= Does the plugin store submissions in the database? =
 
-Yes. Every submission is saved to a custom table, so you always have a permanent record — independent of whether the notification email is delivered.
+Yes. Every submission is stored in a custom table so you always have a permanent record, independent of email delivery.
 
-= How do I protect my forms from spam? =
+= Can I send a notification email to the person who submitted the form? =
 
-Go to **BoldForm → Settings → Captcha** and choose a provider. Honeypot protection is always active with no setup. You can also enable Math Captcha (no keys needed), Google reCAPTCHA v2, or hCaptcha (both require your own API keys).
+Admin notifications are included in the Lite version. User (submitter) notifications are part of the email routing system; configure the recipient email to the field that collects the user's address.
 
-= Can I connect forms to Mailchimp or Brevo? =
+= How do I enable spam protection? =
 
-Yes. Add a connection under **BoldForm → Settings → Integrations**, then assign it to a form and map the email, first-name, and last-name fields. Subscribers are added automatically on submission.
-
-= Can I move my forms to another site? =
-
-Yes. Use **BoldForm → Tools** to export your forms, a single form with its entries, or your global settings as a JSON file, then import them on the destination site with one click.
-
-= Does it work with the block editor and Elementor? =
-
-Yes. BoldForm provides a native Gutenberg block (Block API v3, with a styled in-editor preview) and a native Elementor widget with full styling controls.
+Go to **BoldForm > Settings > Captcha**. Choose your preferred provider (Honeypot is always active). Enter API keys for reCAPTCHA or hCaptcha if you select those.
 
 = Is BoldForm multisite compatible? =
 
 Yes. When the plugin is network-activated, it automatically creates the necessary database tables for each new subsite.
 
-= Is BoldForm GDPR friendly? =
+= Does it work with Elementor? =
 
-Yes. Submissions stay in your own database, and BoldForm registers a personal-data exporter and eraser with WordPress's privacy tools so you can fulfil data-subject requests by email address. See the Privacy section below for details.
+Yes. BoldForm registers a native Elementor widget with full styling controls for fields, labels, buttons, and more — all editable within the Elementor panel.
 
-= Is there a Pro version? =
+= Will there be a Pro version? =
 
-Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 35+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://themewant.com/plugins/boldform/).
+Yes, BoldForm Pro is currently in development. It will add payments (Stripe, PayPal), advanced field types, more integrations, scheduling, webhooks, and more. See the **BoldForm Pro — Coming Soon** section above for the full list.
+
+---
 
 == Screenshots ==
 
@@ -210,6 +248,8 @@ Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advan
 6. Form Analytics
 7. Form Integration
 8. Form View On Page
+
+---
 
 == Bundled Libraries ==
 
@@ -225,6 +265,8 @@ All JavaScript and CSS assets are bundled locally within the plugin directory. N
 * `assets/js/sortable.js` — a small first-party drag-and-drop helper written for this plugin (used for field ordering in the builder). It is original BoldForm code, not the third-party SortableJS library, and is GPL-licensed with the rest of the plugin.
 
 The submissions chart on the Reports page is rendered using the browser's native HTML5 Canvas API. No external charting library is loaded.
+
+---
 
 == External Services ==
 
@@ -278,6 +320,8 @@ Adds contacts to a Brevo list on form submission.
 * Terms of Use: https://www.brevo.com/legal/termsofuse/
 * Privacy Policy: https://www.brevo.com/legal/privacypolicy/
 
+---
+
 == Privacy ==
 
 When a visitor submits a form, BoldForm Lite stores the submission in your site's own database (no data is sent anywhere unless you have configured one of the external services listed above). Each stored entry includes:
@@ -297,6 +341,8 @@ Appsero SDK **does not gather any data by default.** The SDK only starts gatheri
 Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without confirmation from users in any case.**
 
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
+
+---
 
 == Changelog ==
 
@@ -443,4 +489,3 @@ Fixes Conditional Logic rule saving, improves the Integrations connect-and-enabl
 
 = 1.1.0 =
 Security hardening, accessibility improvements, and GDPR export/erase support, plus the live style preview and Elementor refinements. Recommended for all users.
-</content>
