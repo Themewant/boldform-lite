@@ -261,8 +261,39 @@ class BoldForm_Lite_Form_Handler {
 		 */
 		$validation['entry_data'] = apply_filters( 'boldform_entry_data', $validation['entry_data'], $form_id, $settings );
 
+		/**
+		 * Filter whether this submission should be treated as spam.
+		 *
+		 * Return true to STORE the entry with the "spam" status and SKIP every
+		 * post-save side effect — the boldform_entry_created action (which drives
+		 * integrations, webhooks, Zapier, Slack, etc.) and the notification emails —
+		 * while still returning the normal success response to the visitor. This
+		 * routes a flagged submission to the reviewable Spam folder (Entries → Spam)
+		 * instead of rejecting it outright, so a false positive can be recovered and
+		 * a real spammer/bot is given no signal that it was caught.
+		 *
+		 * An anti-spam add-on returns true here to send a flagged submission to the
+		 * folder; returning a rejection from boldform_gate_submission instead is the
+		 * hard-block alternative.
+		 *
+		 * The duplicate-entry check and post-save side effects are skipped for a spam
+		 * submission; the entry is still persisted (as spam) and boldform_entry_saved
+		 * still fires so persistence-level listeners run.
+		 *
+		 * @since 1.1.3
+		 * @param bool                                $is_spam    Whether to treat the submission as spam. Default false.
+		 * @param int                                 $form_id    Form ID.
+		 * @param array<string, mixed>                $settings   Form settings.
+		 * @param array<string, array<string, mixed>> $entry_data Validated entry data.
+		 * @param array<string, mixed>                $request    Raw request payload.
+		 */
+		$is_spam = (bool) apply_filters( 'boldform_submission_is_spam', false, $form_id, $settings, $validation['entry_data'], $request );
+
 		// Duplicate entry check — runs after validation so entry_data is fully resolved.
-		if ( $this->check_duplicate_entry( $form_id, $settings, $validation['entry_data'], $fields ) ) {
+		// Skipped for spam: a flagged submission is always folded silently into the
+		// Spam folder rather than shown a "you already submitted" message (which would
+		// signal a bot that the form is working).
+		if ( ! $is_spam && $this->check_duplicate_entry( $form_id, $settings, $validation['entry_data'], $fields ) ) {
 			$dup_message = ! empty( $settings['dup_message'] )
 				? $settings['dup_message']
 				: __( 'You have already submitted this form.', 'boldform-lite' );
@@ -306,7 +337,7 @@ class BoldForm_Lite_Form_Handler {
 		$entry_id = 0;
 
 		if ( $should_save ) {
-			$entry_id = $this->create_entry( $form_id, $validation['entry_data'] );
+			$entry_id = $this->create_entry( $form_id, $validation['entry_data'], $is_spam ? 'spam' : 'unread' );
 
 			if ( ! $entry_id ) {
 				return $this->build_result(
@@ -347,7 +378,9 @@ class BoldForm_Lite_Form_Handler {
 		 */
 		$defer_actions = (bool) apply_filters( 'boldform_defer_post_save_actions', false, $form_id, $entry_id, $settings, $validation['entry_data'] );
 
-		if ( $should_save && ! $defer_actions ) {
+		// A spam entry is stored for review but must never trigger notifications,
+		// integrations, or webhooks — skip all post-save side effects for it.
+		if ( $should_save && ! $defer_actions && ! $is_spam ) {
 			/**
 			 * Fires after an entry is saved, passing the new entry ID.
 			 *
@@ -1528,14 +1561,25 @@ class BoldForm_Lite_Form_Handler {
 	 *
 	 * @param int                                 $form_id    Form ID.
 	 * @param array<string, array<string, mixed>> $entry_data Sanitized entry payload.
+	 * @param string                              $status     Initial entry status. Whitelisted to the known
+	 *                                                        set ('unread', 'read', 'starred', 'spam'); anything
+	 *                                                        else falls back to 'unread'. Lets a spam filter store
+	 *                                                        a flagged submission straight to the reviewable Spam
+	 *                                                        folder. Defaults to 'unread'.
 	 * @return int Inserted entry ID, or 0 on failure.
 	 */
-	public function create_entry( $form_id, $entry_data ) {
+	public function create_entry( $form_id, $entry_data, $status = 'unread' ) {
 		global $wpdb;
 
 		$table_name = $this->plugin->get_entries_table_name();
 		$user_ip    = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_textarea_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+
+		// Guard the status to the known set so a caller can never write an arbitrary
+		// value into the column.
+		if ( ! in_array( $status, array( 'unread', 'read', 'starred', 'spam' ), true ) ) {
+			$status = 'unread';
+		}
 
 		// Bail before insert if the payload cannot be encoded (e.g. invalid UTF-8),
 		// otherwise an empty-data entry would be saved and reported as a success.
@@ -1551,7 +1595,7 @@ class BoldForm_Lite_Form_Handler {
 			'user_id'          => get_current_user_id(),
 			'user_ip'          => $this->sanitize_ip_address( $user_ip ),
 			'user_agent'       => $user_agent,
-			'status'           => 'unread',
+			'status'           => $status,
 		);
 
 		$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
