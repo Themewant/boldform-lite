@@ -67,7 +67,11 @@ jQuery(
 				redirect_type: settings && settings.redirect_type ? settings.redirect_type : ( settings && settings.redirect_url ? 'custom' : 'page' ),
 				redirect_url: settings && settings.redirect_url ? settings.redirect_url : '',
 				thank_you_message: settings && settings.thank_you_message ? settings.thank_you_message : ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.thankYouMessage || 'Thanks! Your form was submitted successfully.' ),
-				button_text: settings && settings.button_text ? settings.button_text : ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.submitText || 'Submit' ),
+				// Default ONLY when button_text was never set (new form). An explicit
+				// empty string is a deliberate icon-only button, so it must survive a
+				// reload — a truthiness check would wrongly reset '' back to 'Submit'.
+				// Mirrors the server default logic (shortcode uses isset(), not truthy).
+				button_text: settings && typeof settings.button_text !== 'undefined' ? settings.button_text : ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.submitText || 'Submit' ),
 				button_alignment: settings && settings.button_alignment ? settings.button_alignment : 'left',
 				button_icon_type: settings && settings.button_icon_type ? settings.button_icon_type : 'none',
 				button_icon_dashicon: settings && settings.button_icon_dashicon ? settings.button_icon_dashicon : 'dashicons-arrow-right-alt',
@@ -1177,13 +1181,24 @@ jQuery(
 			if ( 'dashicon' === type ) {
 				icon = '<span class="dashicons ' + escapeHtml( state.formSettings.button_icon_dashicon || 'dashicons-arrow-right-alt' ) + '"' + styleAttr + '></span>';
 			} else if ( 'svg' === type && state.formSettings.button_icon_svg ) {
-				var imgW = ( size && size !== '18' ) ? escapeHtml( size ) : '18';
-				var imgStyle = 'width:' + imgW + 'px;height:' + imgW + 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
+				var imgW   = ( size && size !== '18' ) ? escapeHtml( size ) : '18';
+				var svgUrl = escapeHtml( state.formSettings.button_icon_svg );
 				if ( color ) {
-					// Approximate color in builder preview via CSS filter.
-					imgStyle += 'filter:var(--bf-svg-filter,none);';
+					// Tint a monochrome SVG to the chosen colour via a CSS mask: the
+					// SVG shape masks a solid background-color, so it recolours reliably
+					// regardless of the file's internal fills. An <img> can't be
+					// recoloured; this matches how the front end renders a coloured SVG.
+					var maskRef = "url('" + svgUrl + "') center / contain no-repeat";
+					icon = '<span class="boldform-btn-icon-svg" aria-hidden="true" style="'
+						+ 'display:inline-block;vertical-align:middle;flex-shrink:0;'
+						+ 'width:' + imgW + 'px;height:' + imgW + 'px;'
+						+ 'background-color:' + escapeHtml( color ) + ';'
+						+ '-webkit-mask:' + maskRef + ';mask:' + maskRef + ';"></span>';
+				} else {
+					// No colour override — show the SVG's own colours via <img>.
+					icon = '<img src="' + svgUrl + '" class="boldform-btn-icon-svg" alt="" style="'
+						+ 'width:' + imgW + 'px;height:' + imgW + 'px;display:inline-block;vertical-align:middle;flex-shrink:0;">';
 				}
-				icon = '<img src="' + escapeHtml( state.formSettings.button_icon_svg ) + '" class="boldform-btn-icon-svg" style="' + imgStyle + '" alt="">';
 			}
 			return icon;
 		}
@@ -5646,7 +5661,13 @@ jQuery(
 						state.formSettings.button_icon_size = $( '#boldform-setting-button-icon-size' ).val() || '18';
 					}
 					if ( $( '#boldform-setting-button-icon-color' ).length ) {
-						state.formSettings.button_icon_color = $( '#boldform-setting-button-icon-color' ).val() || '';
+						var $iconColorInput = $( '#boldform-setting-button-icon-color' );
+						state.formSettings.button_icon_color = $iconColorInput.val() || '';
+						// Live-update the swatch preview in place while dragging the native
+						// picker. renderCanvas() repaints only the canvas (so the icon
+						// updates instantly) but not the settings panel — updating the panel
+						// wholesale would close the open picker — so nudge the swatch directly.
+						$iconColorInput.siblings( '.boldform-color-preview' ).css( 'background', $iconColorInput.val() || '#ffffff' );
 					}
 					renderCanvas();
 					return;
@@ -5868,7 +5889,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-icon-color, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -5879,6 +5900,12 @@ jQuery(
 						state.formSettings.button_icon_dashicon = $( '#boldform-setting-button-icon-dashicon' ).val() || 'dashicons-arrow-right-alt';
 					}
 					state.formSettings.button_icon_position = $( '#boldform-setting-button-icon-position' ).val() || 'right';
+					// Native <input type="color"> fires 'change' reliably (on picker close)
+					// but 'input' inconsistently across browsers, so capture the icon colour
+					// here too — the 'input' handler covers live dragging where supported.
+					if ( $( '#boldform-setting-button-icon-color' ).length ) {
+						state.formSettings.button_icon_color = $( '#boldform-setting-button-icon-color' ).val() || '';
+					}
 					renderAll();
 					return;
 				}
