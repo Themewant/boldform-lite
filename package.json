@@ -1,6 +1,6 @@
 {
   "name": "boldform-lite",
-  "version": "1.1.2",
+  "version": "1.1.1",
   "description": "Build tooling for the BoldForm Lite WordPress plugin (dev-only; not part of the shipped plugin).",
   "private": true,
   "license": "GPL-2.0-or-later",
@@ -12,15 +12,16 @@
     "includes",
     "languages",
     "public",
+    "templates",
+    "uninstall",
     "boldform-lite.php",
     "readme.txt",
     "uninstall.php",
     "wpml-config.xml"
   ],
   "scripts": {
-    "makepot": "wp i18n make-pot . languages/boldform-lite.pot --exclude=build,node_modules,src,tests --slug=boldform-lite && sed -i.bak '/POT-Creation-Date/d' languages/boldform-lite.pot && rm -f languages/boldform-lite.pot.bak",
-    "build": "npm run makepot && wp-scripts plugin-zip && { zip -qd boldform-lite.zip boldform-lite/package.json boldform-lite/README.md || true; } && rm -rf build && mkdir -p build && unzip -qo boldform-lite.zip -d build && mv -f boldform-lite.zip build/boldform-lite-$npm_package_version.zip",
-    "release": "npm run makepot && { [ -z \"$(git status --porcelain)\" ] || { echo 'Working tree is not clean (commit the regenerated translation template if it changed) - commit or stash before releasing.'; exit 1; }; } && npm run build"
+    "build": "wp-scripts plugin-zip && { zip -qd boldform-lite.zip boldform-lite/package.json boldform-lite/README.md || true; } && rm -rf build && mkdir -p build && unzip -qo boldform-lite.zip -d build && mv -f boldform-lite.zip build/boldform-lite-$npm_package_version.zip",
+    "release": "[ -z \"$(git status --porcelain)\" ] || { echo 'Working tree is not clean - commit or stash before releasing.'; exit 1; } && npm run build"
   },
   "devDependencies": {
     "@wordpress/scripts": "^32.4.0"

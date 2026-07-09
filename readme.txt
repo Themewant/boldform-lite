@@ -1,10 +1,10 @@
-=== BoldForm - Drag & Drop Form Builder ===
+=== BoldForm Lite ===
 Contributors: themewant, maha25
 Tags: forms, contact form, form builder, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,7 @@ Lightweight drag-and-drop form builder for WordPress with shortcode, Gutenberg b
 
 Whether you need a simple contact form, a multi-field registration form, or a survey with conditional logic — BoldForm Lite has you covered with zero bloat.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://themewant.com/plugins/boldform/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://themewant.com/plugins/boldform/)
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Join the Pro Waitlist](https://themewant.com/waitlist/)
 
 ---
 
@@ -346,29 +346,6 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
-= 1.1.2 =
-Improvements:
-* Improve: Added an "Upgrade to Pro" page and CTAs comparing Free vs Pro features, so it's easy to see what BoldForm Pro adds.
-* Improve: The Entries list now supports bulk actions — select multiple submissions and mark them Read, Unread, Starred, or Spam, or delete them in one step.
-* Improve: Added an "Export Selected" button on the Entries list to export just the checked submissions to CSV.
-* Improve: Reorganised the Tools screen into separate Forms and Entries tabs, and added a standalone Entries export so you can download submissions on their own.
-* Improve: Added a Documentation menu to the admin toolbar with quick links to the User and Developer guides.
-* Improve: Expanded the Elementor widget with a Range Slider styling section and typography controls for input text.
-* Improve: Exporting a form now bundles the submit button's custom SVG icon inside the export file, so the icon is recreated on the destination site and keeps working after the form is imported on another website.
-
-Fixes:
-* Fix: Several form and settings values no longer reset to their defaults after saving and reopening — page-redirect type, duplicate-submission prevention, and field style are all preserved.
-* Fix: Saving one Settings tab (General, Captcha, or SMTP) no longer clears the settings on the other tabs.
-* Fix: Custom column widths in the form builder are now kept when a form is saved.
-* Fix: Resolved a form scheduling issue so scheduled open/close windows behave correctly.
-* Fix: The submit button's Icon Color now applies reliably to both Dashicon and custom SVG icons — in the builder preview and on the front end — and the colour swatch updates live as you pick.
-* Fix: An icon-only submit button (an icon with no button text) is no longer reset to "Submit" after saving and reopening the form.
-* Fix: Tidied spacing and sizing across the form builder's field settings panel, so controls align consistently — the Quantity field's Min/Max/Default inputs, the "Enable search" toggle, the option and repeater "Add" buttons, and the payment product option rows.
-* Fix: The Documentation menu now also appears in the toolbar on the Integrations page, so the admin navigation is consistent across every screen.
-
-Maintenance:
-* Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
-
 = 1.1.1 =
 Improvements:
 * Improve: Redesigned the Integrations settings dialog, and a connection now switches on immediately after you save it — no second click needed.
@@ -480,9 +457,6 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
-
-= 1.1.2 =
-Adds Entries bulk actions and selective CSV export, a reorganised Tools screen with standalone entry export, an Upgrade to Pro comparison page, Elementor styling additions, and fixes for settings and column widths resetting after save. Recommended for all users.
 
 = 1.1.1 =
 Fixes Conditional Logic rule saving, improves the Integrations connect-and-enable flow, makes the Forms and Entries tables mobile-friendly, and adds an unread-entries menu badge. Recommended for all users.

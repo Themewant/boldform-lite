@@ -1,0 +1,101 @@
+.boldform-lite-builder-page {
+	max-width: 1200px;
+}
+
+.boldform-lite-builder-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin: 20px 0;
+}
+
+.boldform-lite-save-status {
+	min-height: 24px;
+	color: #2271b1;
+}
+
+.boldform-lite-builder-layout {
+	display: grid;
+	grid-template-columns: 260px 1fr;
+	gap: 20px;
+	align-items: start;
+}
+
+.boldform-lite-field-panel,
+.boldform-lite-preview-panel {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 20px;
+}
+
+.boldform-lite-field-buttons {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+}
+
+.boldform-lite-preview-list {
+	display: grid;
+	gap: 16px;
+}
+
+.boldform-lite-field-card {
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 16px;
+	background: #fdfdfd;
+}
+
+.boldform-lite-field-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 12px;
+}
+
+.boldform-lite-field-card label {
+	display: inline-block;
+	margin-bottom: 6px;
+	font-weight: 600;
+}
+
+.boldform-lite-field-preview {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid #dcdcde;
+}
+
+.boldform-lite-field-preview select,
+.boldform-lite-field-preview textarea,
+.boldform-lite-field-preview input[type="text"],
+.boldform-lite-field-preview input[type="email"] {
+	width: 100%;
+	max-width: 100%;
+}
+
+.boldform-lite-choice {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 400;
+}
+
+.boldform-lite-empty-state {
+	padding: 40px 20px;
+	text-align: center;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+	color: #646970;
+	background: #f6f7f7;
+}
+
+@media screen and (max-width: 782px) {
+	.boldform-lite-builder-toolbar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.boldform-lite-builder-layout {
+		grid-template-columns: 1fr;
+	}
+}

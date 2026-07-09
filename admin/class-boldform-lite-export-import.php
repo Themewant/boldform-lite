@@ -49,45 +49,37 @@ class BoldForm_Lite_Export_Import {
 	public function render_tools_tab( $settings ) {
 		global $wpdb;
 
-		$tools_sub = isset( $_GET['tools_tab'] ) ? sanitize_key( wp_unslash( $_GET['tools_tab'] ) ) : 'forms'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		// Back-compat: legacy export/import deep-links now live under the Forms tab.
-		if ( in_array( $tools_sub, array( 'export', 'import' ), true ) ) {
-			$tools_sub = 'forms';
-		}
-		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries' ), true ) ? $tools_sub : 'forms';
+		$tools_sub = isset( $_GET['tools_tab'] ) ? sanitize_key( wp_unslash( $_GET['tools_tab'] ) ) : 'export'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tools_sub = in_array( $tools_sub, array( 'export', 'import' ), true ) ? $tools_sub : 'export';
 
 		$notice = '';
 
 		if ( isset( $_GET['boldform_imported'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$count     = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$tools_sub = 'forms';
-			$notice    = sprintf(
+			$count    = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$tools_sub = 'import';
+			$notice   = sprintf(
 				/* translators: %d: number of forms imported */
 				_n( '%d form imported successfully.', '%d forms imported successfully.', $count, 'boldform-lite' ),
 				$count
 			);
 		}
-
-		$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
-		$forms       = $wpdb->get_results( $wpdb->prepare( "SELECT id, title FROM `{$forms_table}` WHERE status != %s ORDER BY title ASC", 'trash' ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		?>
 
 		<div class="boldform-smtp-subtabs">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' ) ); ?>" class="<?php echo 'forms' === $tools_sub ? 'active' : ''; ?>">
-				<?php esc_html_e( 'Forms', 'boldform-lite' ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=export' ) ); ?>" class="<?php echo 'export' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Export', 'boldform-lite' ); ?>
 			</a>
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=entries' ) ); ?>" class="<?php echo 'entries' === $tools_sub ? 'active' : ''; ?>">
-				<?php esc_html_e( 'Entries', 'boldform-lite' ); ?>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=import' ) ); ?>" class="<?php echo 'import' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Import', 'boldform-lite' ); ?>
 			</a>
 		</div>
 
-		<?php if ( 'forms' === $tools_sub ) : ?>
+		<?php if ( 'export' === $tools_sub ) : ?>
 
-			<?php if ( $notice ) : ?>
-				<div class="boldform-card boldform-card--success">
-					<p><?php echo esc_html( $notice ); ?></p>
-				</div>
-			<?php endif; ?>
+			<?php
+			$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
+			$forms       = $wpdb->get_results( $wpdb->prepare( "SELECT id, title FROM `{$forms_table}` WHERE status != %s ORDER BY title ASC", 'trash' ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			?>
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Export Forms & Settings', 'boldform-lite' ); ?></h3>
@@ -156,10 +148,9 @@ class BoldForm_Lite_Export_Import {
 						var formSelect=document.getElementById("boldform-export-form-select");
 						var entriesRow=document.getElementById("boldform-export-entries-row");
 						function toggle(){
-							var checked=document.querySelector("input[name=\'boldform_export_scope\']:checked");
-							if(!checked)return;
-							if(formSelect)formSelect.style.display=checked.value==="single"?"":"none";
-							if(entriesRow)entriesRow.style.display=checked.value==="settings_only"?"none":"";
+							var val=document.querySelector("input[name=\'boldform_export_scope\']:checked").value;
+							if(formSelect)formSelect.style.display=val==="single"?"":"none";
+							if(entriesRow)entriesRow.style.display=val==="settings_only"?"none":"";
 						}
 						for(var i=0;i<radios.length;i++)radios[i].addEventListener("change",toggle);
 						toggle();
@@ -167,6 +158,14 @@ class BoldForm_Lite_Export_Import {
 				);
 				?>
 			</div>
+
+		<?php else : ?>
+
+			<?php if ( $notice ) : ?>
+				<div class="boldform-card boldform-card--success">
+					<p><?php echo esc_html( $notice ); ?></p>
+				</div>
+			<?php endif; ?>
 
 			<div class="boldform-card boldform-card--spaced">
 				<h3><?php esc_html_e( 'Import Forms & Settings', 'boldform-lite' ); ?></h3>
@@ -187,100 +186,6 @@ class BoldForm_Lite_Export_Import {
 						<button type="submit" name="boldform_import" class="button button-primary"><?php esc_html_e( 'Upload & Import', 'boldform-lite' ); ?></button>
 					</div>
 				</form>
-			</div>
-
-		<?php else : ?>
-
-			<div class="boldform-card boldform-card--spaced">
-				<h3><?php esc_html_e( 'Export Entries', 'boldform-lite' ); ?></h3>
-				<p class="boldform-tab-description">
-					<?php
-					echo esc_html(
-						/**
-						 * Filters the Tools → Entries export panel description. An add-on
-						 * can replace it when it adds CSV/Excel/PDF format choices to this panel.
-						 *
-						 * @since 1.1.2
-						 *
-						 * @param string $description Default panel description.
-						 */
-						apply_filters(
-							'boldform_tools_entries_export_description',
-							__( 'Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen.', 'boldform-lite' )
-						)
-					);
-					?>
-				</p>
-
-				<form method="post">
-					<?php wp_nonce_field( 'boldform_lite_export', 'boldform_export_nonce' ); ?>
-					<input type="hidden" name="boldform_export_scope" value="entries_only">
-					<?php
-					/**
-					 * Fires at the top of the Tools → Entries export form so add-ons can add
-					 * export options (such as a CSV/Excel/PDF format selector). Runs
-					 * inside the form, before the "Which entries" scope control, so a handler's
-					 * inputs post together with the export.
-					 *
-					 * @since 1.1.2
-					 */
-					do_action( 'boldform_tools_entries_export_fields' );
-					?>
-
-					<div class="boldform-field-row">
-						<div class="boldform-field-label"><?php esc_html_e( 'Which entries', 'boldform-lite' ); ?></div>
-						<div class="boldform-field-control">
-							<div class="boldform-radio-list">
-								<label>
-									<input type="radio" name="boldform_entries_scope" value="all" checked>
-									<?php esc_html_e( 'All forms', 'boldform-lite' ); ?>
-								</label>
-								<label>
-									<input type="radio" name="boldform_entries_scope" value="single">
-									<?php esc_html_e( 'Single form', 'boldform-lite' ); ?>
-								</label>
-							</div>
-						</div>
-					</div>
-
-					<div class="boldform-field-row" id="boldform-entries-form-select" style="display:none;">
-						<div class="boldform-field-label"><label for="boldform-entries-form-id"><?php esc_html_e( 'Select form', 'boldform-lite' ); ?></label></div>
-						<div class="boldform-field-control">
-							<select id="boldform-entries-form-id" name="boldform_export_form_id" style="max-width:100%;">
-								<option value="0"><?php esc_html_e( '-- Select --', 'boldform-lite' ); ?></option>
-								<?php foreach ( $forms as $form ) : ?>
-									<option value="<?php echo absint( $form['id'] ); ?>">
-										<?php
-										/* translators: %d: form ID number */
-										echo esc_html( $form['title'] ? $form['title'] : sprintf( __( 'Form #%d', 'boldform-lite' ), (int) $form['id'] ) );
-										?>
-									</option>
-								<?php endforeach; ?>
-							</select>
-						</div>
-					</div>
-
-					<div class="boldform-submit-area">
-						<button type="submit" name="boldform_export" class="button button-primary"><?php esc_html_e( 'Download Export File', 'boldform-lite' ); ?></button>
-					</div>
-				</form>
-
-				<?php
-				wp_add_inline_script(
-					'boldform-lite-admin',
-					'(function(){
-						var radios=document.querySelectorAll("input[name=\'boldform_entries_scope\']");
-						var formSelect=document.getElementById("boldform-entries-form-select");
-						function toggle(){
-							var checked=document.querySelector("input[name=\'boldform_entries_scope\']:checked");
-							if(!checked)return;
-							if(formSelect)formSelect.style.display=checked.value==="single"?"":"none";
-						}
-						for(var i=0;i<radios.length;i++)radios[i].addEventListener("change",toggle);
-						toggle();
-					})();'
-				);
-				?>
 			</div>
 
 		<?php endif; ?>
@@ -328,13 +233,6 @@ class BoldForm_Lite_Export_Import {
 		} elseif ( 'settings_only' === $scope ) {
 			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 
-		} elseif ( 'entries_only' === $scope ) {
-			if ( $form_id > 0 ) {
-				$data['entries'] = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$entries_table}` WHERE form_id = %d ORDER BY id ASC", $form_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			} else {
-				$data['entries'] = $wpdb->get_results( "SELECT * FROM `{$entries_table}` ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-			}
-
 		} else {
 			$data['forms'] = $wpdb->get_results( "SELECT * FROM `{$forms_table}` WHERE status != 'trash' ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
@@ -345,18 +243,7 @@ class BoldForm_Lite_Export_Import {
 			$data['settings'] = $this->scrub_sensitive_settings( get_option( 'boldform_lite_settings', array() ) );
 		}
 
-		// Bundle any local SVG button icons referenced by the exported forms so the
-		// icon travels inside the export and can be recreated on the destination site.
-		// A button icon is stored only as a URL, which would 404 (or hot-link the
-		// source site) after importing elsewhere; embedding the bytes makes it portable.
-		if ( ! empty( $data['forms'] ) && is_array( $data['forms'] ) ) {
-			$bundled_media = $this->collect_form_media( $data['forms'] );
-			if ( ! empty( $bundled_media ) ) {
-				$data['media'] = $bundled_media;
-			}
-		}
-
-		$filename = ( 'entries_only' === $scope ? 'boldform-entries-' : 'boldform-export-' ) . gmdate( 'Y-m-d' ) . '.json';
+		$filename = 'boldform-export-' . gmdate( 'Y-m-d' ) . '.json';
 
 		nocache_headers();
 		header( 'Content-Type: application/json; charset=utf-8' );
@@ -395,208 +282,6 @@ class BoldForm_Lite_Export_Import {
 			}
 		}
 		return $settings;
-	}
-
-	/**
-	 * Collects the bytes of every local SVG button icon referenced by the given forms
-	 * so they can be embedded in the export and recreated on the destination site.
-	 *
-	 * Only reads .svg files that live inside THIS site's uploads directory (a realpath
-	 * containment check blocks path traversal), and caps each file at 256 KB. The map
-	 * is keyed by the exact icon URL as stored in the form settings, so the importer
-	 * can match and rewrite it.
-	 *
-	 * @param array<int, array<string, mixed>> $forms Raw exported form rows.
-	 * @return array<string, array{filename: string, mime: string, data: string}>
-	 */
-	private function collect_form_media( $forms ) {
-		$media      = array();
-		$upload_dir = wp_upload_dir();
-		$base_url   = isset( $upload_dir['baseurl'] ) ? (string) $upload_dir['baseurl'] : '';
-		$base_dir   = isset( $upload_dir['basedir'] ) ? (string) $upload_dir['basedir'] : '';
-		$base_real  = ( '' !== $base_dir ) ? realpath( $base_dir ) : false;
-
-		if ( '' === $base_url || false === $base_real ) {
-			return $media;
-		}
-
-		foreach ( $forms as $form ) {
-			$settings = isset( $form['settings_json'] ) ? json_decode( (string) $form['settings_json'], true ) : null;
-			if ( ! is_array( $settings ) ) {
-				continue;
-			}
-
-			$url = isset( $settings['button_icon_svg'] ) ? (string) $settings['button_icon_svg'] : '';
-			if ( '' === $url || isset( $media[ $url ] ) ) {
-				continue;
-			}
-
-			// Must be an SVG inside this site's uploads directory.
-			$path_only = (string) wp_parse_url( $url, PHP_URL_PATH );
-			if ( 0 !== strpos( $url, $base_url ) || 'svg' !== strtolower( (string) pathinfo( $path_only, PATHINFO_EXTENSION ) ) ) {
-				continue;
-			}
-
-			$real = realpath( $base_dir . substr( $url, strlen( $base_url ) ) );
-			if ( false === $real || 0 !== strpos( $real, $base_real ) || ! is_file( $real ) || ! is_readable( $real ) ) {
-				continue;
-			}
-
-			// An icon is a few KB; refuse to bloat the export with anything large.
-			if ( filesize( $real ) > 256 * 1024 ) {
-				continue;
-			}
-
-			$bytes = file_get_contents( $real ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			if ( false === $bytes || '' === $bytes ) {
-				continue;
-			}
-
-			$media[ $url ] = array(
-				'filename' => basename( $real ),
-				'mime'     => 'image/svg+xml',
-				'data'     => base64_encode( $bytes ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-			);
-		}
-
-		return $media;
-	}
-
-	/**
-	 * Recreates bundled SVG icons as fresh files in this site's uploads directory and
-	 * returns an old-URL => new-local-URL map for the importer to rewrite settings with.
-	 *
-	 * Each SVG is sanitized (script/handler stripping) before it is written, because the
-	 * file is directly servable at its URL. Anything that fails to decode, sanitize, or
-	 * write is skipped (the icon then falls back to its original URL — no worse than before).
-	 *
-	 * @param array<string, mixed> $media Bundled media map from the export file.
-	 * @return array<string, string> old URL => new local URL.
-	 */
-	private function restore_media( $media ) {
-		$map        = array();
-		$upload_dir = wp_upload_dir();
-
-		if ( ! empty( $upload_dir['error'] ) || empty( $upload_dir['path'] ) || empty( $upload_dir['url'] ) ) {
-			return $map;
-		}
-
-		foreach ( $media as $old_url => $item ) {
-			if ( ! is_array( $item ) || empty( $item['data'] ) ) {
-				continue;
-			}
-
-			// Only SVG icons are bundled/restored.
-			if ( 'image/svg+xml' !== ( isset( $item['mime'] ) ? (string) $item['mime'] : '' ) ) {
-				continue;
-			}
-
-			$bytes = base64_decode( (string) $item['data'], true ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-			if ( false === $bytes || '' === $bytes || strlen( $bytes ) > 256 * 1024 ) {
-				continue;
-			}
-
-			$bytes = $this->sanitize_svg_markup( $bytes );
-			if ( '' === $bytes ) {
-				continue;
-			}
-
-			$name = isset( $item['filename'] ) ? sanitize_file_name( (string) $item['filename'] ) : 'imported-icon.svg';
-			if ( 'svg' !== strtolower( (string) pathinfo( $name, PATHINFO_EXTENSION ) ) ) {
-				$name .= '.svg';
-			}
-			$name = wp_unique_filename( $upload_dir['path'], $name );
-			$dest = trailingslashit( $upload_dir['path'] ) . $name;
-
-			if ( ! $this->write_file( $dest, $bytes ) ) {
-				continue;
-			}
-
-			$map[ (string) $old_url ] = trailingslashit( $upload_dir['url'] ) . $name;
-		}
-
-		return $map;
-	}
-
-	/**
-	 * Strips active content (script elements, on* event handlers, javascript: hrefs)
-	 * from SVG markup so a restored icon file cannot execute if opened directly.
-	 *
-	 * @param string $svg Raw SVG markup.
-	 * @return string Sanitized SVG, or '' when the input is not a valid <svg> document.
-	 */
-	private function sanitize_svg_markup( $svg ) {
-		if ( ! class_exists( 'DOMDocument' ) ) {
-			return '';
-		}
-
-		$dom = new \DOMDocument();
-		libxml_use_internal_errors( true );
-		// LIBXML_NONET blocks network access; entities are not expanded (no NOENT).
-		$loaded = $dom->loadXML( $svg, LIBXML_NONET );
-		libxml_clear_errors();
-
-		if ( ! $loaded || ! $dom->documentElement || 'svg' !== strtolower( $dom->documentElement->nodeName ) ) {
-			return '';
-		}
-
-		// Remove every <script> element (iterate backwards over the live list).
-		$scripts = $dom->getElementsByTagName( 'script' );
-		for ( $i = $scripts->length - 1; $i >= 0; $i-- ) {
-			$node = $scripts->item( $i );
-			if ( $node && $node->parentNode ) {
-				$node->parentNode->removeChild( $node );
-			}
-		}
-
-		// Strip event-handler attributes and javascript: hrefs from every element.
-		$xpath = new \DOMXPath( $dom );
-		$nodes = $xpath->query( '//*' );
-		if ( $nodes ) {
-			foreach ( $nodes as $el ) {
-				if ( ! $el->attributes ) {
-					continue;
-				}
-				for ( $j = $el->attributes->length - 1; $j >= 0; $j-- ) {
-					$attr  = $el->attributes->item( $j );
-					$aname = strtolower( $attr->nodeName );
-					$aval  = trim( (string) $attr->nodeValue );
-					if (
-						0 === strpos( $aname, 'on' )
-						|| ( in_array( $aname, array( 'href', 'xlink:href' ), true ) && 0 === stripos( $aval, 'javascript:' ) )
-					) {
-						$el->removeAttribute( $attr->nodeName );
-					}
-				}
-			}
-		}
-
-		$out = $dom->saveXML( $dom->documentElement );
-
-		return is_string( $out ) ? $out : '';
-	}
-
-	/**
-	 * Writes bytes to a path via WP_Filesystem (standards-compliant, no direct fopen).
-	 *
-	 * @param string $path     Absolute destination path.
-	 * @param string $contents File contents.
-	 * @return bool True on success.
-	 */
-	private function write_file( $path, $contents ) {
-		global $wp_filesystem;
-
-		if ( ! function_exists( 'WP_Filesystem' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-		if ( empty( $wp_filesystem ) ) {
-			WP_Filesystem();
-		}
-		if ( ! $wp_filesystem ) {
-			return false;
-		}
-
-		return (bool) $wp_filesystem->put_contents( $path, $contents, FS_CHMOD_FILE );
 	}
 
 	/**
@@ -645,7 +330,7 @@ class BoldForm_Lite_Export_Import {
 
 		$imported = $this->import_data( $data );
 
-		wp_safe_redirect( add_query_arg( 'boldform_imported', $imported, admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' ) ) );
+		wp_safe_redirect( add_query_arg( 'boldform_imported', $imported, admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=import' ) ) );
 		exit;
 	}
 
@@ -669,10 +354,6 @@ class BoldForm_Lite_Export_Import {
 		$forms_imported = 0;
 		$id_map         = array();
 
-		// Recreate any bundled SVG icons as local files first, so each form's icon URL
-		// can be rewritten to the new local copy (keeping the icon working post-import).
-		$media_map = ( ! empty( $data['media'] ) && is_array( $data['media'] ) ) ? $this->restore_media( $data['media'] ) : array();
-
 		if ( ! empty( $data['forms'] ) && is_array( $data['forms'] ) ) {
 			$forms_table = $this->plugin->get_forms_table_name();
 
@@ -683,16 +364,6 @@ class BoldForm_Lite_Export_Import {
 				// so an imported file cannot store unvalidated field types or raw values.
 				$structure_decoded = isset( $form['fields_json'] ) ? json_decode( wp_unslash( (string) $form['fields_json'] ), true ) : array();
 				$settings_decoded  = isset( $form['settings_json'] ) ? json_decode( wp_unslash( (string) $form['settings_json'] ), true ) : array();
-
-				// Point the button icon at the freshly-recreated local file (if bundled),
-				// before normalize_form_settings() esc_url_raw()s it into the trusted row.
-				if ( ! empty( $media_map ) && is_array( $settings_decoded )
-					&& isset( $settings_decoded['button_icon_svg'] )
-					&& isset( $media_map[ (string) $settings_decoded['button_icon_svg'] ] )
-				) {
-					$settings_decoded['button_icon_svg'] = $media_map[ (string) $settings_decoded['button_icon_svg'] ];
-				}
-
 				$fields_json       = wp_json_encode( array( 'rows' => BoldForm_Lite_Ajax_Save::prepare_rows( is_array( $structure_decoded ) ? $structure_decoded : array() ) ) );
 				$settings_json     = wp_json_encode( BoldForm_Lite_Ajax_Save::normalize_form_settings( is_array( $settings_decoded ) ? $settings_decoded : array() ) );
 				$status            = isset( $form['status'] ) ? sanitize_key( (string) $form['status'] ) : 'draft';
