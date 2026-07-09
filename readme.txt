@@ -82,12 +82,15 @@ Every submission is saved to a custom database table — a permanent record, ind
 
 = Spam Protection =
 
-* **Honeypot** — an invisible field that catches bots automatically, with zero setup.
-* **Math Captcha** — a simple arithmetic challenge that works out of the box, no API keys.
-* **Google reCAPTCHA v2** — checkbox challenge (requires your site and secret keys).
-* **hCaptcha** — a privacy-friendly alternative (requires your hCaptcha keys).
+* **Honeypot** — Invisible hidden field catches bots automatically, no setup required
+* **Google reCAPTCHA v2** — Checkbox challenge; requires a site key and secret key from Google
+* **hCaptcha** — Privacy-friendly alternative to reCAPTCHA; requires keys from hCaptcha
+* **Cloudflare Turnstile** — Modern, no-puzzle captcha from Cloudflare; requires keys from the Cloudflare dashboard
+* **Math Captcha** — Simple arithmetic challenge, works out of the box with no API keys
 
-= Email Notifications & Marketing Integrations =
+---
+
+= Email Marketing Integrations =
 
 * **Email Notifications** — send an admin notification on every submission, with a custom "From" name, reply-to, subject, and message body. Test delivery straight from the settings panel.
 * **SMTP** — route outgoing mail through your own SMTP server for reliable delivery.
@@ -180,13 +183,9 @@ Go to **BoldForm → Settings → Captcha** and choose a provider. Honeypot prot
 
 Yes. Add a connection under **BoldForm → Settings → Integrations**, then assign it to a form and map the email, first-name, and last-name fields. Subscribers are added automatically on submission.
 
-= Can I move my forms to another site? =
+= How do I enable spam protection? =
 
-Yes. Use **BoldForm → Tools** to export your forms, a single form with its entries, or your global settings as a JSON file, then import them on the destination site with one click.
-
-= Does it work with the block editor and Elementor? =
-
-Yes. BoldForm provides a native Gutenberg block (Block API v3, with a styled in-editor preview) and a native Elementor widget with full styling controls.
+Go to **BoldForm > Settings > Captcha**. Choose your preferred provider (Honeypot is always active). Enter API keys for reCAPTCHA, hCaptcha, or Cloudflare Turnstile if you select those.
 
 = Is BoldForm multisite compatible? =
 
@@ -255,6 +254,19 @@ When a page with an hCaptcha-enabled form is loaded, the hCaptcha script is load
 * Service provider: Intuition Machines, Inc.
 * Terms of Service: https://www.hcaptcha.com/terms
 * Privacy Policy: https://www.hcaptcha.com/privacy
+
+= Cloudflare Turnstile =
+
+Modern, privacy-friendly spam protection with no visual puzzles.
+
+When a page with a Turnstile-enabled form is loaded, the Turnstile script is loaded from Cloudflare's servers. On submission, the token and visitor IP are sent to Cloudflare's verification API.
+
+* Data sent: Turnstile response token, visitor IP address
+* When: Each form submission with Turnstile enabled
+* Condition: Only when "Cloudflare Turnstile" is selected in BoldForm > Settings > Captcha and valid keys are entered
+* Service provider: Cloudflare, Inc.
+* Terms of Service: https://www.cloudflare.com/website-terms/
+* Privacy Policy: https://www.cloudflare.com/privacypolicy/
 
 = Mailchimp =
 

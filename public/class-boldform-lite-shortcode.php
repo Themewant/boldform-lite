@@ -678,12 +678,13 @@ class BoldForm_Lite_Shortcode {
 		$saved = is_array( $saved ) ? $saved : array();
 
 		$provider = isset( $saved['captcha_provider'] ) ? sanitize_key( (string) $saved['captcha_provider'] ) : 'simple_math';
-		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $provider : 'simple_math';
+		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $provider : 'simple_math';
 
 		return array(
 			'provider'           => $provider,
 			'recaptcha_site_key' => isset( $saved['recaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['recaptcha_site_key'] ) : '',
 			'hcaptcha_site_key'  => isset( $saved['hcaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['hcaptcha_site_key'] ) : '',
+			'turnstile_site_key' => isset( $saved['turnstile_site_key'] ) ? sanitize_text_field( (string) $saved['turnstile_site_key'] ) : '',
 		);
 	}
 
@@ -714,6 +715,16 @@ class BoldForm_Lite_Shortcode {
 			wp_enqueue_script(
 				'boldform-lite-hcaptcha',
 				'https://js.hcaptcha.com/1/api.js',
+				array(),
+				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
+				true
+			);
+		}
+
+		if ( 'turnstile' === $captcha['provider'] && ! empty( $captcha['turnstile_site_key'] ) ) {
+			wp_enqueue_script(
+				'boldform-lite-turnstile',
+				'https://challenges.cloudflare.com/turnstile/v0/api.js',
 				array(),
 				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
 				true
@@ -772,6 +783,13 @@ class BoldForm_Lite_Shortcode {
 			return sprintf(
 				'<div class="boldform-lite-form__captcha"><div class="h-captcha" data-sitekey="%s"></div></div>',
 				esc_attr( (string) $captcha['hcaptcha_site_key'] )
+			);
+		}
+
+		if ( 'turnstile' === $captcha['provider'] && ! empty( $captcha['turnstile_site_key'] ) ) {
+			return sprintf(
+				'<div class="boldform-lite-form__captcha"><div class="cf-turnstile" data-sitekey="%s"></div></div>',
+				esc_attr( (string) $captcha['turnstile_site_key'] )
 			);
 		}
 
