@@ -81,6 +81,61 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
+	 * Allows CSS mask properties used for inline SVG icon tinting.
+	 *
+	 * @param array<int, string> $styles CSS property allowlist.
+	 * @return array<int, string>
+	 */
+	public function allow_mask_safe_style_css( $styles ) {
+		$styles[] = '-webkit-mask';
+		$styles[] = 'mask';
+
+		return array_unique( $styles );
+	}
+
+	/**
+	 * Allows safe URL-based mask values after wp_kses validates the property name.
+	 *
+	 * WordPress does not treat mask as a URL-capable CSS property internally, so it
+	 * leaves the url() token in the safety test string and strips the declaration.
+	 *
+	 * @param bool   $allow_css       Whether the CSS is currently considered safe.
+	 * @param string $css_test_string CSS declaration being tested.
+	 * @return bool
+	 */
+	public function allow_mask_safe_style_value( $allow_css, $css_test_string ) {
+		if ( $allow_css ) {
+			return true;
+		}
+
+		if ( ! preg_match( '/^(-webkit-mask|mask)\s*:\s*url\(\s*([\'"]?)([^\'")]+)\2\s*\)\s+center\s*\/\s*contain\s+no-repeat$/i', trim( $css_test_string ), $matches ) ) {
+			return false;
+		}
+
+		$url = trim( $matches[3] );
+
+		return '' !== $url && wp_kses_bad_protocol( $url, wp_allowed_protocols() ) === $url;
+	}
+
+	/**
+	 * Sanitizes field markup with the SVG icon mask CSS allowances scoped to this call.
+	 *
+	 * @param string $html Field HTML.
+	 * @return string
+	 */
+	private function kses_field_html( $html ) {
+		add_filter( 'safe_style_css', array( $this, 'allow_mask_safe_style_css' ) );
+		add_filter( 'safecss_filter_attr_allow_css', array( $this, 'allow_mask_safe_style_value' ), 10, 2 );
+
+		$sanitized = wp_kses( $html, $this->get_field_kses_allowed() );
+
+		remove_filter( 'safecss_filter_attr_allow_css', array( $this, 'allow_mask_safe_style_value' ), 10 );
+		remove_filter( 'safe_style_css', array( $this, 'allow_mask_safe_style_css' ) );
+
+		return $sanitized;
+	}
+
+	/**
 	 * Returns a cache-busting version string for a bundled asset.
 	 *
 	 * Uses the file's modification time so the browser re-fetches the asset whenever
@@ -286,7 +341,7 @@ class BoldForm_Lite_Shortcode {
 									if ( in_array( $field_type, array( 'paragraph', 'html_editor' ), true ) ) {
 										echo wp_kses_post( $field_html );
 									} else {
-										echo wp_kses( $field_html, $this->get_field_kses_allowed() );
+										echo $this->kses_field_html( $field_html );
 									}
 									?>
 								<?php endforeach; ?>
@@ -309,7 +364,7 @@ class BoldForm_Lite_Shortcode {
 				$aria_label   = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
 				?>
 				<button type="<?php echo $is_preview ? 'button' : 'submit'; ?>" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-					<?php echo wp_kses( $this->build_button_content( $form_settings ), $this->get_field_kses_allowed() ); ?>
+					<?php echo $this->kses_field_html( $this->build_button_content( $form_settings ) ); ?>
 				</button>
 			</div>
 			<?php endif; ?>
@@ -1089,7 +1144,7 @@ class BoldForm_Lite_Shortcode {
 		$gap      = absint( $settings['button_icon_gap'] ?? 8 );
 
 		$icon_size  = absint( $settings['button_icon_size'] ?? 18 );
-		$icon_color = ! empty( $settings['button_icon_color'] ) ? $settings['button_icon_color'] : '';
+		$icon_color = ! empty( $settings['button_icon_color'] ) ? sanitize_hex_color( (string) $settings['button_icon_color'] ) : '';
 		$icon_style = '';
 		if ( $icon_size && 18 !== $icon_size ) {
 			$icon_style .= 'font-size:' . $icon_size . 'px;width:' . $icon_size . 'px;height:' . $icon_size . 'px;';
@@ -1113,7 +1168,7 @@ class BoldForm_Lite_Shortcode {
 				// shape masks a solid background-color, so it recolours reliably no
 				// matter how the file declares its own fills (a root fill override only
 				// works when every shape inherits fill). Matches the builder preview.
-				$mask_ref  = "url('" . esc_url( $svg_url ) . "') center / contain no-repeat";
+				$mask_ref  = 'url(' . esc_url( $svg_url ) . ') center / contain no-repeat';
 				$svg_style = 'display:inline-block;vertical-align:middle;flex-shrink:0;'
 					. 'width:' . $img_w . 'px;height:' . $img_w . 'px;'
 					. 'background-color:' . $icon_color . ';'

@@ -1981,7 +1981,7 @@
 .boldform-canvas .boldform-canvas-field-body textarea,
 .boldform-canvas .boldform-canvas-field-body select,
 .boldform-canvas .boldform-canvas-field-body .bf-select__trigger,
-.boldform-template-preview__canvas input,
+.boldform-template-preview__canvas input:not([type="radio"]):not([type="checkbox"]),
 .boldform-template-preview__canvas textarea,
 .boldform-template-preview__canvas select,
 .boldform-template-preview__canvas .bf-select__trigger {
@@ -4632,7 +4632,7 @@
 	color: #0f172a;
 }
 
-.boldform-template-preview-field input,
+.boldform-template-preview-field input:not([type="radio"]):not([type="checkbox"]),
 .boldform-template-preview-field textarea,
 .boldform-template-preview-field select {
 	width: 100%;
