@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.2
+Stable tag: 1.1.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -312,6 +312,13 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.3 =
+New features:
+* New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
+
+Developer:
+* Developer: New entry-detail extension points — the `boldform_entry_detail_sidebar` action and `boldform_entry_detail_enqueue_assets` action let add-ons render cards (and load their assets) on the single-entry screen.
+
 = 1.1.2 =
 Improvements:
 * Improve: Added an "Upgrade to Pro" page and CTAs comparing Free vs Pro features, so it's easy to see what BoldForm Pro adds.
@@ -448,6 +455,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.3 =
+Adds Cloudflare Turnstile as a captcha option (server-side verified) and new entry-detail extension hooks for add-ons. Recommended for all users.
 
 = 1.1.2 =
 Adds Entries bulk actions and selective CSV export, a reorganised Tools screen with standalone entry export, an Upgrade to Pro comparison page, Elementor styling additions, and fixes for settings and column widths resetting after save. Recommended for all users.
