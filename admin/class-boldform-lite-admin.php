@@ -24,11 +24,14 @@ class BoldForm_Lite_Admin {
 	const DISMISSED_NOTICES_META = 'boldform_lite_dismissed_notices';
 
 	/**
-	 * Notice id for the BoldForm Pro waitlist banner.
+	 * Notice id for the BoldForm Pro promo banner.
+	 *
+	 * A fresh id (was 'pro_waitlist') so anyone who dismissed the old
+	 * "launching soon" waitlist banner still sees this new sale banner once.
 	 *
 	 * @var string
 	 */
-	const NOTICE_PRO_WAITLIST = 'pro_waitlist';
+	const NOTICE_PRO_SALE = 'pro_early_bird_sale';
 
 	/**
 	 * Main plugin instance.
@@ -1583,10 +1586,9 @@ class BoldForm_Lite_Admin {
 
 		$rendered = true;
 
-		$waitlist_url = 'https://themewant.com/waitlist/';
-		$learn_url    = 'https://themewant.com/plugins/boldform/';
+		$sale_url = 'https://themewant.com/plugins/boldform/';
 		?>
-		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_WAITLIST ); ?>">
+		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_SALE ); ?>">
 
 			<button type="button" class="boldform-admin-notice__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
@@ -1595,22 +1597,18 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-admin-notice__inner">
 				<div class="boldform-admin-notice__content">
 					<span class="boldform-admin-notice__badge">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3"/><path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3"/><circle cx="15" cy="9" r="1"/></svg>
-						<?php esc_html_e( 'Early Access', 'boldform-lite' ); ?>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+						<?php esc_html_e( 'Early Bird Sale', 'boldform-lite' ); ?>
 					</span>
 
-					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
+					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'BoldForm Pro is now available. For a limited time, unlock every Pro feature at 70% off with our Early Bird launch discount.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
-						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-							<?php esc_html_e( 'Join the Waitlist', 'boldform-lite' ); ?>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-						</a>
-						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-admin-notice__link" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Learn More', 'boldform-lite' ); ?>
+						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+							<?php esc_html_e( 'Get 70% Off', 'boldform-lite' ); ?>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
 						</a>
 					</div>
@@ -1715,7 +1713,7 @@ class BoldForm_Lite_Admin {
 	 * @return bool
 	 */
 	private function should_show_waitlist_notice() {
-		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_WAITLIST );
+		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_SALE );
 	}
 
 	/**
