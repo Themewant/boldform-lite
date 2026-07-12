@@ -206,14 +206,31 @@ class BoldForm_Lite_Admin {
 		do_action( 'boldform_admin_menu', $this );
 
 		// Highlighted "Upgrade to Pro" as the final submenu item, opening an in-dashboard
-		// Free-vs-Pro comparison page. Shown by default; hidden when a
-		// boldform_show_upgrade_cta callback returns false. The inline-styled span gives
-		// the menu label its red accent without needing a separate stylesheet.
+		// Free-vs-Pro comparison page. Shown by default; the label's red accent is set
+		// inline so no separate stylesheet is needed. When the CTA is suppressed (Pro
+		// active, or a boldform_show_upgrade_cta callback returning false) the menu item
+		// is hidden. If Pro is active we still REGISTER the page — but remove it from the
+		// menu — so a bookmarked Upgrade URL resolves to render_upgrade_page()'s friendly
+		// "you're on Pro" panel instead of WordPress's "not allowed" screen.
 		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			$this->upgrade_page_hook = add_submenu_page(
 				'boldform-lite',
 				__( 'Upgrade to Pro', 'boldform-lite' ),
 				'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
+				'manage_options',
+				'boldform-lite-upgrade',
+				array( $this, 'render_upgrade_page' )
+			);
+		} elseif ( $this->is_pro_active() ) {
+			// Register the page under an empty parent: it stays reachable by URL (so a
+			// bookmarked Upgrade link resolves to render_upgrade_page()'s "you're on Pro"
+			// panel) but never appears in any menu. WordPress authorises the request via
+			// $_registered_pages['admin_page_boldform-lite-upgrade'], which this sets. An
+			// empty string (not null) avoids PHP 8.1+ null-to-string deprecations in core.
+			$this->upgrade_page_hook = add_submenu_page(
+				'',
+				__( 'Upgrade to Pro', 'boldform-lite' ),
+				__( 'Upgrade to Pro', 'boldform-lite' ),
 				'manage_options',
 				'boldform-lite-upgrade',
 				array( $this, 'render_upgrade_page' )
@@ -1729,11 +1746,41 @@ class BoldForm_Lite_Admin {
 	 * @return bool
 	 */
 	private function should_show_pro_notice() {
-		if ( $this->is_upgrade_screen() ) {
+		// Never upsell someone who already runs Pro, and skip the Upgrade page
+		// (itself a full upgrade pitch) where the banner would be redundant.
+		if ( $this->is_pro_active() || $this->is_upgrade_screen() ) {
 			return false;
 		}
 
 		return $this->should_show_notice( self::NOTICE_PRO_SALE );
+	}
+
+	/**
+	 * Whether BoldForm Pro is active.
+	 *
+	 * Pro defines BOLDFORM_PRO_VERSION at load time (before its own dependency
+	 * gate), so the constant is present whenever the Pro plugin is active — the
+	 * reliable signal for Lite to hide Pro upsell UI.
+	 *
+	 * @return bool
+	 */
+	private function is_pro_active() {
+		return defined( 'BOLDFORM_PRO_VERSION' );
+	}
+
+	/**
+	 * Hides every "Upgrade to Pro" CTA when Pro is active.
+	 *
+	 * Filter callback for `boldform_show_upgrade_cta`, which the Upgrade menu item,
+	 * plugin-row link, topbar nav item, and page-header button all honour. Forces
+	 * false when Pro runs so paying users are never nagged; otherwise passes the
+	 * value through untouched so resellers can still control it.
+	 *
+	 * @param bool $show Whether the CTAs should show.
+	 * @return bool
+	 */
+	public function hide_upgrade_cta_when_pro_active( $show ) {
+		return $this->is_pro_active() ? false : $show;
 	}
 
 	/**
@@ -1971,6 +2018,32 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_upgrade_page() {
+		// Never pitch Pro to someone already running it. The Upgrade CTAs are hidden
+		// when Pro is active, so this page is normally unreachable then — but a
+		// bookmarked URL (or a reseller who force-enables the CTA) could still land
+		// here, so show a friendly "you're on Pro" state instead of the comparison.
+		if ( $this->is_pro_active() ) {
+			$this->render_admin_topbar( 'boldform-lite-upgrade' );
+			?>
+			<div class="wrap boldform-upgrade-page">
+				<hr class="wp-header-end">
+				<div class="boldform-up-hero">
+					<span class="boldform-up-badge">
+						<span class="dashicons dashicons-yes" aria-hidden="true"></span>
+						<?php esc_html_e( 'Pro active', 'boldform-lite' ); ?>
+					</span>
+					<h1><?php esc_html_e( "You're on BoldForm Pro", 'boldform-lite' ); ?></h1>
+					<p><?php esc_html_e( 'Every premium feature is unlocked — payments, multi-page forms, advanced fields, and 35+ integrations are ready to use inside your forms.', 'boldform-lite' ); ?></p>
+					<a class="boldform-up-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>">
+						<?php esc_html_e( 'Go to your forms', 'boldform-lite' ); ?>
+						<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+					</a>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
 		// Destination for the buy buttons. Filterable so resellers can repoint it.
 		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://themewant.com/plugins/boldform/' );
 

@@ -319,6 +319,7 @@ New features:
 Improvements:
 * Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action. It no longer appears on the Upgrade to Pro page, where it would be redundant.
 * Improve: Refreshed the Upgrade to Pro page header — it now leads with the current offer, clearer benefit copy, a stronger call to action, and at-a-glance reassurances (instant access, automatic updates, priority support).
+* Improve: When BoldForm Pro is active, every "Upgrade to Pro" prompt is now hidden — the promo notice, the menu item, the toolbar button, and the page-header link — and the Upgrade page shows a short "You're on Pro" confirmation instead of the comparison, so paying users are never shown upgrade nags.
 
 Fixes:
 * Fix: The Forms list row-actions ("...") menu is no longer clipped by the table card — it now opens fully and stays visible.
