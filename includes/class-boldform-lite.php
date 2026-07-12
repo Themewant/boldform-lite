@@ -199,7 +199,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_assets' );
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_admin_notice_assets' );
-		$this->loader->add_action( 'admin_notices', $this->admin, 'maybe_render_waitlist_notice' );
+		$this->loader->add_action( 'admin_notices', $this->admin, 'maybe_render_pro_notice' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_dismiss_notice', $this->admin, 'ajax_dismiss_notice' );
 		$this->loader->add_filter( 'upload_mimes', $this->admin, 'allow_svg_upload' );
 		$this->loader->add_filter( 'wp_check_filetype_and_ext', $this->admin, 'fix_svg_filetype', 10, 4 );

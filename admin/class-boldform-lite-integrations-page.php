@@ -111,7 +111,7 @@ class BoldForm_Lite_Integrations_Page {
 		// Strip third-party admin notices so only BoldForm's own show. Defer to
 		// in_admin_header (the last hook before notices render) because some plugins
 		// register their notices as late as admin_head — after this enqueue pass.
-		// Re-add BoldForm's own notices afterwards (settings errors + Pro waitlist)
+		// Re-add BoldForm's own notices afterwards (settings errors + Pro promo)
 		// so they survive the purge here too. Re-adding the SAME callback the main
 		// purge uses (BoldForm_Lite_Admin::render_own_notices) keeps both screens
 		// consistent — see BoldForm_Lite_Admin::suppress_foreign_notices().

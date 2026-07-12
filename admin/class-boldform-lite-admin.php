@@ -1543,7 +1543,7 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders only BoldForm admin notices.
 	 *
-	 * Also re-emits the Pro waitlist notice here: on BoldForm screens the global
+	 * Also re-emits the Pro promo notice here: on BoldForm screens the global
 	 * admin_notices hook is purged (suppress_foreign_notices), so without this the
 	 * notice would show everywhere EXCEPT BoldForm's own pages. render_own_notices()
 	 * is the one callback re-added after the purge, so routing it through here keeps
@@ -1554,11 +1554,11 @@ class BoldForm_Lite_Admin {
 	 */
 	public function render_own_notices() {
 		settings_errors( 'boldform_lite_settings' );
-		$this->maybe_render_waitlist_notice();
+		$this->maybe_render_pro_notice();
 	}
 
 	/**
-	 * Outputs the dismissible "BoldForm Pro waitlist" admin notice.
+	 * Outputs the dismissible BoldForm Pro promo admin notice.
 	 *
 	 * Shown on every admin screen to administrators who have not dismissed it. A thin
 	 * consumer of the shared admin-notice layer: it outputs this notice's specific
@@ -1573,14 +1573,14 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @return void
 	 */
-	public function maybe_render_waitlist_notice() {
+	public function maybe_render_pro_notice() {
 		static $rendered = false;
 
 		if ( $rendered ) {
 			return;
 		}
 
-		if ( ! $this->should_show_waitlist_notice() ) {
+		if ( ! $this->should_show_notice( self::NOTICE_PRO_SALE ) ) {
 			return;
 		}
 
@@ -1705,15 +1705,17 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Whether the Pro waitlist notice should be shown to the current user.
+	 * Whether a given admin notice should be shown to the current user.
 	 *
 	 * Single source of truth for both the asset enqueue and the markup render, so
-	 * the stylesheet/script only load when the notice will actually appear.
+	 * the stylesheet/script only load when the notice will actually appear. Pass any
+	 * notice identifier so this gates every BoldForm admin notice, not just one.
 	 *
+	 * @param string $notice_id Notice identifier (e.g. self::NOTICE_PRO_SALE).
 	 * @return bool
 	 */
-	private function should_show_waitlist_notice() {
-		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_SALE );
+	private function should_show_notice( $notice_id ) {
+		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( $notice_id );
 	}
 
 	/**
@@ -1728,8 +1730,8 @@ class BoldForm_Lite_Admin {
 	 */
 	public function enqueue_admin_notice_assets() {
 		// Load only when at least one BoldForm admin notice will render. Extend this
-		// condition (|| $this->should_show_x_notice()) as more notices are added.
-		if ( ! $this->should_show_waitlist_notice() ) {
+		// condition (|| $this->should_show_notice( self::NOTICE_OTHER )) as more notices are added.
+		if ( ! $this->should_show_notice( self::NOTICE_PRO_SALE ) ) {
 			return;
 		}
 
