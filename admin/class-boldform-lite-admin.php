@@ -311,7 +311,9 @@ class BoldForm_Lite_Admin {
 
 		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Trashed entries never count toward the menu's unread badge, even though they
+		// keep their pre-trash status (which may be 'unread') for restore.
+		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		set_transient( 'boldform_lite_unread_count', $count, 5 * MINUTE_IN_SECONDS );
 
@@ -1366,17 +1368,18 @@ class BoldForm_Lite_Admin {
 						function refreshBulkBar(){
 							var ids=selectedIds(),n=ids.length;
 							var $count=$("#boldform-bulk-count");
-							// Bar stays put; the count text + Export Selected button show once something is selected.
-							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");$("#boldform-bulk-export").removeAttr("hidden");}
-							else{$count.attr("hidden",true);$("#boldform-bulk-export").attr("hidden",true);}
+							// Bar stays put; the count text + Export Selected dropdown show once something is selected.
+							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");$("#boldform-bulk-export-dd").removeAttr("hidden");}
+							else{$count.attr("hidden",true);$("#boldform-bulk-export-dd").attr("hidden",true).removeClass("is-open");}
 							var total=$(".boldform-entry-checkbox").length;
 							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
 						}
-						// Export Selected — POST the chosen ids to the CSV endpoint (a POST form, not a
-						// GET URL, so any number of selected ids works without hitting URL length limits).
-						$("#boldform-bulk-export").on("click",function(){
+						// Export CSV (dropdown item) — POST the chosen ids to the CSV endpoint (a POST
+						// form, not a GET URL, so any number of selected ids works without URL limits).
+						$("#boldform-bulk-export-csv").on("click",function(){
 							var ids=selectedIds();
 							if(!ids.length)return;
+							$("#boldform-bulk-export-dd").removeClass("is-open");
 							var $f=$("<form>",{method:"post",action:boldformAdminEntries.exportUrl,style:"display:none"});
 							$f.append($("<input>",{type:"hidden",name:"boldform_export_csv",value:"1"}));
 							$f.append($("<input>",{type:"hidden",name:"_wpnonce",value:boldformAdminEntries.exportNonce}));
@@ -2646,6 +2649,7 @@ class BoldForm_Lite_Admin {
 		$count_read   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'read' ) ) );
 		$count_starred = $this->get_entries_count( array_merge( $filters, array( 'status' => 'starred' ) ) );
 		$count_spam    = $this->get_entries_count( array_merge( $filters, array( 'status' => 'spam' ) ) );
+		$count_trash   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'trash' ) ) );
 
 		$base_url = admin_url( 'admin.php?page=boldform-lite-entries' );
 		$notice   = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -2707,6 +2711,10 @@ class BoldForm_Lite_Admin {
 				<div class="boldform-card boldform-card--success" style="margin-bottom:16px;">
 					<p><?php esc_html_e( 'Entry deleted successfully.', 'boldform-lite' ); ?></p>
 				</div>
+			<?php elseif ( 'entry_trashed' === $notice ) : ?>
+				<div class="boldform-card boldform-card--success" style="margin-bottom:16px;">
+					<p><?php esc_html_e( 'Entry moved to Trash.', 'boldform-lite' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<!-- Filters bar -->
@@ -2728,6 +2736,10 @@ class BoldForm_Lite_Admin {
 						</a>
 						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'spam' ) ) ); ?>" class="boldform-entries-tab<?php echo 'spam' === $filter_status ? ' is-active' : ''; ?>">
 							<?php esc_html_e( 'Spam', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_spam ); ?></span>
+						</a>
+						<?php // Trash tab is always shown (with a 0 count when empty) so it stays a discoverable, fixed destination. ?>
+						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'trash' ) ) ); ?>" class="boldform-entries-tab<?php echo 'trash' === $filter_status ? ' is-active' : ''; ?>">
+							<?php esc_html_e( 'Trash', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_trash ); ?></span>
 						</a>
 					</div>
 				</div>
@@ -2816,28 +2828,44 @@ class BoldForm_Lite_Admin {
 					<span class="boldform-bulk-bar__count" id="boldform-bulk-count" hidden></span>
 					<select id="boldform-bulk-action" class="boldform-bulk-bar__select">
 						<option value=""><?php esc_html_e( 'Bulk actions', 'boldform-lite' ); ?></option>
-						<option value="read"><?php esc_html_e( 'Mark as Read', 'boldform-lite' ); ?></option>
-						<option value="unread"><?php esc_html_e( 'Mark as Unread', 'boldform-lite' ); ?></option>
-						<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
-						<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
-						<option value="delete"><?php esc_html_e( 'Delete permanently', 'boldform-lite' ); ?></option>
+						<?php if ( 'trash' === $filter_status ) : ?>
+							<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
+							<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
+						<?php else : ?>
+							<option value="read"><?php esc_html_e( 'Mark as Read', 'boldform-lite' ); ?></option>
+							<option value="unread"><?php esc_html_e( 'Mark as Unread', 'boldform-lite' ); ?></option>
+							<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
+							<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
+							<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+						<?php endif; ?>
 					</select>
 					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
-					<button type="button" class="boldform-bulk-bar__export" id="boldform-bulk-export" hidden>
-						<span class="dashicons dashicons-download"></span>
-						<?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?>
-					</button>
-					<?php
-					/**
-					 * Fires inside the Entries bulk-action bar, after the "Export Selected"
-					 * (CSV) button, so add-ons can offer more selected-rows export formats
-					 * (such as Excel and PDF). Handlers own their button markup and
-					 * the JS that collects the checked entry ids and posts to their endpoint.
-					 *
-					 * @since 1.1.2
-					 */
-					do_action( 'boldform_entries_bulk_export_actions' );
-					?>
+					<?php // Export-selected menu: a single dropdown replaces the row of format buttons. Shown only while rows are selected (JS toggles the `hidden` attribute). ?>
+					<div class="boldform-dropdown boldform-bulk-export-dd" id="boldform-bulk-export-dd" hidden>
+						<button type="button" class="boldform-dropdown__trigger">
+							<span class="dashicons dashicons-download"></span>
+							<span class="boldform-dropdown__label"><?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?></span>
+							<span class="boldform-dropdown__arrow"></span>
+						</button>
+						<div class="boldform-dropdown__panel">
+							<button type="button" class="boldform-dropdown__item" id="boldform-bulk-export-csv">
+								<span class="dashicons dashicons-media-text"></span>
+								<?php esc_html_e( 'Export CSV', 'boldform-lite' ); ?>
+							</button>
+							<?php
+							/**
+							 * Fires inside the Entries "Export Selected" dropdown, after the CSV
+							 * item, so add-ons can add more selected-rows export formats (Excel,
+							 * PDF). Handlers render dropdown items (`.boldform-dropdown__item`)
+							 * and own the JS that collects the checked ids and posts to their
+							 * endpoint.
+							 *
+							 * @since 1.1.2
+							 */
+							do_action( 'boldform_entries_bulk_export_actions' );
+							?>
+						</div>
+					</div>
 				</div>
 			<?php endif; ?>
 
@@ -2877,9 +2905,12 @@ class BoldForm_Lite_Admin {
 										<input type="checkbox" class="boldform-entry-checkbox" value="<?php echo absint( $entry->id ); ?>" aria-label="<?php esc_attr_e( 'Select entry', 'boldform-lite' ); ?>">
 									</td>
 									<td class="boldform-entry-star">
-										<button type="button" class="boldform-star-btn<?php echo $is_starred ? ' is-starred' : ''; ?>" data-entry-id="<?php echo absint( $entry->id ); ?>" title="<?php esc_attr_e( 'Star', 'boldform-lite' ); ?>">
-											<span class="dashicons <?php echo $is_starred ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
-										</button>
+										<?php // In the Trash view the star is inert — starring here would silently pull the entry back out of the trash. ?>
+										<?php if ( 'trash' !== $filter_status ) : ?>
+											<button type="button" class="boldform-star-btn<?php echo $is_starred ? ' is-starred' : ''; ?>" data-entry-id="<?php echo absint( $entry->id ); ?>" title="<?php esc_attr_e( 'Star', 'boldform-lite' ); ?>">
+												<span class="dashicons <?php echo $is_starred ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
+											</button>
+										<?php endif; ?>
 									</td>
 									<td><strong><?php echo absint( $entry->id ); ?></strong></td>
 									<td>
@@ -3659,6 +3690,7 @@ class BoldForm_Lite_Admin {
 
 		$this->maybe_export_csv();
 		$this->maybe_delete_entry();
+		$this->maybe_trash_or_restore_entry();
 
 		// Bulk actions are submitted via POST, while single-row actions arrive through signed admin URLs.
 		$this->handle_bulk_actions();
@@ -3907,7 +3939,9 @@ class BoldForm_Lite_Admin {
 
 		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Exclude trashed entries — a trashed entry is on its way out and must not inflate
+		// the per-form count shown on the Forms list.
+		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` WHERE trashed_at IS NULL GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$counts = array();
 
@@ -4124,7 +4158,7 @@ class BoldForm_Lite_Admin {
 
 		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$wpdb->prepare(
-				"SELECT id, form_id, entry_data_json, status, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id, form_id, entry_data_json, status, trashed_at, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$per_page,
 				$offset
 			)
@@ -4153,7 +4187,9 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 
-		// Auto-mark as read when viewed.
+		// Auto-mark as read when viewed — this also applies to a trashed entry (it stays
+		// in the Trash, only `status` changes) so an opened submission never lingers as
+		// "Unread". Restore then returns it to `read`, which is correct: it has been read.
 		if ( 'unread' === $entry->status ) {
 			global $wpdb;
 			$wpdb->update( $this->plugin->get_entries_table_name(), array( 'status' => 'read' ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -4165,9 +4201,18 @@ class BoldForm_Lite_Admin {
 		$form         = $this->get_form( (int) $entry->form_id );
 		$form_title   = $form ? ( $form->title ? (string) $form->title : '#' . absint( $form->id ) ) : '';
 		$entry_status = (string) $entry->status;
+		$is_trashed   = ! empty( $entry->trashed_at );
 		$delete_url   = wp_nonce_url(
 			admin_url( 'admin.php?page=boldform-lite-entries&boldform_delete_entry=' . absint( $entry->id ) ),
 			'boldform_lite_delete_entry_' . absint( $entry->id )
+		);
+		$trash_url    = wp_nonce_url(
+			admin_url( 'admin.php?page=boldform-lite-entries&boldform_trash_entry=' . absint( $entry->id ) ),
+			'boldform_lite_trash_entry_' . absint( $entry->id )
+		);
+		$restore_url  = wp_nonce_url(
+			admin_url( 'admin.php?page=boldform-lite-entries&boldform_restore_entry=' . absint( $entry->id ) ),
+			'boldform_lite_restore_entry_' . absint( $entry->id )
 		);
 		?>
 		<div class="wrap boldform-entry-detail-wrap">
@@ -4187,18 +4232,28 @@ class BoldForm_Lite_Admin {
 				</div>
 				<div class="boldform-entry-header__right">
 					<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>" id="boldform-detail-status"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span>
-					<button type="button" class="boldform-entry-action-btn" id="boldform-mark-starred" title="<?php echo 'starred' === $entry_status ? esc_attr__( 'Remove Star', 'boldform-lite' ) : esc_attr__( 'Star Entry', 'boldform-lite' ); ?>">
-						<span class="dashicons <?php echo 'starred' === $entry_status ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
-					</button>
-					<button type="button" class="boldform-entry-action-btn" id="boldform-mark-unread" title="<?php esc_attr_e( 'Mark as Unread', 'boldform-lite' ); ?>" <?php echo 'unread' === $entry_status ? 'disabled' : ''; ?>>
-						<span class="dashicons dashicons-email"></span>
-					</button>
-					<button type="button" class="boldform-entry-action-btn<?php echo 'spam' === $entry_status ? ' is-spam' : ''; ?>" id="boldform-mark-spam" title="<?php echo 'spam' === $entry_status ? esc_attr__( 'Not Spam', 'boldform-lite' ) : esc_attr__( 'Mark as Spam', 'boldform-lite' ); ?>">
-						<span class="dashicons dashicons-shield"></span>
-					</button>
-					<a href="<?php echo esc_url( $delete_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Delete', 'boldform-lite' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this entry permanently?', 'boldform-lite' ) ); ?>');">
-						<span class="dashicons dashicons-trash"></span>
-					</a>
+					<?php if ( $is_trashed ) : ?>
+						<?php // Trashed entry: only restore or permanently delete — the status marks don't apply here. ?>
+						<a href="<?php echo esc_url( $restore_url ); ?>" class="boldform-entry-action-btn" title="<?php esc_attr_e( 'Restore', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-undo"></span>
+						</a>
+						<a href="<?php echo esc_url( $delete_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Delete Permanently', 'boldform-lite' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this entry permanently? This cannot be undone.', 'boldform-lite' ) ); ?>');">
+							<span class="dashicons dashicons-trash"></span>
+						</a>
+					<?php else : ?>
+						<button type="button" class="boldform-entry-action-btn" id="boldform-mark-starred" title="<?php echo 'starred' === $entry_status ? esc_attr__( 'Remove Star', 'boldform-lite' ) : esc_attr__( 'Star Entry', 'boldform-lite' ); ?>">
+							<span class="dashicons <?php echo 'starred' === $entry_status ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
+						</button>
+						<button type="button" class="boldform-entry-action-btn" id="boldform-mark-unread" title="<?php esc_attr_e( 'Mark as Unread', 'boldform-lite' ); ?>" <?php echo 'unread' === $entry_status ? 'disabled' : ''; ?>>
+							<span class="dashicons dashicons-email"></span>
+						</button>
+						<button type="button" class="boldform-entry-action-btn<?php echo 'spam' === $entry_status ? ' is-spam' : ''; ?>" id="boldform-mark-spam" title="<?php echo 'spam' === $entry_status ? esc_attr__( 'Not Spam', 'boldform-lite' ) : esc_attr__( 'Mark as Spam', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-shield"></span>
+						</button>
+						<a href="<?php echo esc_url( $trash_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Move to Trash', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-trash"></span>
+						</a>
+					<?php endif; ?>
 				</div>
 			</div>
 
@@ -4438,9 +4493,13 @@ class BoldForm_Lite_Admin {
 		// Cast to a unique list of positive ints; drop anything else.
 		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
 
+		// Status marks + Trash lifecycle. "trash" moves entries to the Trash view;
+		// "restore" brings them back (to read — the entry has already been seen);
+		// "delete" removes them permanently. Read/unread/starred/spam are plain marks.
 		$is_status = in_array( $action, array( 'unread', 'read', 'starred', 'spam' ), true );
+		$is_move   = in_array( $action, array( 'trash', 'restore' ), true );
 
-		if ( empty( $ids ) || ( ! $is_status && 'delete' !== $action ) ) {
+		if ( empty( $ids ) || ( ! $is_status && ! $is_move && 'delete' !== $action ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'boldform-lite' ) ) );
 		}
 
@@ -4454,6 +4513,13 @@ class BoldForm_Lite_Admin {
 		// sniffs below can't see the dynamic placeholders and are safely ignored.
 		if ( 'delete' === $action ) {
 			$sql = $wpdb->prepare( "DELETE FROM `{$safe_table}` WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		} elseif ( 'trash' === $action ) {
+			// Set the trash timestamp; leave `status` untouched so restore recovers it.
+			$params = array_merge( array( current_time( 'mysql' ) ), $ids );
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		} elseif ( 'restore' === $action ) {
+			// Clear the trash timestamp; the preserved `status` is the restored state.
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = NULL WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		} else {
 			$params = array_merge( array( $action ), $ids );
 			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -4498,6 +4564,52 @@ class BoldForm_Lite_Admin {
 		$this->clear_unread_count_cache();
 
 		wp_safe_redirect( admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_deleted' ) );
+		exit;
+	}
+
+	/**
+	 * Moves a single entry to the Trash, or restores it, from the entry-detail screen.
+	 *
+	 * Two signed single-row actions: `boldform_trash_entry` sets the status to `trash`
+	 * (the entry moves to the Trash tab, recoverable), and `boldform_restore_entry`
+	 * sets it back to `read`. Permanent deletion stays in maybe_delete_entry().
+	 *
+	 * @return void
+	 */
+	private function maybe_trash_or_restore_entry() {
+		$is_trash   = ! empty( $_GET['boldform_trash_entry'] );
+		$is_restore = ! empty( $_GET['boldform_restore_entry'] );
+
+		if ( ! $is_trash && ! $is_restore ) {
+			return;
+		}
+
+		$entry_id = $is_trash ? absint( $_GET['boldform_trash_entry'] ) : absint( $_GET['boldform_restore_entry'] );
+
+		check_admin_referer( ( $is_trash ? 'boldform_lite_trash_entry_' : 'boldform_lite_restore_entry_' ) . $entry_id );
+
+		if ( ! current_user_can( 'manage_options' ) || ! $entry_id ) {
+			return;
+		}
+
+		global $wpdb;
+
+		// Trash stamps the timestamp; restore clears it. `status` is never touched, so a
+		// restored entry returns to exactly the read-state it had before being trashed.
+		// $wpdb->update() writes `trashed_at = NULL` for a null value (the format is
+		// ignored in that case), so restore correctly clears the column.
+		$data = array( 'trashed_at' => $is_trash ? current_time( 'mysql' ) : null );
+		$wpdb->update( $this->plugin->get_entries_table_name(), $data, array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$this->clear_unread_count_cache();
+
+		// Trashing returns to the list (the entry is no longer in a normal view); restoring
+		// reopens the entry so the admin can keep working with it.
+		$redirect = $is_trash
+			? admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_trashed' )
+			: admin_url( 'admin.php?page=boldform-lite-entries&entry_id=' . $entry_id );
+
+		wp_safe_redirect( $redirect );
 		exit;
 	}
 
@@ -4761,8 +4873,21 @@ class BoldForm_Lite_Admin {
 			$clauses[] = $wpdb->prepare( 'form_id = %d', absint( $filters['form_id'] ) );
 		}
 
-		if ( ! empty( $filters['status'] ) && 'all' !== $filters['status'] ) {
-			$clauses[] = $wpdb->prepare( 'status = %s', sanitize_key( $filters['status'] ) );
+		// Trash lifecycle vs. status view. Trash is a separate dimension (the nullable
+		// `trashed_at` column), independent of the read-state in `status`, so restoring
+		// an entry keeps its exact prior status. The "trash" view shows trashed entries;
+		// every other view (including "All") excludes them, as do exports — unless an
+		// explicit id list is supplied (selected-rows export), which is authoritative.
+		if ( empty( $filters['ids'] ) ) {
+			$status = ! empty( $filters['status'] ) ? sanitize_key( $filters['status'] ) : 'all';
+			if ( 'trash' === $status ) {
+				$clauses[] = 'trashed_at IS NOT NULL';
+			} else {
+				$clauses[] = 'trashed_at IS NULL';
+				if ( 'all' !== $status ) {
+					$clauses[] = $wpdb->prepare( 'status = %s', $status );
+				}
+			}
 		}
 
 		if ( ! empty( $filters['date_from'] ) ) {
@@ -5304,18 +5429,19 @@ class BoldForm_Lite_Admin {
 
 		// Overview stats.
 		$total_forms   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		// Spam entries are excluded from every reporting stat below — they are not
-		// genuine submissions and would skew totals, per-form counts, and the trend chart.
-		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Spam AND trashed entries are excluded from every reporting stat below — spam is
+		// not a genuine submission and a trashed entry is on its way to deletion; either
+		// would skew totals, per-form counts, and the trend chart.
+		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Today's entries.
-		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// This week entries.
 		$week_start  = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
-		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Entries per form.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
@@ -5325,7 +5451,7 @@ class BoldForm_Lite_Admin {
 				SUM(CASE WHEN e.status = 'read' THEN 1 ELSE 0 END) AS is_read,
 				SUM(CASE WHEN e.status = 'starred' THEN 1 ELSE 0 END) AS starred
 			FROM `{$forms_table}` f
-			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id AND e.status != 'spam'
+			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id AND e.status != 'spam' AND e.trashed_at IS NULL
 			WHERE f.status != 'trash'
 			GROUP BY f.id
 			ORDER BY total DESC"
@@ -5338,7 +5464,7 @@ class BoldForm_Lite_Admin {
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS entry_date, COUNT(*) AS total
 				FROM `{$entries_table}`
-				WHERE status != 'spam' AND created_at >= %s
+				WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s
 				GROUP BY DATE(created_at)
 				ORDER BY entry_date ASC",
 				wp_date( 'Y-m-d', strtotime( '-30 days' ) ) . ' 00:00:00'

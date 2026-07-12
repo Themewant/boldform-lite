@@ -76,7 +76,8 @@ Every submission is saved to a custom database table — a permanent record, ind
 
 * View, filter, and read submissions from **BoldForm → Entries**.
 * Mark entries **Read, Unread, Starred, or Spam**, with a dedicated Spam tab.
-* **Bulk actions** — update the status of, or delete, many entries at once.
+* **Trash & restore** — move entries to a Trash tab instead of deleting them outright, then restore them (with their original status intact) or delete them permanently, so an accidental delete is recoverable.
+* **Bulk actions** — mark many entries at once, move them to Trash, or — from the Trash tab — restore or permanently delete them.
 * **CSV export** — export all entries, or just the ones you select.
 * **Reports & Analytics** — a dashboard of total forms, total entries, and per-form stats, charted with the browser's native HTML5 Canvas (no external library loaded).
 
@@ -320,6 +321,8 @@ Improvements:
 * Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action. It no longer appears on the Upgrade to Pro page, where it would be redundant.
 * Improve: Refreshed the Upgrade to Pro page header — it now leads with the current offer, clearer benefit copy, a stronger call to action, and at-a-glance reassurances (instant access, automatic updates, priority support).
 * Improve: When BoldForm Pro is active, every "Upgrade to Pro" prompt is now hidden — the promo notice, the menu item, the toolbar button, and the page-header link — and the Upgrade page shows a short "You're on Pro" confirmation instead of the comparison, so paying users are never shown upgrade nags.
+* Improve: The Entries "Export Selected" actions are now a single dropdown (CSV, and Excel/PDF with Pro) instead of a row of separate buttons, for a cleaner bulk-action bar.
+* Improve: Entries now use a Trash instead of deleting immediately — the "Delete permanently" bulk action is replaced by "Move to Trash", trashed entries collect under a new Trash tab (excluded from the other views and from exports), and from there they can be Restored or Deleted Permanently. This matches how WordPress and other form plugins handle deletion, so an accidental bulk delete is recoverable.
 
 Fixes:
 * Fix: The Forms list row-actions ("...") menu is no longer clipped by the table card — it now opens fully and stays visible.
@@ -465,7 +468,7 @@ Developer:
 == Upgrade Notice ==
 
 = 1.1.3 =
-Adds Cloudflare Turnstile as a captcha option (server-side verified) and new entry-detail extension hooks for add-ons. Recommended for all users.
+Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.
 
 = 1.1.2 =
 Adds Entries bulk actions and selective CSV export, a reorganised Tools screen with standalone entry export, an Upgrade to Pro comparison page, Elementor styling additions, and fixes for settings and column widths resetting after save. Recommended for all users.

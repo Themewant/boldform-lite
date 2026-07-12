@@ -181,7 +181,12 @@ final class BoldForm_Lite {
 	 */
 	private function set_locale() {
 		$this->loader->add_action( 'init', $this, 'load_textdomain' );
-		$this->loader->add_action( 'plugins_loaded', $this, 'maybe_upgrade_database' );
+		// Run schema upgrades on admin_init, not plugins_loaded: the plugin boots ON
+		// plugins_loaded, so a callback it registers for that same hook is not reliably
+		// executed (the hook is already mid-flight). admin_init fires later — after this
+		// registration — and is early enough that the schema is ready before the Entries
+		// screen or its actions run. The entries tables are only read/written in admin.
+		$this->loader->add_action( 'admin_init', $this, 'maybe_upgrade_database', 1 );
 	}
 
 	/**

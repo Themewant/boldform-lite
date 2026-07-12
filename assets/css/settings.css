@@ -2139,52 +2139,25 @@
 	box-shadow: 0 0 0 3px rgba(34, 113, 177, .35);
 }
 
-/* Export Selected sits to the far right, visually separated from the status/delete
-   controls; shows only when at least one row is checked (JS toggles [hidden]).
-   Styled as an outlined version of the header "Export CSV" button (same blue) so the
-   two export actions read as a set, while staying secondary to the solid Apply. */
-.boldform-bulk-bar__export {
+/* Export-selected dropdown — replaces the old row of format buttons (CSV/Excel/PDF).
+   Sits at the far right of the bulk bar, like the buttons did, and is revealed only
+   while rows are selected (JS toggles the [hidden] attribute). */
+.boldform-bulk-export-dd {
 	margin-left: auto;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 7px;
-	height: 34px;
-	padding: 0 16px;
-	background: #fff;
-	color: #2271b1;
-	border: 1px solid #2271b1;
-	border-radius: 8px;
-	font-size: 13px;
-	font-weight: 600;
-	line-height: 1;
-	cursor: pointer;
-	box-shadow: none;
-	transition: background .15s ease, color .15s ease, box-shadow .15s ease;
 }
 
-.boldform-bulk-bar__export:hover,
-.boldform-bulk-bar__export:focus {
-	background: #2271b1;
-	color: #fff;
-	border-color: #2271b1;
-	box-shadow: 0 2px 8px rgba(34, 113, 177, .25);
-}
-
-.boldform-bulk-bar__export:focus-visible {
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(34, 113, 177, .35);
-}
-
-.boldform-bulk-bar__export[hidden] {
+.boldform-bulk-export-dd[hidden] {
 	display: none;
 }
 
-.boldform-bulk-bar__export .dashicons {
-	font-size: 16px;
+/* Icons inside a dropdown menu item (the CSV/Excel/PDF export items). */
+.boldform-dropdown__item .dashicons {
 	width: 16px;
 	height: 16px;
-	line-height: 18px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #667085;
+	flex-shrink: 0;
 }
 
 /* Checkbox column — keep the select cells tight and centred. */
@@ -2291,6 +2264,11 @@
 .boldform-status--spam {
 	background: #fee2e2;
 	color: #b91c1c;
+}
+
+.boldform-status--trash {
+	background: #e9e9ed;
+	color: #8a8f98;
 }
 
 /* Active "Mark as Spam" toggle on the entry detail header. */
