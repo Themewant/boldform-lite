@@ -1580,7 +1580,7 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 
-		if ( ! $this->should_show_notice( self::NOTICE_PRO_SALE ) ) {
+		if ( ! $this->should_show_pro_notice() ) {
 			return;
 		}
 
@@ -1719,6 +1719,39 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Whether the Pro promo notice should be shown on the current screen.
+	 *
+	 * Adds the Pro-specific screen rule on top of the generic notice gate: the
+	 * banner is suppressed on the "Upgrade to Pro" page, which is itself a full
+	 * upgrade pitch, so the notice there would be redundant. Used by both the asset
+	 * enqueue and the markup render so they stay in sync.
+	 *
+	 * @return bool
+	 */
+	private function should_show_pro_notice() {
+		if ( $this->is_upgrade_screen() ) {
+			return false;
+		}
+
+		return $this->should_show_notice( self::NOTICE_PRO_SALE );
+	}
+
+	/**
+	 * Whether the current admin screen is BoldForm's "Upgrade to Pro" page.
+	 *
+	 * @return bool
+	 */
+	private function is_upgrade_screen() {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return false;
+		}
+
+		$screen = get_current_screen();
+
+		return $screen && '' !== $this->upgrade_page_hook && $this->upgrade_page_hook === $screen->id;
+	}
+
+	/**
 	 * Enqueues the shared admin-notice assets on every admin screen.
 	 *
 	 * BoldForm admin notices are global (not limited to BoldForm screens, where
@@ -1731,7 +1764,7 @@ class BoldForm_Lite_Admin {
 	public function enqueue_admin_notice_assets() {
 		// Load only when at least one BoldForm admin notice will render. Extend this
 		// condition (|| $this->should_show_notice( self::NOTICE_OTHER )) as more notices are added.
-		if ( ! $this->should_show_notice( self::NOTICE_PRO_SALE ) ) {
+		if ( ! $this->should_show_pro_notice() ) {
 			return;
 		}
 
