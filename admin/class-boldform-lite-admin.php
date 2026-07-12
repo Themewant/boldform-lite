@@ -1603,12 +1603,12 @@ class BoldForm_Lite_Admin {
 
 					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'BoldForm Pro is now available. For a limited time, unlock every Pro feature at 70% off with our Early Bird launch discount.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Unlock payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
 						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
-							<?php esc_html_e( 'Get 70% Off', 'boldform-lite' ); ?>
+							<?php esc_html_e( 'Claim 70% Off', 'boldform-lite' ); ?>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
 						</a>
 					</div>
