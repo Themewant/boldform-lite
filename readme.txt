@@ -316,6 +316,12 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 New features:
 * New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
 
+Improvements:
+* Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action.
+
+Fixes:
+* Fix: The Forms list row-actions ("...") menu is no longer clipped by the table card — it now opens fully and stays visible.
+
 Developer:
 * Developer: New entry-detail extension points — the `boldform_entry_detail_sidebar` action and `boldform_entry_detail_enqueue_assets` action let add-ons render cards (and load their assets) on the single-entry screen.
 
