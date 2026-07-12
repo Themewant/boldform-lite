@@ -2010,12 +2010,21 @@ class BoldForm_Lite_Admin {
 			<hr class="wp-header-end">
 
 			<div class="boldform-up-hero">
-				<span class="boldform-up-badge"><?php esc_html_e( 'BoldForm Pro', 'boldform-lite' ); ?></span>
+				<span class="boldform-up-badge boldform-up-badge--sale">
+					<span class="dashicons dashicons-tag" aria-hidden="true"></span>
+					<?php esc_html_e( 'Early Bird Sale — 70% off', 'boldform-lite' ); ?>
+				</span>
 				<h1><?php esc_html_e( 'Do more with BoldForm Pro', 'boldform-lite' ); ?></h1>
-				<p><?php esc_html_e( 'Unlock multi-page forms, payments, advanced fields, 35+ integrations and more — all inside the same drag-and-drop builder you already know.', 'boldform-lite' ); ?></p>
+				<p><?php esc_html_e( 'Add payments, multi-page forms, advanced fields, and 35+ integrations — all inside the same drag-and-drop builder you already know.', 'boldform-lite' ); ?></p>
 				<a class="boldform-up-btn" href="<?php echo esc_url( $buy_url ); ?>" target="_blank" rel="noopener noreferrer">
-					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+					<?php esc_html_e( 'Claim 70% Off', 'boldform-lite' ); ?>
+					<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 				</a>
+				<ul class="boldform-up-hero__perks">
+					<li><?php esc_html_e( 'Instant access', 'boldform-lite' ); ?></li>
+					<li><?php esc_html_e( 'Automatic updates', 'boldform-lite' ); ?></li>
+					<li><?php esc_html_e( 'Priority support', 'boldform-lite' ); ?></li>
+				</ul>
 			</div>
 
 			<div class="boldform-up-table-card">

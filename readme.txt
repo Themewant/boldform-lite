@@ -317,7 +317,8 @@ New features:
 * New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
 
 Improvements:
-* Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action.
+* Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action. It no longer appears on the Upgrade to Pro page, where it would be redundant.
+* Improve: Refreshed the Upgrade to Pro page header — it now leads with the current offer, clearer benefit copy, a stronger call to action, and at-a-glance reassurances (instant access, automatic updates, priority support).
 
 Fixes:
 * Fix: The Forms list row-actions ("...") menu is no longer clipped by the table card — it now opens fully and stays visible.
