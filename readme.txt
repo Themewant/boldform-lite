@@ -322,6 +322,7 @@ Improvements:
 * Improve: Refreshed the Upgrade to Pro page header — it now leads with the current offer, clearer benefit copy, a stronger call to action, and at-a-glance reassurances (instant access, automatic updates, priority support).
 * Improve: When BoldForm Pro is active, every "Upgrade to Pro" prompt is now hidden — the promo notice, the menu item, the toolbar button, and the page-header link — and the Upgrade page shows a short "You're on Pro" confirmation instead of the comparison, so paying users are never shown upgrade nags.
 * Improve: The Entries "Export Selected" actions are now a single dropdown (CSV, and Excel/PDF with Pro) instead of a row of separate buttons, for a cleaner bulk-action bar.
+* Improve: Tidied the SMTP settings screen — the "Send Test Mail" result message now aligns neatly beside the button, and the Save Changes button has clearer spacing.
 * Improve: Entries now use a Trash instead of deleting immediately — the "Delete permanently" bulk action is replaced by "Move to Trash", trashed entries collect under a new Trash tab (excluded from the other views and from exports), and from there they can be Restored or Deleted Permanently. This matches how WordPress and other form plugins handle deletion, so an accidental bulk delete is recoverable.
 
 Fixes:
