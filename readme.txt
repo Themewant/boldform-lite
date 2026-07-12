@@ -198,7 +198,7 @@ Yes. Submissions stay in your own database, and BoldForm registers a personal-da
 
 = Is there a Pro version? =
 
-Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 35+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://themewant.com/plugins/boldform/).
+Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://themewant.com/plugins/boldform/).
 
 == Screenshots ==
 

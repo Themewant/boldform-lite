@@ -1790,7 +1790,7 @@ msgid "You're on BoldForm Pro"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2039
-msgid "Every premium feature is unlocked — payments, multi-page forms, advanced fields, and 35+ integrations are ready to use inside your forms."
+msgid "Every premium feature is unlocked — payments, multi-page forms, advanced fields, and 30+ integrations are ready to use inside your forms."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2041
@@ -1882,7 +1882,7 @@ msgid "Do more with BoldForm Pro"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2094
-msgid "Add payments, multi-page forms, advanced fields, and 35+ integrations — all inside the same drag-and-drop builder you already know."
+msgid "Add payments, multi-page forms, advanced fields, and 30+ integrations — all inside the same drag-and-drop builder you already know."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2100
