@@ -739,13 +739,21 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	margin-left: 12px;
 	font-size: 13px;
 	font-weight: 500;
+	line-height: 1.4;
+}
+
+.boldform-test-mail-result:empty {
+	display: none;
 }
 
 /* ── Submit button area ── */
 .boldform-submit-area {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
 	padding-top: 8px;
 }
 
@@ -779,6 +787,10 @@
 
 .boldform-radio-list label:last-child {
 	margin-bottom: 0;
+}
+
+#boldform-smtp-auth-fields .boldform-field-row:first-child {
+	padding-top: 14px;
 }
 
 /* ── Responsive ── */
