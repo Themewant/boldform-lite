@@ -739,13 +739,21 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	margin-left: 12px;
 	font-size: 13px;
 	font-weight: 500;
+	line-height: 1.4;
+}
+
+.boldform-test-mail-result:empty {
+	display: none;
 }
 
 /* ── Submit button area ── */
 .boldform-submit-area {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 12px;
 	padding-top: 8px;
 }
 
@@ -779,6 +787,10 @@
 
 .boldform-radio-list label:last-child {
 	margin-bottom: 0;
+}
+
+#boldform-smtp-auth-fields .boldform-field-row:first-child {
+	padding-top: 14px;
 }
 
 /* ── Responsive ── */
@@ -1013,6 +1025,19 @@
 	max-width: 100%;
 	overflow-x: auto;
 	-webkit-overflow-scrolling: touch;
+}
+
+/* The row-actions dropdown is absolutely positioned and drops below/left of its
+   button, so the card's overflow:hidden (rounded corners + narrow-screen spill
+   guard) and the scroll wrapper's overflow-x:auto were clipping it. Lift both
+   clips ONLY while a menu is open (:has()), so the rounded corners and
+   horizontal scrolling are untouched in every other state. */
+.boldform-table-card:has(.boldform-form-actions-dd.is-open) {
+	overflow: visible;
+}
+
+.boldform-table-card:has(.boldform-form-actions-dd.is-open) .boldform-table-scroll {
+	overflow: visible;
 }
 
 .boldform-table-card table.widefat {
@@ -2126,52 +2151,25 @@
 	box-shadow: 0 0 0 3px rgba(34, 113, 177, .35);
 }
 
-/* Export Selected sits to the far right, visually separated from the status/delete
-   controls; shows only when at least one row is checked (JS toggles [hidden]).
-   Styled as an outlined version of the header "Export CSV" button (same blue) so the
-   two export actions read as a set, while staying secondary to the solid Apply. */
-.boldform-bulk-bar__export {
+/* Export-selected dropdown — replaces the old row of format buttons (CSV/Excel/PDF).
+   Sits at the far right of the bulk bar, like the buttons did, and is revealed only
+   while rows are selected (JS toggles the [hidden] attribute). */
+.boldform-bulk-export-dd {
 	margin-left: auto;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 7px;
-	height: 34px;
-	padding: 0 16px;
-	background: #fff;
-	color: #2271b1;
-	border: 1px solid #2271b1;
-	border-radius: 8px;
-	font-size: 13px;
-	font-weight: 600;
-	line-height: 1;
-	cursor: pointer;
-	box-shadow: none;
-	transition: background .15s ease, color .15s ease, box-shadow .15s ease;
 }
 
-.boldform-bulk-bar__export:hover,
-.boldform-bulk-bar__export:focus {
-	background: #2271b1;
-	color: #fff;
-	border-color: #2271b1;
-	box-shadow: 0 2px 8px rgba(34, 113, 177, .25);
-}
-
-.boldform-bulk-bar__export:focus-visible {
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(34, 113, 177, .35);
-}
-
-.boldform-bulk-bar__export[hidden] {
+.boldform-bulk-export-dd[hidden] {
 	display: none;
 }
 
-.boldform-bulk-bar__export .dashicons {
-	font-size: 16px;
+/* Icons inside a dropdown menu item (the CSV/Excel/PDF export items). */
+.boldform-dropdown__item .dashicons {
 	width: 16px;
 	height: 16px;
-	line-height: 18px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #667085;
+	flex-shrink: 0;
 }
 
 /* Checkbox column — keep the select cells tight and centred. */
@@ -2278,6 +2276,11 @@
 .boldform-status--spam {
 	background: #fee2e2;
 	color: #b91c1c;
+}
+
+.boldform-status--trash {
+	background: #e9e9ed;
+	color: #8a8f98;
 }
 
 /* Active "Mark as Spam" toggle on the entry detail header. */
@@ -3239,7 +3242,9 @@
 }
 
 .boldform-up-badge {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
 	padding: 5px 14px;
 	margin-bottom: 16px;
 	border-radius: 999px;
@@ -3250,6 +3255,20 @@
 	color: #93c5fd;
 	background: rgba(96, 165, 250, 0.14);
 	border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.boldform-up-badge .dashicons {
+	width: 15px;
+	height: 15px;
+	font-size: 15px;
+	line-height: 1;
+}
+
+/* Sale variant: amber accent so the offer stands out from the blue brand colour. */
+.boldform-up-badge--sale {
+	color: #fcd34d;
+	background: rgba(251, 191, 36, 0.14);
+	border-color: rgba(251, 191, 36, 0.30);
 }
 
 .boldform-up-hero h1 {
@@ -3285,11 +3304,52 @@
 	transition: background 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
 }
 
+.boldform-up-btn .dashicons {
+	width: 16px;
+	height: 16px;
+	margin-left: 8px;
+	font-size: 16px;
+	line-height: 1;
+	transition: transform 0.18s ease;
+}
+
 .boldform-up-btn:hover {
 	color: #fff;
 	background: #1d4ed8;
 	transform: translateY(-1px);
 	box-shadow: 0 7px 20px rgba(37, 99, 235, 0.5);
+}
+
+.boldform-up-btn:hover .dashicons {
+	transform: translateX(3px);
+}
+
+/* ── Hero reassurance row ── */
+.boldform-up-hero__perks {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px 22px;
+	margin: 22px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.boldform-up-hero__perks li {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	font-size: 13px;
+	color: #94a3b8;
+}
+
+.boldform-up-hero__perks li::before {
+	content: "\f147"; /* dashicons-yes */
+	font-family: dashicons;
+	font-size: 15px;
+	line-height: 1;
+	color: #4ade80;
 }
 
 /* Keep the focus ring as a box-shadow (always follows border-radius) and kill the
