@@ -1015,6 +1015,19 @@
 	-webkit-overflow-scrolling: touch;
 }
 
+/* The row-actions dropdown is absolutely positioned and drops below/left of its
+   button, so the card's overflow:hidden (rounded corners + narrow-screen spill
+   guard) and the scroll wrapper's overflow-x:auto were clipping it. Lift both
+   clips ONLY while a menu is open (:has()), so the rounded corners and
+   horizontal scrolling are untouched in every other state. */
+.boldform-table-card:has(.boldform-form-actions-dd.is-open) {
+	overflow: visible;
+}
+
+.boldform-table-card:has(.boldform-form-actions-dd.is-open) .boldform-table-scroll {
+	overflow: visible;
+}
+
 .boldform-table-card table.widefat {
 	border: none;
 	border-radius: 0;
