@@ -181,7 +181,12 @@ final class BoldForm_Lite {
 	 */
 	private function set_locale() {
 		$this->loader->add_action( 'init', $this, 'load_textdomain' );
-		$this->loader->add_action( 'plugins_loaded', $this, 'maybe_upgrade_database' );
+		// Run schema upgrades on admin_init, not plugins_loaded: the plugin boots ON
+		// plugins_loaded, so a callback it registers for that same hook is not reliably
+		// executed (the hook is already mid-flight). admin_init fires later — after this
+		// registration — and is early enough that the schema is ready before the Entries
+		// screen or its actions run. The entries tables are only read/written in admin.
+		$this->loader->add_action( 'admin_init', $this, 'maybe_upgrade_database', 1 );
 	}
 
 	/**
@@ -192,6 +197,10 @@ final class BoldForm_Lite {
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
 		$this->loader->add_filter( 'plugin_action_links_' . plugin_basename( BOLDFORM_LITE_FILE ), $this->admin, 'add_plugin_action_links' );
+		// Hide every "Upgrade to Pro" CTA once Pro is active (menu item, plugin-row link,
+		// topbar nav, header button) — they all honour this filter. Priority 5 so a
+		// reseller's own callback can still override at the default priority if desired.
+		$this->loader->add_filter( 'boldform_show_upgrade_cta', $this->admin, 'hide_upgrade_cta_when_pro_active', 5 );
 		$this->loader->add_action( 'boldform_entry_created', $this->admin, 'clear_unread_count_cache' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
 		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
@@ -199,7 +208,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_assets' );
 		$this->loader->add_action( 'admin_init', $this->admin, 'handle_form_actions' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this->admin, 'enqueue_admin_notice_assets' );
-		$this->loader->add_action( 'admin_notices', $this->admin, 'maybe_render_waitlist_notice' );
+		$this->loader->add_action( 'admin_notices', $this->admin, 'maybe_render_pro_notice' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_dismiss_notice', $this->admin, 'ajax_dismiss_notice' );
 		$this->loader->add_filter( 'upload_mimes', $this->admin, 'allow_svg_upload' );
 		$this->loader->add_filter( 'wp_check_filetype_and_ext', $this->admin, 'fix_svg_filetype', 10, 4 );

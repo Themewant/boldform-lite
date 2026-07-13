@@ -109,15 +109,48 @@ class BoldForm_Lite_Activator {
 			user_ip varchar(100) NULL,
 			user_agent text NULL,
 			status varchar(20) NOT NULL DEFAULT 'unread',
+			trashed_at datetime NULL DEFAULT NULL,
 			created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			PRIMARY KEY  (id),
 			KEY form_id (form_id),
 			KEY status (status),
+			KEY trashed_at (trashed_at),
 			KEY created_at (created_at),
 			KEY submission_key (submission_key)
 		) {$charset_collate};";
 
 		dbDelta( $forms_sql );
 		dbDelta( $entries_sql );
+
+		self::migrate_entry_trash( $entries_table );
+	}
+
+	/**
+	 * Normalises legacy trash state onto the dedicated `trashed_at` column.
+	 *
+	 * The trash lifecycle used to be a `status = 'trash'` value, which conflated it
+	 * with the read-state (unread/read/starred/spam) and lost the entry's prior status
+	 * on restore. Trash now lives in its own nullable timestamp column, so read-state
+	 * is preserved. Any row still carrying the old value is converted once — the entry
+	 * is stamped as trashed now and its status reset to `read` (its pre-trash status is
+	 * unknown for these legacy rows). Idempotent: after conversion no such rows remain.
+	 *
+	 * @param string $entries_table Fully-qualified entries table name.
+	 * @return void
+	 */
+	private static function migrate_entry_trash( $entries_table ) {
+		global $wpdb;
+
+		$safe_table = esc_sql( $entries_table );
+
+		// Only touch rows that still use the legacy value; skips entirely on fresh installs.
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"UPDATE `{$safe_table}` SET trashed_at = %s, status = %s WHERE status = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				current_time( 'mysql' ),
+				'read',
+				'trash'
+			)
+		);
 	}
 }

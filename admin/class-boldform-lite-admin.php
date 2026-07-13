@@ -24,11 +24,14 @@ class BoldForm_Lite_Admin {
 	const DISMISSED_NOTICES_META = 'boldform_lite_dismissed_notices';
 
 	/**
-	 * Notice id for the BoldForm Pro waitlist banner.
+	 * Notice id for the BoldForm Pro promo banner.
+	 *
+	 * A fresh id (was 'pro_waitlist') so anyone who dismissed the old
+	 * "launching soon" waitlist banner still sees this new sale banner once.
 	 *
 	 * @var string
 	 */
-	const NOTICE_PRO_WAITLIST = 'pro_waitlist';
+	const NOTICE_PRO_SALE = 'pro_early_bird_sale';
 
 	/**
 	 * Main plugin instance.
@@ -203,14 +206,31 @@ class BoldForm_Lite_Admin {
 		do_action( 'boldform_admin_menu', $this );
 
 		// Highlighted "Upgrade to Pro" as the final submenu item, opening an in-dashboard
-		// Free-vs-Pro comparison page. Shown by default; hidden when a
-		// boldform_show_upgrade_cta callback returns false. The inline-styled span gives
-		// the menu label its red accent without needing a separate stylesheet.
+		// Free-vs-Pro comparison page. Shown by default; the label's red accent is set
+		// inline so no separate stylesheet is needed. When the CTA is suppressed (Pro
+		// active, or a boldform_show_upgrade_cta callback returning false) the menu item
+		// is hidden. If Pro is active we still REGISTER the page — but remove it from the
+		// menu — so a bookmarked Upgrade URL resolves to render_upgrade_page()'s friendly
+		// "you're on Pro" panel instead of WordPress's "not allowed" screen.
 		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			$this->upgrade_page_hook = add_submenu_page(
 				'boldform-lite',
 				__( 'Upgrade to Pro', 'boldform-lite' ),
 				'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
+				'manage_options',
+				'boldform-lite-upgrade',
+				array( $this, 'render_upgrade_page' )
+			);
+		} elseif ( $this->is_pro_active() ) {
+			// Register the page under an empty parent: it stays reachable by URL (so a
+			// bookmarked Upgrade link resolves to render_upgrade_page()'s "you're on Pro"
+			// panel) but never appears in any menu. WordPress authorises the request via
+			// $_registered_pages['admin_page_boldform-lite-upgrade'], which this sets. An
+			// empty string (not null) avoids PHP 8.1+ null-to-string deprecations in core.
+			$this->upgrade_page_hook = add_submenu_page(
+				'',
+				__( 'Upgrade to Pro', 'boldform-lite' ),
+				__( 'Upgrade to Pro', 'boldform-lite' ),
 				'manage_options',
 				'boldform-lite-upgrade',
 				array( $this, 'render_upgrade_page' )
@@ -291,7 +311,9 @@ class BoldForm_Lite_Admin {
 
 		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Trashed entries never count toward the menu's unread badge, even though they
+		// keep their pre-trash status (which may be 'unread') for restore.
+		$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		set_transient( 'boldform_lite_unread_count', $count, 5 * MINUTE_IN_SECONDS );
 
@@ -1346,17 +1368,18 @@ class BoldForm_Lite_Admin {
 						function refreshBulkBar(){
 							var ids=selectedIds(),n=ids.length;
 							var $count=$("#boldform-bulk-count");
-							// Bar stays put; the count text + Export Selected button show once something is selected.
-							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");$("#boldform-bulk-export").removeAttr("hidden");}
-							else{$count.attr("hidden",true);$("#boldform-bulk-export").attr("hidden",true);}
+							// Bar stays put; the count text + Export Selected dropdown show once something is selected.
+							if(n){$count.text(n+" "+boldformAdminEntries.selectedText).removeAttr("hidden");$("#boldform-bulk-export-dd").removeAttr("hidden");}
+							else{$count.attr("hidden",true);$("#boldform-bulk-export-dd").attr("hidden",true).removeClass("is-open");}
 							var total=$(".boldform-entry-checkbox").length;
 							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
 						}
-						// Export Selected — POST the chosen ids to the CSV endpoint (a POST form, not a
-						// GET URL, so any number of selected ids works without hitting URL length limits).
-						$("#boldform-bulk-export").on("click",function(){
+						// Export CSV (dropdown item) — POST the chosen ids to the CSV endpoint (a POST
+						// form, not a GET URL, so any number of selected ids works without URL limits).
+						$("#boldform-bulk-export-csv").on("click",function(){
 							var ids=selectedIds();
 							if(!ids.length)return;
+							$("#boldform-bulk-export-dd").removeClass("is-open");
 							var $f=$("<form>",{method:"post",action:boldformAdminEntries.exportUrl,style:"display:none"});
 							$f.append($("<input>",{type:"hidden",name:"boldform_export_csv",value:"1"}));
 							$f.append($("<input>",{type:"hidden",name:"_wpnonce",value:boldformAdminEntries.exportNonce}));
@@ -1422,6 +1445,19 @@ class BoldForm_Lite_Admin {
 						});
 					});'
 				);
+
+				/**
+				 * Fires when admin assets are enqueued for the single-entry detail screen.
+				 *
+				 * Lets an add-on enqueue its own CSS/JS for the entry-detail view — e.g. a
+				 * notes panel rendered via `boldform_entry_detail_sidebar`. Mirrors
+				 * `boldform_builder_enqueue_assets` for the builder screen.
+				 *
+				 * @since 1.1.3
+				 *
+				 * @param int $entry_id The entry being viewed.
+				 */
+				do_action( 'boldform_entry_detail_enqueue_assets', $entry_id );
 			}
 
 			// ── Settings page ─────────────────────────────────────────────────────
@@ -1527,7 +1563,7 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders only BoldForm admin notices.
 	 *
-	 * Also re-emits the Pro waitlist notice here: on BoldForm screens the global
+	 * Also re-emits the Pro promo notice here: on BoldForm screens the global
 	 * admin_notices hook is purged (suppress_foreign_notices), so without this the
 	 * notice would show everywhere EXCEPT BoldForm's own pages. render_own_notices()
 	 * is the one callback re-added after the purge, so routing it through here keeps
@@ -1538,11 +1574,11 @@ class BoldForm_Lite_Admin {
 	 */
 	public function render_own_notices() {
 		settings_errors( 'boldform_lite_settings' );
-		$this->maybe_render_waitlist_notice();
+		$this->maybe_render_pro_notice();
 	}
 
 	/**
-	 * Outputs the dismissible "BoldForm Pro waitlist" admin notice.
+	 * Outputs the dismissible BoldForm Pro promo admin notice.
 	 *
 	 * Shown on every admin screen to administrators who have not dismissed it. A thin
 	 * consumer of the shared admin-notice layer: it outputs this notice's specific
@@ -1557,23 +1593,22 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @return void
 	 */
-	public function maybe_render_waitlist_notice() {
+	public function maybe_render_pro_notice() {
 		static $rendered = false;
 
 		if ( $rendered ) {
 			return;
 		}
 
-		if ( ! $this->should_show_waitlist_notice() ) {
+		if ( ! $this->should_show_pro_notice() ) {
 			return;
 		}
 
 		$rendered = true;
 
-		$waitlist_url = 'https://themewant.com/waitlist/';
-		$learn_url    = 'https://themewant.com/plugins/boldform/';
+		$sale_url = 'https://themewant.com/plugins/boldform/';
 		?>
-		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_WAITLIST ); ?>">
+		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_SALE ); ?>">
 
 			<button type="button" class="boldform-admin-notice__dismiss" aria-label="<?php esc_attr_e( 'Dismiss this notice', 'boldform-lite' ); ?>">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></svg>
@@ -1582,22 +1617,18 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-admin-notice__inner">
 				<div class="boldform-admin-notice__content">
 					<span class="boldform-admin-notice__badge">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 13a8 8 0 0 1 7 7 6 6 0 0 0 3-5 9 9 0 0 0 6-8 3 3 0 0 0-3-3 9 9 0 0 0-8 6 6 6 0 0 0-5 3"/><path d="M7 14a6 6 0 0 0-3 6 6 6 0 0 0 6-3"/><circle cx="15" cy="9" r="1"/></svg>
-						<?php esc_html_e( 'Early Access', 'boldform-lite' ); ?>
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+						<?php esc_html_e( 'Early Bird Sale', 'boldform-lite' ); ?>
 					</span>
 
-					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is launching soon!', 'boldform-lite' ); ?></div>
+					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Join the waitlist to get early access, exclusive launch discounts, and product updates.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Unlock payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
-						<a href="<?php echo esc_url( $waitlist_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-							<?php esc_html_e( 'Join the Waitlist', 'boldform-lite' ); ?>
-							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-						</a>
-						<a href="<?php echo esc_url( $learn_url ); ?>" class="boldform-admin-notice__link" target="_blank" rel="noopener noreferrer">
-							<?php esc_html_e( 'Learn More', 'boldform-lite' ); ?>
+						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
+							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+							<?php esc_html_e( 'Claim 70% Off', 'boldform-lite' ); ?>
 							<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
 						</a>
 					</div>
@@ -1694,15 +1725,80 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Whether the Pro waitlist notice should be shown to the current user.
+	 * Whether a given admin notice should be shown to the current user.
 	 *
 	 * Single source of truth for both the asset enqueue and the markup render, so
-	 * the stylesheet/script only load when the notice will actually appear.
+	 * the stylesheet/script only load when the notice will actually appear. Pass any
+	 * notice identifier so this gates every BoldForm admin notice, not just one.
+	 *
+	 * @param string $notice_id Notice identifier (e.g. self::NOTICE_PRO_SALE).
+	 * @return bool
+	 */
+	private function should_show_notice( $notice_id ) {
+		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( $notice_id );
+	}
+
+	/**
+	 * Whether the Pro promo notice should be shown on the current screen.
+	 *
+	 * Adds the Pro-specific screen rule on top of the generic notice gate: the
+	 * banner is suppressed on the "Upgrade to Pro" page, which is itself a full
+	 * upgrade pitch, so the notice there would be redundant. Used by both the asset
+	 * enqueue and the markup render so they stay in sync.
 	 *
 	 * @return bool
 	 */
-	private function should_show_waitlist_notice() {
-		return current_user_can( 'manage_options' ) && ! $this->is_notice_dismissed( self::NOTICE_PRO_WAITLIST );
+	private function should_show_pro_notice() {
+		// Never upsell someone who already runs Pro, and skip the Upgrade page
+		// (itself a full upgrade pitch) where the banner would be redundant.
+		if ( $this->is_pro_active() || $this->is_upgrade_screen() ) {
+			return false;
+		}
+
+		return $this->should_show_notice( self::NOTICE_PRO_SALE );
+	}
+
+	/**
+	 * Whether BoldForm Pro is active.
+	 *
+	 * Pro defines BOLDFORM_PRO_VERSION at load time (before its own dependency
+	 * gate), so the constant is present whenever the Pro plugin is active — the
+	 * reliable signal for Lite to hide Pro upsell UI.
+	 *
+	 * @return bool
+	 */
+	private function is_pro_active() {
+		return defined( 'BOLDFORM_PRO_VERSION' );
+	}
+
+	/**
+	 * Hides every "Upgrade to Pro" CTA when Pro is active.
+	 *
+	 * Filter callback for `boldform_show_upgrade_cta`, which the Upgrade menu item,
+	 * plugin-row link, topbar nav item, and page-header button all honour. Forces
+	 * false when Pro runs so paying users are never nagged; otherwise passes the
+	 * value through untouched so resellers can still control it.
+	 *
+	 * @param bool $show Whether the CTAs should show.
+	 * @return bool
+	 */
+	public function hide_upgrade_cta_when_pro_active( $show ) {
+		return $this->is_pro_active() ? false : $show;
+	}
+
+	/**
+	 * Whether the current admin screen is BoldForm's "Upgrade to Pro" page.
+	 *
+	 * @return bool
+	 */
+	private function is_upgrade_screen() {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return false;
+		}
+
+		$screen = get_current_screen();
+
+		return $screen && '' !== $this->upgrade_page_hook && $this->upgrade_page_hook === $screen->id;
 	}
 
 	/**
@@ -1717,8 +1813,8 @@ class BoldForm_Lite_Admin {
 	 */
 	public function enqueue_admin_notice_assets() {
 		// Load only when at least one BoldForm admin notice will render. Extend this
-		// condition (|| $this->should_show_x_notice()) as more notices are added.
-		if ( ! $this->should_show_waitlist_notice() ) {
+		// condition (|| $this->should_show_notice( self::NOTICE_OTHER )) as more notices are added.
+		if ( ! $this->should_show_pro_notice() ) {
 			return;
 		}
 
@@ -1925,6 +2021,32 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_upgrade_page() {
+		// Never pitch Pro to someone already running it. The Upgrade CTAs are hidden
+		// when Pro is active, so this page is normally unreachable then — but a
+		// bookmarked URL (or a reseller who force-enables the CTA) could still land
+		// here, so show a friendly "you're on Pro" state instead of the comparison.
+		if ( $this->is_pro_active() ) {
+			$this->render_admin_topbar( 'boldform-lite-upgrade' );
+			?>
+			<div class="wrap boldform-upgrade-page">
+				<hr class="wp-header-end">
+				<div class="boldform-up-hero">
+					<span class="boldform-up-badge">
+						<span class="dashicons dashicons-yes" aria-hidden="true"></span>
+						<?php esc_html_e( 'Pro active', 'boldform-lite' ); ?>
+					</span>
+					<h1><?php esc_html_e( "You're on BoldForm Pro", 'boldform-lite' ); ?></h1>
+					<p><?php esc_html_e( 'Every premium feature is unlocked — payments, multi-page forms, advanced fields, and 30+ integrations are ready to use inside your forms.', 'boldform-lite' ); ?></p>
+					<a class="boldform-up-btn" href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>">
+						<?php esc_html_e( 'Go to your forms', 'boldform-lite' ); ?>
+						<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
+					</a>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
 		// Destination for the buy buttons. Filterable so resellers can repoint it.
 		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://themewant.com/plugins/boldform/' );
 
@@ -1936,7 +2058,7 @@ class BoldForm_Lite_Admin {
 			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
 			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Conditional logic', 'boldform-lite' ),                                 'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Anti-spam: reCAPTCHA & hCaptcha', 'boldform-lite' ),                   'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),                     'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Integrations', 'boldform-lite' ),                                      'lite' => __( 'Mailchimp & Brevo', 'boldform-lite' ), 'pro' => __( '35+ apps', 'boldform-lite' ) ),
 			array( 'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),                           'lite' => false,                                 'pro' => true ),
@@ -1964,12 +2086,21 @@ class BoldForm_Lite_Admin {
 			<hr class="wp-header-end">
 
 			<div class="boldform-up-hero">
-				<span class="boldform-up-badge"><?php esc_html_e( 'BoldForm Pro', 'boldform-lite' ); ?></span>
+				<span class="boldform-up-badge boldform-up-badge--sale">
+					<span class="dashicons dashicons-tag" aria-hidden="true"></span>
+					<?php esc_html_e( 'Early Bird Sale — 70% off', 'boldform-lite' ); ?>
+				</span>
 				<h1><?php esc_html_e( 'Do more with BoldForm Pro', 'boldform-lite' ); ?></h1>
-				<p><?php esc_html_e( 'Unlock multi-page forms, payments, advanced fields, 35+ integrations and more — all inside the same drag-and-drop builder you already know.', 'boldform-lite' ); ?></p>
+				<p><?php esc_html_e( 'Add payments, multi-page forms, advanced fields, and 30+ integrations — all inside the same drag-and-drop builder you already know.', 'boldform-lite' ); ?></p>
 				<a class="boldform-up-btn" href="<?php echo esc_url( $buy_url ); ?>" target="_blank" rel="noopener noreferrer">
-					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
+					<?php esc_html_e( 'Claim 70% Off', 'boldform-lite' ); ?>
+					<span class="dashicons dashicons-arrow-right-alt2" aria-hidden="true"></span>
 				</a>
+				<ul class="boldform-up-hero__perks">
+					<li><?php esc_html_e( 'Instant access', 'boldform-lite' ); ?></li>
+					<li><?php esc_html_e( 'Automatic updates', 'boldform-lite' ); ?></li>
+					<li><?php esc_html_e( 'Priority support', 'boldform-lite' ); ?></li>
+				</ul>
 			</div>
 
 			<div class="boldform-up-table-card">
@@ -2518,6 +2649,7 @@ class BoldForm_Lite_Admin {
 		$count_read   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'read' ) ) );
 		$count_starred = $this->get_entries_count( array_merge( $filters, array( 'status' => 'starred' ) ) );
 		$count_spam    = $this->get_entries_count( array_merge( $filters, array( 'status' => 'spam' ) ) );
+		$count_trash   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'trash' ) ) );
 
 		$base_url = admin_url( 'admin.php?page=boldform-lite-entries' );
 		$notice   = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -2579,6 +2711,10 @@ class BoldForm_Lite_Admin {
 				<div class="boldform-card boldform-card--success" style="margin-bottom:16px;">
 					<p><?php esc_html_e( 'Entry deleted successfully.', 'boldform-lite' ); ?></p>
 				</div>
+			<?php elseif ( 'entry_trashed' === $notice ) : ?>
+				<div class="boldform-card boldform-card--success" style="margin-bottom:16px;">
+					<p><?php esc_html_e( 'Entry moved to Trash.', 'boldform-lite' ); ?></p>
+				</div>
 			<?php endif; ?>
 
 			<!-- Filters bar -->
@@ -2600,6 +2736,10 @@ class BoldForm_Lite_Admin {
 						</a>
 						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'spam' ) ) ); ?>" class="boldform-entries-tab<?php echo 'spam' === $filter_status ? ' is-active' : ''; ?>">
 							<?php esc_html_e( 'Spam', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_spam ); ?></span>
+						</a>
+						<?php // Trash tab is always shown (with a 0 count when empty) so it stays a discoverable, fixed destination. ?>
+						<a href="<?php echo esc_url( $filter_url( array( 'status' => 'trash' ) ) ); ?>" class="boldform-entries-tab<?php echo 'trash' === $filter_status ? ' is-active' : ''; ?>">
+							<?php esc_html_e( 'Trash', 'boldform-lite' ); ?> <span class="boldform-entries-tab__count"><?php echo absint( $count_trash ); ?></span>
 						</a>
 					</div>
 				</div>
@@ -2688,28 +2828,44 @@ class BoldForm_Lite_Admin {
 					<span class="boldform-bulk-bar__count" id="boldform-bulk-count" hidden></span>
 					<select id="boldform-bulk-action" class="boldform-bulk-bar__select">
 						<option value=""><?php esc_html_e( 'Bulk actions', 'boldform-lite' ); ?></option>
-						<option value="read"><?php esc_html_e( 'Mark as Read', 'boldform-lite' ); ?></option>
-						<option value="unread"><?php esc_html_e( 'Mark as Unread', 'boldform-lite' ); ?></option>
-						<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
-						<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
-						<option value="delete"><?php esc_html_e( 'Delete permanently', 'boldform-lite' ); ?></option>
+						<?php if ( 'trash' === $filter_status ) : ?>
+							<option value="restore"><?php esc_html_e( 'Restore', 'boldform-lite' ); ?></option>
+							<option value="delete"><?php esc_html_e( 'Delete Permanently', 'boldform-lite' ); ?></option>
+						<?php else : ?>
+							<option value="read"><?php esc_html_e( 'Mark as Read', 'boldform-lite' ); ?></option>
+							<option value="unread"><?php esc_html_e( 'Mark as Unread', 'boldform-lite' ); ?></option>
+							<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
+							<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
+							<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+						<?php endif; ?>
 					</select>
 					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
-					<button type="button" class="boldform-bulk-bar__export" id="boldform-bulk-export" hidden>
-						<span class="dashicons dashicons-download"></span>
-						<?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?>
-					</button>
-					<?php
-					/**
-					 * Fires inside the Entries bulk-action bar, after the "Export Selected"
-					 * (CSV) button, so add-ons can offer more selected-rows export formats
-					 * (such as Excel and PDF). Handlers own their button markup and
-					 * the JS that collects the checked entry ids and posts to their endpoint.
-					 *
-					 * @since 1.1.2
-					 */
-					do_action( 'boldform_entries_bulk_export_actions' );
-					?>
+					<?php // Export-selected menu: a single dropdown replaces the row of format buttons. Shown only while rows are selected (JS toggles the `hidden` attribute). ?>
+					<div class="boldform-dropdown boldform-bulk-export-dd" id="boldform-bulk-export-dd" hidden>
+						<button type="button" class="boldform-dropdown__trigger">
+							<span class="dashicons dashicons-download"></span>
+							<span class="boldform-dropdown__label"><?php esc_html_e( 'Export Selected', 'boldform-lite' ); ?></span>
+							<span class="boldform-dropdown__arrow"></span>
+						</button>
+						<div class="boldform-dropdown__panel">
+							<button type="button" class="boldform-dropdown__item" id="boldform-bulk-export-csv">
+								<span class="dashicons dashicons-media-text"></span>
+								<?php esc_html_e( 'Export CSV', 'boldform-lite' ); ?>
+							</button>
+							<?php
+							/**
+							 * Fires inside the Entries "Export Selected" dropdown, after the CSV
+							 * item, so add-ons can add more selected-rows export formats (Excel,
+							 * PDF). Handlers render dropdown items (`.boldform-dropdown__item`)
+							 * and own the JS that collects the checked ids and posts to their
+							 * endpoint.
+							 *
+							 * @since 1.1.2
+							 */
+							do_action( 'boldform_entries_bulk_export_actions' );
+							?>
+						</div>
+					</div>
 				</div>
 			<?php endif; ?>
 
@@ -2749,9 +2905,12 @@ class BoldForm_Lite_Admin {
 										<input type="checkbox" class="boldform-entry-checkbox" value="<?php echo absint( $entry->id ); ?>" aria-label="<?php esc_attr_e( 'Select entry', 'boldform-lite' ); ?>">
 									</td>
 									<td class="boldform-entry-star">
-										<button type="button" class="boldform-star-btn<?php echo $is_starred ? ' is-starred' : ''; ?>" data-entry-id="<?php echo absint( $entry->id ); ?>" title="<?php esc_attr_e( 'Star', 'boldform-lite' ); ?>">
-											<span class="dashicons <?php echo $is_starred ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
-										</button>
+										<?php // In the Trash view the star is inert — starring here would silently pull the entry back out of the trash. ?>
+										<?php if ( 'trash' !== $filter_status ) : ?>
+											<button type="button" class="boldform-star-btn<?php echo $is_starred ? ' is-starred' : ''; ?>" data-entry-id="<?php echo absint( $entry->id ); ?>" title="<?php esc_attr_e( 'Star', 'boldform-lite' ); ?>">
+												<span class="dashicons <?php echo $is_starred ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
+											</button>
+										<?php endif; ?>
 									</td>
 									<td><strong><?php echo absint( $entry->id ); ?></strong></td>
 									<td>
@@ -2964,6 +3123,11 @@ class BoldForm_Lite_Admin {
 										<span class="boldform-captcha-card__title"><?php esc_html_e( 'hCaptcha', 'boldform-lite' ); ?></span>
 										<span class="boldform-captcha-card__description"><?php esc_html_e( 'Privacy-focused captcha alternative.', 'boldform-lite' ); ?></span>
 									</label>
+									<label class="boldform-captcha-card<?php echo 'turnstile' === $settings['captcha_provider'] ? ' is-selected' : ''; ?>">
+										<input type="radio" name="boldform_captcha_provider" value="turnstile"<?php checked( $settings['captcha_provider'], 'turnstile' ); ?>>
+										<span class="boldform-captcha-card__title"><?php esc_html_e( 'Cloudflare Turnstile', 'boldform-lite' ); ?></span>
+										<span class="boldform-captcha-card__description"><?php esc_html_e( 'Modern, no-puzzle captcha from Cloudflare.', 'boldform-lite' ); ?></span>
+									</label>
 									<label class="boldform-captcha-card<?php echo 'simple_math' === $settings['captcha_provider'] ? ' is-selected' : ''; ?>">
 										<input type="radio" name="boldform_captcha_provider" value="simple_math"<?php checked( $settings['captcha_provider'], 'simple_math' ); ?>>
 										<span class="boldform-captcha-card__title"><?php esc_html_e( 'Simple Math', 'boldform-lite' ); ?></span>
@@ -3005,6 +3169,25 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['hcaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
 											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: hCaptcha URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="boldform-captcha-panel" data-captcha-panel="turnstile"<?php echo 'turnstile' === $settings['captcha_provider'] ? '' : ' hidden'; ?>>
+								<div class="boldform-card">
+									<h3><?php esc_html_e( 'Turnstile Keys', 'boldform-lite' ); ?></h3>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-turnstile-site-key"><?php esc_html_e( 'Site key', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="text" id="boldform-turnstile-site-key" name="boldform_turnstile_site_key" value="<?php echo esc_attr( $settings['turnstile_site_key'] ); ?>">
+										</div>
+									</div>
+									<div class="boldform-field-row">
+										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
+										<div class="boldform-field-control">
+											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: Cloudflare Turnstile dashboard URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
@@ -3202,6 +3385,8 @@ class BoldForm_Lite_Admin {
 			'recaptcha_secret_key' => '',
 			'hcaptcha_site_key'    => '',
 			'hcaptcha_secret_key'  => '',
+			'turnstile_site_key'   => '',
+			'turnstile_secret_key' => '',
 			'required_msg_text'     => '',
 			'required_msg_email'    => '',
 			'required_msg_number'   => '',
@@ -3276,9 +3461,10 @@ class BoldForm_Lite_Admin {
 
 		if ( 'captcha' === $active_tab ) {
 			$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
-			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
+			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
 			$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
 			$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
+			$settings['turnstile_site_key']   = isset( $_POST['boldform_turnstile_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_site_key'] ) ) : '';
 
 			// Secret keys are masked on render (value=""); only overwrite when a new value is
 			// submitted, so re-saving the page with a blank field preserves the stored key.
@@ -3287,6 +3473,9 @@ class BoldForm_Lite_Admin {
 			}
 			if ( isset( $_POST['boldform_hcaptcha_secret_key'] ) && '' !== $_POST['boldform_hcaptcha_secret_key'] ) {
 				$settings['hcaptcha_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_secret_key'] ) );
+			}
+			if ( isset( $_POST['boldform_turnstile_secret_key'] ) && '' !== $_POST['boldform_turnstile_secret_key'] ) {
+				$settings['turnstile_secret_key'] = sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_secret_key'] ) );
 			}
 		}
 
@@ -3501,6 +3690,7 @@ class BoldForm_Lite_Admin {
 
 		$this->maybe_export_csv();
 		$this->maybe_delete_entry();
+		$this->maybe_trash_or_restore_entry();
 
 		// Bulk actions are submitted via POST, while single-row actions arrive through signed admin URLs.
 		$this->handle_bulk_actions();
@@ -3749,7 +3939,9 @@ class BoldForm_Lite_Admin {
 
 		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Exclude trashed entries — a trashed entry is on its way out and must not inflate
+		// the per-form count shown on the Forms list.
+		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` WHERE trashed_at IS NULL GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		$counts = array();
 
@@ -3966,7 +4158,7 @@ class BoldForm_Lite_Admin {
 
 		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$wpdb->prepare(
-				"SELECT id, form_id, entry_data_json, status, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT id, form_id, entry_data_json, status, trashed_at, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$per_page,
 				$offset
 			)
@@ -3995,7 +4187,9 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 
-		// Auto-mark as read when viewed.
+		// Auto-mark as read when viewed — this also applies to a trashed entry (it stays
+		// in the Trash, only `status` changes) so an opened submission never lingers as
+		// "Unread". Restore then returns it to `read`, which is correct: it has been read.
 		if ( 'unread' === $entry->status ) {
 			global $wpdb;
 			$wpdb->update( $this->plugin->get_entries_table_name(), array( 'status' => 'read' ), array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -4007,9 +4201,18 @@ class BoldForm_Lite_Admin {
 		$form         = $this->get_form( (int) $entry->form_id );
 		$form_title   = $form ? ( $form->title ? (string) $form->title : '#' . absint( $form->id ) ) : '';
 		$entry_status = (string) $entry->status;
+		$is_trashed   = ! empty( $entry->trashed_at );
 		$delete_url   = wp_nonce_url(
 			admin_url( 'admin.php?page=boldform-lite-entries&boldform_delete_entry=' . absint( $entry->id ) ),
 			'boldform_lite_delete_entry_' . absint( $entry->id )
+		);
+		$trash_url    = wp_nonce_url(
+			admin_url( 'admin.php?page=boldform-lite-entries&boldform_trash_entry=' . absint( $entry->id ) ),
+			'boldform_lite_trash_entry_' . absint( $entry->id )
+		);
+		$restore_url  = wp_nonce_url(
+			admin_url( 'admin.php?page=boldform-lite-entries&boldform_restore_entry=' . absint( $entry->id ) ),
+			'boldform_lite_restore_entry_' . absint( $entry->id )
 		);
 		?>
 		<div class="wrap boldform-entry-detail-wrap">
@@ -4029,18 +4232,28 @@ class BoldForm_Lite_Admin {
 				</div>
 				<div class="boldform-entry-header__right">
 					<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>" id="boldform-detail-status"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span>
-					<button type="button" class="boldform-entry-action-btn" id="boldform-mark-starred" title="<?php echo 'starred' === $entry_status ? esc_attr__( 'Remove Star', 'boldform-lite' ) : esc_attr__( 'Star Entry', 'boldform-lite' ); ?>">
-						<span class="dashicons <?php echo 'starred' === $entry_status ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
-					</button>
-					<button type="button" class="boldform-entry-action-btn" id="boldform-mark-unread" title="<?php esc_attr_e( 'Mark as Unread', 'boldform-lite' ); ?>" <?php echo 'unread' === $entry_status ? 'disabled' : ''; ?>>
-						<span class="dashicons dashicons-email"></span>
-					</button>
-					<button type="button" class="boldform-entry-action-btn<?php echo 'spam' === $entry_status ? ' is-spam' : ''; ?>" id="boldform-mark-spam" title="<?php echo 'spam' === $entry_status ? esc_attr__( 'Not Spam', 'boldform-lite' ) : esc_attr__( 'Mark as Spam', 'boldform-lite' ); ?>">
-						<span class="dashicons dashicons-shield"></span>
-					</button>
-					<a href="<?php echo esc_url( $delete_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Delete', 'boldform-lite' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this entry permanently?', 'boldform-lite' ) ); ?>');">
-						<span class="dashicons dashicons-trash"></span>
-					</a>
+					<?php if ( $is_trashed ) : ?>
+						<?php // Trashed entry: only restore or permanently delete — the status marks don't apply here. ?>
+						<a href="<?php echo esc_url( $restore_url ); ?>" class="boldform-entry-action-btn" title="<?php esc_attr_e( 'Restore', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-undo"></span>
+						</a>
+						<a href="<?php echo esc_url( $delete_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Delete Permanently', 'boldform-lite' ); ?>" onclick="return confirm('<?php echo esc_js( __( 'Delete this entry permanently? This cannot be undone.', 'boldform-lite' ) ); ?>');">
+							<span class="dashicons dashicons-trash"></span>
+						</a>
+					<?php else : ?>
+						<button type="button" class="boldform-entry-action-btn" id="boldform-mark-starred" title="<?php echo 'starred' === $entry_status ? esc_attr__( 'Remove Star', 'boldform-lite' ) : esc_attr__( 'Star Entry', 'boldform-lite' ); ?>">
+							<span class="dashicons <?php echo 'starred' === $entry_status ? 'dashicons-star-filled' : 'dashicons-star-empty'; ?>"></span>
+						</button>
+						<button type="button" class="boldform-entry-action-btn" id="boldform-mark-unread" title="<?php esc_attr_e( 'Mark as Unread', 'boldform-lite' ); ?>" <?php echo 'unread' === $entry_status ? 'disabled' : ''; ?>>
+							<span class="dashicons dashicons-email"></span>
+						</button>
+						<button type="button" class="boldform-entry-action-btn<?php echo 'spam' === $entry_status ? ' is-spam' : ''; ?>" id="boldform-mark-spam" title="<?php echo 'spam' === $entry_status ? esc_attr__( 'Not Spam', 'boldform-lite' ) : esc_attr__( 'Mark as Spam', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-shield"></span>
+						</button>
+						<a href="<?php echo esc_url( $trash_url ); ?>" class="boldform-entry-action-btn boldform-entry-action-btn--danger" title="<?php esc_attr_e( 'Move to Trash', 'boldform-lite' ); ?>">
+							<span class="dashicons dashicons-trash"></span>
+						</a>
+					<?php endif; ?>
 				</div>
 			</div>
 
@@ -4102,6 +4315,22 @@ class BoldForm_Lite_Admin {
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
+
+					<?php
+					/**
+					 * Fires in the entry-detail main column, after the read-only submitted-data list.
+					 *
+					 * Lets an add-on render an inline editor for the submitted values (or any other
+					 * main-column UI). Receives the entry row object and the decoded entry-data map
+					 * ( $field_id => array{ label, type, value, path? } ) so it need not re-query.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object                             $entry   The entry row object.
+					 * @param array<string, array<string, mixed>> $decoded Decoded entry_data_json map.
+					 */
+					do_action( 'boldform_entry_detail_after_data', $entry, is_array( $decoded ) ? $decoded : array() );
+					?>
 				</div>
 
 				<!-- Sidebar: Meta -->
@@ -4145,6 +4374,20 @@ class BoldForm_Lite_Admin {
 							<?php endif; ?>
 						</div>
 					</div>
+
+					<?php
+					/**
+					 * Fires inside the entry-detail sidebar, after the Details card.
+					 *
+					 * Lets an add-on append its own sidebar card to the entry-detail view — e.g.
+					 * a private admin-notes panel. Receives the full entry row object.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param object $entry The entry row object (id, form_id, status, created_at, …).
+					 */
+					do_action( 'boldform_entry_detail_sidebar', $entry );
+					?>
 				</div>
 			</div>
 
@@ -4250,9 +4493,13 @@ class BoldForm_Lite_Admin {
 		// Cast to a unique list of positive ints; drop anything else.
 		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
 
+		// Status marks + Trash lifecycle. "trash" moves entries to the Trash view;
+		// "restore" brings them back (to read — the entry has already been seen);
+		// "delete" removes them permanently. Read/unread/starred/spam are plain marks.
 		$is_status = in_array( $action, array( 'unread', 'read', 'starred', 'spam' ), true );
+		$is_move   = in_array( $action, array( 'trash', 'restore' ), true );
 
-		if ( empty( $ids ) || ( ! $is_status && 'delete' !== $action ) ) {
+		if ( empty( $ids ) || ( ! $is_status && ! $is_move && 'delete' !== $action ) ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid request.', 'boldform-lite' ) ) );
 		}
 
@@ -4266,6 +4513,13 @@ class BoldForm_Lite_Admin {
 		// sniffs below can't see the dynamic placeholders and are safely ignored.
 		if ( 'delete' === $action ) {
 			$sql = $wpdb->prepare( "DELETE FROM `{$safe_table}` WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		} elseif ( 'trash' === $action ) {
+			// Set the trash timestamp; leave `status` untouched so restore recovers it.
+			$params = array_merge( array( current_time( 'mysql' ) ), $ids );
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		} elseif ( 'restore' === $action ) {
+			// Clear the trash timestamp; the preserved `status` is the restored state.
+			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = NULL WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		} else {
 			$params = array_merge( array( $action ), $ids );
 			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -4310,6 +4564,52 @@ class BoldForm_Lite_Admin {
 		$this->clear_unread_count_cache();
 
 		wp_safe_redirect( admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_deleted' ) );
+		exit;
+	}
+
+	/**
+	 * Moves a single entry to the Trash, or restores it, from the entry-detail screen.
+	 *
+	 * Two signed single-row actions: `boldform_trash_entry` sets the status to `trash`
+	 * (the entry moves to the Trash tab, recoverable), and `boldform_restore_entry`
+	 * sets it back to `read`. Permanent deletion stays in maybe_delete_entry().
+	 *
+	 * @return void
+	 */
+	private function maybe_trash_or_restore_entry() {
+		$is_trash   = ! empty( $_GET['boldform_trash_entry'] );
+		$is_restore = ! empty( $_GET['boldform_restore_entry'] );
+
+		if ( ! $is_trash && ! $is_restore ) {
+			return;
+		}
+
+		$entry_id = $is_trash ? absint( $_GET['boldform_trash_entry'] ) : absint( $_GET['boldform_restore_entry'] );
+
+		check_admin_referer( ( $is_trash ? 'boldform_lite_trash_entry_' : 'boldform_lite_restore_entry_' ) . $entry_id );
+
+		if ( ! current_user_can( 'manage_options' ) || ! $entry_id ) {
+			return;
+		}
+
+		global $wpdb;
+
+		// Trash stamps the timestamp; restore clears it. `status` is never touched, so a
+		// restored entry returns to exactly the read-state it had before being trashed.
+		// $wpdb->update() writes `trashed_at = NULL` for a null value (the format is
+		// ignored in that case), so restore correctly clears the column.
+		$data = array( 'trashed_at' => $is_trash ? current_time( 'mysql' ) : null );
+		$wpdb->update( $this->plugin->get_entries_table_name(), $data, array( 'id' => $entry_id ), array( '%s' ), array( '%d' ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$this->clear_unread_count_cache();
+
+		// Trashing returns to the list (the entry is no longer in a normal view); restoring
+		// reopens the entry so the admin can keep working with it.
+		$redirect = $is_trash
+			? admin_url( 'admin.php?page=boldform-lite-entries&boldform_notice=entry_trashed' )
+			: admin_url( 'admin.php?page=boldform-lite-entries&entry_id=' . $entry_id );
+
+		wp_safe_redirect( $redirect );
 		exit;
 	}
 
@@ -4573,8 +4873,21 @@ class BoldForm_Lite_Admin {
 			$clauses[] = $wpdb->prepare( 'form_id = %d', absint( $filters['form_id'] ) );
 		}
 
-		if ( ! empty( $filters['status'] ) && 'all' !== $filters['status'] ) {
-			$clauses[] = $wpdb->prepare( 'status = %s', sanitize_key( $filters['status'] ) );
+		// Trash lifecycle vs. status view. Trash is a separate dimension (the nullable
+		// `trashed_at` column), independent of the read-state in `status`, so restoring
+		// an entry keeps its exact prior status. The "trash" view shows trashed entries;
+		// every other view (including "All") excludes them, as do exports — unless an
+		// explicit id list is supplied (selected-rows export), which is authoritative.
+		if ( empty( $filters['ids'] ) ) {
+			$status = ! empty( $filters['status'] ) ? sanitize_key( $filters['status'] ) : 'all';
+			if ( 'trash' === $status ) {
+				$clauses[] = 'trashed_at IS NOT NULL';
+			} else {
+				$clauses[] = 'trashed_at IS NULL';
+				if ( 'all' !== $status ) {
+					$clauses[] = $wpdb->prepare( 'status = %s', $status );
+				}
+			}
 		}
 
 		if ( ! empty( $filters['date_from'] ) ) {
@@ -5116,16 +5429,19 @@ class BoldForm_Lite_Admin {
 
 		// Overview stats.
 		$total_forms   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}`" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Spam AND trashed entries are excluded from every reporting stat below — spam is
+		// not a genuine submission and a trashed entry is on its way to deletion; either
+		// would skew totals, per-form counts, and the trend chart.
+		$total_entries = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$unread_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'unread' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$starred_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status = %s AND trashed_at IS NULL", 'starred' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Today's entries.
-		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// This week entries.
 		$week_start  = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
-		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Entries per form.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
@@ -5135,7 +5451,7 @@ class BoldForm_Lite_Admin {
 				SUM(CASE WHEN e.status = 'read' THEN 1 ELSE 0 END) AS is_read,
 				SUM(CASE WHEN e.status = 'starred' THEN 1 ELSE 0 END) AS starred
 			FROM `{$forms_table}` f
-			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id
+			LEFT JOIN `{$entries_table}` e ON e.form_id = f.id AND e.status != 'spam' AND e.trashed_at IS NULL
 			WHERE f.status != 'trash'
 			GROUP BY f.id
 			ORDER BY total DESC"
@@ -5148,7 +5464,7 @@ class BoldForm_Lite_Admin {
 			$wpdb->prepare(
 				"SELECT DATE(created_at) AS entry_date, COUNT(*) AS total
 				FROM `{$entries_table}`
-				WHERE created_at >= %s
+				WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s
 				GROUP BY DATE(created_at)
 				ORDER BY entry_date ASC",
 				wp_date( 'Y-m-d', strtotime( '-30 days' ) ) . ' 00:00:00'

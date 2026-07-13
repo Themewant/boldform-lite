@@ -341,7 +341,7 @@ class BoldForm_Lite_Shortcode {
 									if ( in_array( $field_type, array( 'paragraph', 'html_editor' ), true ) ) {
 										echo wp_kses_post( $field_html );
 									} else {
-										echo $this->kses_field_html( $field_html );
+										echo $this->kses_field_html( $field_html ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped via kses_field_html() (wp_kses).
 									}
 									?>
 								<?php endforeach; ?>
@@ -364,7 +364,7 @@ class BoldForm_Lite_Shortcode {
 				$aria_label   = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
 				?>
 				<button type="<?php echo $is_preview ? 'button' : 'submit'; ?>" class="boldform-lite-form__submit"<?php echo $aria_label; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
-					<?php echo $this->kses_field_html( $this->build_button_content( $form_settings ) ); ?>
+					<?php echo $this->kses_field_html( $this->build_button_content( $form_settings ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped via kses_field_html() (wp_kses). ?>
 				</button>
 			</div>
 			<?php endif; ?>
@@ -678,12 +678,13 @@ class BoldForm_Lite_Shortcode {
 		$saved = is_array( $saved ) ? $saved : array();
 
 		$provider = isset( $saved['captcha_provider'] ) ? sanitize_key( (string) $saved['captcha_provider'] ) : 'simple_math';
-		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'simple_math' ), true ) ? $provider : 'simple_math';
+		$provider = in_array( $provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $provider : 'simple_math';
 
 		return array(
 			'provider'           => $provider,
 			'recaptcha_site_key' => isset( $saved['recaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['recaptcha_site_key'] ) : '',
 			'hcaptcha_site_key'  => isset( $saved['hcaptcha_site_key'] ) ? sanitize_text_field( (string) $saved['hcaptcha_site_key'] ) : '',
+			'turnstile_site_key' => isset( $saved['turnstile_site_key'] ) ? sanitize_text_field( (string) $saved['turnstile_site_key'] ) : '',
 		);
 	}
 
@@ -714,6 +715,17 @@ class BoldForm_Lite_Shortcode {
 			wp_enqueue_script(
 				'boldform-lite-hcaptcha',
 				'https://js.hcaptcha.com/1/api.js',
+				array(),
+				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
+				true
+			);
+		}
+
+		if ( 'turnstile' === $captcha['provider'] && ! empty( $captcha['turnstile_site_key'] ) ) {
+			wp_enqueue_script(
+				'boldform-lite-turnstile',
+				// phpcs:ignore PluginCheck.CodeAnalysis.EnqueuedResourceOffloading.OffloadedContent -- Cloudflare Turnstile captcha API must load from the provider (same as reCAPTCHA/hCaptcha).
+				'https://challenges.cloudflare.com/turnstile/v0/api.js',
 				array(),
 				null, // phpcs:ignore WordPress.WP.EnqueuedResourceParameters.MissingVersion -- external resource, version controlled by provider.
 				true
@@ -772,6 +784,13 @@ class BoldForm_Lite_Shortcode {
 			return sprintf(
 				'<div class="boldform-lite-form__captcha"><div class="h-captcha" data-sitekey="%s"></div></div>',
 				esc_attr( (string) $captcha['hcaptcha_site_key'] )
+			);
+		}
+
+		if ( 'turnstile' === $captcha['provider'] && ! empty( $captcha['turnstile_site_key'] ) ) {
+			return sprintf(
+				'<div class="boldform-lite-form__captcha"><div class="cf-turnstile" data-sitekey="%s"></div></div>',
+				esc_attr( (string) $captcha['turnstile_site_key'] )
 			);
 		}
 
