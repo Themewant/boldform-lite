@@ -2806,6 +2806,29 @@ class BoldForm_Lite_Admin {
 							<?php endforeach; ?>
 						</div>
 					</div>
+					<?php
+					/**
+					 * Fires inside the Entries filter toolbar, after the Form and Date
+					 * dropdowns, so an add-on can add its own filter control (e.g. an
+					 * Approval-status dropdown). Render a `.boldform-dropdown` block to
+					 * match the native Form/Date filters — Lite's dropdown toggle JS
+					 * already handles any `.boldform-dropdown__trigger` on this screen.
+					 *
+					 * @since 1.1.4
+					 *
+					 * @param array<string, mixed> $filter_context form_id, status, date_range, date_from, date_to.
+					 */
+					do_action(
+						'boldform_entries_filter_controls',
+						array(
+							'form_id'    => $filter_form,
+							'status'     => $filter_status,
+							'date_range' => $filter_date,
+							'date_from'  => $filter_from,
+							'date_to'    => $filter_to,
+						)
+					);
+					?>
 				</div>
 			</div>
 
@@ -2920,7 +2943,22 @@ class BoldForm_Lite_Admin {
 									</td>
 									<td><span class="boldform-entry-form-badge"><?php echo esc_html( $form_title ); ?></span></td>
 									<td><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( (string) $entry->created_at ) ) ); ?></td>
-									<td><span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span></td>
+									<td>
+										<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span>
+										<?php
+										/**
+										 * Filter extra HTML shown after an entry's status badge in the
+										 * list (e.g. an approval-status badge). Returned markup is passed
+										 * through wp_kses_post before output.
+										 *
+										 * @since 1.1.4
+										 *
+										 * @param string $html  Extra HTML (default empty).
+										 * @param object $entry The entry row object.
+										 */
+										echo wp_kses_post( apply_filters( 'boldform_entry_status_badge_after', '', $entry ) );
+										?>
+									</td>
 								</tr>
 							<?php endforeach; ?>
 						<?php endif; ?>
@@ -4156,9 +4194,28 @@ class BoldForm_Lite_Admin {
 		$safe_table = esc_sql( $table_name );
 		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
 
+		$columns = 'id, form_id, entry_data_json, status, trashed_at, user_ip, created_at';
+
+		/**
+		 * Filter extra columns selected for each entries-list row, so an add-on can
+		 * read its own column (e.g. an approval status) on the row object without an
+		 * extra query per row. Values must be plain identifier names of columns that
+		 * exist on the entries table; each is passed through esc_sql().
+		 *
+		 * @since 1.1.4
+		 *
+		 * @param string[] $extra_columns Extra column names (default empty).
+		 */
+		$extra_columns = (array) apply_filters( 'boldform_entries_list_columns', array() );
+		foreach ( $extra_columns as $extra_column ) {
+			if ( is_string( $extra_column ) && '' !== $extra_column ) {
+				$columns .= ', ' . esc_sql( $extra_column );
+			}
+		}
+
 		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$wpdb->prepare(
-				"SELECT id, form_id, entry_data_json, status, trashed_at, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT {$columns} FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$per_page,
 				$offset
 			)
@@ -4897,6 +4954,21 @@ class BoldForm_Lite_Admin {
 		if ( ! empty( $filters['date_to'] ) ) {
 			$clauses[] = $wpdb->prepare( 'created_at <= %s', sanitize_text_field( $filters['date_to'] ) . ' 23:59:59' );
 		}
+
+		/**
+		 * Filter the WHERE conditions for entries list/count queries.
+		 *
+		 * Lets an add-on scope the entries list by a Pro-owned column (e.g. the
+		 * Entry Approval status). Each clause in the returned array is joined with
+		 * AND verbatim, so a callback MUST return only already-escaped or
+		 * $wpdb->prepare()'d SQL fragments — never raw user input.
+		 *
+		 * @since 1.1.4
+		 *
+		 * @param string[]             $clauses Prepared WHERE fragments.
+		 * @param array<string, mixed> $filters Active filters for this query.
+		 */
+		$clauses = (array) apply_filters( 'boldform_entries_where_clauses', $clauses, $filters );
 
 		if ( empty( $clauses ) ) {
 			return '';
