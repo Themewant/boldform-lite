@@ -3182,6 +3182,14 @@
 	padding: 16px;
 }
 
+/* An empty Pro extension slot is still a sibling of the head, so it defeats the
+   `:only-child` rule above. When a block has no body and its slot is empty (e.g.
+   Lite without the Custom Email add-on), keep the head borderless as before so
+   no divider dangles under a lone toggle. */
+.bfsп-email-block:not( :has( .bfsп-email-block__body ) ):not( :has( .boldform-email-pro-slot > * ) ) .bfsп-email-block__head {
+	border-bottom: none;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media ( max-width: 1024px ) {
 	.bfs-stab-nav {

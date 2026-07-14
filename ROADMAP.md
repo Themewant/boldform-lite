@@ -47,7 +47,7 @@ _At-a-glance board view (matches our public roadmap columns). Numbering is per-c
 10. **Color Picker Field** — Allow users to select a color value directly within the form.
 
 **Pro 1.2 — smarter notifications & payments**
-11. **Custom Email Editor** — Fully customize notification email subjects and content, including dynamic values from submitted fields.
+11. **Custom Email Editor** ✅ _built_ — Fully customize notification email subjects and content, including dynamic values from submitted fields (merge tags). Per-form, admin + user emails independently; rides Lite's existing email filters (zero Lite changes).
 12. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
 13. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
 14. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.

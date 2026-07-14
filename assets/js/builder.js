@@ -3220,6 +3220,9 @@ jQuery(
 						'</div>'
 						: ''
 					) +
+					// Pro extension slot: add-ons (e.g. Custom Email Editor) inject
+					// per-email content controls here on boldform:form_settings_rendered.
+					'<div class="boldform-email-pro-slot" data-email-slot="admin"></div>' +
 				'</div>' +
 				'<div class="bfsп-email-block">' +
 					'<div class="bfsп-email-block__head">' +
@@ -3229,6 +3232,8 @@ jQuery(
 							'<span class="boldform-switch__slider"></span>' +
 						'</label>' +
 					'</div>' +
+					// Pro extension slot for the user confirmation email.
+					'<div class="boldform-email-pro-slot" data-email-slot="user"></div>' +
 				'</div>';
 
 			// ── Security pane — duplicate prevention ────────────────────────────
