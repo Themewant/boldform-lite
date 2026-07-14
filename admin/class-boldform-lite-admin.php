@@ -2814,7 +2814,7 @@ class BoldForm_Lite_Admin {
 					 * match the native Form/Date filters — Lite's dropdown toggle JS
 					 * already handles any `.boldform-dropdown__trigger` on this screen.
 					 *
-					 * @since 1.1.4
+					 * @since 1.1.3
 					 *
 					 * @param array<string, mixed> $filter_context form_id, status, date_range, date_from, date_to.
 					 */
@@ -2860,6 +2860,19 @@ class BoldForm_Lite_Admin {
 							<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
 							<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
 							<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+							<?php
+							/**
+							 * Fires inside the entries bulk-actions <select>, in non-trash
+							 * views, so an add-on can add its own <option> bulk actions
+							 * (e.g. Approve / Reject). The add-on performs the work by
+							 * handling the `boldform_bulk_entry_action` action.
+							 *
+							 * @since 1.1.3
+							 *
+							 * @param string $filter_status The current status view.
+							 */
+							do_action( 'boldform_entries_bulk_actions', $filter_status );
+							?>
 						<?php endif; ?>
 					</select>
 					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
@@ -2951,7 +2964,7 @@ class BoldForm_Lite_Admin {
 										 * list (e.g. an approval-status badge). Returned markup is passed
 										 * through wp_kses_post before output.
 										 *
-										 * @since 1.1.4
+										 * @since 1.1.3
 										 *
 										 * @param string $html  Extra HTML (default empty).
 										 * @param object $entry The entry row object.
@@ -4202,7 +4215,7 @@ class BoldForm_Lite_Admin {
 		 * extra query per row. Values must be plain identifier names of columns that
 		 * exist on the entries table; each is passed through esc_sql().
 		 *
-		 * @since 1.1.4
+		 * @since 1.1.3
 		 *
 		 * @param string[] $extra_columns Extra column names (default empty).
 		 */
@@ -4549,6 +4562,21 @@ class BoldForm_Lite_Admin {
 
 		// Cast to a unique list of positive ints; drop anything else.
 		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
+
+		/**
+		 * Fires in the bulk entry-action handler after the ids are resolved, so an
+		 * add-on can perform a custom bulk action it registered in the dropdown
+		 * (e.g. Approve / Reject). The request nonce and the manage_options
+		 * capability are already verified above. A handler that claims $action MUST
+		 * send its own JSON response (which ends the request); if none does, Lite
+		 * proceeds with its built-in actions and rejects an unknown action.
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param string $action The requested bulk action.
+		 * @param int[]  $ids    Resolved entry ids.
+		 */
+		do_action( 'boldform_bulk_entry_action', $action, $ids );
 
 		// Status marks + Trash lifecycle. "trash" moves entries to the Trash view;
 		// "restore" brings them back (to read — the entry has already been seen);
@@ -4963,7 +4991,7 @@ class BoldForm_Lite_Admin {
 		 * AND verbatim, so a callback MUST return only already-escaped or
 		 * $wpdb->prepare()'d SQL fragments — never raw user input.
 		 *
-		 * @since 1.1.4
+		 * @since 1.1.3
 		 *
 		 * @param string[]             $clauses Prepared WHERE fragments.
 		 * @param array<string, mixed> $filters Active filters for this query.
