@@ -476,9 +476,6 @@ Developer:
 
 == Upgrade Notice ==
 
-= 1.1.4 =
-Adds the extension points behind the BoldForm Pro Custom Email Editor, and lets a per-message Reply-To take precedence over the site-wide SMTP Reply-To. A safe update for all users.
-
 = 1.1.3 =
 Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.
 
