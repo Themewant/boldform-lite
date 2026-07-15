@@ -312,10 +312,12 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
-
 = 1.1.4 =
 Improvements:
 * Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
+Developer:
+* Developer: New entries-list extension points so add-ons can extend the Entries screen — `boldform_entries_list_columns` (add columns to each row's query), `boldform_entries_where_clauses` (scope the list and its counts by an add-on column), `boldform_entries_filter_controls` (add a filter control to the toolbar alongside the Form and Date filters), and `boldform_entry_status_badge_after` (append markup after a row's status badge).
+* Developer: New bulk-action extension points for the Entries list — `boldform_entries_bulk_actions` (add options to the bulk-actions dropdown) and `boldform_bulk_entry_action` (handle a custom bulk action, with the request nonce and capability already verified). Used by BoldForm Pro's Entry Approval workflow to add per-row approval badges, an Approval filter, and bulk approve/reject.
 
 = 1.1.3 =
 New features:
