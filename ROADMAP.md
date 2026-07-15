@@ -35,44 +35,36 @@ _At-a-glance board view (matches our public roadmap columns). Numbering is per-c
 **Flagship (planning)**
 1. **AI Form Builder** — Create complete forms from a plain-language description. Simply describe the form you need, and AI instantly generates the fields, layout, and settings — ready to refine in the drag-and-drop builder.
 
-**Pro 1.1 — managing submissions**
-2. **Entry Approval Workflow** — Review submissions before they take effect. Entries arrive as pending and only trigger notifications and follow-up actions once an administrator approves them.
-3. **Entry Editing** — Edit saved submissions directly from the dashboard to correct or update information after it has been received.
-4. **Import Entries** — Restore or migrate form submissions by importing them from a JSON export file, so entries can move between sites alongside their forms (Lite exports entries; importing them is a Pro capability).
-5. **Entry Notes** — Add private, admin-only notes to any submission to track follow-ups and internal context.
-6. **Custom Entry Statuses** — Define your own submission statuses to match your team's workflow, beyond the built-in read, starred, and spam labels.
-7. **Entry Limit & Cooldown** — Automatically close a form after a set number of submissions, and rate-limit repeat submissions per user to prevent abuse.
-8. **Form Locking** — Protect any form with a password so it is only accessible to authorized visitors.
-9. **Akismet Spam Filtering** — Add Akismet, the industry-standard spam service, for an extra layer of protection against unwanted submissions.
-10. **Color Picker Field** — Allow users to select a color value directly within the form.
+**Pro 1.1 — managing submissions** _(Entry Approval Workflow built — see Done below)_
+2. **Custom Entry Statuses** — Define your own submission statuses to match your team's workflow, beyond the built-in read, starred, and spam labels.
 
 **Pro 1.2 — smarter notifications & payments**
-11. **Custom Email Editor** — Fully customize notification email subjects and content, including dynamic values from submitted fields.
-12. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
-13. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
-14. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
-15. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
-16. **Custom Thank-You Page** — Display a personalized confirmation message using submitted field values after a form is completed.
-17. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
-18. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
-19. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
-20. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
+3. **Custom Email Editor** — Fully customize notification email subjects and content, including dynamic values from submitted fields.
+4. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
+5. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
+6. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
+7. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
+8. **Custom Thank-You Page** — Display a personalized confirmation message using submitted field values after a form is completed.
+9. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
+10. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
+11. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
+12. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
 
 **Pro 2.0 — marquee features**
-21. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
-22. **A/B Testing** — Split traffic between two versions of a form to compare performance and identify the higher-converting design.
-23. **User Submission Portal** — Give logged-in users a dedicated area to view and manage their own past submissions.
-24. **Subscriptions & Recurring Payments** — Collect recurring payments through Stripe and PayPal for memberships, donations, and retainers.
-25. **Embed Modes** — Display forms as popups, slide-ins, or floating buttons to capture leads anywhere on the site.
-26. **Premium Template Packs** — Expand the built-in free template library with additional industry-specific, ready-to-use form packs available to Pro users.
-27. **Country & IP Blocking** — Restrict submissions from specific countries or IP addresses to reduce fraud and abuse.
-28. **REST API & WP-CLI** — Read and create entries programmatically through a REST API and manage the plugin via the command line.
-29. **Advanced Actions** — Automatically create posts, register users, or restrict form access by role upon submission.
-30. **WooCommerce Integration** — Create WooCommerce orders directly from form submissions.
-31. **AI Response Tools** — Use AI to summarize submissions or draft automated responses (separate from the flagship AI Form Builder).
-32. **Google Places Autocomplete** — Offer address autocomplete in address fields using Google Places.
-33. **Mailchimp Tags & Groups** — Apply granular Mailchimp tags and groups when syncing subscribers.
-34. **ActiveCampaign Deals** — Create deals in ActiveCampaign, not just contacts, from submissions.
+13. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
+14. **A/B Testing** — Split traffic between two versions of a form to compare performance and identify the higher-converting design.
+15. **User Submission Portal** — Give logged-in users a dedicated area to view and manage their own past submissions.
+16. **Subscriptions & Recurring Payments** — Collect recurring payments through Stripe and PayPal for memberships, donations, and retainers.
+17. **Embed Modes** — Display forms as popups, slide-ins, or floating buttons to capture leads anywhere on the site.
+18. **Premium Template Packs** — Expand the built-in free template library with additional industry-specific, ready-to-use form packs available to Pro users.
+19. **Country & IP Blocking** — Restrict submissions from specific countries or IP addresses to reduce fraud and abuse.
+20. **REST API & WP-CLI** — Read and create entries programmatically through a REST API and manage the plugin via the command line.
+21. **Advanced Actions** — Automatically create posts, register users, or restrict form access by role upon submission.
+22. **WooCommerce Integration** — Create WooCommerce orders directly from form submissions.
+23. **AI Response Tools** — Use AI to summarize submissions or draft automated responses (separate from the flagship AI Form Builder).
+24. **Google Places Autocomplete** — Offer address autocomplete in address fields using Google Places.
+25. **Mailchimp Tags & Groups** — Apply granular Mailchimp tags and groups when syncing subscribers.
+26. **ActiveCampaign Deals** — Create deals in ActiveCampaign, not just contacts, from submissions.
 
 ### ⚫ Done — already shipped
 
@@ -112,6 +104,17 @@ _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐
 29. **Auto-Populate & Merge Tags** — ⭐ Pro — Pre-fill fields and reuse submitted values dynamically.
 30. **Hidden Field** — ⭐ Pro — Pass hidden, pre-filled values through a form without showing them to the visitor.
 31. **Analytics** — ⭐ Pro — Track form views and conversion performance.
+32. **Entry Approval Workflow** — ⭐ Pro — Hold submissions for admin review before their notifications and integrations run; approve or reject from the entry screen or in bulk, with per-row badges and an approval filter on the Entries list. _(built — release version set at merge)_
+33. **Entry Editing** — ⭐ Pro — Edit a saved submission from the admin using each field's native control, with an edit-history audit trail. _(Pro 1.1.0)_
+34. **Entry Notes** — ⭐ Pro — Private, admin-only notes attached to any submission (never shown, exported, or emailed). _(Pro 1.1.0)_
+35. **Save & Resume** — ⭐ Pro — Visitors save a partially completed form and return via a private resume link. _(Pro 1.1.0)_
+36. **Draft Auto-Save** — ⭐ Pro — Answers are saved in the visitor's browser as they type and restored if the page is reloaded before submitting. _(Pro 1.1.0)_
+37. **Form Locking** — ⭐ Pro — Password-protect a form (hashed, verified server-side) before it renders or accepts submissions. _(Pro 1.1.0)_
+38. **Excel & PDF Export** — ⭐ Pro — Export entries to Excel (.xlsx) and PDF alongside Lite's CSV export. _(Pro 1.1.0)_
+39. **Entry Limit & Cooldown** — ⭐ Pro — Cap total submissions per form and rate-limit repeat submissions per visitor. _(Pro 1.0.0)_
+40. **Akismet Spam Filtering** — ⭐ Pro — Check submissions against Akismet and block spam, per form. _(Pro 1.0.0)_
+41. **Color Picker Field** — ⭐ Pro — A colour-picker field (swatch, hue map, hex input) that stores a hex colour. _(Pro 1.0.0)_
+42. **Import Entries** — ⭐ Pro — Import entries from a BoldForm export onto a chosen form, with duplicates skipped. _(Pro 1.0.0)_
 
 ---
 
