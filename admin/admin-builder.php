@@ -39,21 +39,15 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 
 	<!-- Setup screen for new forms -->
 	<div class="boldform-setup-screen" id="boldform-setup-screen"<?php echo ! $boldform_lite_is_new_form ? ' hidden' : ''; ?>>
-		<div class="boldform-setup-header">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>" class="boldform-setup-header__back">
-				<span class="dashicons dashicons-arrow-left-alt2"></span>
-			</a>
-			<div class="boldform-setup-header__brand">
-				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
-			</div>
-			<?php // Shown by default; a callback on boldform_show_upgrade_cta can return false to hide it. ?>
-			<?php if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) : ?>
-				<a class="boldform-setup-header__upgrade" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer">
-					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
-				</a>
-			<?php endif; ?>
-		</div>
+		<?php
+		// The Add-New landing shares the exact BoldForm topbar used on every other admin
+		// screen (brand + section nav + Upgrade), so the create flow stays visually
+		// consistent and fully navigable instead of showing a near-empty mini header.
+		// 'Forms' is the active section (Add New lives under it). The deep field-editing
+		// canvas below keeps its own focused builder toolbar — matching how top form
+		// plugins strip section nav only once you are actually editing fields.
+		$this->render_admin_topbar( 'boldform-lite' );
+		?>
 
 		<div class="boldform-setup-body">
 			<?php // New-form marker: relocates the notice here — below the dark header bar, above "Create a New Form". ?>

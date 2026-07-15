@@ -731,10 +731,20 @@ class BoldForm_Lite_Admin {
 			$form_record = $form_id ? $this->get_form( $form_id ) : null;
 			$form_data   = $this->normalize_form_for_builder( $form_record );
 
+			// The Add-New setup screen renders the shared BoldForm topbar, whose styles
+			// live in settings.css. Load it first (as a dependency) so builder.css is
+			// enqueued after it and still wins any shared-selector conflict on the canvas.
+			wp_enqueue_style(
+				'boldform-lite-admin',
+				BOLDFORM_LITE_URL . 'assets/css/settings.css',
+				array(),
+				$this->asset_version( 'assets/css/settings.css' )
+			);
+
 			wp_enqueue_style(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/css/builder.css',
-				array(),
+				array( 'boldform-lite-admin' ),
 				$this->asset_version( 'assets/css/builder.css' )
 			);
 
