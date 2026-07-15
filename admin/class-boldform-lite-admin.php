@@ -1328,6 +1328,13 @@ class BoldForm_Lite_Admin {
 						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
 					)
 				);
+
+				// Export upgrade-modal wiring (Lite only, shared with the Tools export
+				// teaser). Never loads once the paid add-on is active or CTAs are off.
+				if ( ! $this->is_pro_active() && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
+				}
+
 				wp_add_inline_script(
 					'boldform-lite-admin',
 					'jQuery(function($){
@@ -1463,6 +1470,10 @@ class BoldForm_Lite_Admin {
 			// ── Settings page ─────────────────────────────────────────────────────
 			if ( $this->settings_page_hook === $hook_suffix ) {
 				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				// Tools -> Entries export teaser: wire the shared upgrade modal.
+				if ( 'tools' === $active_tab && ! $this->is_pro_active() && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
+				}
 				wp_add_inline_script(
 					'boldform-lite-admin',
 					'(function(){
@@ -2009,6 +2020,142 @@ class BoldForm_Lite_Admin {
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
 		<?php
+	}
+
+	/**
+	 * Renders locked "Export Excel" / "Export PDF" teaser buttons beside the free
+	 * Export CSV button on the Entries screen, plus a one-time upgrade modal.
+	 *
+	 * The buttons never export — they open a contextual upgrade modal so people
+	 * learn what the paid add-on unlocks at the exact moment they want it.
+	 *
+	 * Hooked to boldform_entries_export_actions. It bails entirely when the paid
+	 * add-on is active (is_pro_active) — the add-on renders its own real Excel/PDF
+	 * buttons on the same action, so showing the teaser too would duplicate them
+	 * and nag a paying customer — and when the boldform_show_upgrade_cta filter is
+	 * switched off (the supported way for any reseller/add-on to suppress every
+	 * upgrade CTA at once).
+	 *
+	 * @return void
+	 */
+	public function render_entries_export_teaser() {
+		if ( $this->is_pro_active() ) {
+			return;
+		}
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return;
+		}
+
+		$formats = array(
+			'excel' => array(
+				'label' => __( 'Export Excel', 'boldform-lite' ),
+				'icon'  => 'media-spreadsheet',
+			),
+			'pdf'   => array(
+				'label' => __( 'Export PDF', 'boldform-lite' ),
+				'icon'  => 'media-document',
+			),
+		);
+
+		foreach ( $formats as $key => $format ) {
+			?>
+			<button type="button" class="boldform-btn-add boldform-export-teaser" data-boldform-export-feature="<?php echo esc_attr( $key ); ?>">
+				<span class="dashicons dashicons-<?php echo esc_attr( $format['icon'] ); ?>"></span>
+				<?php echo esc_html( $format['label'] ); ?>
+				<span class="boldform-export-teaser__badge" aria-hidden="true"><span class="dashicons dashicons-lock"></span></span>
+				<span class="screen-reader-text"><?php esc_html_e( 'Upgrade required', 'boldform-lite' ); ?></span>
+			</button>
+			<?php
+		}
+
+		$this->render_export_upgrade_modal();
+	}
+
+	/**
+	 * Renders the contextual upgrade modal opened by the export teaser buttons.
+	 * Self-contained (the builder modal's CSS is not loaded on this screen); its
+	 * styles live in settings.css and it is toggled by inline JS on the Entries
+	 * page. Rendered only from render_entries_export_teaser(), so it never
+	 * appears when the paid add-on is active.
+	 *
+	 * @return void
+	 */
+	private function render_export_upgrade_modal() {
+		?>
+		<div class="boldform-upgrade-modal" id="boldform-export-upgrade-modal" hidden>
+			<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+			<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-export-upgrade-modal-title">
+				<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+				<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock Excel &amp; PDF export', 'boldform-lite' ); ?></h2>
+				<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen.', 'boldform-lite' ); ?></p>
+				<ul class="boldform-upgrade-modal__list">
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Formatted Excel (.xlsx) for reporting and analysis', 'boldform-lite' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Print-ready PDF records to share or archive', 'boldform-lite' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'One click from this screen, honouring your current filters', 'boldform-lite' ); ?></li>
+				</ul>
+				<div class="boldform-upgrade-modal__actions">
+					<a class="boldform-upgrade-modal__cta" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+					<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the Tools -> Entries export format selector for the free plugin:
+	 * JSON (the available free format) plus locked Excel/PDF options that open the
+	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields
+	 * and, like the Entries teaser, bails when the paid add-on is active (it injects
+	 * its own real format field on this same action) or when CTAs are suppressed.
+	 *
+	 * @return void
+	 */
+	public function render_tools_export_teaser() {
+		if ( $this->is_pro_active() ) {
+			return;
+		}
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return;
+		}
+		?>
+		<div class="boldform-field-row">
+			<div class="boldform-field-label"><label for="boldform-export-format"><?php esc_html_e( 'Export format', 'boldform-lite' ); ?></label></div>
+			<div class="boldform-field-control">
+				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
+					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
+					<option value="xlsx" data-locked="1"><?php esc_html_e( 'Excel (.xlsx) — Upgrade', 'boldform-lite' ); ?></option>
+					<option value="pdf" data-locked="1"><?php esc_html_e( 'PDF — Upgrade', 'boldform-lite' ); ?></option>
+				</select>
+				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php esc_html_e( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' ); ?></p>
+			</div>
+		</div>
+		<?php
+		$this->render_export_upgrade_modal();
+	}
+
+	/**
+	 * Returns the inline jQuery that toggles the shared export upgrade modal.
+	 * Opens on a teaser button click (Entries screen) or when a locked format is
+	 * chosen in the export-format select (Tools screen), and closes on the X, the
+	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only when the
+	 * paid add-on is inactive, so it never loads for a paid user.
+	 *
+	 * @return string
+	 */
+	private function upgrade_modal_inline_js() {
+		return 'jQuery(function($){' .
+			'var $m=$("#boldform-export-upgrade-modal");if(!$m.length){return;}' .
+			'var titles={excel:' . wp_json_encode( __( 'Unlock Excel export', 'boldform-lite' ) ) . ',xlsx:' . wp_json_encode( __( 'Unlock Excel export', 'boldform-lite' ) ) . ',pdf:' . wp_json_encode( __( 'Unlock PDF export', 'boldform-lite' ) ) . '};' .
+			'var fallback=' . wp_json_encode( __( 'Unlock Excel & PDF export', 'boldform-lite' ) ) . ';' .
+			'function openModal(f){$m.find(".boldform-upgrade-modal__title").text(titles[f]||fallback);$m.removeAttr("hidden");$("body").addClass("boldform-upgrade-modal-open");}' .
+			'function closeModal(){$m.attr("hidden","hidden");$("body").removeClass("boldform-upgrade-modal-open");}' .
+			'$(document).on("click",".boldform-export-teaser",function(e){e.preventDefault();openModal($(this).data("boldform-export-feature"));});' .
+			'$(document).on("change",".boldform-upgrade-select",function(){var o=this.options[this.selectedIndex];if(o&&o.getAttribute("data-locked")){openModal(o.value);this.value=$(this).data("free-default")||this.options[0].value;}});' .
+			'$m.on("click","[data-boldform-upgrade-close]",function(){closeModal();});' .
+			'$(document).on("keydown",function(e){if(e.key==="Escape"){closeModal();}});' .
+		'});';
 	}
 
 	/**

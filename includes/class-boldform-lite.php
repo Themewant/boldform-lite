@@ -201,6 +201,14 @@ final class BoldForm_Lite {
 		// topbar nav, header button) — they all honour this filter. Priority 5 so a
 		// reseller's own callback can still override at the default priority if desired.
 		$this->loader->add_filter( 'boldform_show_upgrade_cta', $this->admin, 'hide_upgrade_cta_when_pro_active', 5 );
+		// Preview the premium Excel/PDF export beside the free Export CSV button.
+		// The callback bails when the paid add-on is active (is_pro_active), so the
+		// add-on's real buttons replace it and no teaser is shown to a paid user.
+		$this->loader->add_action( 'boldform_entries_export_actions', $this->admin, 'render_entries_export_teaser' );
+		// Same idea on the Tools → Entries export panel: a locked format selector
+		// (Excel/PDF) that opens the upgrade modal. Bails when the paid add-on is
+		// active, which injects its own real format field on this action.
+		$this->loader->add_action( 'boldform_tools_entries_export_fields', $this->admin, 'render_tools_export_teaser' );
 		$this->loader->add_action( 'boldform_entry_created', $this->admin, 'clear_unread_count_cache' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
 		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );

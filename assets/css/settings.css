@@ -3459,3 +3459,226 @@
 		padding: 12px 12px;
 	}
 }
+
+/* ── Export upgrade teaser (Entries screen, Lite only) ──────────────────────
+   Locked "Export Excel/PDF" buttons that preview a premium feature, plus the
+   contextual upgrade modal they open. Rendered only when the paid add-on is
+   inactive (see render_entries_export_teaser() in the admin class). */
+.boldform-page-header .boldform-btn-add.boldform-export-teaser {
+	background: #fff;
+	color: #4b5563;
+	border: 1px solid #d1d5db;
+	box-shadow: none;
+}
+
+.boldform-page-header .boldform-btn-add.boldform-export-teaser:hover,
+.boldform-page-header .boldform-btn-add.boldform-export-teaser:focus {
+	background: #f9fafb;
+	color: #1f2937;
+	border-color: #9ca3af;
+	box-shadow: 0 2px 8px rgba( 17, 24, 39, 0.08 );
+	transform: translateY( -1px );
+}
+
+.boldform-page-header .boldform-btn-add.boldform-export-teaser > .dashicons:first-child {
+	color: #9ca3af;
+}
+
+.boldform-export-teaser__badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	margin-left: 2px;
+	padding: 2px 7px 2px 5px;
+	border-radius: 999px;
+	background: #eef2ff;
+	color: #4338ca;
+	font-size: 10px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	line-height: 1.5;
+}
+
+.boldform-export-teaser__badge .dashicons {
+	width: 12px;
+	height: 12px;
+	font-size: 12px;
+	line-height: 1;
+}
+
+.boldform-upgrade-modal[hidden] {
+	display: none;
+}
+
+.boldform-upgrade-modal {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+}
+
+.boldform-upgrade-modal__backdrop {
+	position: absolute;
+	inset: 0;
+	background: rgba( 15, 23, 42, 0.55 );
+}
+
+.boldform-upgrade-modal__dialog {
+	position: relative;
+	width: 100%;
+	max-width: 440px;
+	padding: 28px 28px 24px;
+	background: #fff;
+	border-radius: 14px;
+	box-shadow: 0 24px 60px rgba( 15, 23, 42, 0.3 );
+	text-align: center;
+	animation: boldform-upgrade-modal-in 0.16s ease-out;
+}
+
+@keyframes boldform-upgrade-modal-in {
+	from { opacity: 0; transform: translateY( 8px ) scale( 0.98 ); }
+	to { opacity: 1; transform: none; }
+}
+
+.boldform-upgrade-modal__close {
+	position: absolute;
+	top: 12px;
+	right: 12px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+	background: transparent;
+	border: none;
+	border-radius: 8px;
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.boldform-upgrade-modal__close:hover {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.boldform-upgrade-modal__icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 52px;
+	height: 52px;
+	margin: 0 auto 14px;
+	border-radius: 50%;
+	background: #eef2ff;
+	color: #4338ca;
+}
+
+.boldform-upgrade-modal__icon .dashicons {
+	width: 26px;
+	height: 26px;
+	font-size: 26px;
+}
+
+.boldform-upgrade-modal__title {
+	margin: 0 0 8px;
+	font-size: 18px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.boldform-upgrade-modal__text {
+	margin: 0 0 16px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #475569;
+}
+
+.boldform-upgrade-modal__list {
+	margin: 0 0 20px;
+	padding: 0;
+	list-style: none;
+	text-align: left;
+}
+
+.boldform-upgrade-modal__list li {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	margin: 0 0 8px;
+	font-size: 13px;
+	color: #334155;
+}
+
+.boldform-upgrade-modal__list .dashicons {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	color: #16a34a;
+}
+
+.boldform-upgrade-modal__actions {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+}
+
+.boldform-upgrade-modal__cta {
+	display: inline-flex;
+	align-items: center;
+	padding: 10px 22px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.boldform-upgrade-modal__cta:hover,
+.boldform-upgrade-modal__cta:focus {
+	background: #135e96;
+	color: #fff;
+	box-shadow: 0 4px 12px rgba( 34, 113, 177, 0.35 );
+}
+
+.boldform-upgrade-modal__dismiss {
+	padding: 10px 14px;
+	background: transparent;
+	border: none;
+	color: #64748b;
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.boldform-upgrade-modal__dismiss:hover {
+	color: #334155;
+	text-decoration: underline;
+}
+
+body.boldform-upgrade-modal-open {
+	overflow: hidden;
+}
+
+/* Hint under the locked Tools -> Entries export format selector. */
+.boldform-upgrade-hint {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin: 8px 0 0;
+	font-size: 12px;
+	color: #64748b;
+}
+
+.boldform-upgrade-hint .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: #94a3b8;
+}

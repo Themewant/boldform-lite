@@ -313,6 +313,10 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.4 =
+Improvements:
+* Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
+
 = 1.1.3 =
 New features:
 * New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
