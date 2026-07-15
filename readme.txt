@@ -1,4 +1,4 @@
-=== BoldForm - Drag & Drop Form Builder ===
+=== BoldForm - Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms ===
 Contributors: themewant, maha25
 Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
@@ -16,7 +16,7 @@ Lightweight drag-and-drop WordPress form builder — contact forms and more with
 
 From a simple contact form to a form with conditional logic, spam protection, and email-marketing sync, BoldForm gives you the tools professional forms need — without the bloat that slows your site down.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://themewant.com/plugins/boldform/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://themewant.com/plugins/boldform/)
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://wpboldform.com/)
 
 https://www.youtube.com/watch?v=EWum_aGDAMc
 
@@ -30,7 +30,7 @@ https://www.youtube.com/watch?v=EWum_aGDAMc
 
 Perfect for contact forms, quote requests, registrations, feedback forms, surveys, job applications, event sign-ups, and newsletter opt-ins.
 
-= Drag & Drop Form Builder =
+= Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms =
 
 Build forms visually without writing a single line of code. Drag fields from the sidebar, drop them into multi-column rows, reorder with a handle, and configure every field in its own settings panel.
 
@@ -127,7 +127,7 @@ BoldForm ships a documented action/filter API so add-ons and custom code can hoo
 
 = Meet BoldForm Pro =
 
-Ready for more? **[BoldForm Pro](https://themewant.com/plugins/boldform/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
+Ready for more? **[BoldForm Pro](https://wpboldform.com/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
 
 **Advanced form building**
 
@@ -153,7 +153,7 @@ Ready for more? **[BoldForm Pro](https://themewant.com/plugins/boldform/)** unlo
 
 Plus **priority support and automatic updates**.
 
-[See everything in BoldForm Pro →](https://themewant.com/plugins/boldform/)
+[See everything in BoldForm Pro →](https://wpboldform.com/)
 
 == Installation ==
 
@@ -198,7 +198,7 @@ Yes. Submissions stay in your own database, and BoldForm registers a personal-da
 
 = Is there a Pro version? =
 
-Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://themewant.com/plugins/boldform/).
+Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://wpboldform.com/).
 
 == Screenshots ==
 
@@ -312,8 +312,9 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
-
 = 1.1.4 =
+Improvements:
+* Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
 Developer:
 * Developer: New entries-list extension points so add-ons can extend the Entries screen — `boldform_entries_list_columns` (add columns to each row's query), `boldform_entries_where_clauses` (scope the list and its counts by an add-on column), `boldform_entries_filter_controls` (add a filter control to the toolbar alongside the Form and Date filters), and `boldform_entry_status_badge_after` (append markup after a row's status badge).
 * Developer: New bulk-action extension points for the Entries list — `boldform_entries_bulk_actions` (add options to the bulk-actions dropdown) and `boldform_bulk_entry_action` (handle a custom bulk action, with the request nonce and capability already verified). Used by BoldForm Pro's Entry Approval workflow to add per-row approval badges, an Approval filter, and bulk approve/reject.

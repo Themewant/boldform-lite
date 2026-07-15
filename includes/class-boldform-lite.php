@@ -197,10 +197,17 @@ final class BoldForm_Lite {
 	private function define_hooks() {
 		$this->loader->add_action( 'admin_menu', $this->admin, 'register_menu' );
 		$this->loader->add_filter( 'plugin_action_links_' . plugin_basename( BOLDFORM_LITE_FILE ), $this->admin, 'add_plugin_action_links' );
-		// Hide every "Upgrade to Pro" CTA once Pro is active (menu item, plugin-row link,
-		// topbar nav, header button) — they all honour this filter. Priority 5 so a
-		// reseller's own callback can still override at the default priority if desired.
-		$this->loader->add_filter( 'boldform_show_upgrade_cta', $this->admin, 'hide_upgrade_cta_when_pro_active', 5 );
+		// Every upgrade CTA (the Upgrade menu item/page, header button, plugin-row link,
+		// and promo notice) is gated by the boldform_show_upgrade_cta filter (default
+		// true). Lite does NOT detect the paid add-on — the add-on turns this filter off
+		// when installed, so all CTAs hide with zero add-on awareness here.
+		// Preview the premium Excel/PDF export beside the free Export CSV button, and on
+		// the Tools → Entries export panel. Unconditional free-plugin features — Lite
+		// never detects any add-on; they simply respect boldform_show_upgrade_cta. An
+		// add-on that ships real export turns that filter off (so these bail) and renders
+		// its own controls on the same actions (see the paid add-on's entry-export module).
+		$this->loader->add_action( 'boldform_entries_export_actions', $this->admin, 'render_entries_export_teaser' );
+		$this->loader->add_action( 'boldform_tools_entries_export_fields', $this->admin, 'render_tools_export_teaser' );
 		$this->loader->add_action( 'boldform_entry_created', $this->admin, 'clear_unread_count_cache' );
 		$this->loader->add_action( 'admin_head', $this->admin, 'print_menu_icon_styles' );
 		$this->loader->add_filter( 'admin_body_class', $this->admin, 'add_admin_body_class' );
