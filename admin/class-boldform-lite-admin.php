@@ -243,7 +243,7 @@ class BoldForm_Lite_Admin {
 
 		$links['boldform_upgrade'] = sprintf(
 			'<a href="%1$s" target="_blank" rel="noopener noreferrer" style="color:#d63638;font-weight:700;">%2$s</a>',
-			esc_url( 'https://themewant.com/plugins/boldform/' ),
+			esc_url( 'https://wpboldform.com/' ),
 			esc_html__( 'Upgrade to Pro', 'boldform-lite' )
 		);
 
@@ -1607,7 +1607,7 @@ class BoldForm_Lite_Admin {
 
 		$rendered = true;
 
-		$sale_url = 'https://themewant.com/plugins/boldform/';
+		$sale_url = 'https://wpboldform.com/';
 		?>
 		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_SALE ); ?>">
 
@@ -1978,7 +1978,7 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 		?>
-		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+		<a class="boldform-header-upgrade" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer">
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
 		<?php
@@ -2054,7 +2054,7 @@ class BoldForm_Lite_Admin {
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'One click from this screen, honouring your current filters', 'boldform-lite' ); ?></li>
 				</ul>
 				<div class="boldform-upgrade-modal__actions">
-					<a class="boldform-upgrade-modal__cta" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+					<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
 					<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
 				</div>
 			</div>
@@ -2152,7 +2152,7 @@ class BoldForm_Lite_Admin {
 		}
 
 		// Destination for the buy buttons. Filterable so resellers can repoint it.
-		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://themewant.com/plugins/boldform/' );
+		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://wpboldform.com/' );
 
 		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
 		// or a string (a short qualifier shown as text).

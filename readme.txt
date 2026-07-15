@@ -16,7 +16,7 @@ Lightweight drag-and-drop WordPress form builder — contact forms and more with
 
 From a simple contact form to a form with conditional logic, spam protection, and email-marketing sync, BoldForm gives you the tools professional forms need — without the bloat that slows your site down.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://themewant.com/plugins/boldform/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://themewant.com/plugins/boldform/)
+* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://wpboldform.com/)
 
 https://www.youtube.com/watch?v=EWum_aGDAMc
 
@@ -127,7 +127,7 @@ BoldForm ships a documented action/filter API so add-ons and custom code can hoo
 
 = Meet BoldForm Pro =
 
-Ready for more? **[BoldForm Pro](https://themewant.com/plugins/boldform/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
+Ready for more? **[BoldForm Pro](https://wpboldform.com/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
 
 **Advanced form building**
 
@@ -153,7 +153,7 @@ Ready for more? **[BoldForm Pro](https://themewant.com/plugins/boldform/)** unlo
 
 Plus **priority support and automatic updates**.
 
-[See everything in BoldForm Pro →](https://themewant.com/plugins/boldform/)
+[See everything in BoldForm Pro →](https://wpboldform.com/)
 
 == Installation ==
 
@@ -198,7 +198,7 @@ Yes. Submissions stay in your own database, and BoldForm registers a personal-da
 
 = Is there a Pro version? =
 
-Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://themewant.com/plugins/boldform/).
+Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://wpboldform.com/).
 
 == Screenshots ==
 

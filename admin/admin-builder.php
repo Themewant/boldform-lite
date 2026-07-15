@@ -49,7 +49,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 			</div>
 			<?php // Shown by default; a callback on boldform_show_upgrade_cta can return false to hide it. ?>
 			<?php if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) : ?>
-				<a class="boldform-setup-header__upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+				<a class="boldform-setup-header__upgrade" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer">
 					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 				</a>
 			<?php endif; ?>
