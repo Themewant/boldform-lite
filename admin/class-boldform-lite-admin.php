@@ -205,37 +205,25 @@ class BoldForm_Lite_Admin {
 		 */
 		do_action( 'boldform_admin_menu', $this );
 
-		// Highlighted "Upgrade to Pro" as the final submenu item, opening an in-dashboard
-		// Free-vs-Pro comparison page. Shown by default; the label's red accent is set
-		// inline so no separate stylesheet is needed. When the CTA is suppressed (Pro
-		// active, or a boldform_show_upgrade_cta callback returning false) the menu item
-		// is hidden. If Pro is active we still REGISTER the page — but remove it from the
-		// menu — so a bookmarked Upgrade URL resolves to render_upgrade_page()'s friendly
-		// "you're on Pro" panel instead of WordPress's "not allowed" screen.
-		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
-			$this->upgrade_page_hook = add_submenu_page(
-				'boldform-lite',
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
-				'manage_options',
-				'boldform-lite-upgrade',
-				array( $this, 'render_upgrade_page' )
-			);
-		} elseif ( $this->is_pro_active() ) {
-			// Register the page under an empty parent: it stays reachable by URL (so a
-			// bookmarked Upgrade link resolves to render_upgrade_page()'s "you're on Pro"
-			// panel) but never appears in any menu. WordPress authorises the request via
-			// $_registered_pages['admin_page_boldform-lite-upgrade'], which this sets. An
-			// empty string (not null) avoids PHP 8.1+ null-to-string deprecations in core.
-			$this->upgrade_page_hook = add_submenu_page(
-				'',
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				'manage_options',
-				'boldform-lite-upgrade',
-				array( $this, 'render_upgrade_page' )
-			);
-		}
+		// Highlighted "Upgrade to Pro" submenu item, opening an in-dashboard Free-vs-Pro
+		// comparison page (its red label accent is set inline, so no extra stylesheet).
+		// The page is ALWAYS registered so a bookmarked URL always resolves; it only
+		// appears IN the menu while the boldform_show_upgrade_cta filter is on. When an
+		// add-on turns the filter off, registering under an empty parent (not null —
+		// avoids PHP 8.1+ deprecations) keeps the page reachable by URL but out of every
+		// menu, and render_upgrade_page() shows a friendly confirmation instead of the
+		// pitch. Lite never detects the add-on itself — it only reads the filter.
+		$show_upgrade_cta = apply_filters( 'boldform_show_upgrade_cta', true );
+		$this->upgrade_page_hook = add_submenu_page(
+			$show_upgrade_cta ? 'boldform-lite' : '',
+			__( 'Upgrade to Pro', 'boldform-lite' ),
+			$show_upgrade_cta
+				? '<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>'
+				: __( 'Upgrade to Pro', 'boldform-lite' ),
+			'manage_options',
+			'boldform-lite-upgrade',
+			array( $this, 'render_upgrade_page' )
+		);
 	}
 
 	/**
@@ -1330,9 +1318,9 @@ class BoldForm_Lite_Admin {
 				);
 
 				// Export upgrade-modal wiring (shared with the Tools export teaser). Loads
-				// only while the Entries teaser is still hooked, so an add-on that unhooks
-				// the teaser to render real export controls drops this along with it.
-				if ( has_action( 'boldform_entries_export_actions', array( $this, 'render_entries_export_teaser' ) ) && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// only when the upgrade CTAs are shown — the same guard the teaser uses —
+				// so it never loads once an add-on turns the filter off.
+				if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 
@@ -1471,9 +1459,9 @@ class BoldForm_Lite_Admin {
 			// ── Settings page ─────────────────────────────────────────────────────
 			if ( $this->settings_page_hook === $hook_suffix ) {
 				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				// Tools -> Entries export teaser: wire the shared upgrade modal, only while
-				// the Tools teaser is still hooked (an add-on may have replaced it).
-				if ( 'tools' === $active_tab && has_action( 'boldform_tools_entries_export_fields', array( $this, 'render_tools_export_teaser' ) ) && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// Tools -> Entries export teaser: wire the shared upgrade modal, only when
+				// the upgrade CTAs are shown (same guard the teaser uses).
+				if ( 'tools' === $active_tab && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 				wp_add_inline_script(
@@ -1762,41 +1750,13 @@ class BoldForm_Lite_Admin {
 	 * @return bool
 	 */
 	private function should_show_pro_notice() {
-		// Never upsell someone who already runs Pro, and skip the Upgrade page
-		// (itself a full upgrade pitch) where the banner would be redundant.
-		if ( $this->is_pro_active() || $this->is_upgrade_screen() ) {
+		// Honour the shared upgrade-CTA switch (an add-on turns it off), and skip the
+		// Upgrade page itself, where this promo banner would be redundant.
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) || $this->is_upgrade_screen() ) {
 			return false;
 		}
 
 		return $this->should_show_notice( self::NOTICE_PRO_SALE );
-	}
-
-	/**
-	 * Whether BoldForm Pro is active.
-	 *
-	 * Pro defines BOLDFORM_PRO_VERSION at load time (before its own dependency
-	 * gate), so the constant is present whenever the Pro plugin is active — the
-	 * reliable signal for Lite to hide Pro upsell UI.
-	 *
-	 * @return bool
-	 */
-	private function is_pro_active() {
-		return defined( 'BOLDFORM_PRO_VERSION' );
-	}
-
-	/**
-	 * Hides every "Upgrade to Pro" CTA when Pro is active.
-	 *
-	 * Filter callback for `boldform_show_upgrade_cta`, which the Upgrade menu item,
-	 * plugin-row link, topbar nav item, and page-header button all honour. Forces
-	 * false when Pro runs so paying users are never nagged; otherwise passes the
-	 * value through untouched so resellers can still control it.
-	 *
-	 * @param bool $show Whether the CTAs should show.
-	 * @return bool
-	 */
-	public function hide_upgrade_cta_when_pro_active( $show ) {
-		return $this->is_pro_active() ? false : $show;
 	}
 
 	/**
@@ -2032,10 +1992,11 @@ class BoldForm_Lite_Admin {
 	 * learn what an upgrade unlocks at the exact moment they want it.
 	 *
 	 * This is an unconditional part of the free plugin: Lite does not know or check
-	 * whether any paid add-on exists. An add-on that ships real Excel/PDF export
-	 * simply unhooks this callback from boldform_entries_export_actions and renders
-	 * its own controls in its place. Respects boldform_show_upgrade_cta — the
-	 * supported way for a reseller to suppress every upgrade CTA at once.
+	 * whether any paid add-on exists. It is gated only by boldform_show_upgrade_cta
+	 * (default true) — an add-on that ships real export turns that filter off, so this
+	 * teaser bails on its own guard while the add-on's real controls (hooked to the
+	 * same action) render instead. That one filter is also the supported way for a
+	 * reseller to suppress every upgrade CTA at once.
 	 *
 	 * @return void
 	 */
@@ -2074,7 +2035,7 @@ class BoldForm_Lite_Admin {
 	 * Self-contained (the builder modal's CSS is not loaded on this screen); its
 	 * styles live in settings.css and it is toggled by inline JS on the Entries
 	 * page. Rendered only from the teaser callbacks, so it is present only when a
-	 * teaser is actually shown (an add-on that unhooks a teaser removes it too).
+	 * teaser is actually shown (i.e. while boldform_show_upgrade_cta is true).
 	 *
 	 * @return void
 	 */
@@ -2105,9 +2066,9 @@ class BoldForm_Lite_Admin {
 	 * Renders the Tools -> Entries export format selector for the free plugin:
 	 * JSON (the available free format) plus locked Excel/PDF options that open the
 	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields.
-	 * Like the Entries teaser it is unconditional; an add-on that ships real
-	 * multi-format export unhooks it and renders its own format field instead.
-	 * Respects boldform_show_upgrade_cta.
+	 * Like the Entries teaser it is unconditional and gated only by
+	 * boldform_show_upgrade_cta: an add-on that ships real multi-format export turns
+	 * that filter off, so this bails and the add-on's real format field renders instead.
 	 *
 	 * @return void
 	 */
@@ -2135,9 +2096,9 @@ class BoldForm_Lite_Admin {
 	 * Returns the inline jQuery that toggles the shared export upgrade modal.
 	 * Opens on a teaser button click (Entries screen) or when a locked format is
 	 * chosen in the export-format select (Tools screen), and closes on the X, the
-	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only while a
-	 * teaser is present (its action is still hooked), so it stops loading once an
-	 * add-on has replaced the teaser.
+	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only while the
+	 * upgrade CTAs are shown (boldform_show_upgrade_cta is true), so it stops loading
+	 * once an add-on turns that filter off.
 	 *
 	 * @return string
 	 */
@@ -2165,11 +2126,10 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_upgrade_page() {
-		// Never pitch Pro to someone already running it. The Upgrade CTAs are hidden
-		// when Pro is active, so this page is normally unreachable then — but a
-		// bookmarked URL (or a reseller who force-enables the CTA) could still land
-		// here, so show a friendly "you're on Pro" state instead of the comparison.
-		if ( $this->is_pro_active() ) {
+		// When the upgrade CTAs are switched off (an add-on turns the shared filter
+		// off), the menu item is hidden but this page stays reachable by URL — so a
+		// bookmarked link shows a friendly confirmation state instead of the pitch.
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			$this->render_admin_topbar( 'boldform-lite-upgrade' );
 			?>
 			<div class="wrap boldform-upgrade-page">
