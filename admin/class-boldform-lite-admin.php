@@ -1329,9 +1329,10 @@ class BoldForm_Lite_Admin {
 					)
 				);
 
-				// Export upgrade-modal wiring (Lite only, shared with the Tools export
-				// teaser). Never loads once the paid add-on is active or CTAs are off.
-				if ( ! $this->is_pro_active() && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// Export upgrade-modal wiring (shared with the Tools export teaser). Loads
+				// only while the Entries teaser is still hooked, so an add-on that unhooks
+				// the teaser to render real export controls drops this along with it.
+				if ( has_action( 'boldform_entries_export_actions', array( $this, 'render_entries_export_teaser' ) ) && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 
@@ -1470,8 +1471,9 @@ class BoldForm_Lite_Admin {
 			// ── Settings page ─────────────────────────────────────────────────────
 			if ( $this->settings_page_hook === $hook_suffix ) {
 				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				// Tools -> Entries export teaser: wire the shared upgrade modal.
-				if ( 'tools' === $active_tab && ! $this->is_pro_active() && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// Tools -> Entries export teaser: wire the shared upgrade modal, only while
+				// the Tools teaser is still hooked (an add-on may have replaced it).
+				if ( 'tools' === $active_tab && has_action( 'boldform_tools_entries_export_fields', array( $this, 'render_tools_export_teaser' ) ) && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 				wp_add_inline_script(
@@ -2027,21 +2029,17 @@ class BoldForm_Lite_Admin {
 	 * Export CSV button on the Entries screen, plus a one-time upgrade modal.
 	 *
 	 * The buttons never export — they open a contextual upgrade modal so people
-	 * learn what the paid add-on unlocks at the exact moment they want it.
+	 * learn what an upgrade unlocks at the exact moment they want it.
 	 *
-	 * Hooked to boldform_entries_export_actions. It bails entirely when the paid
-	 * add-on is active (is_pro_active) — the add-on renders its own real Excel/PDF
-	 * buttons on the same action, so showing the teaser too would duplicate them
-	 * and nag a paying customer — and when the boldform_show_upgrade_cta filter is
-	 * switched off (the supported way for any reseller/add-on to suppress every
-	 * upgrade CTA at once).
+	 * This is an unconditional part of the free plugin: Lite does not know or check
+	 * whether any paid add-on exists. An add-on that ships real Excel/PDF export
+	 * simply unhooks this callback from boldform_entries_export_actions and renders
+	 * its own controls in its place. Respects boldform_show_upgrade_cta — the
+	 * supported way for a reseller to suppress every upgrade CTA at once.
 	 *
 	 * @return void
 	 */
 	public function render_entries_export_teaser() {
-		if ( $this->is_pro_active() ) {
-			return;
-		}
 		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			return;
 		}
@@ -2075,8 +2073,8 @@ class BoldForm_Lite_Admin {
 	 * Renders the contextual upgrade modal opened by the export teaser buttons.
 	 * Self-contained (the builder modal's CSS is not loaded on this screen); its
 	 * styles live in settings.css and it is toggled by inline JS on the Entries
-	 * page. Rendered only from render_entries_export_teaser(), so it never
-	 * appears when the paid add-on is active.
+	 * page. Rendered only from the teaser callbacks, so it is present only when a
+	 * teaser is actually shown (an add-on that unhooks a teaser removes it too).
 	 *
 	 * @return void
 	 */
@@ -2106,16 +2104,14 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Renders the Tools -> Entries export format selector for the free plugin:
 	 * JSON (the available free format) plus locked Excel/PDF options that open the
-	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields
-	 * and, like the Entries teaser, bails when the paid add-on is active (it injects
-	 * its own real format field on this same action) or when CTAs are suppressed.
+	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields.
+	 * Like the Entries teaser it is unconditional; an add-on that ships real
+	 * multi-format export unhooks it and renders its own format field instead.
+	 * Respects boldform_show_upgrade_cta.
 	 *
 	 * @return void
 	 */
 	public function render_tools_export_teaser() {
-		if ( $this->is_pro_active() ) {
-			return;
-		}
 		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			return;
 		}
@@ -2139,8 +2135,9 @@ class BoldForm_Lite_Admin {
 	 * Returns the inline jQuery that toggles the shared export upgrade modal.
 	 * Opens on a teaser button click (Entries screen) or when a locked format is
 	 * chosen in the export-format select (Tools screen), and closes on the X, the
-	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only when the
-	 * paid add-on is inactive, so it never loads for a paid user.
+	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only while a
+	 * teaser is present (its action is still hooked), so it stops loading once an
+	 * add-on has replaced the teaser.
 	 *
 	 * @return string
 	 */
