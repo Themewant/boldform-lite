@@ -1,4 +1,4 @@
-=== BoldForm - Drag & Drop Form Builder ===
+=== BoldForm - Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms ===
 Contributors: themewant, maha25
 Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
@@ -30,7 +30,7 @@ https://www.youtube.com/watch?v=EWum_aGDAMc
 
 Perfect for contact forms, quote requests, registrations, feedback forms, surveys, job applications, event sign-ups, and newsletter opt-ins.
 
-= Drag & Drop Form Builder =
+= Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms =
 
 Build forms visually without writing a single line of code. Drag fields from the sidebar, drop them into multi-column rows, reorder with a handle, and configure every field in its own settings panel.
 

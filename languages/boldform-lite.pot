@@ -1870,7 +1870,7 @@ msgid "Go to your forms"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2160
-msgid "Drag & drop form builder"
+msgid "Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:2161
