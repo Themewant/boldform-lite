@@ -3580,8 +3580,10 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
-		if ( $reply_to ) {
-			$phpmailer->clearReplyTos();
+		// Apply the global Reply-To only when the message doesn't already carry one
+		// (e.g. a per-form Reply-To set via the email headers filter), so a more
+		// specific Reply-To always wins over this site-wide default.
+		if ( $reply_to && empty( $phpmailer->getReplyToAddresses() ) ) {
 			$phpmailer->addReplyTo( $reply_to );
 		}
 

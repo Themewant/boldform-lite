@@ -313,6 +313,14 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 
+= 1.1.4 =
+Improvements:
+* Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
+
+Developer:
+* Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
+* Developer: The notification email filters now pass the saved entry ID (`boldform_lite_admin_email_subject`/`_content` gain a 4th `$entry_id` arg; `boldform_lite_user_email_subject`/`_content` a 5th), and two new filters — `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` — let an add-on adjust the `wp_mail` headers (e.g. add a Reply-To). Backward-compatible (extra args are ignored by existing callbacks).
+
 = 1.1.3 =
 New features:
 * New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
@@ -330,7 +338,6 @@ Fixes:
 
 Developer:
 * Developer: New entry-detail extension points — the `boldform_entry_detail_sidebar` action and `boldform_entry_detail_enqueue_assets` action let add-ons render cards (and load their assets) on the single-entry screen.
-* Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
 
 = 1.1.2 =
 Improvements:
@@ -468,6 +475,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.4 =
+Adds the extension points behind the BoldForm Pro Custom Email Editor, and lets a per-message Reply-To take precedence over the site-wide SMTP Reply-To. A safe update for all users.
 
 = 1.1.3 =
 Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.

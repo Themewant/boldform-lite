@@ -874,10 +874,13 @@ list's <strong>Export Selected</strong> dropdown and the Tools screen — ready-
 <p><strong>Design the notification emails for each form.</strong> Open a form's builder, go to
 <strong>Form Settings &rarr; Email Notification</strong>, and under each email — the admin notification and the
 user confirmation — turn on <strong>Customize this email</strong> to write a custom <strong>subject</strong> and
-<strong>HTML message</strong>. Drop in submitted data with merge tags —
-<code>{all_fields}</code>, <code>{field:Label}</code>, <code>{form_title}</code>, <code>{site_title}</code>,
-<code>{admin_email}</code>, <code>{user_email}</code>, and <code>{date}</code>. Turn it on per form; leave a template
-blank to keep the default email.</p>
+<strong>HTML message</strong>, and set a <strong>Reply-To</strong> (use <code>{user_email}</code> to reply straight to
+the submitter). A merge-tag picker inserts your form's actual fields plus general tags —
+<code>{all_fields}</code>, <code>{form_title}</code>, <code>{form_id}</code>, <code>{entry_id}</code>,
+<code>{admin_link}</code>, <code>{ip}</code>, <code>{site_title}</code>, <code>{admin_email}</code>,
+<code>{user_email}</code>, <code>{user:display_name}</code>, <code>{date}</code>, <code>{time}</code>, and
+<code>{datetime}</code>. Line breaks are preserved, and you can optionally hide empty fields from
+<code>{all_fields}</code>. Turn it on per email; leave a template blank to keep the default.</p>
 
 <!-- Shortcode -->
 <h2 id="shortcode">Shortcode</h2>

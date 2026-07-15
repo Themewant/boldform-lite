@@ -394,7 +394,7 @@ class BoldForm_Lite_Form_Handler {
 			 */
 			do_action( 'boldform_entry_created', $entry_id, $form_id, $validation['entry_data'], $settings );
 
-			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
+			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'], (int) $entry_id );
 		}
 
 		// Only redirect when the form's confirmation mode is "redirect" (To a Page /
