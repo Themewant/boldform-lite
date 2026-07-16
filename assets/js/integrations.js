@@ -54,6 +54,17 @@
 		return assignedIds.indexOf( id ) !== -1;
 	}
 
+	// The number shown on the tab badge: assignments that are actually live on this
+	// form. An assigned connection that no longer exists (deleted) or that is locked
+	// (an add-on-only type the free plugin will not dispatch) is not counted, so the
+	// badge reflects what will really fire rather than every id ever saved.
+	function assignedCount() {
+		return assignedIds.filter( function ( id ) {
+			var conn = connById( id );
+			return conn && ! isLockedConn( conn );
+		} ).length;
+	}
+
 	function getFormFields() {
 		var fields = [];
 		var state  = window.boldformBuilderState;
@@ -236,7 +247,13 @@
 		$panel.find( '.bfs-stab-nav-item[data-stab="integrations"]' ).remove();
 		$panel.find( '.bfs-stab-pane[data-pane="integrations"]' ).remove();
 
-		var count      = assignedIds.length;
+		// Build the pane first: renderPane seeds assignedIds from this form's settings,
+		// so the badge below counts THIS form's assignments. Reading the count before
+		// this ran left the first render showing the previous form's count (or none).
+		var $pane = $( '<div class="bfs-stab-pane" data-pane="integrations"></div>' );
+		$pane.html( renderPane( formSettings ) );
+
+		var count      = assignedCount();
 		var countBadge = count ? ' <span class="bf-int-count-badge">' + count + '</span>' : '';
 
 		$navSlot.append(
@@ -250,8 +267,6 @@
 			'</button>'
 		);
 
-		var $pane = $( '<div class="bfs-stab-pane" data-pane="integrations"></div>' );
-		$pane.html( renderPane( formSettings ) );
 		$content.append( $pane );
 	}
 
@@ -316,9 +331,10 @@
 
 		// Update count badge.
 		var $label = $( '.bfs-stab-nav-item[data-stab="integrations"] .bfs-stab-nav-label' );
+		var count  = assignedCount();
 		$label.find( '.bf-int-count-badge' ).remove();
-		if ( assignedIds.length ) {
-			$label.append( ' <span class="bf-int-count-badge">' + assignedIds.length + '</span>' );
+		if ( count ) {
+			$label.append( ' <span class="bf-int-count-badge">' + count + '</span>' );
 		}
 	} );
 
