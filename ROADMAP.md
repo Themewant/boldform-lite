@@ -26,9 +26,11 @@ _Last updated: 2026-07-05 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
 _At-a-glance board view (matches our public roadmap columns). Numbering is per-column. Details for each live in §5 below._
 
 ### 🟢 Progress — building now
-1. **Save & Resume** — Let visitors save their progress and return later through a secure private link, significantly reducing drop-off on longer forms.
-2. **Draft Auto-Save** — Automatically save a visitor's progress as they fill out a form to prevent lost work.
-3. **Excel & PDF Export** — Export form entries as Excel or PDF files for reporting, sharing, and record-keeping.
+_All of Pro 1.1, plus Save & Resume, Draft Auto-Save, and Excel & PDF Export, are already BUILT on branches (see `ROADMAP-PROGRESS.md`). Currently finalizing for release:_
+1. **Custom Email Editor** — built + QA'd; finalizing (targets Lite 1.1.4 / Pro 1.1.1). First Pro 1.2 item.
+2. **Entry Approval Workflow** — built + QA'd; finalizing (same wave).
+
+**▶ Next to develop (serialized 2026-07-15):** Conditional Email Routing → PDF Attachment → Custom Thank-You Page → Marketing Tracking → Scheduled Export → Conditional Logic on Pages → Abandonment Tracking → _(Wave-2, migration first)_ Email Confirmation → Custom Entry Statuses → Coupons/Tax/Multi-Currency. Full rationale in `ROADMAP-PROGRESS.md` → **NEXT-BUILD QUEUE**, and §7 below.
 
 ### 🔵 UpComing — planned next (in release order)
 

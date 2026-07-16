@@ -217,7 +217,7 @@ class BoldForm_Lite_Export_Import {
 						 */
 						apply_filters(
 							'boldform_tools_entries_export_description',
-							__( 'Download form submission entries as a JSON file. For a spreadsheet, use CSV export on the Entries screen.', 'boldform-lite' )
+							__( 'Download form submission entries as a JSON file. Upgrade to also export them as Excel or PDF.', 'boldform-lite' )
 						)
 					);
 					?>

@@ -408,7 +408,7 @@ class BoldForm_Lite_Integrations_Page {
 			return;
 		}
 		?>
-		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+		<a class="boldform-header-upgrade" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer">
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
 		<?php
