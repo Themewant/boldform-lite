@@ -34,10 +34,23 @@ Perfect for contact forms, quote requests, registrations, feedback forms, survey
 
 Build forms visually without writing a single line of code. Drag fields from the sidebar, drop them into multi-column rows, reorder with a handle, and configure every field in its own settings panel.
 
+https://www.youtube.com/watch?v=wkY9uTVaYJ0
+
 * **Multi-column layouts** — arrange fields in flexible rows and columns with adjustable widths.
 * **Live Style tab** — field, label, and button styling updates instantly beside the controls, with Normal / Hover / Focus / Checked states, selectable design themes, gradient backgrounds, and per-device (desktop / tablet / mobile) responsive values.
 * **Custom submit button** — set your own text, a Dashicon or custom SVG icon, and the icon colour.
-* **Form templates** — start from a ready-made template (Contact, Lead Capture, Feedback, Newsletter) instead of a blank canvas, then customise from there.
+* **Form templates** — start from one of 11 ready-made templates instead of a blank canvas, then customise from there (see below).
+
+= Form Template Library =
+
+Skip the blank canvas. BoldForm ships 11 ready-made forms, grouped into General, Business, Events & Booking, and HR & Surveys — import any of them into the builder with a single click, then make it yours.
+
+https://www.youtube.com/watch?v=Iv9QXaEa2i0
+
+* **General** — Contact Form, Newsletter Signup, Feedback Form, Registration Form.
+* **Business** — Lead Capture Form, Support Ticket, Order / Quote Request.
+* **Events & Booking** — Event RSVP, Booking / Appointment.
+* **HR & Surveys** — Job Application, Customer Survey.
 
 = All the Fields You Need =
 
@@ -320,6 +333,9 @@ Security:
 * Fix: The confirmation message shown after a submission made without JavaScript is no longer passed through the page URL. Anyone could previously put arbitrary wording on the page with a crafted link (for example, a fake "your payment failed, call this number" notice under your own form). The message is now held server-side and fetched with a single-use token, so only a real submission can produce one.
 
 Improvements:
+* Improve: BoldForm has a new logo — the BoldForm "B" monogram replaces the previous form-and-pencil mark. It updates everywhere at once: the admin menu icon, every screen's toolbar, the builder, the dashboard stat cards and the empty states.
+* Improve: The plugin's name now spells out what it does — "BoldForm - Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms". Nothing about the plugin itself changes; it is only easier to find.
+* Improve: BoldForm now has a home of its own at wpboldform.com, and the upgrade and roadmap links point there.
 * Improve: Padding, margin, radius and border-width controls now start with their four sides linked, everywhere in the Style tab — form container, input fields, labels, placeholders and every other group. Type one value and all four sides follow, instead of having to click the link icon first. A control that already has different values per side still opens unlinked.
 * Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
 * Improve: The Form Settings tabs now keep a consistent order and use standard WordPress icons, so every tab — including any added by an add-on — matches the rest of the admin and highlights correctly when selected.
@@ -496,7 +512,7 @@ Developer:
 == Upgrade Notice ==
 
 = 1.1.4 =
-Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, and new entries-list and email extension hooks for add-ons. Recommended for all users.
+Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, a new BoldForm logo across the admin, and new entries-list and email extension hooks for add-ons. Recommended for all users.
 
 = 1.1.3 =
 Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.
