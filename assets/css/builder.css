@@ -3108,6 +3108,14 @@
 	padding: 16px;
 }
 
+/* An empty Pro extension slot is still a sibling of the head, so it defeats the
+   `:only-child` rule above. When a block has no body and its slot is empty (e.g.
+   Lite without the Custom Email add-on), keep the head borderless as before so
+   no divider dangles under a lone toggle. */
+.bfsп-email-block:not( :has( .bfsп-email-block__body ) ):not( :has( .boldform-email-pro-slot > * ) ) .bfsп-email-block__head {
+	border-bottom: none;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media ( max-width: 1024px ) {
 	.bfs-stab-nav {
@@ -6599,3 +6607,140 @@
 }
 
 /* File upload sample removed from preview states (native button is not styled). */
+
+/* ── Rich thank-you message editor ───────────────────────────────────────────
+   The Confirmation pane's message is edited in the WordPress editor
+   (wp.editor.initialize), whose markup lands inside a .boldform-setting-group.
+   That group's own rules are written for form controls and would otherwise
+   reshape the editor's chrome, so they are reset back here.
+
+   Note wp.editor.initialize() nests .wp-editor-container INSIDE .wp-editor-tools,
+   which is the reverse of the markup wp_editor() prints in PHP -- so the tools
+   bar cannot be styled as a standalone strip above the editor. */
+
+.boldform-rich-editor .wp-editor-tools {
+	padding: 0;
+	background: transparent;
+	border: 0;
+}
+
+/* Float would leave the tools bar zero-height, showing as an empty band above
+   the toolbar. Flex keeps the tabs on the right and the bar sized to them. */
+.boldform-rich-editor .wp-editor-tabs {
+	float: none;
+	display: flex;
+	justify-content: flex-end;
+	gap: 4px;
+	margin-bottom: 6px;
+}
+
+.boldform-rich-editor .wp-editor-container {
+	border: 1px solid #cbd5e1;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+/* .boldform-setting-group input sets width:100% and a 38px min-height for form
+   controls. The quicktags buttons in Code view are <input type="button">, so
+   without this reset they stack one per row at full width. */
+.boldform-rich-editor .quicktags-toolbar input.ed_button {
+	width: auto;
+	min-width: 0;
+	min-height: 0;
+	height: auto;
+	padding: 2px 6px;
+	line-height: 1.4;
+	border-radius: 3px;
+}
+
+/* The editor's own textarea (Code view) is chrome-managed; the group's border,
+   radius and padding would double up with .wp-editor-container's. */
+.boldform-rich-editor .wp-editor-area {
+	border: 0;
+	border-radius: 0;
+	padding: 10px;
+}
+
+/* ── Upgrade teasers ─────────────────────────────────────────────────────────
+   Locked buttons that open an upgrade dialog: "Add Shortcodes" beside the
+   thank-you message, and "Customize this email" inside each email block. They
+   open a dialog rather than a control, so there is no popover or switch here.
+
+   Scoped to the settings panel: these are generic class names, and the panel is
+   the only place the buttons exist. The extra specificity also keeps the
+   .boldform-setting-group control rules (width:100%, min-height:38px) off them. */
+
+#boldform-form-settings-panel .boldform-upgrade-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: auto;
+	min-height: 0;
+	padding: 7px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	background: #fff;
+	box-sizing: border-box;
+	color: #334155;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+#boldform-form-settings-panel .boldform-upgrade-btn:hover {
+	background: #eef2ff;
+	border-color: #c7d2fe;
+	color: #4338ca;
+}
+
+#boldform-form-settings-panel .boldform-upgrade-btn:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: 1px;
+}
+
+#boldform-form-settings-panel .boldform-upgrade-btn .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: #94a3b8;
+}
+
+#boldform-form-settings-panel .boldform-upgrade-btn:hover .dashicons {
+	color: #6366f1;
+}
+
+/* Thank-you message: the button sits opposite the field label. */
+#boldform-form-settings-panel .boldform-ty-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 6px;
+}
+
+/* The group's label rule adds a bottom margin meant for a stacked label. */
+#boldform-form-settings-panel .boldform-ty-head label {
+	margin-bottom: 0;
+}
+
+#boldform-form-settings-panel .boldform-shortcode-slot:empty {
+	display: none;
+}
+
+/* Email blocks: the teaser sits under the block head, where the real per-email
+   controls appear. The slot is empty (and collapses) once an add-on is active
+   and has not yet filled it. */
+#boldform-form-settings-panel .boldform-email-pro-slot:empty {
+	display: none;
+}
+
+#boldform-form-settings-panel .boldform-email-teaser {
+	padding: 14px 16px 16px;
+	border-top: 1px solid #e2e8f0;
+}
+
+#boldform-form-settings-panel .boldform-email-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
+}

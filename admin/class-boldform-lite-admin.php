@@ -758,10 +758,13 @@ class BoldForm_Lite_Admin {
 
 			wp_enqueue_media();
 
+			// Powers the rich thank-you message editor in the Confirmation settings.
+			wp_enqueue_editor();
+
 			wp_enqueue_script(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
-				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y' ),
+				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y', 'editor', 'quicktags' ),
 				$this->asset_version( 'assets/js/builder.js' ),
 				true
 			);
@@ -882,6 +885,16 @@ class BoldForm_Lite_Admin {
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
 						'thankYouMessage' => __( 'Thank you message', 'boldform-lite' ),
+						// WordPress labels the editor's second tab "Text". This holds a
+						// message template rather than a post, so "Code" describes it better.
+						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
+						'editorCode'      => __( 'Code', 'boldform-lite' ),
+						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
+						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
+						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
+						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
+						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
+						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
 						'submissionType' => __( 'After Submit', 'boldform-lite' ),
 						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
@@ -1109,6 +1122,18 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
+					// Thank-you message shortcode picker. The builder always renders the
+					// slot; this flag only decides whether the free teaser goes inside it.
+					// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
+					// off, so the slot is left empty for it to fill on the
+					// boldform:form_settings_rendered event.
+					//
+					// Must stay a bool: wp_localize_script casts top-level scalars with
+					// (string), so this reaches JS as '1' or '' and the empty string is
+					// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
+					// as the string '0', which is truthy, and the teaser would then show
+					// even with an add-on active.
+					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
@@ -3745,8 +3770,10 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
-		if ( $reply_to ) {
-			$phpmailer->clearReplyTos();
+		// Apply the global Reply-To only when the message doesn't already carry one
+		// (e.g. a per-form Reply-To set via the email headers filter), so a more
+		// specific Reply-To always wins over this site-wide default.
+		if ( $reply_to && empty( $phpmailer->getReplyToAddresses() ) ) {
 			$phpmailer->addReplyTo( $reply_to );
 		}
 
@@ -5202,7 +5229,8 @@ class BoldForm_Lite_Admin {
 				? $decoded['redirect_type']
 				: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' ),
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Rich markup: filtered with the post allowlist, matching the save path.
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
 			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],

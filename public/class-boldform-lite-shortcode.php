@@ -36,6 +36,15 @@ class BoldForm_Lite_Shortcode {
 	private $current_form_settings = array();
 
 	/**
+	 * Status message for this request, resolved once because reading it spends its token.
+	 *
+	 * Null until looked up; false once looked up and there was none.
+	 *
+	 * @var array<string, mixed>|false|null
+	 */
+	private $status_message = null;
+
+	/**
 	 * ID of the form currently being rendered (used to scope element ids).
 	 *
 	 * @var int
@@ -318,7 +327,12 @@ class BoldForm_Lite_Shortcode {
 		>
 
 			<div class="boldform-lite-form__message<?php echo $status ? ' is-visible is-' . esc_attr( $status['type'] ) : ''; ?>" data-boldform-message aria-live="polite">
-				<?php echo $status ? esc_html( $status['message'] ) : ''; ?>
+				<?php
+				// Rich markup: the message is server-authored (looked up by a single-use
+				// token, never read from the URL) and is filtered with the post allowlist
+				// on the way out, so a template cannot introduce script or event handlers.
+				echo $status ? wp_kses_post( $status['message'] ) : '';
+				?>
 			</div>
 
 			<?php $has_submit_field = $this->structure_contains_field_type( $structure, 'submit' ); ?>
@@ -547,7 +561,8 @@ class BoldForm_Lite_Shortcode {
 			'enable_ajax'       => 'ajax' === $submission_type,
 			'enable_redirect'   => 'redirect' === $submission_type,
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Rich markup: filtered with the post allowlist, matching the save path.
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
 			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
@@ -2213,21 +2228,52 @@ class BoldForm_Lite_Shortcode {
 	 * @return array<string, string>|null
 	 */
 	private function get_form_status_message( $form_id ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display of redirect query params; no data is modified.
-		$status_form_id = isset( $_GET['boldform_form_id'] ) ? absint( wp_unslash( $_GET['boldform_form_id'] ) ) : 0;
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$status         = isset( $_GET['boldform_status'] ) ? sanitize_key( wp_unslash( $_GET['boldform_status'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized via sanitize_text_field().
-		$message        = isset( $_GET['boldform_message'] ) ? sanitize_text_field( rawurldecode( wp_unslash( $_GET['boldform_message'] ) ) ) : '';
+		if ( null === $this->status_message ) {
+			$this->status_message = $this->consume_status_message();
+		}
 
 		// Only show redirect messages on the form instance that initiated the submission.
-		if ( $form_id !== $status_form_id || '' === $status || '' === $message ) {
+		if ( ! is_array( $this->status_message ) || $form_id !== $this->status_message['form_id'] ) {
 			return null;
 		}
 
+		return $this->status_message;
+	}
+
+	/**
+	 * Reads and clears the stored status message for this request.
+	 *
+	 * The message is looked up by a single-use token rather than read out of the URL:
+	 * the query string is visitor-controlled, so a message taken from it could only ever
+	 * be printed as escaped text -- which would strip the rich thank-you markup -- and
+	 * would let anyone put arbitrary wording on the page with a crafted link. The token
+	 * is consumed on read so a shared or revisited URL cannot replay the message.
+	 *
+	 * The result is cached on the instance because the token is spent on first read and
+	 * the same form may be rendered more than once per page.
+	 *
+	 * @return array<string, mixed>|false Status message, or false when there is none.
+	 */
+	private function consume_status_message() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display of a redirect result; no data is modified.
+		$token = isset( $_GET['boldform_msg'] ) ? sanitize_key( wp_unslash( $_GET['boldform_msg'] ) ) : '';
+
+		if ( '' === $token ) {
+			return false;
+		}
+
+		$stored = get_transient( 'boldform_lite_msg_' . $token );
+
+		if ( ! is_array( $stored ) || empty( $stored['message'] ) ) {
+			return false;
+		}
+
+		delete_transient( 'boldform_lite_msg_' . $token );
+
 		return array(
-			'type'    => 'success' === $status ? 'success' : 'error',
-			'message' => $message,
+			'type'    => isset( $stored['type'] ) && 'success' === $stored['type'] ? 'success' : 'error',
+			'message' => (string) $stored['message'],
+			'form_id' => isset( $stored['form_id'] ) ? (int) $stored['form_id'] : 0,
 		);
 	}
 

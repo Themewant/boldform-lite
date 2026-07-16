@@ -84,18 +84,30 @@ class BoldForm_Lite_Form_Handler {
 				'boldform_status',
 				'boldform_message',
 				'boldform_form_id',
+				'boldform_msg',
 			),
 			$redirect_url
 		);
 
-		$redirect_url = add_query_arg(
+		// Hand the message back through a one-shot token rather than the query string.
+		// The thank-you message is rich markup, which a URL round-trip cannot carry (it
+		// has to be flattened to text to stay safe to print). Keeping the message
+		// server-side means what renders is what this request produced -- including any
+		// override applied by the boldform_submission_result filter -- instead of
+		// whatever a visitor put in the URL.
+		$token = bin2hex( random_bytes( 16 ) );
+
+		set_transient(
+			'boldform_lite_msg_' . $token,
 			array(
-				'boldform_status'  => $result['success'] ? 'success' : 'error',
-				'boldform_message' => rawurlencode( $result['message'] ),
-				'boldform_form_id' => $form_id,
+				'type'    => $result['success'] ? 'success' : 'error',
+				'message' => (string) $result['message'],
+				'form_id' => $form_id,
 			),
-			$redirect_url
+			5 * MINUTE_IN_SECONDS
 		);
+
+		$redirect_url = add_query_arg( 'boldform_msg', $token, $redirect_url );
 
 		wp_safe_redirect( $redirect_url );
 		exit;
@@ -112,7 +124,12 @@ class BoldForm_Lite_Form_Handler {
 		if ( $result['success'] ) {
 			wp_send_json_success(
 				array(
-					'message'      => $result['message'],
+					// The success message is inserted as markup by the frontend script, so
+					// it is filtered here rather than where it was read: boldform_submission_result
+					// runs after that point and can replace the message with anything.
+					// Filtering at the boundary keeps that filter from becoming a way to
+					// put script on the page. The error branch below is printed as text.
+					'message'      => wp_kses_post( (string) $result['message'] ),
 					'redirectUrl'  => $result['redirect_url'],
 				)
 			);
@@ -394,7 +411,7 @@ class BoldForm_Lite_Form_Handler {
 			 */
 			do_action( 'boldform_entry_created', $entry_id, $form_id, $validation['entry_data'], $settings );
 
-			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'] );
+			$this->email_handler->send_notifications( $form_record, $settings, $validation['entry_data'], (int) $entry_id );
 		}
 
 		// Only redirect when the form's confirmation mode is "redirect" (To a Page /
@@ -774,7 +791,10 @@ class BoldForm_Lite_Form_Handler {
 			'enable_redirect'   => 'redirect' === $submission_type,
 			'redirect_type'     => $redirect_type,
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : '',
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Rich markup: filtered with the post allowlist, matching the save path. This is
+			// the filter the AJAX success message is rendered from, so it runs on every
+			// submission rather than trusting what the row happens to hold.
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
 			'button_layout'     => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : $defaults['button_layout'],

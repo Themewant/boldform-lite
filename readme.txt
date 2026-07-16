@@ -313,8 +313,21 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 = 1.1.4 =
+New features:
+* New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
+
+Security:
+* Fix: The confirmation message shown after a submission made without JavaScript is no longer passed through the page URL. Anyone could previously put arbitrary wording on the page with a crafted link (for example, a fake "your payment failed, call this number" notice under your own form). The message is now held server-side and fetched with a single-use token, so only a real submission can produce one.
+
 Improvements:
+* Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
 * Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
+* Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
+* Improve: The Email Notification panel now previews the custom email editor — a locked "Customize this email" button under each notification that opens a quick upgrade dialog. Shown only in the free version.
+* Improve: In a form's Integrations tab, connections whose service the free plugin cannot send to (anything other than Mailchimp or Brevo) now appear as a locked row that opens a quick upgrade dialog, instead of a toggle that would never fire. Existing assignments are preserved. Shown only in the free version.
+Developer:
+* Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
+* Developer: The notification email filters now pass the saved entry ID (`boldform_lite_admin_email_subject`/`_content` gain a 4th `$entry_id` arg; `boldform_lite_user_email_subject`/`_content` a 5th), and two new filters — `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` — let an add-on adjust the `wp_mail` headers (e.g. add a Reply-To). Backward-compatible (extra args are ignored by existing callbacks).
 Developer:
 * Developer: New entries-list extension points so add-ons can extend the Entries screen — `boldform_entries_list_columns` (add columns to each row's query), `boldform_entries_where_clauses` (scope the list and its counts by an add-on column), `boldform_entries_filter_controls` (add a filter control to the toolbar alongside the Form and Date filters), and `boldform_entry_status_badge_after` (append markup after a row's status badge).
 * Developer: New bulk-action extension points for the Entries list — `boldform_entries_bulk_actions` (add options to the bulk-actions dropdown) and `boldform_bulk_entry_action` (handle a custom bulk action, with the request nonce and capability already verified). Used by BoldForm Pro's Entry Approval workflow to add per-row approval badges, an Approval filter, and bulk approve/reject.

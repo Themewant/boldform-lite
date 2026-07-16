@@ -36,9 +36,10 @@ class BoldForm_Lite_Email_Handler {
 	 * @param object                           $form_record Form record.
 	 * @param array<string, mixed>             $settings Form settings.
 	 * @param array<string, array<string,mixed>> $entry_data Sanitized entry data.
+	 * @param int                              $entry_id ID of the saved entry (0 if unknown).
 	 * @return void
 	 */
-	public function send_notifications( $form_record, $settings, $entry_data ) {
+	public function send_notifications( $form_record, $settings, $entry_data, $entry_id = 0 ) {
 		$attachments = $this->collect_file_attachments( $entry_data );
 
 		/**
@@ -53,11 +54,11 @@ class BoldForm_Lite_Email_Handler {
 		do_action( 'boldform_before_notifications', $form_record, $settings, $entry_data );
 
 		if ( ! empty( $settings['enable_admin_email'] ) ) {
-			$this->send_admin_email( $form_record, $settings, $entry_data, $attachments );
+			$this->send_admin_email( $form_record, $settings, $entry_data, $attachments, (int) $entry_id );
 		}
 
 		if ( ! empty( $settings['enable_user_email'] ) ) {
-			$this->send_user_email( $form_record, $entry_data );
+			$this->send_user_email( $form_record, $entry_data, (int) $entry_id );
 		}
 
 		/**
@@ -97,9 +98,10 @@ class BoldForm_Lite_Email_Handler {
 	 * @param array<string, mixed>               $settings    Form settings.
 	 * @param array<string, array<string,mixed>> $entry_data  Entry data.
 	 * @param array<int, string>                 $attachments File paths to attach.
+	 * @param int                                $entry_id    Saved entry ID (0 if unknown).
 	 * @return void
 	 */
-	private function send_admin_email( $form_record, $settings, $entry_data, $attachments = array() ) {
+	private function send_admin_email( $form_record, $settings, $entry_data, $attachments = array(), $entry_id = 0 ) {
 		// Resolve the recipient, most specific first:
 		// 1. the form's own custom admin address,
 		// 2. the global "Default email" notification setting,
@@ -123,7 +125,8 @@ class BoldForm_Lite_Email_Handler {
 				! empty( $form_record->title ) ? (string) $form_record->title : __( 'BoldForm', 'boldform-lite' )
 			),
 			$form_record,
-			$entry_data
+			$entry_data,
+			(int) $entry_id
 		);
 		$message = apply_filters(
 			'boldform_lite_admin_email_content',
@@ -133,10 +136,30 @@ class BoldForm_Lite_Email_Handler {
 				__( 'A new form submission has been received.', 'boldform-lite' )
 			),
 			$form_record,
-			$entry_data
+			$entry_data,
+			(int) $entry_id
 		);
 
-		wp_mail( sanitize_email( $to ), $subject, $message, array( 'Content-Type: text/html; charset=UTF-8' ), $attachments );
+		/**
+		 * Filter the admin-notification email headers (e.g. to add a Reply-To,
+		 * Cc or Bcc). The first entry keeps the HTML content type.
+		 *
+		 * @since 1.1.4
+		 *
+		 * @param string[]             $headers     wp_mail headers.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$headers = (array) apply_filters(
+			'boldform_lite_admin_email_headers',
+			array( 'Content-Type: text/html; charset=UTF-8' ),
+			$form_record,
+			$entry_data,
+			(int) $entry_id
+		);
+
+		wp_mail( sanitize_email( $to ), $subject, $message, $headers, $attachments );
 	}
 
 	/**
@@ -144,9 +167,10 @@ class BoldForm_Lite_Email_Handler {
 	 *
 	 * @param object                           $form_record Form record.
 	 * @param array<string, array<string,mixed>> $entry_data Entry data.
+	 * @param int                              $entry_id Saved entry ID (0 if unknown).
 	 * @return void
 	 */
-	private function send_user_email( $form_record, $entry_data ) {
+	private function send_user_email( $form_record, $entry_data, $entry_id = 0 ) {
 		$user_email = $this->detect_user_email( $entry_data );
 
 		if ( ! $user_email ) {
@@ -162,7 +186,8 @@ class BoldForm_Lite_Email_Handler {
 			),
 			$form_record,
 			$entry_data,
-			$user_email
+			$user_email,
+			(int) $entry_id
 		);
 		$message = apply_filters(
 			'boldform_lite_user_email_content',
@@ -173,10 +198,31 @@ class BoldForm_Lite_Email_Handler {
 			),
 			$form_record,
 			$entry_data,
-			$user_email
+			$user_email,
+			(int) $entry_id
 		);
 
-		wp_mail( $user_email, $subject, $message, array( 'Content-Type: text/html; charset=UTF-8' ) );
+		/**
+		 * Filter the user-confirmation email headers (e.g. to add a Reply-To).
+		 *
+		 * @since 1.1.4
+		 *
+		 * @param string[]             $headers     wp_mail headers.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param string               $user_email  Detected recipient.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$headers = (array) apply_filters(
+			'boldform_lite_user_email_headers',
+			array( 'Content-Type: text/html; charset=UTF-8' ),
+			$form_record,
+			$entry_data,
+			$user_email,
+			(int) $entry_id
+		);
+
+		wp_mail( $user_email, $subject, $message, $headers );
 	}
 
 	/**

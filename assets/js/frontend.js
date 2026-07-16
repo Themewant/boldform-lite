@@ -317,9 +317,14 @@ jQuery(
 								return;
 							}
 
+							// The thank-you message is authored in a rich editor, so it is
+							// inserted as markup. It is server-authored and filtered with
+							// the post allowlist on every read, so it carries no script or
+							// event handlers. The error branch below stays .text() -- those
+							// messages can quote submitted values back at the visitor.
 							$message
 								.addClass( 'is-visible is-success' )
-								.text( message );
+								.html( message );
 
 							$form.trigger( 'reset' );
 

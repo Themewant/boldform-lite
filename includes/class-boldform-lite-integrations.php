@@ -393,6 +393,14 @@ class BoldForm_Lite_Integrations {
 		$data['globalConnections']      = $safe;
 		$data['integrationsNonce']      = wp_create_nonce( 'boldform_integration_nonce' );
 		$data['integrationsAdminUrl']   = admin_url( 'admin.php?page=boldform-lite-integrations' );
+
+		// The connection types the free plugin can actually dispatch. Any assigned
+		// connection of another type is a leftover from when an add-on was active
+		// (a clean free install cannot create one), so the builder renders those as
+		// locked upgrade teasers rather than working toggles that would silently
+		// never fire. The array_values keeps this a JSON array, not an object.
+		$data['freeIntegrationTypes'] = array_values( BoldForm_Lite_Integrations_Page::FREE_TYPES );
+
 		return $data;
 	}
 

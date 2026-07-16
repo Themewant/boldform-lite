@@ -41,6 +41,16 @@ _All of Pro 1.1, plus Save & Resume, Draft Auto-Save, and Excel & PDF Export, ar
 2. **Custom Entry Statuses** — Define your own submission statuses to match your team's workflow, beyond the built-in read, starred, and spam labels.
 
 **Pro 1.2 — smarter notifications & payments**
+11. **Custom Email Editor** ✅ _built_ — Fully customize notification email subjects and content, including dynamic values from submitted fields (merge tags). Per-form, admin + user emails independently; rides Lite's existing email filters (zero Lite changes).
+12. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
+13. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
+14. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
+15. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
+16. **Custom Thank-You Page** — Display a personalized confirmation message using submitted field values after a form is completed.
+17. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
+18. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
+19. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
+20. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
 3. **Custom Email Editor** — Fully customize notification email subjects and content, including dynamic values from submitted fields.
 4. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
 5. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
