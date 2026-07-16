@@ -3935,9 +3935,10 @@ jQuery(
 					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
 				'</div>';
 			}
-			// Linked when all four sides are equal (or a single shorthand value) — restores
-			// the link toggle's active state on reload instead of resetting it each render.
-			var linked = '' !== nums[0] && nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
+			// Linked when all four sides are equal — including the default all-empty state,
+			// so a fresh control starts linked and one value fills every side. Only diverging
+			// side values render it unlinked. Also restores the toggle state on reload.
+			var linked = nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
 			return '<div class="boldform-setting-group boldform-adv-field' + ( linked ? ' is-linked' : '' ) + '" data-type="dimension" data-var="' + cssVar + '">' +
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-dim">' +
