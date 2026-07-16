@@ -313,6 +313,12 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 = 1.1.4 =
+New features:
+* New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
+
+Security:
+* Fix: The confirmation message shown after a submission made without JavaScript is no longer passed through the page URL. Anyone could previously put arbitrary wording on the page with a crafted link (for example, a fake "your payment failed, call this number" notice under your own form). The message is now held server-side and fetched with a single-use token, so only a real submission can produce one.
+
 Improvements:
 * Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
 * Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.

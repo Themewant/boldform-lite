@@ -472,7 +472,11 @@ class BoldForm_Lite_Ajax_Save {
 			// Persist a redirect URL only in redirect mode; AJAX/message mode always
 			// stores an empty URL so switching back to AJAX can't leave a stale redirect.
 			'redirect_url'      => 'redirect' === $submission_type && isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
-			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? sanitize_textarea_field( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Authored in a rich editor and rendered as markup, so the message is filtered
+			// with the post allowlist rather than flattened to plain text. Every read path
+			// applies the same filter, so markup reaching the row another way is still
+			// filtered before it is output.
+			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? wp_kses_post( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $settings_payload['button_alignment'] ) && in_array( $settings_payload['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['button_alignment'] : $defaults['button_alignment'],
 			'button_layout'     => isset( $settings_payload['button_layout'] ) && in_array( $settings_payload['button_layout'], array( 'below', 'inline' ), true ) ? $settings_payload['button_layout'] : $defaults['button_layout'],

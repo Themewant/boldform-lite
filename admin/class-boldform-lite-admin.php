@@ -758,10 +758,13 @@ class BoldForm_Lite_Admin {
 
 			wp_enqueue_media();
 
+			// Powers the rich thank-you message editor in the Confirmation settings.
+			wp_enqueue_editor();
+
 			wp_enqueue_script(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
-				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y' ),
+				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y', 'editor', 'quicktags' ),
 				$this->asset_version( 'assets/js/builder.js' ),
 				true
 			);
@@ -882,6 +885,10 @@ class BoldForm_Lite_Admin {
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
 						'thankYouMessage' => __( 'Thank you message', 'boldform-lite' ),
+						// WordPress labels the editor's second tab "Text". This holds a
+						// message template rather than a post, so "Code" describes it better.
+						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
+						'editorCode'      => __( 'Code', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
 						'submissionType' => __( 'After Submit', 'boldform-lite' ),
 						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
@@ -5204,7 +5211,8 @@ class BoldForm_Lite_Admin {
 				? $decoded['redirect_type']
 				: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' ),
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Rich markup: filtered with the post allowlist, matching the save path.
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
 			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],

@@ -3121,6 +3121,102 @@ jQuery(
 		// Remembers which settings tab is active across re-renders.
 		var activeSettingsTab = 'confirmation';
 
+		// ── Thank-you message editor ─────────────────────────────────────────────
+		// The message is rich markup, so it is edited in the WordPress editor rather
+		// than a plain textarea. renderFormSettings() replaces the whole settings
+		// panel's HTML, so the editor has to be torn down before each render and stood
+		// back up after -- see removeThankYouEditor()/initThankYouEditor().
+
+		var THANK_YOU_EDITOR_ID = 'boldform-thank-you-message';
+
+		/**
+		 * Whether the WordPress editor API is available.
+		 *
+		 * @return {boolean} True when wp.editor can be used.
+		 */
+		function hasEditorApi() {
+			return !! ( window.wp && window.wp.editor && window.wp.editor.initialize );
+		}
+
+		/**
+		 * Tears down the thank-you editor.
+		 *
+		 * Safe to call when no instance exists, which is the common case: the panel is
+		 * re-rendered on changes that have nothing to do with this field.
+		 *
+		 * @return {void}
+		 */
+		function removeThankYouEditor() {
+			if ( ! hasEditorApi() ) {
+				return;
+			}
+
+			try {
+				window.wp.editor.remove( THANK_YOU_EDITOR_ID );
+			} catch ( e ) {
+				// No instance to remove; nothing to do.
+			}
+		}
+
+		/**
+		 * Stands the thank-you editor up and wires it back to formSettings.
+		 *
+		 * Only the AJAX submit mode renders the field, so this is a no-op in the
+		 * redirect modes.
+		 *
+		 * @return {void}
+		 */
+		function initThankYouEditor() {
+			if ( ! hasEditorApi() || ! document.getElementById( THANK_YOU_EDITOR_ID ) ) {
+				return;
+			}
+
+			// An instance can survive in TinyMCE's registry after its DOM is gone. Left
+			// registered, initialize() would bind to the corpse and the message would
+			// silently stop syncing.
+			if ( window.tinymce && window.tinymce.get( THANK_YOU_EDITOR_ID ) ) {
+				window.tinymce.remove( '#' + THANK_YOU_EDITOR_ID );
+			}
+
+			window.wp.editor.initialize( THANK_YOU_EDITOR_ID, {
+				mediaButtons: false,
+				quicktags:    true,
+				tinymce:      {
+					wpautop:  true,
+					height:   200,
+					toolbar1: 'formatselect,bold,italic,underline,bullist,numlist,alignleft,aligncenter,alignright,link,unlink,forecolor,removeformat,undo,redo',
+					toolbar2: '',
+					setup:    function ( editor ) {
+						// Mirror every keystroke: TinyMCE edits an iframe, so the
+						// textarea's own input/change events never fire and the
+						// delegated settings collector would never see the message.
+						editor.on( 'change keyup SetContent undo redo', syncThankYouMessage );
+					}
+				}
+			} );
+
+			$( '#' + THANK_YOU_EDITOR_ID + '-html' ).text( boldformLiteBuilder.labels.editorCode || 'Code' );
+			$( '#' + THANK_YOU_EDITOR_ID + '-tmce' ).text( boldformLiteBuilder.labels.editorVisual || 'Visual' );
+		}
+
+		/**
+		 * Reads the thank-you message out of whichever editor mode is active and stores it.
+		 *
+		 * wp.editor.getContent() flushes TinyMCE into the textarea first when Visual is
+		 * active, so this is correct in either mode.
+		 *
+		 * @return {void}
+		 */
+		function syncThankYouMessage() {
+			if ( ! document.getElementById( THANK_YOU_EDITOR_ID ) ) {
+				return;
+			}
+
+			state.formSettings.thank_you_message = hasEditorApi()
+				? window.wp.editor.getContent( THANK_YOU_EDITOR_ID )
+				: ( $( '#' + THANK_YOU_EDITOR_ID ).val() || '' );
+		}
+
 		function renderFormSettings() {
 			var submitMode = 'ajax';
 			if ( 'redirect' === state.formSettings.submission_type ) {
@@ -3155,7 +3251,11 @@ jQuery(
 				( 'ajax' === submitMode
 					? '<div class="boldform-setting-group bfs-stab-field">' +
 						'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
-						'<textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
+						// Only the bare textarea: wp.editor.initialize() builds the editor
+						// wrap, the Visual/Code tabs and the quicktags toolbar around it.
+						'<div class="boldform-rich-editor">' +
+							'<textarea id="boldform-thank-you-message" rows="6">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
+						'</div>' +
 					'</div>'
 					: ''
 				) +
@@ -3333,6 +3433,10 @@ jQuery(
 					'</div>' +
 				'</div>';
 
+			// Tear the editor down before the markup it is attached to is destroyed:
+			// TinyMCE keeps the instance (and its iframe) alive otherwise.
+			removeThankYouEditor();
+
 			$( '#boldform-form-settings-panel' ).html( html );
 
 			// ── Tab switching ────────────────────────────────────────────────────
@@ -3367,6 +3471,9 @@ jQuery(
 			}
 			$restore.addClass( 'is-active' );
 			$panel.find( '.bfs-stab-pane[data-pane="' + activeSettingsTab + '"]' ).addClass( 'is-active' );
+
+			// After the active pane is set, so TinyMCE measures a visible container.
+			initThankYouEditor();
 		}
 
 		var designThemes = {
@@ -4644,6 +4751,11 @@ jQuery(
 			// Note: an empty form (no rows/fields) is intentionally allowed to save,
 			// so a user can clear a form and have that persist. The server stores an
 			// empty structure and the renderer skips a field-less form gracefully.
+
+			// Flush the thank-you editor. Typing in Code view fires no event the editor
+			// reports, so without this a message written there and saved immediately
+			// would not be picked up.
+			syncThankYouMessage();
 
 			/**
 			 * Allow Pro modules to mutate state.formSettings before it is serialised.
@@ -6106,9 +6218,11 @@ jQuery(
 				} else if ( $( '#boldform-redirect-custom-url' ).length ) {
 					state.formSettings.redirect_url = $( '#boldform-redirect-custom-url' ).val() || '';
 				}
-				if ( $( '#boldform-thank-you-message' ).length ) {
-					state.formSettings.thank_you_message = $( '#boldform-thank-you-message' ).val() || '';
-				}
+				// Read through the editor, not the textarea: while Visual is active the
+				// textarea holds whatever it was seeded with, so a plain .val() here
+				// would overwrite the live message every time an unrelated setting on
+				// this panel changed.
+				syncThankYouMessage();
 				if ( $( '#boldform-enable-admin-email' ).length ) {
 					state.formSettings.enable_admin_email = $( '#boldform-enable-admin-email' ).is( ':checked' );
 				}
