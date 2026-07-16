@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-16T07:48:19+00:00\n"
+"POT-Creation-Date: 2026-07-16T08:04:21+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: boldform-lite\n"
@@ -74,7 +74,7 @@ msgstr ""
 #: admin/admin-builder.php:89
 #: admin/ajax-save.php:81
 #: admin/class-boldform-lite-admin.php:807
-#: admin/class-boldform-lite-admin.php:5157
+#: admin/class-boldform-lite-admin.php:5159
 msgid "Untitled Form"
 msgstr ""
 
@@ -87,30 +87,30 @@ msgid "Builder"
 msgstr ""
 
 #: admin/admin-builder.php:98
-#: admin/class-boldform-lite-admin.php:1090
+#: admin/class-boldform-lite-admin.php:1092
 msgid "Style"
 msgstr ""
 
 #: admin/admin-builder.php:101
 #: admin/class-boldform-lite-admin.php:162
 #: admin/class-boldform-lite-admin.php:163
-#: admin/class-boldform-lite-admin.php:1888
-#: admin/class-boldform-lite-admin.php:2302
-#: admin/class-boldform-lite-admin.php:2544
+#: admin/class-boldform-lite-admin.php:1890
+#: admin/class-boldform-lite-admin.php:2304
+#: admin/class-boldform-lite-admin.php:2546
 #: admin/class-boldform-lite-integrations-page.php:280
 #: admin/class-boldform-lite-integrations-page.php:323
 msgid "Settings"
 msgstr ""
 
 #: admin/admin-builder.php:108
-#: admin/class-boldform-lite-admin.php:2452
-#: admin/class-boldform-lite-admin.php:2720
+#: admin/class-boldform-lite-admin.php:2454
+#: admin/class-boldform-lite-admin.php:2722
 msgid "Shortcode"
 msgstr ""
 
 #: admin/admin-builder.php:113
-#: admin/class-boldform-lite-admin.php:2503
-#: admin/class-boldform-lite-admin.php:2542
+#: admin/class-boldform-lite-admin.php:2505
+#: admin/class-boldform-lite-admin.php:2544
 msgid "Preview"
 msgstr ""
 
@@ -203,17 +203,17 @@ msgid "Preview device"
 msgstr ""
 
 #: admin/admin-builder.php:267
-#: admin/class-boldform-lite-admin.php:2714
+#: admin/class-boldform-lite-admin.php:2716
 msgid "Desktop"
 msgstr ""
 
 #: admin/admin-builder.php:268
-#: admin/class-boldform-lite-admin.php:2715
+#: admin/class-boldform-lite-admin.php:2717
 msgid "Tablet"
 msgstr ""
 
 #: admin/admin-builder.php:269
-#: admin/class-boldform-lite-admin.php:2716
+#: admin/class-boldform-lite-admin.php:2718
 msgid "Mobile"
 msgstr ""
 
@@ -238,7 +238,8 @@ msgstr ""
 #: admin/admin-builder.php:315
 #: admin/admin-builder.php:343
 #: admin/admin-builder.php:362
-#: admin/class-boldform-lite-admin.php:2080
+#: admin/admin-builder.php:381
+#: admin/class-boldform-lite-admin.php:2082
 msgid "Close"
 msgstr ""
 
@@ -277,13 +278,15 @@ msgstr ""
 
 #: admin/admin-builder.php:353
 #: admin/admin-builder.php:372
-#: admin/class-boldform-lite-admin.php:2090
+#: admin/admin-builder.php:391
+#: admin/class-boldform-lite-admin.php:2092
 msgid "Upgrade Now"
 msgstr ""
 
 #: admin/admin-builder.php:354
 #: admin/admin-builder.php:373
-#: admin/class-boldform-lite-admin.php:2091
+#: admin/admin-builder.php:392
+#: admin/class-boldform-lite-admin.php:2093
 msgid "Maybe later"
 msgstr ""
 
@@ -307,6 +310,26 @@ msgstr ""
 msgid "Insert submitted data, and set a Reply-To that answers the submitter"
 msgstr ""
 
+#: admin/admin-builder.php:383
+msgid "Unlock this integration"
+msgstr ""
+
+#: admin/admin-builder.php:384
+msgid "BoldForm Lite sends submissions to Mailchimp and Brevo. Upgrade to connect your forms to CRMs, spreadsheets, messaging apps and automation tools, and send each submission wherever you work."
+msgstr ""
+
+#: admin/admin-builder.php:386
+msgid "CRMs and newsletters — HubSpot, ActiveCampaign, MailerLite, Zoho and more"
+msgstr ""
+
+#: admin/admin-builder.php:387
+msgid "Spreadsheets, storage and messaging — Google Sheets, Slack, Telegram, Notion"
+msgstr ""
+
+#: admin/admin-builder.php:388
+msgid "Automation — Zapier, Make and Pabbly Connect"
+msgstr ""
+
 #: admin/ajax-save.php:44
 msgid "You are not allowed to perform this action."
 msgstr ""
@@ -326,7 +349,7 @@ msgid "Unable to update the form. Database error: %s"
 msgstr ""
 
 #: admin/ajax-save.php:142
-#: admin/class-boldform-lite-admin.php:1121
+#: admin/class-boldform-lite-admin.php:1123
 msgid "Unable to save the form."
 msgstr ""
 
@@ -337,13 +360,13 @@ msgid "Unable to save the form. Database error: %s"
 msgstr ""
 
 #: admin/ajax-save.php:179
-#: admin/class-boldform-lite-admin.php:1120
+#: admin/class-boldform-lite-admin.php:1122
 msgid "Form saved successfully."
 msgstr ""
 
 #: admin/ajax-save.php:420
 #: admin/class-boldform-lite-admin.php:811
-#: admin/class-boldform-lite-admin.php:5175
+#: admin/class-boldform-lite-admin.php:5177
 #: public/class-boldform-lite-form-handler.php:736
 #: public/class-boldform-lite-shortcode.php:512
 msgid "Thanks! Your form was submitted successfully."
@@ -351,7 +374,7 @@ msgstr ""
 
 #: admin/ajax-save.php:421
 #: admin/class-boldform-lite-admin.php:812
-#: admin/class-boldform-lite-admin.php:5176
+#: admin/class-boldform-lite-admin.php:5178
 #: public/class-boldform-lite-form-handler.php:737
 #: public/class-boldform-lite-shortcode.php:513
 #: public/class-boldform-lite-shortcode.php:1139
@@ -362,8 +385,8 @@ msgstr ""
 
 #: admin/class-boldform-lite-admin.php:124
 #: admin/class-boldform-lite-admin.php:125
-#: admin/class-boldform-lite-admin.php:1956
-#: admin/class-boldform-lite-admin.php:2331
+#: admin/class-boldform-lite-admin.php:1958
+#: admin/class-boldform-lite-admin.php:2333
 #: admin/class-boldform-lite-integrations-page.php:353
 #: includes/class-boldform-lite-email-handler.php:125
 #: includes/class-boldform-lite-email-handler.php:134
@@ -377,32 +400,32 @@ msgstr ""
 
 #: admin/class-boldform-lite-admin.php:135
 #: admin/class-boldform-lite-admin.php:136
-#: admin/class-boldform-lite-admin.php:2287
-#: admin/class-boldform-lite-admin.php:2406
-#: admin/class-boldform-lite-admin.php:2886
-#: admin/class-boldform-lite-admin.php:2904
+#: admin/class-boldform-lite-admin.php:2289
+#: admin/class-boldform-lite-admin.php:2408
+#: admin/class-boldform-lite-admin.php:2888
+#: admin/class-boldform-lite-admin.php:2906
 msgid "All Forms"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:144
-#: admin/class-boldform-lite-admin.php:2469
+#: admin/class-boldform-lite-admin.php:2471
 msgid "Add New Form"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:145
-#: admin/class-boldform-lite-admin.php:2396
+#: admin/class-boldform-lite-admin.php:2398
 msgid "Add New"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:153
 #: admin/class-boldform-lite-admin.php:261
-#: admin/class-boldform-lite-admin.php:1870
-#: admin/class-boldform-lite-admin.php:2292
-#: admin/class-boldform-lite-admin.php:2453
-#: admin/class-boldform-lite-admin.php:2501
-#: admin/class-boldform-lite-admin.php:2541
-#: admin/class-boldform-lite-admin.php:2814
-#: admin/class-boldform-lite-admin.php:5886
+#: admin/class-boldform-lite-admin.php:1872
+#: admin/class-boldform-lite-admin.php:2294
+#: admin/class-boldform-lite-admin.php:2455
+#: admin/class-boldform-lite-admin.php:2503
+#: admin/class-boldform-lite-admin.php:2543
+#: admin/class-boldform-lite-admin.php:2816
+#: admin/class-boldform-lite-admin.php:5888
 #: admin/class-boldform-lite-export-import.php:91
 #: admin/class-boldform-lite-integrations-page.php:320
 msgid "Entries"
@@ -410,9 +433,9 @@ msgstr ""
 
 #: admin/class-boldform-lite-admin.php:171
 #: admin/class-boldform-lite-admin.php:172
-#: admin/class-boldform-lite-admin.php:1876
-#: admin/class-boldform-lite-admin.php:2297
-#: admin/class-boldform-lite-admin.php:5753
+#: admin/class-boldform-lite-admin.php:1878
+#: admin/class-boldform-lite-admin.php:2299
+#: admin/class-boldform-lite-admin.php:5755
 #: admin/class-boldform-lite-integrations-page.php:321
 msgid "Reports"
 msgstr ""
@@ -420,7 +443,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:180
 #: admin/class-boldform-lite-admin.php:181
 #: admin/class-boldform-lite-admin.php:412
-#: admin/class-boldform-lite-admin.php:2688
+#: admin/class-boldform-lite-admin.php:2690
 msgid "Preview Form"
 msgstr ""
 
@@ -433,7 +456,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:221
 #: admin/class-boldform-lite-admin.php:222
 #: admin/class-boldform-lite-admin.php:247
-#: admin/class-boldform-lite-admin.php:2015
+#: admin/class-boldform-lite-admin.php:2017
 #: admin/class-boldform-lite-integrations-page.php:412
 msgid "Upgrade to Pro"
 msgstr ""
@@ -503,7 +526,7 @@ msgid "Enter text"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:823
-#: admin/class-boldform-lite-admin.php:3426
+#: admin/class-boldform-lite-admin.php:3428
 msgid "you@example.com"
 msgstr ""
 
@@ -541,7 +564,7 @@ msgid "Select a time"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:833
-#: admin/class-boldform-lite-admin.php:3501
+#: admin/class-boldform-lite-admin.php:3503
 msgid "Password"
 msgstr ""
 
@@ -554,14 +577,14 @@ msgid "Type to search…"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:839
-#: admin/class-boldform-lite-admin.php:2499
-#: admin/class-boldform-lite-admin.php:2543
+#: admin/class-boldform-lite-admin.php:2501
+#: admin/class-boldform-lite-admin.php:2545
 msgid "Duplicate"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:840
-#: admin/class-boldform-lite-admin.php:2490
-#: admin/class-boldform-lite-admin.php:2538
+#: admin/class-boldform-lite-admin.php:2492
+#: admin/class-boldform-lite-admin.php:2540
 #: admin/class-boldform-lite-integrations-page.php:176
 msgid "Delete"
 msgstr ""
@@ -603,7 +626,7 @@ msgid "Selected Field"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:855
-#: admin/class-boldform-lite-admin.php:989
+#: admin/class-boldform-lite-admin.php:991
 #: public/class-boldform-lite-elementor-widget.php:677
 msgid "Placeholder"
 msgstr ""
@@ -746,275 +769,285 @@ msgid "Write your own subject and message for this email with an upgrade."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:896
-msgid "Submission Settings"
+#: admin/class-boldform-lite-admin.php:1949
+#: admin/class-boldform-lite-integrations-page.php:344
+msgid "Upgrade"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:897
-msgid "After Submit"
+msgid "Available with an upgrade"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:898
-msgid "AJAX submit"
+msgid "Submission Settings"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:899
-msgid "Submit without page reload and show a success message."
+msgid "After Submit"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:900
-msgid "Custom page redirect"
+msgid "AJAX submit"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:901
-msgid "Send the user to a custom URL after submit."
+msgid "Submit without page reload and show a success message."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:902
-msgid "Enable admin email"
+msgid "Custom page redirect"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:903
-msgid "Enable user confirmation email"
+msgid "Send the user to a custom URL after submit."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:904
-msgid "Admin email address"
+msgid "Enable admin email"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:905
-msgid "Admin Email Recipient"
+msgid "Enable user confirmation email"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:906
-msgid "Site admin email"
+msgid "Admin email address"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:907
-msgid "Use the email address from WordPress settings."
+msgid "Admin Email Recipient"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:908
-msgid "Custom email"
+msgid "Site admin email"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:909
-msgid "Send notifications to a custom email address."
+msgid "Use the email address from WordPress settings."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:910
-msgid "Admin Notifications"
+msgid "Custom email"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:911
-msgid "User Confirmation Email"
+msgid "Send notifications to a custom email address."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:912
-msgid "Terms text"
+msgid "Admin Notifications"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:913
-msgid "This field will use the captcha provider selected in global settings."
+msgid "User Confirmation Email"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:914
-msgid "Zone Colors"
+msgid "Terms text"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:915
-msgid "Detractors (0–6)"
+msgid "This field will use the captcha provider selected in global settings."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:916
-msgid "Passives (7–8)"
+msgid "Zone Colors"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:917
-msgid "Promoters (9–10)"
+msgid "Detractors (0–6)"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:918
-msgid "Reset to default"
+msgid "Passives (7–8)"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:919
-msgid "Icon Size (px)"
+msgid "Promoters (9–10)"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:920
-msgid "Star Color"
+msgid "Reset to default"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:921
-msgid "Active Color"
+msgid "Icon Size (px)"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:922
+msgid "Star Color"
+msgstr ""
+
+#: admin/class-boldform-lite-admin.php:923
+msgid "Active Color"
+msgstr ""
+
+#: admin/class-boldform-lite-admin.php:924
 #: public/class-boldform-lite-shortcode.php:1865
 msgid "Choose file or drag & drop"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:923
+#: admin/class-boldform-lite-admin.php:925
 msgid "Allowed file types"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:924
+#: admin/class-boldform-lite-admin.php:926
 msgid "Max file size (MB)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:925
+#: admin/class-boldform-lite-admin.php:927
 #: public/class-boldform-lite-elementor-widget.php:1814
 msgid "Description"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:926
-#: admin/class-boldform-lite-admin.php:995
-#: admin/class-boldform-lite-admin.php:5642
+#: admin/class-boldform-lite-admin.php:928
+#: admin/class-boldform-lite-admin.php:997
+#: admin/class-boldform-lite-admin.php:5644
 #: public/class-boldform-lite-elementor-widget.php:1857
 msgid "Submit Button"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:927
+#: admin/class-boldform-lite-admin.php:929
 msgid "Button text"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:928
+#: admin/class-boldform-lite-admin.php:930
 msgid "Button alignment"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:929
+#: admin/class-boldform-lite-admin.php:931
 msgid "Button layout"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:930
+#: admin/class-boldform-lite-admin.php:932
 msgid "Icon"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:931
 #: admin/class-boldform-lite-admin.php:933
+#: admin/class-boldform-lite-admin.php:935
 msgid "Dashicon"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:932
+#: admin/class-boldform-lite-admin.php:934
 msgid "Custom SVG"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:934
+#: admin/class-boldform-lite-admin.php:936
 msgid "Upload SVG"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:935
+#: admin/class-boldform-lite-admin.php:937
 msgid "Change SVG"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:936
+#: admin/class-boldform-lite-admin.php:938
 msgid "Use this SVG"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:937
+#: admin/class-boldform-lite-admin.php:939
 msgid "SVG Icon"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:938
+#: admin/class-boldform-lite-admin.php:940
 msgid "Icon position"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:939
+#: admin/class-boldform-lite-admin.php:941
 msgid "Icon gap (px)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:940
+#: admin/class-boldform-lite-admin.php:942
 msgid "CSS Class"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:941
+#: admin/class-boldform-lite-admin.php:943
 msgid "Auto Populate Key"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:942
+#: admin/class-boldform-lite-admin.php:944
 msgid "Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:943
+#: admin/class-boldform-lite-admin.php:945
 msgid "Row settings"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:944
+#: admin/class-boldform-lite-admin.php:946
 msgid "Move up"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:945
+#: admin/class-boldform-lite-admin.php:947
 msgid "Move down"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:946
+#: admin/class-boldform-lite-admin.php:948
 msgid "Column"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:947
-#: admin/class-boldform-lite-admin.php:1091
+#: admin/class-boldform-lite-admin.php:949
+#: admin/class-boldform-lite-admin.php:1093
 msgid "Width"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:948
+#: admin/class-boldform-lite-admin.php:950
 msgid "Below fields"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:949
+#: admin/class-boldform-lite-admin.php:951
 msgid "Inline with last row"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:950
+#: admin/class-boldform-lite-admin.php:952
 msgid "Button color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:951
+#: admin/class-boldform-lite-admin.php:953
 msgid "Field Appearance"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:952
+#: admin/class-boldform-lite-admin.php:954
 msgid "Field style"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:953
+#: admin/class-boldform-lite-admin.php:955
 msgid "Field size"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:954
+#: admin/class-boldform-lite-admin.php:956
 msgid "Focus color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:955
+#: admin/class-boldform-lite-admin.php:957
 msgid "Field Styles"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:956
+#: admin/class-boldform-lite-admin.php:958
 msgid "Label Styles"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:957
+#: admin/class-boldform-lite-admin.php:959
 msgid "Button Styles"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:958
+#: admin/class-boldform-lite-admin.php:960
 msgid "Add fields in the Builder tab to preview your styling here."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:959
+#: admin/class-boldform-lite-admin.php:961
 #: public/class-boldform-lite-elementor-widget.php:716
 msgid "Size"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:960
+#: admin/class-boldform-lite-admin.php:962
 #: public/class-boldform-lite-elementor-widget.php:1709
 msgid "Border"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:961
+#: admin/class-boldform-lite-admin.php:963
 msgid "Border Size"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:962
+#: admin/class-boldform-lite-admin.php:964
 #: public/class-boldform-lite-elementor-widget.php:234
 #: public/class-boldform-lite-elementor-widget.php:521
 #: public/class-boldform-lite-elementor-widget.php:886
@@ -1025,7 +1058,7 @@ msgstr ""
 msgid "Border Radius"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:963
+#: admin/class-boldform-lite-admin.php:965
 #: public/class-boldform-lite-elementor-widget.php:783
 #: public/class-boldform-lite-elementor-widget.php:806
 #: public/class-boldform-lite-elementor-widget.php:923
@@ -1038,166 +1071,166 @@ msgstr ""
 msgid "Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:964
-#: admin/class-boldform-lite-admin.php:5517
+#: admin/class-boldform-lite-admin.php:966
+#: admin/class-boldform-lite-admin.php:5519
 msgid "Text"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:965
-#: admin/class-boldform-lite-admin.php:1098
+#: admin/class-boldform-lite-admin.php:967
+#: admin/class-boldform-lite-admin.php:1100
 msgid "Default"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:966
+#: admin/class-boldform-lite-admin.php:968
 msgid "Sublabel"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:967
+#: admin/class-boldform-lite-admin.php:969
 msgid "Error"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:968
-#: admin/class-boldform-lite-admin.php:1086
+#: admin/class-boldform-lite-admin.php:970
+#: admin/class-boldform-lite-admin.php:1088
 msgid "Solid"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:969
+#: admin/class-boldform-lite-admin.php:971
 msgid "Dashed"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:970
-#: admin/class-boldform-lite-admin.php:3468
+#: admin/class-boldform-lite-admin.php:972
+#: admin/class-boldform-lite-admin.php:3470
 msgid "None"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:971
+#: admin/class-boldform-lite-admin.php:973
 msgid "Small"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:972
+#: admin/class-boldform-lite-admin.php:974
 msgid "Medium"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:973
-msgid "Large"
-msgstr ""
-
-#: admin/class-boldform-lite-admin.php:974
-#: admin/class-boldform-lite-admin.php:1000
-#: admin/class-boldform-lite-admin.php:1097
-#: public/class-boldform-lite-elementor-widget.php:186
-msgid "Left"
-msgstr ""
-
 #: admin/class-boldform-lite-admin.php:975
-#: admin/class-boldform-lite-admin.php:1001
-#: public/class-boldform-lite-elementor-widget.php:190
-msgid "Center"
+msgid "Large"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:976
 #: admin/class-boldform-lite-admin.php:1002
-#: admin/class-boldform-lite-admin.php:1095
+#: admin/class-boldform-lite-admin.php:1099
+#: public/class-boldform-lite-elementor-widget.php:186
+msgid "Left"
+msgstr ""
+
+#: admin/class-boldform-lite-admin.php:977
+#: admin/class-boldform-lite-admin.php:1003
+#: public/class-boldform-lite-elementor-widget.php:190
+msgid "Center"
+msgstr ""
+
+#: admin/class-boldform-lite-admin.php:978
+#: admin/class-boldform-lite-admin.php:1004
+#: admin/class-boldform-lite-admin.php:1097
 #: public/class-boldform-lite-elementor-widget.php:194
 msgid "Right"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:977
+#: admin/class-boldform-lite-admin.php:979
 msgid "Teal"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:978
+#: admin/class-boldform-lite-admin.php:980
 msgid "Blue"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:979
+#: admin/class-boldform-lite-admin.php:981
 msgid "Green"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:980
+#: admin/class-boldform-lite-admin.php:982
 msgid "Red"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:981
+#: admin/class-boldform-lite-admin.php:983
 msgid "Dark"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:985
+#: admin/class-boldform-lite-admin.php:987
 #: public/class-boldform-lite-elementor-widget.php:158
 msgid "Form Container"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:986
+#: admin/class-boldform-lite-admin.php:988
 #: public/class-boldform-lite-elementor-widget.php:294
 msgid "Layout & Spacing"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:987
+#: admin/class-boldform-lite-admin.php:989
 #: public/class-boldform-lite-elementor-widget.php:375
 msgid "Labels"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:988
+#: admin/class-boldform-lite-admin.php:990
 #: public/class-boldform-lite-elementor-widget.php:486
 msgid "Input Fields"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:990
+#: admin/class-boldform-lite-admin.php:992
 #: public/class-boldform-lite-elementor-widget.php:708
 msgid "Checkbox & Radio"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:991
+#: admin/class-boldform-lite-admin.php:993
 #: public/class-boldform-lite-elementor-widget.php:846
 msgid "Select Dropdown"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:992
-#: admin/class-boldform-lite-admin.php:5632
+#: admin/class-boldform-lite-admin.php:994
+#: admin/class-boldform-lite-admin.php:5634
 #: public/class-boldform-lite-elementor-widget.php:1214
 msgid "Terms & Conditions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:993
-#: admin/class-boldform-lite-admin.php:5637
+#: admin/class-boldform-lite-admin.php:995
+#: admin/class-boldform-lite-admin.php:5639
 #: public/class-boldform-lite-elementor-widget.php:1610
 msgid "File Upload"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:994
-#: admin/class-boldform-lite-admin.php:5627
+#: admin/class-boldform-lite-admin.php:996
+#: admin/class-boldform-lite-admin.php:5629
 #: public/class-boldform-lite-elementor-widget.php:1677
 msgid "Section Break"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:996
+#: admin/class-boldform-lite-admin.php:998
 #: public/class-boldform-lite-elementor-widget.php:2036
 msgid "Error Messages"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:997
+#: admin/class-boldform-lite-admin.php:999
 #: public/class-boldform-lite-elementor-widget.php:2134
 msgid "Success Message"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:998
+#: admin/class-boldform-lite-admin.php:1000
 #: public/class-boldform-lite-elementor-widget.php:166
 msgid "Max Width"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:999
+#: admin/class-boldform-lite-admin.php:1001
 #: public/class-boldform-lite-elementor-widget.php:182
 msgid "Alignment"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1003
-#: admin/class-boldform-lite-admin.php:1055
+#: admin/class-boldform-lite-admin.php:1005
+#: admin/class-boldform-lite-admin.php:1057
 #: public/class-boldform-lite-elementor-widget.php:198
 #: public/class-boldform-lite-elementor-widget.php:1865
 msgid "Full Width"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1004
+#: admin/class-boldform-lite-admin.php:1006
 #: public/class-boldform-lite-elementor-widget.php:246
 #: public/class-boldform-lite-elementor-widget.php:533
 #: public/class-boldform-lite-elementor-widget.php:898
@@ -1208,7 +1241,7 @@ msgstr ""
 msgid "Padding"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1005
+#: admin/class-boldform-lite-admin.php:1007
 #: public/class-boldform-lite-elementor-widget.php:391
 #: public/class-boldform-lite-elementor-widget.php:1685
 #: public/class-boldform-lite-elementor-widget.php:2119
@@ -1216,7 +1249,7 @@ msgstr ""
 msgid "Margin"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1006
+#: admin/class-boldform-lite-admin.php:1008
 #: public/class-boldform-lite-elementor-widget.php:773
 #: public/class-boldform-lite-elementor-widget.php:796
 #: public/class-boldform-lite-elementor-widget.php:960
@@ -1227,7 +1260,7 @@ msgstr ""
 msgid "Border Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1007
+#: admin/class-boldform-lite-admin.php:1009
 #: public/class-boldform-lite-elementor-widget.php:1253
 #: public/class-boldform-lite-elementor-widget.php:1266
 #: public/class-boldform-lite-elementor-widget.php:1509
@@ -1235,20 +1268,20 @@ msgstr ""
 msgid "Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1008
+#: admin/class-boldform-lite-admin.php:1010
 #: public/class-boldform-lite-elementor-widget.php:258
 msgid "Box Shadow"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1009
+#: admin/class-boldform-lite-admin.php:1011
 msgid "Box Shadow (Hover)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1010
+#: admin/class-boldform-lite-admin.php:1012
 msgid "Box Shadow (Focus)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1011
+#: admin/class-boldform-lite-admin.php:1013
 #: public/class-boldform-lite-elementor-widget.php:266
 #: public/class-boldform-lite-elementor-widget.php:432
 #: public/class-boldform-lite-elementor-widget.php:562
@@ -1263,8 +1296,8 @@ msgstr ""
 msgid "Normal"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1012
-#: admin/class-boldform-lite-admin.php:1060
+#: admin/class-boldform-lite-admin.php:1014
+#: admin/class-boldform-lite-admin.php:1062
 #: public/class-boldform-lite-elementor-widget.php:276
 #: public/class-boldform-lite-elementor-widget.php:597
 #: public/class-boldform-lite-elementor-widget.php:792
@@ -1278,64 +1311,64 @@ msgstr ""
 msgid "Hover"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1013
-#: admin/class-boldform-lite-admin.php:1061
+#: admin/class-boldform-lite-admin.php:1015
+#: admin/class-boldform-lite-admin.php:1063
 #: public/class-boldform-lite-elementor-widget.php:455
 #: public/class-boldform-lite-elementor-widget.php:632
 msgid "Focus"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1014
+#: admin/class-boldform-lite-admin.php:1016
 #: public/class-boldform-lite-elementor-widget.php:815
 #: public/class-boldform-lite-elementor-widget.php:1434
 msgid "Checked"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1015
+#: admin/class-boldform-lite-admin.php:1017
 #: public/class-boldform-lite-elementor-widget.php:1184
 msgid "Selected"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1016
+#: admin/class-boldform-lite-admin.php:1018
 #: public/class-boldform-lite-elementor-widget.php:302
 msgid "Row Gap"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1017
+#: admin/class-boldform-lite-admin.php:1019
 #: public/class-boldform-lite-elementor-widget.php:318
 msgid "Column Gap"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1018
+#: admin/class-boldform-lite-admin.php:1020
 #: public/class-boldform-lite-elementor-widget.php:348
 #: public/class-boldform-lite-elementor-widget.php:1368
 msgid "Field Margin"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1019
+#: admin/class-boldform-lite-admin.php:1021
 #: public/class-boldform-lite-elementor-widget.php:360
 msgid "Input Margin"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1020
+#: admin/class-boldform-lite-admin.php:1022
 msgid "Typography"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1021
+#: admin/class-boldform-lite-admin.php:1023
 msgid "Required Mark Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1022
+#: admin/class-boldform-lite-admin.php:1024
 #: public/class-boldform-lite-elementor-widget.php:494
 msgid "Height"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1023
+#: admin/class-boldform-lite-admin.php:1025
 #: public/class-boldform-lite-elementor-widget.php:507
 msgid "Textarea Height"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1024
+#: admin/class-boldform-lite-admin.php:1026
 #: public/class-boldform-lite-elementor-widget.php:574
 #: public/class-boldform-lite-elementor-widget.php:609
 #: public/class-boldform-lite-elementor-widget.php:646
@@ -1350,472 +1383,472 @@ msgstr ""
 msgid "Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1025
+#: admin/class-boldform-lite-admin.php:1027
 #: public/class-boldform-lite-elementor-widget.php:685
 #: public/class-boldform-lite-elementor-widget.php:856
 msgid "Placeholder Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1026
+#: admin/class-boldform-lite-admin.php:1028
 msgid "Focus Border Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1027
+#: admin/class-boldform-lite-admin.php:1029
 msgid "Focus Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1028
+#: admin/class-boldform-lite-admin.php:1030
 msgid "Accent Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1029
+#: admin/class-boldform-lite-admin.php:1031
 #: public/class-boldform-lite-elementor-widget.php:436
 #: public/class-boldform-lite-elementor-widget.php:459
 #: public/class-boldform-lite-elementor-widget.php:729
 msgid "Label Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1030
+#: admin/class-boldform-lite-admin.php:1032
 msgid "Link Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1031
+#: admin/class-boldform-lite-admin.php:1033
 #: public/class-boldform-lite-elementor-widget.php:1346
 msgid "Spacing"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1032
+#: admin/class-boldform-lite-admin.php:1034
 msgid "Gap"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1033
+#: admin/class-boldform-lite-admin.php:1035
 msgid "Checked Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1034
+#: admin/class-boldform-lite-admin.php:1036
 #: public/class-boldform-lite-elementor-widget.php:867
 msgid "Arrow Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1035
+#: admin/class-boldform-lite-admin.php:1037
 #: public/class-boldform-lite-elementor-widget.php:1026
 msgid "Panel Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1036
+#: admin/class-boldform-lite-admin.php:1038
 #: public/class-boldform-lite-elementor-widget.php:1035
 msgid "Panel Border Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1037
+#: admin/class-boldform-lite-admin.php:1039
 msgid "Option Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1038
+#: admin/class-boldform-lite-admin.php:1040
 msgid "Option Text"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1039
+#: admin/class-boldform-lite-admin.php:1041
 msgid "Option Hover Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1040
+#: admin/class-boldform-lite-admin.php:1042
 msgid "Option Hover Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1041
+#: admin/class-boldform-lite-admin.php:1043
 msgid "Selected Option Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1042
+#: admin/class-boldform-lite-admin.php:1044
 #: public/class-boldform-lite-elementor-widget.php:1069
 msgid "Search Box"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1043
+#: admin/class-boldform-lite-admin.php:1045
 #: public/class-boldform-lite-elementor-widget.php:1079
 msgid "Search Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1044
+#: admin/class-boldform-lite-admin.php:1046
 #: public/class-boldform-lite-elementor-widget.php:1088
 msgid "Search Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1045
+#: admin/class-boldform-lite-admin.php:1047
 #: public/class-boldform-lite-elementor-widget.php:1099
 msgid "Search Placeholder Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1046
+#: admin/class-boldform-lite-admin.php:1048
 #: public/class-boldform-lite-elementor-widget.php:1280
 msgid "Copy Text"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1047
+#: admin/class-boldform-lite-admin.php:1049
 #: public/class-boldform-lite-elementor-widget.php:1733
 msgid "Border Width"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1048
+#: admin/class-boldform-lite-admin.php:1050
 msgid "Border Style"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1049
+#: admin/class-boldform-lite-admin.php:1051
 msgid "Button Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1050
+#: admin/class-boldform-lite-admin.php:1052
 #: public/class-boldform-lite-elementor-widget.php:1633
 #: public/class-boldform-lite-elementor-widget.php:1659
 msgid "Button Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1051
+#: admin/class-boldform-lite-admin.php:1053
 #: public/class-boldform-lite-elementor-widget.php:1783
 msgid "Title Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1052
+#: admin/class-boldform-lite-admin.php:1054
 #: public/class-boldform-lite-elementor-widget.php:1823
 msgid "Description Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1053
+#: admin/class-boldform-lite-admin.php:1055
 #: public/class-boldform-lite-elementor-widget.php:2078
 msgid "Notice Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1054
+#: admin/class-boldform-lite-admin.php:1056
 #: public/class-boldform-lite-elementor-widget.php:2065
 msgid "Notice Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1056
+#: admin/class-boldform-lite-admin.php:1058
 #: public/class-boldform-lite-elementor-widget.php:1898
 msgid "Icon Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1057
+#: admin/class-boldform-lite-admin.php:1059
 msgid "Hover Text Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1058
+#: admin/class-boldform-lite-admin.php:1060
 msgid "Hover Background"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1059
+#: admin/class-boldform-lite-admin.php:1061
 msgid "Hover Border Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1062
+#: admin/class-boldform-lite-admin.php:1064
 msgid "Focus Ring Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1063
+#: admin/class-boldform-lite-admin.php:1065
 #: public/class-boldform-lite-elementor-widget.php:993
 msgid "Ring Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1064
+#: admin/class-boldform-lite-admin.php:1066
 msgid "Hover Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1065
+#: admin/class-boldform-lite-admin.php:1067
 msgid "Link Hover Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1066
+#: admin/class-boldform-lite-admin.php:1068
 msgid "Focused Label Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1067
+#: admin/class-boldform-lite-admin.php:1069
 msgid "States"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1068
+#: admin/class-boldform-lite-admin.php:1070
 msgid "Sub-field Label"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1069
+#: admin/class-boldform-lite-admin.php:1071
 #: public/class-boldform-lite-elementor-widget.php:446
 #: public/class-boldform-lite-elementor-widget.php:469
 msgid "Sub-label Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1070
+#: admin/class-boldform-lite-admin.php:1072
 #: public/class-boldform-lite-elementor-widget.php:332
 msgid "Sub-field Gap"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1071
+#: admin/class-boldform-lite-admin.php:1073
 #: public/class-boldform-lite-elementor-widget.php:1925
 msgid "Button Margin"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1072
+#: admin/class-boldform-lite-admin.php:1074
 msgid "Container Margin"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1073
+#: admin/class-boldform-lite-admin.php:1075
 msgid "Font Family"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1074
+#: admin/class-boldform-lite-admin.php:1076
 msgid "Font Size"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1075
+#: admin/class-boldform-lite-admin.php:1077
 msgid "Weight"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1076
+#: admin/class-boldform-lite-admin.php:1078
 msgid "Line Height"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1077
+#: admin/class-boldform-lite-admin.php:1079
 msgid "Letter Spacing"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1078
+#: admin/class-boldform-lite-admin.php:1080
 msgid "Transform"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1079
+#: admin/class-boldform-lite-admin.php:1081
 msgid "X Offset"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1080
+#: admin/class-boldform-lite-admin.php:1082
 msgid "Y Offset"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1081
+#: admin/class-boldform-lite-admin.php:1083
 msgid "Blur"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1082
+#: admin/class-boldform-lite-admin.php:1084
 msgid "Spread"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1083
+#: admin/class-boldform-lite-admin.php:1085
 msgid "Shadow Color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1084
+#: admin/class-boldform-lite-admin.php:1086
 msgid "Inset"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1085
+#: admin/class-boldform-lite-admin.php:1087
 msgid "Gradient"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1087
+#: admin/class-boldform-lite-admin.php:1089
 msgid "Angle"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1088
+#: admin/class-boldform-lite-admin.php:1090
 msgid "Color 1"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1089
+#: admin/class-boldform-lite-admin.php:1091
 msgid "Color 2"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1092
+#: admin/class-boldform-lite-admin.php:1094
 msgid "Radius"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1093
+#: admin/class-boldform-lite-admin.php:1095
 msgid "Link sides"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1094
+#: admin/class-boldform-lite-admin.php:1096
 msgid "Top"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1096
+#: admin/class-boldform-lite-admin.php:1098
 msgid "Bottom"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1099
+#: admin/class-boldform-lite-admin.php:1101
 msgid "Opacity (%)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1100
+#: admin/class-boldform-lite-admin.php:1102
 msgid "Reset color"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1101
+#: admin/class-boldform-lite-admin.php:1103
 msgid "Reset this section"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1102
+#: admin/class-boldform-lite-admin.php:1104
 msgid "Preview states — messages & open dropdown"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1103
+#: admin/class-boldform-lite-admin.php:1105
 msgid "Your form has been submitted successfully."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1104
+#: admin/class-boldform-lite-admin.php:1106
 msgid "Please correct the highlighted fields below."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1105
+#: admin/class-boldform-lite-admin.php:1107
 msgid "Field with an error"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1106
+#: admin/class-boldform-lite-admin.php:1108
 msgid "Invalid value"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1107
+#: admin/class-boldform-lite-admin.php:1109
 msgid "This field is required."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1108
+#: admin/class-boldform-lite-admin.php:1110
 msgid "Dropdown (open)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1109
+#: admin/class-boldform-lite-admin.php:1111
 msgid "Search…"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1110
+#: admin/class-boldform-lite-admin.php:1112
 msgid "Selected option"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1111
+#: admin/class-boldform-lite-admin.php:1113
 msgid "Another option"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1112
+#: admin/class-boldform-lite-admin.php:1114
 msgid "Theme Default"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1113
+#: admin/class-boldform-lite-admin.php:1115
 msgid "UPPERCASE"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1114
+#: admin/class-boldform-lite-admin.php:1116
 msgid "lowercase"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1115
+#: admin/class-boldform-lite-admin.php:1117
 msgid "Capitalize"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1116
+#: admin/class-boldform-lite-admin.php:1118
 msgid "Dotted"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1119
+#: admin/class-boldform-lite-admin.php:1121
 msgid "Add at least one field before saving."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1210
+#: admin/class-boldform-lite-admin.php:1212
 #: public/class-boldform-lite-block.php:163
 #: public/class-boldform-lite-elementor-widget.php:2302
 #: public/class-boldform-lite-shortcode.php:2296
 msgid "Submitting..."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1211
+#: admin/class-boldform-lite-admin.php:1213
 #: public/class-boldform-lite-block.php:164
 #: public/class-boldform-lite-elementor-widget.php:2303
 #: public/class-boldform-lite-shortcode.php:2297
 msgid "Form submitted successfully."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1212
+#: admin/class-boldform-lite-admin.php:1214
 #: public/class-boldform-lite-block.php:165
 #: public/class-boldform-lite-elementor-widget.php:2304
 #: public/class-boldform-lite-shortcode.php:2298
 msgid "Unable to submit the form."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1287
-#: admin/class-boldform-lite-admin.php:2436
-#: admin/class-boldform-lite-admin.php:2526
+#: admin/class-boldform-lite-admin.php:1289
+#: admin/class-boldform-lite-admin.php:2438
+#: admin/class-boldform-lite-admin.php:2528
 #: admin/class-boldform-lite-integrations-page.php:179
 msgid "Active"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1288
-#: admin/class-boldform-lite-admin.php:2437
-#: admin/class-boldform-lite-admin.php:2526
+#: admin/class-boldform-lite-admin.php:1290
+#: admin/class-boldform-lite-admin.php:2439
+#: admin/class-boldform-lite-admin.php:2528
 #: admin/class-boldform-lite-integrations-page.php:180
 msgid "Inactive"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1346
+#: admin/class-boldform-lite-admin.php:1348
 msgid "selected"
 msgstr ""
 
 #. translators: %d: number of selected entries to delete.
-#: admin/class-boldform-lite-admin.php:1348
+#: admin/class-boldform-lite-admin.php:1350
 #, php-format
 msgid "Permanently delete %d selected entries? This cannot be undone."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1349
+#: admin/class-boldform-lite-admin.php:1351
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1447
-#: admin/class-boldform-lite-admin.php:2998
-#: admin/class-boldform-lite-admin.php:4459
+#: admin/class-boldform-lite-admin.php:1449
+#: admin/class-boldform-lite-admin.php:3000
+#: admin/class-boldform-lite-admin.php:4461
 msgid "Mark as Spam"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1448
-#: admin/class-boldform-lite-admin.php:4459
+#: admin/class-boldform-lite-admin.php:1450
+#: admin/class-boldform-lite-admin.php:4461
 msgid "Not Spam"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1543
+#: admin/class-boldform-lite-admin.php:1545
 msgid "Sending..."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1544
-#: admin/class-boldform-lite-admin.php:3856
+#: admin/class-boldform-lite-admin.php:1546
+#: admin/class-boldform-lite-admin.php:3858
 msgid "Email sent successfully!"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1545
+#: admin/class-boldform-lite-admin.php:1547
 msgid "Failed to send email."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1647
+#: admin/class-boldform-lite-admin.php:1649
 msgid "Dismiss this notice"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1655
+#: admin/class-boldform-lite-admin.php:1657
 msgid "Early Bird Sale"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1658
+#: admin/class-boldform-lite-admin.php:1660
 msgid "BoldForm Pro is here — get 70% off!"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1660
+#: admin/class-boldform-lite-admin.php:1662
 msgid "Unlock payments, multi-page forms, advanced fields, and much more."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1665
-#: admin/class-boldform-lite-admin.php:2233
+#: admin/class-boldform-lite-admin.php:1667
+#: admin/class-boldform-lite-admin.php:2235
 msgid "Claim 70% Off"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1863
-#: admin/class-boldform-lite-admin.php:2392
+#: admin/class-boldform-lite-admin.php:1865
+#: admin/class-boldform-lite-admin.php:2394
 #: admin/class-boldform-lite-export-import.php:88
 #: admin/class-boldform-lite-integrations-page.php:319
 msgid "Forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1882
-#: admin/class-boldform-lite-admin.php:2200
+#: admin/class-boldform-lite-admin.php:1884
+#: admin/class-boldform-lite-admin.php:2202
 #: admin/class-boldform-lite-integrations-page.php:87
 #: admin/class-boldform-lite-integrations-page.php:88
 #: admin/class-boldform-lite-integrations-page.php:212
@@ -1823,653 +1856,648 @@ msgstr ""
 msgid "Integrations"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1894
-#: admin/class-boldform-lite-admin.php:2307
-#: admin/class-boldform-lite-admin.php:3178
+#: admin/class-boldform-lite-admin.php:1896
+#: admin/class-boldform-lite-admin.php:2309
+#: admin/class-boldform-lite-admin.php:3180
 #: admin/class-boldform-lite-integrations-page.php:324
 msgid "SMTP"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1900
-#: admin/class-boldform-lite-admin.php:2312
-#: admin/class-boldform-lite-admin.php:3179
-#: admin/class-boldform-lite-admin.php:3544
+#: admin/class-boldform-lite-admin.php:1902
+#: admin/class-boldform-lite-admin.php:2314
+#: admin/class-boldform-lite-admin.php:3181
+#: admin/class-boldform-lite-admin.php:3546
 #: admin/class-boldform-lite-integrations-page.php:325
 msgid "Tools"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1906
+#: admin/class-boldform-lite-admin.php:1908
 #: admin/class-boldform-lite-integrations-page.php:328
 msgid "Documentation"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1913
+#: admin/class-boldform-lite-admin.php:1915
 #: admin/class-boldform-lite-integrations-page.php:333
 msgid "User Documentation"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1919
+#: admin/class-boldform-lite-admin.php:1921
 #: admin/class-boldform-lite-integrations-page.php:334
 msgid "Admin Documentation"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:1947
-#: admin/class-boldform-lite-integrations-page.php:344
-msgid "Upgrade"
-msgstr ""
-
-#: admin/class-boldform-lite-admin.php:2043
+#: admin/class-boldform-lite-admin.php:2045
 msgid "Export Excel"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2047
+#: admin/class-boldform-lite-admin.php:2049
 msgid "Export PDF"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2058
+#: admin/class-boldform-lite-admin.php:2060
 msgid "Upgrade required"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2082
+#: admin/class-boldform-lite-admin.php:2084
 msgid "Unlock Excel &amp; PDF export"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2083
+#: admin/class-boldform-lite-admin.php:2085
 msgid "BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2085
+#: admin/class-boldform-lite-admin.php:2087
 msgid "Formatted Excel (.xlsx) for reporting and analysis"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2086
+#: admin/class-boldform-lite-admin.php:2088
 msgid "Print-ready PDF records to share or archive"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2087
+#: admin/class-boldform-lite-admin.php:2089
 msgid "One click from this screen, honouring your current filters"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2114
+#: admin/class-boldform-lite-admin.php:2116
 msgid "Export format"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2117
+#: admin/class-boldform-lite-admin.php:2119
 msgid "JSON"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2118
+#: admin/class-boldform-lite-admin.php:2120
 msgid "Excel (.xlsx) — Upgrade"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2119
+#: admin/class-boldform-lite-admin.php:2121
 msgid "PDF — Upgrade"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2121
+#: admin/class-boldform-lite-admin.php:2123
 msgid "Excel and PDF export are available with an upgrade."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2141
+#: admin/class-boldform-lite-admin.php:2143
 msgid "Unlock Excel export"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2141
+#: admin/class-boldform-lite-admin.php:2143
 msgid "Unlock PDF export"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2142
+#: admin/class-boldform-lite-admin.php:2144
 msgid "Unlock Excel & PDF export"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2173
+#: admin/class-boldform-lite-admin.php:2175
 msgid "Pro active"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2175
+#: admin/class-boldform-lite-admin.php:2177
 msgid "You're on BoldForm Pro"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2176
+#: admin/class-boldform-lite-admin.php:2178
 msgid "Every premium feature is unlocked — payments, multi-page forms, advanced fields, and 30+ integrations are ready to use inside your forms."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2178
+#: admin/class-boldform-lite-admin.php:2180
 msgid "Go to your forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2193
+#: admin/class-boldform-lite-admin.php:2195
 msgid "Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2194
+#: admin/class-boldform-lite-admin.php:2196
 msgid "Unlimited forms & entries"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2195
+#: admin/class-boldform-lite-admin.php:2197
 msgid "Core fields (text, email, select, date, file upload…)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2196
+#: admin/class-boldform-lite-admin.php:2198
 msgid "Email notifications + SMTP"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2197
+#: admin/class-boldform-lite-admin.php:2199
 msgid "Conditional logic"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2198
+#: admin/class-boldform-lite-admin.php:2200
 msgid "Anti-spam: reCAPTCHA, hCaptcha & Turnstile"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2199
+#: admin/class-boldform-lite-admin.php:2201
 msgid "Entries, CSV export & reports"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2200
+#: admin/class-boldform-lite-admin.php:2202
 msgid "Mailchimp & Brevo"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2200
+#: admin/class-boldform-lite-admin.php:2202
 msgid "35+ apps"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2201
+#: admin/class-boldform-lite-admin.php:2203
 msgid "Multi-page (step) forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2202
+#: admin/class-boldform-lite-admin.php:2204
 msgid "Payments — Stripe & PayPal"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2203
+#: admin/class-boldform-lite-admin.php:2205
 msgid "Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2204
+#: admin/class-boldform-lite-admin.php:2206
 msgid "Webhooks"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2205
+#: admin/class-boldform-lite-admin.php:2207
 msgid "Form scheduling (open / close dates)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2206
+#: admin/class-boldform-lite-admin.php:2208
 msgid "Auto-populate & hidden data"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2207
+#: admin/class-boldform-lite-admin.php:2209
 msgid "Advanced analytics (views & conversions)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2208
+#: admin/class-boldform-lite-admin.php:2210
 msgid "Priority support & automatic updates"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2213
+#: admin/class-boldform-lite-admin.php:2215
 msgid "Included"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2216
+#: admin/class-boldform-lite-admin.php:2218
 msgid "Not included"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2228
+#: admin/class-boldform-lite-admin.php:2230
 msgid "Early Bird Sale — 70% off"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2230
+#: admin/class-boldform-lite-admin.php:2232
 msgid "Do more with BoldForm Pro"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2231
+#: admin/class-boldform-lite-admin.php:2233
 msgid "Add payments, multi-page forms, advanced fields, and 30+ integrations — all inside the same drag-and-drop builder you already know."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2237
+#: admin/class-boldform-lite-admin.php:2239
 msgid "Instant access"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2238
+#: admin/class-boldform-lite-admin.php:2240
 msgid "Automatic updates"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2239
+#: admin/class-boldform-lite-admin.php:2241
 msgid "Priority support"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2247
+#: admin/class-boldform-lite-admin.php:2249
 msgid "Feature"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2248
+#: admin/class-boldform-lite-admin.php:2250
 msgid "Lite (Free)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2250
+#: admin/class-boldform-lite-admin.php:2252
 msgid "Pro"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2251
+#: admin/class-boldform-lite-admin.php:2253
 msgid "Recommended"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2409
-#: admin/class-boldform-lite-admin.php:2505
-#: admin/class-boldform-lite-admin.php:2546
-#: admin/class-boldform-lite-admin.php:2879
+#: admin/class-boldform-lite-admin.php:2411
+#: admin/class-boldform-lite-admin.php:2507
+#: admin/class-boldform-lite-admin.php:2548
+#: admin/class-boldform-lite-admin.php:2881
 msgid "Trash"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2417
+#: admin/class-boldform-lite-admin.php:2419
 msgid "Bulk Actions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2419
-#: admin/class-boldform-lite-admin.php:2488
-#: admin/class-boldform-lite-admin.php:2537
-#: admin/class-boldform-lite-admin.php:2992
-#: admin/class-boldform-lite-admin.php:4446
+#: admin/class-boldform-lite-admin.php:2421
+#: admin/class-boldform-lite-admin.php:2490
+#: admin/class-boldform-lite-admin.php:2539
+#: admin/class-boldform-lite-admin.php:2994
+#: admin/class-boldform-lite-admin.php:4448
 msgid "Restore"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2420
-#: admin/class-boldform-lite-admin.php:2993
-#: admin/class-boldform-lite-admin.php:4449
+#: admin/class-boldform-lite-admin.php:2422
+#: admin/class-boldform-lite-admin.php:2995
+#: admin/class-boldform-lite-admin.php:4451
 msgid "Delete Permanently"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2422
-#: admin/class-boldform-lite-admin.php:2999
-#: admin/class-boldform-lite-admin.php:4462
+#: admin/class-boldform-lite-admin.php:2424
+#: admin/class-boldform-lite-admin.php:3001
+#: admin/class-boldform-lite-admin.php:4464
 msgid "Move to Trash"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2425
-#: admin/class-boldform-lite-admin.php:2981
-#: admin/class-boldform-lite-admin.php:3015
+#: admin/class-boldform-lite-admin.php:2427
+#: admin/class-boldform-lite-admin.php:2983
+#: admin/class-boldform-lite-admin.php:3017
 msgid "Apply"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2435
+#: admin/class-boldform-lite-admin.php:2437
 msgid "All Status"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2439
+#: admin/class-boldform-lite-admin.php:2441
 msgid "Filter"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2451
-#: admin/class-boldform-lite-admin.php:3056
-#: admin/class-boldform-lite-admin.php:4561
-#: admin/class-boldform-lite-admin.php:5885
+#: admin/class-boldform-lite-admin.php:2453
+#: admin/class-boldform-lite-admin.php:3058
+#: admin/class-boldform-lite-admin.php:4563
+#: admin/class-boldform-lite-admin.php:5887
 #: admin/class-boldform-lite-integrations-page.php:585
 #: includes/class-boldform-lite-privacy.php:387
 #: assets/js/block-form.js:101
 msgid "Form"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2454
-#: admin/class-boldform-lite-admin.php:3058
+#: admin/class-boldform-lite-admin.php:2456
+#: admin/class-boldform-lite-admin.php:3060
 msgid "Status"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2455
+#: admin/class-boldform-lite-admin.php:2457
 msgid "Updated"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2456
-#: admin/class-boldform-lite-admin.php:2532
+#: admin/class-boldform-lite-admin.php:2458
+#: admin/class-boldform-lite-admin.php:2534
 msgid "Actions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2465
+#: admin/class-boldform-lite-admin.php:2467
 msgid "Trash is empty."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2468
+#: admin/class-boldform-lite-admin.php:2470
 msgid "No forms yet. Create your first form!"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2490
-#: admin/class-boldform-lite-admin.php:2538
+#: admin/class-boldform-lite-admin.php:2492
+#: admin/class-boldform-lite-admin.php:2540
 msgid "Delete permanently?"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2497
-#: admin/class-boldform-lite-admin.php:2540
+#: admin/class-boldform-lite-admin.php:2499
+#: admin/class-boldform-lite-admin.php:2542
 msgid "Edit"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2511
+#: admin/class-boldform-lite-admin.php:2513
 msgid "Click to copy"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2589
+#: admin/class-boldform-lite-admin.php:2591
 msgid "User Guide"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2590
+#: admin/class-boldform-lite-admin.php:2592
 msgid "Learn how to create forms, manage entries, configure settings, and embed forms on your site."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2591
+#: admin/class-boldform-lite-admin.php:2593
 msgid "Open User Guide"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2600
+#: admin/class-boldform-lite-admin.php:2602
 msgid "Developer Guide"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2601
+#: admin/class-boldform-lite-admin.php:2603
 msgid "Hooks, filters, custom field types, integrations API, database schema, and file structure reference."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2602
+#: admin/class-boldform-lite-admin.php:2604
 msgid "Open Developer Guide"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2611
+#: admin/class-boldform-lite-admin.php:2613
 msgid "Support"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2612
+#: admin/class-boldform-lite-admin.php:2614
 msgid "Run into an issue? Open a support ticket and our team will help you get back on track quickly."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2613
+#: admin/class-boldform-lite-admin.php:2615
 msgid "Get Support"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2622
+#: admin/class-boldform-lite-admin.php:2624
 msgid "Community"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2623
+#: admin/class-boldform-lite-admin.php:2625
 msgid "Join the BoldForm community to share tips, ask questions, and connect with other users and developers."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2624
+#: admin/class-boldform-lite-admin.php:2626
 msgid "Join Community"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2633
 #: admin/class-boldform-lite-admin.php:2635
+#: admin/class-boldform-lite-admin.php:2637
 msgid "Leave a Review"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2634
+#: admin/class-boldform-lite-admin.php:2636
 msgid "Enjoying BoldForm? A quick 5-star review on WordPress.org helps others find the plugin and motivates us to keep improving."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2644
 #: admin/class-boldform-lite-admin.php:2646
+#: admin/class-boldform-lite-admin.php:2648
 msgid "Request a Feature"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2645
+#: admin/class-boldform-lite-admin.php:2647
 msgid "Have an idea that would make BoldForm even better? Share it with us — your feedback shapes our roadmap."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2656
+#: admin/class-boldform-lite-admin.php:2658
 msgid "Help &amp; Support"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2692
+#: admin/class-boldform-lite-admin.php:2694
 msgid "Form not found."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2701
+#: admin/class-boldform-lite-admin.php:2703
 msgid "Exit"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2708
+#: admin/class-boldform-lite-admin.php:2710
 msgid "Form Preview"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2709
+#: admin/class-boldform-lite-admin.php:2711
 msgid "Untitled form"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2713
+#: admin/class-boldform-lite-admin.php:2715
 msgid "Preview devices"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2719
+#: admin/class-boldform-lite-admin.php:2721
 msgid "Copy shortcode"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2818
-#: admin/class-boldform-lite-admin.php:3026
+#: admin/class-boldform-lite-admin.php:2820
+#: admin/class-boldform-lite-admin.php:3028
 msgid "Export CSV"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2849
+#: admin/class-boldform-lite-admin.php:2851
 msgid "Entry deleted successfully."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2853
+#: admin/class-boldform-lite-admin.php:2855
 msgid "Entry moved to Trash."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2863
+#: admin/class-boldform-lite-admin.php:2865
 #: admin/class-boldform-lite-integrations-page.php:222
 msgid "All"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2866
-#: admin/class-boldform-lite-admin.php:5784
-#: admin/class-boldform-lite-admin.php:5920
+#: admin/class-boldform-lite-admin.php:2868
+#: admin/class-boldform-lite-admin.php:5786
+#: admin/class-boldform-lite-admin.php:5922
 msgid "Unread"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2869
-#: admin/class-boldform-lite-admin.php:5921
+#: admin/class-boldform-lite-admin.php:2871
+#: admin/class-boldform-lite-admin.php:5923
 msgid "Read"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2872
-#: admin/class-boldform-lite-admin.php:5793
-#: admin/class-boldform-lite-admin.php:5922
+#: admin/class-boldform-lite-admin.php:2874
+#: admin/class-boldform-lite-admin.php:5795
+#: admin/class-boldform-lite-admin.php:5924
 msgid "Starred"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2875
+#: admin/class-boldform-lite-admin.php:2877
 msgid "Spam"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2917
+#: admin/class-boldform-lite-admin.php:2919
 msgid "All Time"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2918
-#: admin/class-boldform-lite-admin.php:5802
+#: admin/class-boldform-lite-admin.php:2920
+#: admin/class-boldform-lite-admin.php:5804
 msgid "Today"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2919
+#: admin/class-boldform-lite-admin.php:2921
 msgid "Yesterday"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2920
+#: admin/class-boldform-lite-admin.php:2922
 msgid "Last 7 Days"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2921
-#: admin/class-boldform-lite-admin.php:5848
+#: admin/class-boldform-lite-admin.php:2923
+#: admin/class-boldform-lite-admin.php:5850
 msgid "Last 30 Days"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2922
+#: admin/class-boldform-lite-admin.php:2924
 msgid "Custom Range"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2979
+#: admin/class-boldform-lite-admin.php:2981
 msgid "From"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2980
-#: admin/class-boldform-lite-admin.php:3519
+#: admin/class-boldform-lite-admin.php:2982
+#: admin/class-boldform-lite-admin.php:3521
 msgid "To"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2990
+#: admin/class-boldform-lite-admin.php:2992
 msgid "Bulk actions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2995
+#: admin/class-boldform-lite-admin.php:2997
 msgid "Mark as Read"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2996
-#: admin/class-boldform-lite-admin.php:4456
+#: admin/class-boldform-lite-admin.php:2998
+#: admin/class-boldform-lite-admin.php:4458
 msgid "Mark as Unread"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:2997
+#: admin/class-boldform-lite-admin.php:2999
 msgid "Mark as Starred"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3020
+#: admin/class-boldform-lite-admin.php:3022
 msgid "Export Selected"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3051
+#: admin/class-boldform-lite-admin.php:3053
 msgid "Select all"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3054
+#: admin/class-boldform-lite-admin.php:3056
 msgid "ID"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3055
+#: admin/class-boldform-lite-admin.php:3057
 msgid "Submission"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3057
+#: admin/class-boldform-lite-admin.php:3059
 msgid "Date"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3064
+#: admin/class-boldform-lite-admin.php:3066
 msgid "No entries found."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3078
+#: admin/class-boldform-lite-admin.php:3080
 msgid "Select entry"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3083
+#: admin/class-boldform-lite-admin.php:3085
 msgid "Star"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3149
+#: admin/class-boldform-lite-admin.php:3151
 msgid "&laquo;"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3150
+#: admin/class-boldform-lite-admin.php:3152
 msgid "&raquo;"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3176
+#: admin/class-boldform-lite-admin.php:3178
 msgid "General"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3177
-#: admin/class-boldform-lite-admin.php:5622
+#: admin/class-boldform-lite-admin.php:3179
+#: admin/class-boldform-lite-admin.php:5624
 msgid "Captcha"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3195
+#: admin/class-boldform-lite-admin.php:3197
 msgid "BoldForm Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3211
+#: admin/class-boldform-lite-admin.php:3213
 msgid "General Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3212
+#: admin/class-boldform-lite-admin.php:3214
 msgid "Configure the core behavior and appearance of your forms."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3219
+#: admin/class-boldform-lite-admin.php:3221
 msgid "Form Style"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3223
+#: admin/class-boldform-lite-admin.php:3225
 msgid "Plugin (BoldForm)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3224
+#: admin/class-boldform-lite-admin.php:3226
 msgid "Use the built-in BoldForm styles for inputs, buttons, and layout."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3230
+#: admin/class-boldform-lite-admin.php:3232
 msgid "Theme (Inherit)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3231
+#: admin/class-boldform-lite-admin.php:3233
 msgid "Inherit input, button, and label styles from your active theme."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3237
+#: admin/class-boldform-lite-admin.php:3239
 msgid "Notifications"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3240
+#: admin/class-boldform-lite-admin.php:3242
 msgid "Default email"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3244
+#: admin/class-boldform-lite-admin.php:3246
 msgid "Leave blank to use the site admin email."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3250
+#: admin/class-boldform-lite-admin.php:3252
 msgid "Validation Messages"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3251
+#: admin/class-boldform-lite-admin.php:3253
 msgid "Customize the required field error messages. Leave blank to use the default."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3254
+#: admin/class-boldform-lite-admin.php:3256
 msgid "Text field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3255
+#: admin/class-boldform-lite-admin.php:3257
 msgid "Email field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3256
+#: admin/class-boldform-lite-admin.php:3258
 msgid "Number field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3257
+#: admin/class-boldform-lite-admin.php:3259
 msgid "Textarea field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3258
+#: admin/class-boldform-lite-admin.php:3260
 msgid "Select field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3259
+#: admin/class-boldform-lite-admin.php:3261
 msgid "Checkbox field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3260
+#: admin/class-boldform-lite-admin.php:3262
 msgid "Radio field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3261
+#: admin/class-boldform-lite-admin.php:3263
 msgid "Date field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3262
+#: admin/class-boldform-lite-admin.php:3264
 msgid "Time field"
 msgstr ""
 
 #. translators: %s: field type label (e.g. "Email field")
 #. translators: %s: field label
-#: admin/class-boldform-lite-admin.php:3272
+#: admin/class-boldform-lite-admin.php:3274
 #: public/class-boldform-lite-form-handler.php:1106
 #: public/class-boldform-lite-form-handler.php:1394
 #: public/class-boldform-lite-shortcode.php:1010
@@ -2477,247 +2505,247 @@ msgstr ""
 msgid "%s is required."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3281
+#: admin/class-boldform-lite-admin.php:3283
 msgid "Data"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3284
+#: admin/class-boldform-lite-admin.php:3286
 msgid "Delete all forms, entries, and settings when the plugin is uninstalled."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3289
-#: admin/class-boldform-lite-admin.php:3394
-#: admin/class-boldform-lite-admin.php:3511
+#: admin/class-boldform-lite-admin.php:3291
+#: admin/class-boldform-lite-admin.php:3396
+#: admin/class-boldform-lite-admin.php:3513
 msgid "Save Changes"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3294
+#: admin/class-boldform-lite-admin.php:3296
 msgid "Captcha Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3295
+#: admin/class-boldform-lite-admin.php:3297
 msgid "Choose which captcha service should protect all frontend forms."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3302
+#: admin/class-boldform-lite-admin.php:3304
 msgid "Provider"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3306
+#: admin/class-boldform-lite-admin.php:3308
 msgid "Google reCAPTCHA v2"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3307
+#: admin/class-boldform-lite-admin.php:3309
 msgid "Free checkbox challenge from Google."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3311
+#: admin/class-boldform-lite-admin.php:3313
 msgid "hCaptcha"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3312
+#: admin/class-boldform-lite-admin.php:3314
 msgid "Privacy-focused captcha alternative."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3316
+#: admin/class-boldform-lite-admin.php:3318
 msgid "Cloudflare Turnstile"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3317
+#: admin/class-boldform-lite-admin.php:3319
 msgid "Modern, no-puzzle captcha from Cloudflare."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3321
+#: admin/class-boldform-lite-admin.php:3323
 msgid "Simple Math"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3322
+#: admin/class-boldform-lite-admin.php:3324
 msgid "Built-in math challenge, no external services."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3329
+#: admin/class-boldform-lite-admin.php:3331
 msgid "reCAPTCHA Keys"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3331
-#: admin/class-boldform-lite-admin.php:3350
-#: admin/class-boldform-lite-admin.php:3369
+#: admin/class-boldform-lite-admin.php:3333
+#: admin/class-boldform-lite-admin.php:3352
+#: admin/class-boldform-lite-admin.php:3371
 msgid "Site key"
-msgstr ""
-
-#: admin/class-boldform-lite-admin.php:3337
-#: admin/class-boldform-lite-admin.php:3356
-#: admin/class-boldform-lite-admin.php:3375
-msgid "Secret key"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:3339
 #: admin/class-boldform-lite-admin.php:3358
 #: admin/class-boldform-lite-admin.php:3377
+msgid "Secret key"
+msgstr ""
+
+#: admin/class-boldform-lite-admin.php:3341
+#: admin/class-boldform-lite-admin.php:3360
+#: admin/class-boldform-lite-admin.php:3379
 #: admin/class-boldform-lite-integrations-page.php:185
 msgid "Saved — leave blank to keep current key"
 msgstr ""
 
 #. translators: %s: reCAPTCHA URL
-#: admin/class-boldform-lite-admin.php:3340
+#: admin/class-boldform-lite-admin.php:3342
 #, php-format
 msgid "Get your keys from %s. Supports reCAPTCHA v2 (checkbox)."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3348
+#: admin/class-boldform-lite-admin.php:3350
 msgid "hCaptcha Keys"
 msgstr ""
 
 #. translators: %s: hCaptcha URL
 #. translators: %s: Cloudflare Turnstile dashboard URL
-#: admin/class-boldform-lite-admin.php:3359
-#: admin/class-boldform-lite-admin.php:3378
+#: admin/class-boldform-lite-admin.php:3361
+#: admin/class-boldform-lite-admin.php:3380
 #, php-format
 msgid "Get your keys from %s."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3367
+#: admin/class-boldform-lite-admin.php:3369
 msgid "Turnstile Keys"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3387
+#: admin/class-boldform-lite-admin.php:3389
 msgid "Simple Math captcha is built in."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3388
+#: admin/class-boldform-lite-admin.php:3390
 msgid "No keys required. Visitors solve a small math question before submitting."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3403
+#: admin/class-boldform-lite-admin.php:3405
 msgid "SMTP Settings"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3404
+#: admin/class-boldform-lite-admin.php:3406
 msgid "Configure a custom SMTP server to send emails reliably."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3408
+#: admin/class-boldform-lite-admin.php:3410
 msgid "Configuration"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3411
+#: admin/class-boldform-lite-admin.php:3413
 msgid "Mail Test"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3421
+#: admin/class-boldform-lite-admin.php:3423
 msgid "Sender"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3422
+#: admin/class-boldform-lite-admin.php:3424
 msgid "Applied to all BoldForm emails, even when SMTP is disabled."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3424
+#: admin/class-boldform-lite-admin.php:3426
 msgid "From Email"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3430
+#: admin/class-boldform-lite-admin.php:3432
 msgid "From Name"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3436
+#: admin/class-boldform-lite-admin.php:3438
 msgid "Reply-To"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3438
+#: admin/class-boldform-lite-admin.php:3440
 msgid "reply@example.com"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3445
+#: admin/class-boldform-lite-admin.php:3447
 msgid "Enable SMTP"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3448
-#: admin/class-boldform-lite-admin.php:3488
+#: admin/class-boldform-lite-admin.php:3450
+#: admin/class-boldform-lite-admin.php:3490
 #: public/class-boldform-lite-elementor-widget.php:1720
 msgid "Yes"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3449
-#: admin/class-boldform-lite-admin.php:3489
+#: admin/class-boldform-lite-admin.php:3451
+#: admin/class-boldform-lite-admin.php:3491
 #: public/class-boldform-lite-elementor-widget.php:1721
 msgid "No"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3457
+#: admin/class-boldform-lite-admin.php:3459
 msgid "Server"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3459
+#: admin/class-boldform-lite-admin.php:3461
 msgid "SMTP Host"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3465
+#: admin/class-boldform-lite-admin.php:3467
 msgid "Encryption"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3469
+#: admin/class-boldform-lite-admin.php:3471
 msgid "TLS"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3470
+#: admin/class-boldform-lite-admin.php:3472
 msgid "SSL"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3475
+#: admin/class-boldform-lite-admin.php:3477
 msgid "Port"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3483
+#: admin/class-boldform-lite-admin.php:3485
 msgid "Authentication"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3485
+#: admin/class-boldform-lite-admin.php:3487
 msgid "SMTP Auth"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3495
+#: admin/class-boldform-lite-admin.php:3497
 msgid "Username"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3503
+#: admin/class-boldform-lite-admin.php:3505
 msgid "Saved — leave blank to keep current password"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3517
+#: admin/class-boldform-lite-admin.php:3519
 msgid "Send a Test Email"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3521
+#: admin/class-boldform-lite-admin.php:3523
 msgid "recipient@example.com"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3525
 #: admin/class-boldform-lite-admin.php:3527
+#: admin/class-boldform-lite-admin.php:3529
 msgid "Subject"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3531
 #: admin/class-boldform-lite-admin.php:3533
+#: admin/class-boldform-lite-admin.php:3535
 msgid "Message"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3538
+#: admin/class-boldform-lite-admin.php:3540
 msgid "Send Test Mail"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3545
+#: admin/class-boldform-lite-admin.php:3547
 msgid "Export and import your forms, entries, and plugin settings."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3692
+#: admin/class-boldform-lite-admin.php:3694
 msgid "Settings saved."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3823
-#: admin/class-boldform-lite-admin.php:4635
-#: admin/class-boldform-lite-admin.php:4661
-#: admin/class-boldform-lite-admin.php:4695
+#: admin/class-boldform-lite-admin.php:3825
+#: admin/class-boldform-lite-admin.php:4637
+#: admin/class-boldform-lite-admin.php:4663
+#: admin/class-boldform-lite-admin.php:4697
 #: admin/class-boldform-lite-integrations-page.php:947
 #: admin/class-boldform-lite-integrations-page.php:974
 #: admin/class-boldform-lite-integrations-page.php:988
@@ -2726,295 +2754,295 @@ msgstr ""
 msgid "Unauthorized."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3829
+#: admin/class-boldform-lite-admin.php:3831
 #: public/class-boldform-lite-block.php:166
 #: public/class-boldform-lite-shortcode.php:2299
 msgid "Please enter a valid email address."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3835
+#: admin/class-boldform-lite-admin.php:3837
 msgid "Please wait a few seconds before sending another test email."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3846
+#: admin/class-boldform-lite-admin.php:3848
 msgid "BoldForm SMTP test email"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3850
+#: admin/class-boldform-lite-admin.php:3852
 msgid "This is a test email from BoldForm confirming your email/SMTP settings are working."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:3859
+#: admin/class-boldform-lite-admin.php:3861
 msgid "Failed to send email. Check your SMTP configuration."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4197
+#: admin/class-boldform-lite-admin.php:4199
 msgid "Form moved to trash."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4198
+#: admin/class-boldform-lite-admin.php:4200
 msgid "Selected forms moved to trash."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4199
+#: admin/class-boldform-lite-admin.php:4201
 msgid "Form restored."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4200
+#: admin/class-boldform-lite-admin.php:4202
 msgid "Selected forms restored."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4201
+#: admin/class-boldform-lite-admin.php:4203
 msgid "Form permanently deleted."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4202
+#: admin/class-boldform-lite-admin.php:4204
 msgid "Selected forms permanently deleted."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4203
+#: admin/class-boldform-lite-admin.php:4205
 msgid "Unable to delete the form."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4204
+#: admin/class-boldform-lite-admin.php:4206
 msgid "Unable to duplicate the form."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4205
+#: admin/class-boldform-lite-admin.php:4207
 msgid "Security check failed."
 msgstr ""
 
 #. translators: %s: original form title
-#: admin/class-boldform-lite-admin.php:4244
+#: admin/class-boldform-lite-admin.php:4246
 #, php-format
 msgid "%s (Copy)"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4392
+#: admin/class-boldform-lite-admin.php:4394
 msgid "Entry Not Found"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4393
+#: admin/class-boldform-lite-admin.php:4395
 msgid "The requested entry does not exist."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4432
+#: admin/class-boldform-lite-admin.php:4434
 msgid "Back to Entries"
 msgstr ""
 
 #. translators: %d: entry ID
-#: admin/class-boldform-lite-admin.php:4436
+#: admin/class-boldform-lite-admin.php:4438
 #, php-format
 msgid "Entry #%d"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4449
+#: admin/class-boldform-lite-admin.php:4451
 msgid "Delete this entry permanently? This cannot be undone."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4453
+#: admin/class-boldform-lite-admin.php:4455
 msgid "Remove Star"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4453
+#: admin/class-boldform-lite-admin.php:4455
 msgid "Star Entry"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4476
+#: admin/class-boldform-lite-admin.php:4478
 #: includes/class-boldform-lite-email-handler.php:262
 msgid "Field"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4490
+#: admin/class-boldform-lite-admin.php:4492
 msgid "Accepted"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4490
+#: admin/class-boldform-lite-admin.php:4492
 msgid "Not accepted"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4548
+#: admin/class-boldform-lite-admin.php:4550
 msgid "Details"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4553
+#: admin/class-boldform-lite-admin.php:4555
 msgid "Submitted"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4570
+#: admin/class-boldform-lite-admin.php:4572
 msgid "IP Address"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4579
+#: admin/class-boldform-lite-admin.php:4581
 msgid "Browser"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:4642
-#: admin/class-boldform-lite-admin.php:4668
-#: admin/class-boldform-lite-admin.php:4727
+#: admin/class-boldform-lite-admin.php:4644
+#: admin/class-boldform-lite-admin.php:4670
+#: admin/class-boldform-lite-admin.php:4729
 msgid "Invalid request."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5458
-#: admin/class-boldform-lite-admin.php:5484
+#: admin/class-boldform-lite-admin.php:5460
+#: admin/class-boldform-lite-admin.php:5486
 msgid "No data"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5522
+#: admin/class-boldform-lite-admin.php:5524
 msgid "Name"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5527
+#: admin/class-boldform-lite-admin.php:5529
 msgid "Email"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5532
+#: admin/class-boldform-lite-admin.php:5534
 msgid "Number"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5537
+#: admin/class-boldform-lite-admin.php:5539
 msgid "Textarea"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5542
+#: admin/class-boldform-lite-admin.php:5544
 msgid "Date Picker"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5547
+#: admin/class-boldform-lite-admin.php:5549
 msgid "Time Picker"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5552
+#: admin/class-boldform-lite-admin.php:5554
 #: public/class-boldform-lite-shortcode.php:1501
 msgid "Select"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5557
+#: admin/class-boldform-lite-admin.php:5559
 msgid "Multi Select"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5562
+#: admin/class-boldform-lite-admin.php:5564
 #: public/class-boldform-lite-elementor-widget.php:1297
 msgid "Checkbox"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5567
+#: admin/class-boldform-lite-admin.php:5569
 msgid "Radio"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5572
+#: admin/class-boldform-lite-admin.php:5574
 msgid "Phone"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5577
+#: admin/class-boldform-lite-admin.php:5579
 msgid "URL"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5582
+#: admin/class-boldform-lite-admin.php:5584
 msgid "Numeric"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5587
+#: admin/class-boldform-lite-admin.php:5589
 msgid "Input Mask"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5592
+#: admin/class-boldform-lite-admin.php:5594
 msgid "HTML Editor"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5597
+#: admin/class-boldform-lite-admin.php:5599
 msgid "Paragraph"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5602
+#: admin/class-boldform-lite-admin.php:5604
 msgid "Address"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5607
+#: admin/class-boldform-lite-admin.php:5609
 #: public/class-boldform-lite-shortcode.php:1948
 msgid "Country"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5612
+#: admin/class-boldform-lite-admin.php:5614
 #: public/class-boldform-lite-elementor-widget.php:1465
 msgid "Star Rating"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5617
+#: admin/class-boldform-lite-admin.php:5619
 msgid "Slider Range"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5754
+#: admin/class-boldform-lite-admin.php:5756
 msgid "Overview"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5766
+#: admin/class-boldform-lite-admin.php:5768
 msgid "Total Forms"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5775
+#: admin/class-boldform-lite-admin.php:5777
 msgid "Total Entries"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5811
+#: admin/class-boldform-lite-admin.php:5813
 msgid "This Week"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5847
+#: admin/class-boldform-lite-admin.php:5849
 msgid "Submissions"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5878
+#: admin/class-boldform-lite-admin.php:5880
 msgid "Entries by Form"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5887
+#: admin/class-boldform-lite-admin.php:5889
 msgid "Breakdown"
 msgstr ""
 
 #. translators: %d: unread count
-#: admin/class-boldform-lite-admin.php:5908
+#: admin/class-boldform-lite-admin.php:5910
 #, php-format
 msgid "Unread: %d"
 msgstr ""
 
 #. translators: %d: read count
-#: admin/class-boldform-lite-admin.php:5909
+#: admin/class-boldform-lite-admin.php:5911
 #, php-format
 msgid "Read: %d"
 msgstr ""
 
 #. translators: %d: starred count
-#: admin/class-boldform-lite-admin.php:5910
+#: admin/class-boldform-lite-admin.php:5912
 #, php-format
 msgid "Starred: %d"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5930
+#: admin/class-boldform-lite-admin.php:5932
 msgid "No forms found. Create your first form to see reports."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5938
+#: admin/class-boldform-lite-admin.php:5940
 msgid "Recent Entries"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5939
+#: admin/class-boldform-lite-admin.php:5941
 msgid "View All"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5961
+#: admin/class-boldform-lite-admin.php:5963
 msgid "Entry"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5966
+#: admin/class-boldform-lite-admin.php:5968
 msgid "ago"
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5980
+#: admin/class-boldform-lite-admin.php:5982
 msgid "No entries yet. Entries will appear here once forms are submitted."
 msgstr ""
 
-#: admin/class-boldform-lite-admin.php:5994
+#: admin/class-boldform-lite-admin.php:5996
 msgid "entries"
 msgstr ""
 

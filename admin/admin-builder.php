@@ -374,5 +374,24 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 			</div>
 		</div>
 	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-integration-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-integration-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-integration-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock this integration', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends submissions to Mailchimp and Brevo. Upgrade to connect your forms to CRMs, spreadsheets, messaging apps and automation tools, and send each submission wherever you work.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'CRMs and newsletters — HubSpot, ActiveCampaign, MailerLite, Zoho and more', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Spreadsheets, storage and messaging — Google Sheets, Slack, Telegram, Notion', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Automation — Zapier, Make and Pabbly Connect', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
 	<?php
 endif;
