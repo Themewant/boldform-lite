@@ -3550,9 +3550,9 @@ jQuery(
 
 			// ── Build tabbed layout ──────────────────────────────────────────────
 			var tabs = [
-				{ id: 'confirmation',  icon: '&#10003;', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
-				{ id: 'email',         icon: '&#9993;',  label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
-				{ id: 'security',      icon: '&#128274;', label: 'Security',       desc: 'Duplicate prevention' }
+				{ id: 'confirmation',  icon: '<span class="dashicons dashicons-yes"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
+				{ id: 'email',         icon: '<span class="dashicons dashicons-email-alt"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
+				{ id: 'security',      icon: '<span class="dashicons dashicons-privacy"></span>', label: 'Security',       desc: 'Duplicate prevention' }
 			];
 
 			var navHtml = '';
@@ -3609,6 +3609,43 @@ jQuery(
 			 * @param {object} formSettings Current state.formSettings snapshot.
 			 */
 			$( document ).trigger( 'boldform:form_settings_rendered', [ state.formSettings ] );
+
+			// Order the injected tabs deterministically.
+			//
+			// Listeners append in whatever order they happened to bind, which depends on
+			// how each one is loaded (inline script vs. its own file), so the resulting
+			// tab order is otherwise incidental. Instead, an add-on declares its position
+			// with a numeric `data-stab-order` on its nav item and this pass sorts by it
+			// (items without one default to 50, and equal values keep their append order,
+			// so a listener that declares nothing still behaves exactly as before).
+			//
+			// Deferred by setTimeout so it runs after every synchronous listener of the
+			// event above has finished appending — sorting inline would only see the tabs
+			// injected so far. Nothing here names a specific add-on: it is a generic
+			// ordering seam.
+			setTimeout( function () {
+				var $slots = $panel.find( '.bfs-stab-nav-pro-slots' );
+				if ( ! $slots.length ) {
+					return;
+				}
+
+				var $items = $slots.children( '.bfs-stab-nav-item' );
+				if ( $items.length < 2 ) {
+					return;
+				}
+
+				$items.get()
+					.map( function ( el, i ) {
+						var order = parseFloat( $( el ).attr( 'data-stab-order' ) );
+						return { el: el, order: isNaN( order ) ? 50 : order, i: i };
+					} )
+					.sort( function ( a, b ) {
+						return a.order - b.order || a.i - b.i;
+					} )
+					.forEach( function ( item ) {
+						$slots.append( item.el );
+					} );
+			}, 0 );
 
 			// Restore the previously active tab (Pro panes are now injected above).
 			var $restore = $panel.find( '.bfs-stab-nav-item[data-stab="' + activeSettingsTab + '"]' );

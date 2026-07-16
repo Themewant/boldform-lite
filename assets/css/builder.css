@@ -2962,6 +2962,17 @@
 	color: #fff;
 }
 
+/* Tab icons are dashicons: a font, so they inherit the chip's color above and
+   turn white when the tab is active. (Colour emoji ignore `color`, which is why
+   they are not used here.) Sized down from the 20px dashicons default to sit
+   inside the 30px chip. */
+.bfs-stab-nav-icon .dashicons {
+	width: 17px;
+	height: 17px;
+	font-size: 17px;
+	line-height: 1;
+}
+
 .bfs-stab-nav-text {
 	flex: 1;
 	min-width: 0;

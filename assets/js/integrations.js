@@ -257,8 +257,8 @@
 		var countBadge = count ? ' <span class="bf-int-count-badge">' + count + '</span>' : '';
 
 		$navSlot.append(
-			'<button type="button" class="bfs-stab-nav-item" data-stab="integrations">' +
-				'<span class="bfs-stab-nav-icon">&#9741;</span>' +
+			'<button type="button" class="bfs-stab-nav-item" data-stab="integrations" data-stab-order="80">' +
+				'<span class="bfs-stab-nav-icon"><span class="dashicons dashicons-randomize"></span></span>' +
 				'<span class="bfs-stab-nav-text">' +
 					'<span class="bfs-stab-nav-label">Integrations' + countBadge + '</span>' +
 					'<span class="bfs-stab-nav-desc">Assign connections</span>' +
