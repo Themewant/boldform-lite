@@ -3121,6 +3121,99 @@ jQuery(
 		// Remembers which settings tab is active across re-renders.
 		var activeSettingsTab = 'confirmation';
 
+		// ── Thank-you message shortcode teaser ───────────────────────────────────
+		// The free plugin advertises the shortcode feature without implementing any
+		// of it: the button opens the upgrade dialog rather than a tag list. There is
+		// deliberately no picker here -- Lite has no tag engine, the message is stored
+		// and rendered verbatim, so a browsable list of tags that cannot be inserted
+		// would only invite people to try.
+		//
+		// This is not gated on detecting an add-on. It renders whenever
+		// boldform_show_upgrade_cta is true, exactly like the Tools -> Entries export
+		// teaser; an add-on with the real feature turns that filter off and fills the
+		// .boldform-shortcode-slot with its own picker.
+
+		/**
+		 * Whether the upgrade teaser should render.
+		 *
+		 * wp_localize_script stringifies the PHP boolean, so this is '1' or '' rather
+		 * than true/false -- hence the truthiness check rather than a strict compare.
+		 *
+		 * @return {boolean} True while the upgrade CTAs are shown.
+		 */
+		function showUpgradeCta() {
+			return !! boldformLiteBuilder.showUpgradeCta;
+		}
+
+		/**
+		 * The locked "Add Shortcodes" button.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function shortcodeTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			// aria-haspopup="dialog": this opens the upgrade dialog, not a menu.
+			return '<div class="boldform-sc">' +
+				'<button type="button" class="boldform-sc__trigger" aria-haspopup="dialog">' +
+					'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+					escapeHtml( boldformLiteBuilder.labels.addShortcodes || 'Add Shortcodes' ) +
+				'</button>' +
+			'</div>';
+		}
+
+		/**
+		 * The lock hint under the editor.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function shortcodeHint() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<p class="boldform-upgrade-hint boldform-sc__hint">' +
+				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+				escapeHtml( boldformLiteBuilder.labels.shortcodeHint || '' ) +
+			'</p>';
+		}
+
+		/**
+		 * Opens the shared upgrade dialog.
+		 *
+		 * @return {void}
+		 */
+		function openShortcodeUpgradeModal() {
+			$( '#boldform-shortcode-upgrade-modal' ).removeAttr( 'hidden' );
+			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
+		}
+
+		/**
+		 * Closes the shared upgrade dialog.
+		 *
+		 * @return {void}
+		 */
+		function closeShortcodeUpgradeModal() {
+			$( '#boldform-shortcode-upgrade-modal' ).attr( 'hidden', 'hidden' );
+			$( 'body' ).removeClass( 'boldform-upgrade-modal-open' );
+		}
+
+		$( document )
+			.on( 'click.bfsc', '.boldform-sc__trigger', function ( e ) {
+				e.preventDefault();
+				openShortcodeUpgradeModal();
+			} )
+			.on( 'click.bfsc', '#boldform-shortcode-upgrade-modal [data-boldform-upgrade-close]', function () {
+				closeShortcodeUpgradeModal();
+			} )
+			.on( 'keydown.bfsc', function ( e ) {
+				if ( 'Escape' === e.key ) {
+					closeShortcodeUpgradeModal();
+				}
+			} );
+
 		// ── Thank-you message editor ─────────────────────────────────────────────
 		// The message is rich markup, so it is edited in the WordPress editor rather
 		// than a plain textarea. renderFormSettings() replaces the whole settings
@@ -3250,12 +3343,20 @@ jQuery(
 				'</div>' +
 				( 'ajax' === submitMode
 					? '<div class="boldform-setting-group bfs-stab-field">' +
-						'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
+						'<div class="boldform-ty-head">' +
+							'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
+							// Always rendered, even when empty: an add-on shipping real
+							// shortcodes fills this slot on boldform:form_settings_rendered.
+							'<div class="boldform-shortcode-slot" data-shortcode-slot="thank_you">' +
+								shortcodeTeaser() +
+							'</div>' +
+						'</div>' +
 						// Only the bare textarea: wp.editor.initialize() builds the editor
 						// wrap, the Visual/Code tabs and the quicktags toolbar around it.
 						'<div class="boldform-rich-editor">' +
 							'<textarea id="boldform-thank-you-message" rows="6">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
 						'</div>' +
+						shortcodeHint() +
 					'</div>'
 					: ''
 				) +

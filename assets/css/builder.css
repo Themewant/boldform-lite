@@ -6660,3 +6660,74 @@
 	border-radius: 0;
 	padding: 10px;
 }
+
+/* ── Thank-you message shortcode teaser ──────────────────────────────────────
+   The locked "Add Shortcodes" button beside the thank-you message. It opens the
+   upgrade dialog rather than a tag list, so there is no popover to style here.
+
+   Scoped to the settings panel: these are generic class names, and the panel is
+   the only place the button exists. The extra specificity also keeps the
+   .boldform-setting-group control rules (width:100%, min-height:38px) off it. */
+
+#boldform-form-settings-panel .boldform-ty-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 6px;
+}
+
+/* The group's label rule adds a bottom margin meant for a stacked label. */
+#boldform-form-settings-panel .boldform-ty-head label {
+	margin-bottom: 0;
+}
+
+#boldform-form-settings-panel .boldform-sc {
+	display: flex;
+	flex: 0 0 auto;
+}
+
+#boldform-form-settings-panel .boldform-sc__trigger {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	width: auto;
+	min-height: 0;
+	padding: 7px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	background: #fff;
+	box-sizing: border-box;
+	color: #334155;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+#boldform-form-settings-panel .boldform-sc__trigger:hover {
+	background: #eef2ff;
+	border-color: #c7d2fe;
+	color: #4338ca;
+}
+
+#boldform-form-settings-panel .boldform-sc__trigger:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: 1px;
+}
+
+#boldform-form-settings-panel .boldform-sc__trigger .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: #94a3b8;
+}
+
+#boldform-form-settings-panel .boldform-sc__trigger:hover .dashicons {
+	color: #6366f1;
+}
+
+#boldform-form-settings-panel .boldform-sc__hint {
+	margin: 6px 0 0;
+}

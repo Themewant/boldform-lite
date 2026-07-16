@@ -889,6 +889,8 @@ class BoldForm_Lite_Admin {
 						// message template rather than a post, so "Code" describes it better.
 						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
 						'editorCode'      => __( 'Code', 'boldform-lite' ),
+						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
+						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
 						'submissionType' => __( 'After Submit', 'boldform-lite' ),
 						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
@@ -1116,6 +1118,18 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
+					// Thank-you message shortcode picker. The builder always renders the
+					// slot; this flag only decides whether the free teaser goes inside it.
+					// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
+					// off, so the slot is left empty for it to fill on the
+					// boldform:form_settings_rendered event.
+					//
+					// Must stay a bool: wp_localize_script casts top-level scalars with
+					// (string), so this reaches JS as '1' or '' and the empty string is
+					// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
+					// as the string '0', which is truthy, and the teaser would then show
+					// even with an add-on active.
+					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 

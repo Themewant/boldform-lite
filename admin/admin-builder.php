@@ -327,3 +327,33 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		</div>
 	</div>
 </div>
+<?php
+/*
+ * Upgrade modal for the thank-you message shortcode teaser. Uses the same
+ * .boldform-upgrade-modal component as the export teasers -- its styles live in
+ * settings.css, which the builder loads as a dependency of builder.css. Rendered
+ * only while the upgrade CTAs are shown, so it disappears (with the teaser that
+ * opens it) once an add-on turns boldform_show_upgrade_cta off.
+ */
+if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
+	?>
+	<div class="boldform-upgrade-modal" id="boldform-shortcode-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-shortcode-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-shortcode-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock shortcodes', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite shows the same thank-you message to everyone. Upgrade to write the submitted data straight into it — greet people by name, repeat their answers back, and show their entry details.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert any field from this form by name', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Show every answer back as a table with {all_fields}', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Add entry, site and submitter details to the message', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
+	<?php
+endif;

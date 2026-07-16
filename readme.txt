@@ -322,6 +322,7 @@ Security:
 Improvements:
 * Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
 * Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
+* Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
 Developer:
 * Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
 * Developer: The notification email filters now pass the saved entry ID (`boldform_lite_admin_email_subject`/`_content` gain a 4th `$entry_id` arg; `boldform_lite_user_email_subject`/`_content` a 5th), and two new filters — `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` — let an add-on adjust the `wp_mail` headers (e.g. add a Reply-To). Backward-compatible (extra args are ignored by existing callbacks).
