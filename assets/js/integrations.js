@@ -11,10 +11,25 @@
 
 	var cfg      = window.boldformLiteBuilder || {};
 	var adminUrl = cfg.integrationsAdminUrl || '';
+	var labels   = cfg.labels || {};
 
 	// Only active connections are relevant inside the builder.
 	var globalConns = ( Array.isArray( cfg.globalConnections ) ? cfg.globalConnections : [] )
 		.filter( function ( c ) { return c.status === 'active'; } );
+
+	// The free plugin dispatches only these connection types. Any other assigned
+	// connection is a leftover from when an add-on was active (a clean free install
+	// cannot create one), so it renders as a locked upgrade teaser rather than a
+	// working toggle that would silently never fire.
+	//
+	// showUpgradeCta is stringified by wp_localize_script, so it is '1' or '' here;
+	// when an add-on turns the CTA off it dispatches every type and nothing locks.
+	var showUpgradeCta = !! cfg.showUpgradeCta;
+	var freeTypes      = Array.isArray( cfg.freeIntegrationTypes ) ? cfg.freeIntegrationTypes : [];
+
+	function isLockedConn( conn ) {
+		return showUpgradeCta && freeTypes.indexOf( String( conn.type || '' ) ) === -1;
+	}
 
 	// Per-form state — populated from formSettings on render.
 	var assignedIds = [];   // string[]
@@ -37,6 +52,17 @@
 
 	function isAssigned( id ) {
 		return assignedIds.indexOf( id ) !== -1;
+	}
+
+	// The number shown on the tab badge: assignments that are actually live on this
+	// form. An assigned connection that no longer exists (deleted) or that is locked
+	// (an add-on-only type the free plugin will not dispatch) is not counted, so the
+	// badge reflects what will really fire rather than every id ever saved.
+	function assignedCount() {
+		return assignedIds.filter( function ( id ) {
+			var conn = connById( id );
+			return conn && ! isLockedConn( conn );
+		} ).length;
 	}
 
 	function getFormFields() {
@@ -110,6 +136,14 @@
 		html += '<div class="bf-assign-list">';
 
 		globalConns.forEach( function ( conn ) {
+			// Locked (add-on-only) type: a teaser row that opens the upgrade dialog.
+			// It carries no functional toggle, so its saved assignment (if any) is
+			// left untouched -- the free plugin would not dispatch it regardless.
+			if ( isLockedConn( conn ) ) {
+				html += lockedRow( conn );
+				return;
+			}
+
 			var on  = isAssigned( conn.id );
 			var map = fieldMap[ conn.id ] || {};
 
@@ -160,6 +194,23 @@
 		return html;
 	}
 
+	// A locked connection row: the same shape as a functional one, but a lock in
+	// place of the toggle and an "Upgrade" pill in place of the gear. The whole row
+	// opens the integration upgrade dialog; there is no field-mapping panel.
+	function lockedRow( conn ) {
+		return '<div class="bf-assign-item is-locked" data-conn-id="' + escHtml( conn.id ) + '">' +
+			'<div class="bf-assign-item__row bf-assign-locked" role="button" tabindex="0"' +
+				' aria-haspopup="dialog" title="' + escHtml( labels.integrationLocked || '' ) + '">' +
+				'<span class="bf-assign-lock"><span class="dashicons dashicons-lock"></span></span>' +
+				'<div class="bf-assign-item__info">' +
+					'<span class="bf-assign-item__name">' + escHtml( conn.name ) + '</span>' +
+					'<span class="bf-assign-item__type">' + escHtml( conn.type ) + '</span>' +
+				'</div>' +
+				'<span class="bf-assign-upgrade-pill">' + escHtml( labels.integrationUpgrade || 'Upgrade' ) + '</span>' +
+			'</div>' +
+		'</div>';
+	}
+
 	function renderMapFields( connId, map ) {
 		return '<div class="bf-assign-map__rows">' +
 			'<div class="bf-assign-map__row">' +
@@ -196,12 +247,18 @@
 		$panel.find( '.bfs-stab-nav-item[data-stab="integrations"]' ).remove();
 		$panel.find( '.bfs-stab-pane[data-pane="integrations"]' ).remove();
 
-		var count      = assignedIds.length;
+		// Build the pane first: renderPane seeds assignedIds from this form's settings,
+		// so the badge below counts THIS form's assignments. Reading the count before
+		// this ran left the first render showing the previous form's count (or none).
+		var $pane = $( '<div class="bfs-stab-pane" data-pane="integrations"></div>' );
+		$pane.html( renderPane( formSettings ) );
+
+		var count      = assignedCount();
 		var countBadge = count ? ' <span class="bf-int-count-badge">' + count + '</span>' : '';
 
 		$navSlot.append(
-			'<button type="button" class="bfs-stab-nav-item" data-stab="integrations">' +
-				'<span class="bfs-stab-nav-icon">&#9741;</span>' +
+			'<button type="button" class="bfs-stab-nav-item" data-stab="integrations" data-stab-order="80">' +
+				'<span class="bfs-stab-nav-icon"><span class="dashicons dashicons-randomize"></span></span>' +
 				'<span class="bfs-stab-nav-text">' +
 					'<span class="bfs-stab-nav-label">Integrations' + countBadge + '</span>' +
 					'<span class="bfs-stab-nav-desc">Assign connections</span>' +
@@ -210,8 +267,6 @@
 			'</button>'
 		);
 
-		var $pane = $( '<div class="bfs-stab-pane" data-pane="integrations"></div>' );
-		$pane.html( renderPane( formSettings ) );
 		$content.append( $pane );
 	}
 
@@ -221,6 +276,18 @@
 
 	$( document ).on( 'boldform:form_settings_rendered', function ( e, formSettings ) {
 		injectTab( formSettings );
+	} );
+
+	// A locked row opens the shared integration upgrade dialog. The dialog's own
+	// close controls (X, backdrop, Escape) are handled by the builder script, which
+	// owns every .boldform-upgrade-modal on the page.
+	$( document ).on( 'click keydown', '.bf-assign-locked', function ( e ) {
+		if ( 'keydown' === e.type && 'Enter' !== e.key && ' ' !== e.key ) {
+			return;
+		}
+		e.preventDefault();
+		$( '#boldform-integration-upgrade-modal' ).removeAttr( 'hidden' );
+		$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
 	} );
 
 	// Toggle connection on/off for this form.
@@ -264,9 +331,10 @@
 
 		// Update count badge.
 		var $label = $( '.bfs-stab-nav-item[data-stab="integrations"] .bfs-stab-nav-label' );
+		var count  = assignedCount();
 		$label.find( '.bf-int-count-badge' ).remove();
-		if ( assignedIds.length ) {
-			$label.append( ' <span class="bf-int-count-badge">' + assignedIds.length + '</span>' );
+		if ( count ) {
+			$label.append( ' <span class="bf-int-count-badge">' + count + '</span>' );
 		}
 	} );
 

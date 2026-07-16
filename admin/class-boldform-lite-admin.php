@@ -205,37 +205,25 @@ class BoldForm_Lite_Admin {
 		 */
 		do_action( 'boldform_admin_menu', $this );
 
-		// Highlighted "Upgrade to Pro" as the final submenu item, opening an in-dashboard
-		// Free-vs-Pro comparison page. Shown by default; the label's red accent is set
-		// inline so no separate stylesheet is needed. When the CTA is suppressed (Pro
-		// active, or a boldform_show_upgrade_cta callback returning false) the menu item
-		// is hidden. If Pro is active we still REGISTER the page — but remove it from the
-		// menu — so a bookmarked Upgrade URL resolves to render_upgrade_page()'s friendly
-		// "you're on Pro" panel instead of WordPress's "not allowed" screen.
-		if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
-			$this->upgrade_page_hook = add_submenu_page(
-				'boldform-lite',
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				'<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>',
-				'manage_options',
-				'boldform-lite-upgrade',
-				array( $this, 'render_upgrade_page' )
-			);
-		} elseif ( $this->is_pro_active() ) {
-			// Register the page under an empty parent: it stays reachable by URL (so a
-			// bookmarked Upgrade link resolves to render_upgrade_page()'s "you're on Pro"
-			// panel) but never appears in any menu. WordPress authorises the request via
-			// $_registered_pages['admin_page_boldform-lite-upgrade'], which this sets. An
-			// empty string (not null) avoids PHP 8.1+ null-to-string deprecations in core.
-			$this->upgrade_page_hook = add_submenu_page(
-				'',
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				__( 'Upgrade to Pro', 'boldform-lite' ),
-				'manage_options',
-				'boldform-lite-upgrade',
-				array( $this, 'render_upgrade_page' )
-			);
-		}
+		// Highlighted "Upgrade to Pro" submenu item, opening an in-dashboard Free-vs-Pro
+		// comparison page (its red label accent is set inline, so no extra stylesheet).
+		// The page is ALWAYS registered so a bookmarked URL always resolves; it only
+		// appears IN the menu while the boldform_show_upgrade_cta filter is on. When an
+		// add-on turns the filter off, registering under an empty parent (not null —
+		// avoids PHP 8.1+ deprecations) keeps the page reachable by URL but out of every
+		// menu, and render_upgrade_page() shows a friendly confirmation instead of the
+		// pitch. Lite never detects the add-on itself — it only reads the filter.
+		$show_upgrade_cta = apply_filters( 'boldform_show_upgrade_cta', true );
+		$this->upgrade_page_hook = add_submenu_page(
+			$show_upgrade_cta ? 'boldform-lite' : '',
+			__( 'Upgrade to Pro', 'boldform-lite' ),
+			$show_upgrade_cta
+				? '<span class="boldform-upgrade-menu" style="color:#ff6d6d;font-weight:600;">' . esc_html__( 'Upgrade to Pro', 'boldform-lite' ) . '</span>'
+				: __( 'Upgrade to Pro', 'boldform-lite' ),
+			'manage_options',
+			'boldform-lite-upgrade',
+			array( $this, 'render_upgrade_page' )
+		);
 	}
 
 	/**
@@ -255,7 +243,7 @@ class BoldForm_Lite_Admin {
 
 		$links['boldform_upgrade'] = sprintf(
 			'<a href="%1$s" target="_blank" rel="noopener noreferrer" style="color:#d63638;font-weight:700;">%2$s</a>',
-			esc_url( 'https://themewant.com/plugins/boldform/' ),
+			esc_url( 'https://wpboldform.com/' ),
 			esc_html__( 'Upgrade to Pro', 'boldform-lite' )
 		);
 
@@ -743,10 +731,20 @@ class BoldForm_Lite_Admin {
 			$form_record = $form_id ? $this->get_form( $form_id ) : null;
 			$form_data   = $this->normalize_form_for_builder( $form_record );
 
+			// The Add-New setup screen renders the shared BoldForm topbar, whose styles
+			// live in settings.css. Load it first (as a dependency) so builder.css is
+			// enqueued after it and still wins any shared-selector conflict on the canvas.
+			wp_enqueue_style(
+				'boldform-lite-admin',
+				BOLDFORM_LITE_URL . 'assets/css/settings.css',
+				array(),
+				$this->asset_version( 'assets/css/settings.css' )
+			);
+
 			wp_enqueue_style(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/css/builder.css',
-				array(),
+				array( 'boldform-lite-admin' ),
 				$this->asset_version( 'assets/css/builder.css' )
 			);
 
@@ -760,10 +758,13 @@ class BoldForm_Lite_Admin {
 
 			wp_enqueue_media();
 
+			// Powers the rich thank-you message editor in the Confirmation settings.
+			wp_enqueue_editor();
+
 			wp_enqueue_script(
 				'boldform-lite-builder',
 				BOLDFORM_LITE_URL . 'assets/js/builder.js',
-				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y' ),
+				array( 'jquery', 'boldform-lite-sortable', 'wp-a11y', 'editor', 'quicktags' ),
 				$this->asset_version( 'assets/js/builder.js' ),
 				true
 			);
@@ -884,6 +885,16 @@ class BoldForm_Lite_Admin {
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
 						'thankYouMessage' => __( 'Thank you message', 'boldform-lite' ),
+						// WordPress labels the editor's second tab "Text". This holds a
+						// message template rather than a post, so "Code" describes it better.
+						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
+						'editorCode'      => __( 'Code', 'boldform-lite' ),
+						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
+						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
+						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
+						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
+						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
+						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
 						'submissionType' => __( 'After Submit', 'boldform-lite' ),
 						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
@@ -1111,6 +1122,18 @@ class BoldForm_Lite_Admin {
 						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
 						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
 					),
+					// Thank-you message shortcode picker. The builder always renders the
+					// slot; this flag only decides whether the free teaser goes inside it.
+					// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
+					// off, so the slot is left empty for it to fill on the
+					// boldform:form_settings_rendered event.
+					//
+					// Must stay a bool: wp_localize_script casts top-level scalars with
+					// (string), so this reaches JS as '1' or '' and the empty string is
+					// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
+					// as the string '0', which is truthy, and the teaser would then show
+					// even with an add-on active.
+					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
@@ -1328,6 +1351,14 @@ class BoldForm_Lite_Admin {
 						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
 					)
 				);
+
+				// Export upgrade-modal wiring (shared with the Tools export teaser). Loads
+				// only when the upgrade CTAs are shown — the same guard the teaser uses —
+				// so it never loads once an add-on turns the filter off.
+				if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
+				}
+
 				wp_add_inline_script(
 					'boldform-lite-admin',
 					'jQuery(function($){
@@ -1463,6 +1494,11 @@ class BoldForm_Lite_Admin {
 			// ── Settings page ─────────────────────────────────────────────────────
 			if ( $this->settings_page_hook === $hook_suffix ) {
 				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				// Tools -> Entries export teaser: wire the shared upgrade modal, only when
+				// the upgrade CTAs are shown (same guard the teaser uses).
+				if ( 'tools' === $active_tab && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
+				}
 				wp_add_inline_script(
 					'boldform-lite-admin',
 					'(function(){
@@ -1606,7 +1642,7 @@ class BoldForm_Lite_Admin {
 
 		$rendered = true;
 
-		$sale_url = 'https://themewant.com/plugins/boldform/';
+		$sale_url = 'https://wpboldform.com/';
 		?>
 		<div class="notice boldform-admin-notice" data-notice-id="<?php echo esc_attr( self::NOTICE_PRO_SALE ); ?>">
 
@@ -1749,41 +1785,13 @@ class BoldForm_Lite_Admin {
 	 * @return bool
 	 */
 	private function should_show_pro_notice() {
-		// Never upsell someone who already runs Pro, and skip the Upgrade page
-		// (itself a full upgrade pitch) where the banner would be redundant.
-		if ( $this->is_pro_active() || $this->is_upgrade_screen() ) {
+		// Honour the shared upgrade-CTA switch (an add-on turns it off), and skip the
+		// Upgrade page itself, where this promo banner would be redundant.
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) || $this->is_upgrade_screen() ) {
 			return false;
 		}
 
 		return $this->should_show_notice( self::NOTICE_PRO_SALE );
-	}
-
-	/**
-	 * Whether BoldForm Pro is active.
-	 *
-	 * Pro defines BOLDFORM_PRO_VERSION at load time (before its own dependency
-	 * gate), so the constant is present whenever the Pro plugin is active — the
-	 * reliable signal for Lite to hide Pro upsell UI.
-	 *
-	 * @return bool
-	 */
-	private function is_pro_active() {
-		return defined( 'BOLDFORM_PRO_VERSION' );
-	}
-
-	/**
-	 * Hides every "Upgrade to Pro" CTA when Pro is active.
-	 *
-	 * Filter callback for `boldform_show_upgrade_cta`, which the Upgrade menu item,
-	 * plugin-row link, topbar nav item, and page-header button all honour. Forces
-	 * false when Pro runs so paying users are never nagged; otherwise passes the
-	 * value through untouched so resellers can still control it.
-	 *
-	 * @param bool $show Whether the CTAs should show.
-	 * @return bool
-	 */
-	public function hide_upgrade_cta_when_pro_active( $show ) {
-		return $this->is_pro_active() ? false : $show;
 	}
 
 	/**
@@ -2005,10 +2013,142 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 		?>
-		<a class="boldform-header-upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
+		<a class="boldform-header-upgrade" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer">
 			<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
 		</a>
 		<?php
+	}
+
+	/**
+	 * Renders locked "Export Excel" / "Export PDF" teaser buttons beside the free
+	 * Export CSV button on the Entries screen, plus a one-time upgrade modal.
+	 *
+	 * The buttons never export — they open a contextual upgrade modal so people
+	 * learn what an upgrade unlocks at the exact moment they want it.
+	 *
+	 * This is an unconditional part of the free plugin: Lite does not know or check
+	 * whether any paid add-on exists. It is gated only by boldform_show_upgrade_cta
+	 * (default true) — an add-on that ships real export turns that filter off, so this
+	 * teaser bails on its own guard while the add-on's real controls (hooked to the
+	 * same action) render instead. That one filter is also the supported way for a
+	 * reseller to suppress every upgrade CTA at once.
+	 *
+	 * @return void
+	 */
+	public function render_entries_export_teaser() {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return;
+		}
+
+		$formats = array(
+			'excel' => array(
+				'label' => __( 'Export Excel', 'boldform-lite' ),
+				'icon'  => 'media-spreadsheet',
+			),
+			'pdf'   => array(
+				'label' => __( 'Export PDF', 'boldform-lite' ),
+				'icon'  => 'media-document',
+			),
+		);
+
+		foreach ( $formats as $key => $format ) {
+			?>
+			<button type="button" class="boldform-btn-add boldform-export-teaser" data-boldform-export-feature="<?php echo esc_attr( $key ); ?>">
+				<span class="dashicons dashicons-<?php echo esc_attr( $format['icon'] ); ?>"></span>
+				<?php echo esc_html( $format['label'] ); ?>
+				<span class="boldform-export-teaser__badge" aria-hidden="true"><span class="dashicons dashicons-lock"></span></span>
+				<span class="screen-reader-text"><?php esc_html_e( 'Upgrade required', 'boldform-lite' ); ?></span>
+			</button>
+			<?php
+		}
+
+		$this->render_export_upgrade_modal();
+	}
+
+	/**
+	 * Renders the contextual upgrade modal opened by the export teaser buttons.
+	 * Self-contained (the builder modal's CSS is not loaded on this screen); its
+	 * styles live in settings.css and it is toggled by inline JS on the Entries
+	 * page. Rendered only from the teaser callbacks, so it is present only when a
+	 * teaser is actually shown (i.e. while boldform_show_upgrade_cta is true).
+	 *
+	 * @return void
+	 */
+	private function render_export_upgrade_modal() {
+		?>
+		<div class="boldform-upgrade-modal" id="boldform-export-upgrade-modal" hidden>
+			<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+			<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-export-upgrade-modal-title">
+				<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+				<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock Excel &amp; PDF export', 'boldform-lite' ); ?></h2>
+				<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen.', 'boldform-lite' ); ?></p>
+				<ul class="boldform-upgrade-modal__list">
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Formatted Excel (.xlsx) for reporting and analysis', 'boldform-lite' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Print-ready PDF records to share or archive', 'boldform-lite' ); ?></li>
+					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'One click from this screen, honouring your current filters', 'boldform-lite' ); ?></li>
+				</ul>
+				<div class="boldform-upgrade-modal__actions">
+					<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+					<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders the Tools -> Entries export format selector for the free plugin:
+	 * JSON (the available free format) plus locked Excel/PDF options that open the
+	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields.
+	 * Like the Entries teaser it is unconditional and gated only by
+	 * boldform_show_upgrade_cta: an add-on that ships real multi-format export turns
+	 * that filter off, so this bails and the add-on's real format field renders instead.
+	 *
+	 * @return void
+	 */
+	public function render_tools_export_teaser() {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return;
+		}
+		?>
+		<div class="boldform-field-row">
+			<div class="boldform-field-label"><label for="boldform-export-format"><?php esc_html_e( 'Export format', 'boldform-lite' ); ?></label></div>
+			<div class="boldform-field-control">
+				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
+					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
+					<option value="xlsx" data-locked="1"><?php esc_html_e( 'Excel (.xlsx) — Upgrade', 'boldform-lite' ); ?></option>
+					<option value="pdf" data-locked="1"><?php esc_html_e( 'PDF — Upgrade', 'boldform-lite' ); ?></option>
+				</select>
+				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php esc_html_e( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' ); ?></p>
+			</div>
+		</div>
+		<?php
+		$this->render_export_upgrade_modal();
+	}
+
+	/**
+	 * Returns the inline jQuery that toggles the shared export upgrade modal.
+	 * Opens on a teaser button click (Entries screen) or when a locked format is
+	 * chosen in the export-format select (Tools screen), and closes on the X, the
+	 * backdrop, or Escape. Attached to the boldform-lite-admin handle only while the
+	 * upgrade CTAs are shown (boldform_show_upgrade_cta is true), so it stops loading
+	 * once an add-on turns that filter off.
+	 *
+	 * @return string
+	 */
+	private function upgrade_modal_inline_js() {
+		return 'jQuery(function($){' .
+			'var $m=$("#boldform-export-upgrade-modal");if(!$m.length){return;}' .
+			'var titles={excel:' . wp_json_encode( __( 'Unlock Excel export', 'boldform-lite' ) ) . ',xlsx:' . wp_json_encode( __( 'Unlock Excel export', 'boldform-lite' ) ) . ',pdf:' . wp_json_encode( __( 'Unlock PDF export', 'boldform-lite' ) ) . '};' .
+			'var fallback=' . wp_json_encode( __( 'Unlock Excel & PDF export', 'boldform-lite' ) ) . ';' .
+			'function openModal(f){$m.find(".boldform-upgrade-modal__title").text(titles[f]||fallback);$m.removeAttr("hidden");$("body").addClass("boldform-upgrade-modal-open");}' .
+			'function closeModal(){$m.attr("hidden","hidden");$("body").removeClass("boldform-upgrade-modal-open");}' .
+			'$(document).on("click",".boldform-export-teaser",function(e){e.preventDefault();openModal($(this).data("boldform-export-feature"));});' .
+			'$(document).on("change",".boldform-upgrade-select",function(){var o=this.options[this.selectedIndex];if(o&&o.getAttribute("data-locked")){openModal(o.value);this.value=$(this).data("free-default")||this.options[0].value;}});' .
+			'$m.on("click","[data-boldform-upgrade-close]",function(){closeModal();});' .
+			'$(document).on("keydown",function(e){if(e.key==="Escape"){closeModal();}});' .
+		'});';
 	}
 
 	/**
@@ -2021,11 +2161,10 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_upgrade_page() {
-		// Never pitch Pro to someone already running it. The Upgrade CTAs are hidden
-		// when Pro is active, so this page is normally unreachable then — but a
-		// bookmarked URL (or a reseller who force-enables the CTA) could still land
-		// here, so show a friendly "you're on Pro" state instead of the comparison.
-		if ( $this->is_pro_active() ) {
+		// When the upgrade CTAs are switched off (an add-on turns the shared filter
+		// off), the menu item is hidden but this page stays reachable by URL — so a
+		// bookmarked link shows a friendly confirmation state instead of the pitch.
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
 			$this->render_admin_topbar( 'boldform-lite-upgrade' );
 			?>
 			<div class="wrap boldform-upgrade-page">
@@ -2048,12 +2187,12 @@ class BoldForm_Lite_Admin {
 		}
 
 		// Destination for the buy buttons. Filterable so resellers can repoint it.
-		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://themewant.com/plugins/boldform/' );
+		$buy_url = apply_filters( 'boldform_upgrade_url', 'https://wpboldform.com/' );
 
 		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
 		// or a string (a short qualifier shown as text).
 		$features = array(
-			array( 'label' => __( 'Drag & drop form builder', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
 			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
@@ -2806,6 +2945,29 @@ class BoldForm_Lite_Admin {
 							<?php endforeach; ?>
 						</div>
 					</div>
+					<?php
+					/**
+					 * Fires inside the Entries filter toolbar, after the Form and Date
+					 * dropdowns, so an add-on can add its own filter control (e.g. an
+					 * Approval-status dropdown). Render a `.boldform-dropdown` block to
+					 * match the native Form/Date filters — Lite's dropdown toggle JS
+					 * already handles any `.boldform-dropdown__trigger` on this screen.
+					 *
+					 * @since 1.1.3
+					 *
+					 * @param array<string, mixed> $filter_context form_id, status, date_range, date_from, date_to.
+					 */
+					do_action(
+						'boldform_entries_filter_controls',
+						array(
+							'form_id'    => $filter_form,
+							'status'     => $filter_status,
+							'date_range' => $filter_date,
+							'date_from'  => $filter_from,
+							'date_to'    => $filter_to,
+						)
+					);
+					?>
 				</div>
 			</div>
 
@@ -2837,6 +2999,19 @@ class BoldForm_Lite_Admin {
 							<option value="starred"><?php esc_html_e( 'Mark as Starred', 'boldform-lite' ); ?></option>
 							<option value="spam"><?php esc_html_e( 'Mark as Spam', 'boldform-lite' ); ?></option>
 							<option value="trash"><?php esc_html_e( 'Move to Trash', 'boldform-lite' ); ?></option>
+							<?php
+							/**
+							 * Fires inside the entries bulk-actions <select>, in non-trash
+							 * views, so an add-on can add its own <option> bulk actions
+							 * (e.g. Approve / Reject). The add-on performs the work by
+							 * handling the `boldform_bulk_entry_action` action.
+							 *
+							 * @since 1.1.3
+							 *
+							 * @param string $filter_status The current status view.
+							 */
+							do_action( 'boldform_entries_bulk_actions', $filter_status );
+							?>
 						<?php endif; ?>
 					</select>
 					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
@@ -2920,7 +3095,22 @@ class BoldForm_Lite_Admin {
 									</td>
 									<td><span class="boldform-entry-form-badge"><?php echo esc_html( $form_title ); ?></span></td>
 									<td><?php echo esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( (string) $entry->created_at ) ) ); ?></td>
-									<td><span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span></td>
+									<td>
+										<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry_status ); ?>"><?php echo esc_html( ucfirst( $entry_status ) ); ?></span>
+										<?php
+										/**
+										 * Filter extra HTML shown after an entry's status badge in the
+										 * list (e.g. an approval-status badge). Returned markup is passed
+										 * through wp_kses_post before output.
+										 *
+										 * @since 1.1.3
+										 *
+										 * @param string $html  Extra HTML (default empty).
+										 * @param object $entry The entry row object.
+										 */
+										echo wp_kses_post( apply_filters( 'boldform_entry_status_badge_after', '', $entry ) );
+										?>
+									</td>
 								</tr>
 							<?php endforeach; ?>
 						<?php endif; ?>
@@ -3580,8 +3770,10 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
-		if ( $reply_to ) {
-			$phpmailer->clearReplyTos();
+		// Apply the global Reply-To only when the message doesn't already carry one
+		// (e.g. a per-form Reply-To set via the email headers filter), so a more
+		// specific Reply-To always wins over this site-wide default.
+		if ( $reply_to && empty( $phpmailer->getReplyToAddresses() ) ) {
 			$phpmailer->addReplyTo( $reply_to );
 		}
 
@@ -4156,9 +4348,28 @@ class BoldForm_Lite_Admin {
 		$safe_table = esc_sql( $table_name );
 		$where      = $this->build_entries_where( $filters ); // Each clause is individually prepared via $wpdb->prepare().
 
+		$columns = 'id, form_id, entry_data_json, status, trashed_at, user_ip, created_at';
+
+		/**
+		 * Filter extra columns selected for each entries-list row, so an add-on can
+		 * read its own column (e.g. an approval status) on the row object without an
+		 * extra query per row. Values must be plain identifier names of columns that
+		 * exist on the entries table; each is passed through esc_sql().
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param string[] $extra_columns Extra column names (default empty).
+		 */
+		$extra_columns = (array) apply_filters( 'boldform_entries_list_columns', array() );
+		foreach ( $extra_columns as $extra_column ) {
+			if ( is_string( $extra_column ) && '' !== $extra_column ) {
+				$columns .= ', ' . esc_sql( $extra_column );
+			}
+		}
+
 		return $wpdb->get_results( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
 			$wpdb->prepare(
-				"SELECT id, form_id, entry_data_json, status, trashed_at, user_ip, created_at FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT {$columns} FROM `{$safe_table}` {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$per_page,
 				$offset
 			)
@@ -4492,6 +4703,21 @@ class BoldForm_Lite_Admin {
 
 		// Cast to a unique list of positive ints; drop anything else.
 		$ids = array_values( array_unique( array_filter( array_map( 'absint', $raw_ids ) ) ) );
+
+		/**
+		 * Fires in the bulk entry-action handler after the ids are resolved, so an
+		 * add-on can perform a custom bulk action it registered in the dropdown
+		 * (e.g. Approve / Reject). The request nonce and the manage_options
+		 * capability are already verified above. A handler that claims $action MUST
+		 * send its own JSON response (which ends the request); if none does, Lite
+		 * proceeds with its built-in actions and rejects an unknown action.
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param string $action The requested bulk action.
+		 * @param int[]  $ids    Resolved entry ids.
+		 */
+		do_action( 'boldform_bulk_entry_action', $action, $ids );
 
 		// Status marks + Trash lifecycle. "trash" moves entries to the Trash view;
 		// "restore" brings them back (to read — the entry has already been seen);
@@ -4898,6 +5124,21 @@ class BoldForm_Lite_Admin {
 			$clauses[] = $wpdb->prepare( 'created_at <= %s', sanitize_text_field( $filters['date_to'] ) . ' 23:59:59' );
 		}
 
+		/**
+		 * Filter the WHERE conditions for entries list/count queries.
+		 *
+		 * Lets an add-on scope the entries list by a Pro-owned column (e.g. the
+		 * Entry Approval status). Each clause in the returned array is joined with
+		 * AND verbatim, so a callback MUST return only already-escaped or
+		 * $wpdb->prepare()'d SQL fragments — never raw user input.
+		 *
+		 * @since 1.1.3
+		 *
+		 * @param string[]             $clauses Prepared WHERE fragments.
+		 * @param array<string, mixed> $filters Active filters for this query.
+		 */
+		$clauses = (array) apply_filters( 'boldform_entries_where_clauses', $clauses, $filters );
+
 		if ( empty( $clauses ) ) {
 			return '';
 		}
@@ -4988,7 +5229,8 @@ class BoldForm_Lite_Admin {
 				? $decoded['redirect_type']
 				: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' ),
 			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? sanitize_textarea_field( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			// Rich markup: filtered with the post allowlist, matching the save path.
+			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
 			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
 			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
 			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],

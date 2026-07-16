@@ -545,3 +545,63 @@
 	margin-left: 3px;
 	line-height: 1.4;
 }
+
+/* ── Locked (upgrade-teaser) connection rows ─────────────────────────────────
+   A connection whose type the free plugin cannot dispatch. Shaped like a normal
+   assign row but with a lock in place of the toggle and an "Upgrade" pill in
+   place of the gear; the whole row opens the integration upgrade dialog. */
+
+.bf-assign-item.is-locked {
+	border-style: dashed;
+	background: #f9fafb;
+}
+
+.bf-assign-locked {
+	cursor: pointer;
+}
+
+.bf-assign-locked:hover {
+	background: #f3f4ff;
+}
+
+.bf-assign-locked:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: -2px;
+	border-radius: 8px;
+}
+
+/* Muted name/type, to read as unavailable rather than active. */
+.bf-assign-item.is-locked .bf-assign-item__name {
+	color: #6b7280;
+}
+
+.bf-assign-lock {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 20px;
+}
+
+.bf-assign-lock .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	color: #9ca3af;
+}
+
+.bf-assign-locked:hover .bf-assign-lock .dashicons {
+	color: #6366f1;
+}
+
+.bf-assign-upgrade-pill {
+	flex-shrink: 0;
+	padding: 3px 9px;
+	border-radius: 999px;
+	background: #eef2ff;
+	color: #4338ca;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.5;
+}

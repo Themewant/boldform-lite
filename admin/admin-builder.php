@@ -39,21 +39,15 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 
 	<!-- Setup screen for new forms -->
 	<div class="boldform-setup-screen" id="boldform-setup-screen"<?php echo ! $boldform_lite_is_new_form ? ' hidden' : ''; ?>>
-		<div class="boldform-setup-header">
-			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite' ) ); ?>" class="boldform-setup-header__back">
-				<span class="dashicons dashicons-arrow-left-alt2"></span>
-			</a>
-			<div class="boldform-setup-header__brand">
-				<?php boldform_lite_brand_icon( array( 'class' => 'dashicons boldform-brand-icon' ) ); ?>
-				<span><?php esc_html_e( 'BoldForm', 'boldform-lite' ); ?></span>
-			</div>
-			<?php // Shown by default; a callback on boldform_show_upgrade_cta can return false to hide it. ?>
-			<?php if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) : ?>
-				<a class="boldform-setup-header__upgrade" href="https://themewant.com/plugins/boldform/" target="_blank" rel="noopener noreferrer">
-					<?php esc_html_e( 'Upgrade to Pro', 'boldform-lite' ); ?>
-				</a>
-			<?php endif; ?>
-		</div>
+		<?php
+		// The Add-New landing shares the exact BoldForm topbar used on every other admin
+		// screen (brand + section nav + Upgrade), so the create flow stays visually
+		// consistent and fully navigable instead of showing a near-empty mini header.
+		// 'Forms' is the active section (Add New lives under it). The deep field-editing
+		// canvas below keeps its own focused builder toolbar — matching how top form
+		// plugins strip section nav only once you are actually editing fields.
+		$this->render_admin_topbar( 'boldform-lite' );
+		?>
 
 		<div class="boldform-setup-body">
 			<?php // New-form marker: relocates the notice here — below the dark header bar, above "Create a New Form". ?>
@@ -333,3 +327,71 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 		</div>
 	</div>
 </div>
+<?php
+/*
+ * Upgrade modal for the thank-you message shortcode teaser. Uses the same
+ * .boldform-upgrade-modal component as the export teasers -- its styles live in
+ * settings.css, which the builder loads as a dependency of builder.css. Rendered
+ * only while the upgrade CTAs are shown, so it disappears (with the teaser that
+ * opens it) once an add-on turns boldform_show_upgrade_cta off.
+ */
+if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
+	?>
+	<div class="boldform-upgrade-modal" id="boldform-shortcode-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-shortcode-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-shortcode-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock shortcodes', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite shows the same thank-you message to everyone. Upgrade to write the submitted data straight into it — greet people by name, repeat their answers back, and show their entry details.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert any field from this form by name', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Show every answer back as a table with {all_fields}', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Add entry, site and submitter details to the message', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-email-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-email-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-email-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock the email editor', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends these notifications using its standard layout. Upgrade to switch on a custom email per form and write your own subject and message in a visual editor.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Turn a custom email on per notification, per form', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Write the subject and message in a visual editor, or hand-write the HTML', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert submitted data, and set a Reply-To that answers the submitter', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-integration-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-integration-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-integration-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock this integration', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends submissions to Mailchimp and Brevo. Upgrade to connect your forms to CRMs, spreadsheets, messaging apps and automation tools, and send each submission wherever you work.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'CRMs and newsletters — HubSpot, ActiveCampaign, MailerLite, Zoho and more', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Spreadsheets, storage and messaging — Google Sheets, Slack, Telegram, Notion', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Automation — Zapier, Make and Pabbly Connect', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
+	<?php
+endif;

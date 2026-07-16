@@ -158,7 +158,7 @@ pre code{background:none;padding:0;color:inherit}
 <!-- Introduction -->
 <h1 id="introduction">BoldForm Lite &mdash; User Guide</h1>
 <p class="bf-subtitle">A complete guide to building, styling, and managing forms with BoldForm Lite for WordPress.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.1 · Updated 2026-06-24</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.3 · Updated 2026-07-13</p>
 
 <p>BoldForm Lite is a lightweight, drag-and-drop form builder for WordPress. Build contact forms, feedback forms, registration forms, surveys, and more &mdash; with no coding required.</p>
 
@@ -170,10 +170,10 @@ pre code{background:none;padding:0;color:inherit}
   <li>Conditional logic (show/hide fields based on user input)</li>
   <li>Pre-built form templates</li>
   <li>AJAX form submission (no page reload)</li>
-  <li>Entry management with read/unread/starred statuses</li>
+  <li>Entry management with read/unread/starred statuses, bulk actions, and a Trash</li>
   <li>Gutenberg block &amp; Elementor widget with full styling controls</li>
   <li>Mailchimp &amp; Brevo integrations</li>
-  <li>Built-in Simple Math captcha, plus Google reCAPTCHA &amp; hCaptcha support</li>
+  <li>Built-in Simple Math captcha, plus Google reCAPTCHA, hCaptcha &amp; Cloudflare Turnstile support</li>
   <li>SMTP email configuration</li>
   <li>Export &amp; import forms and entries</li>
   <li>Full multisite support</li>
@@ -310,6 +310,7 @@ pre code{background:none;padding:0;color:inherit}
     <tr><td><strong>Lookup / Autocomplete</strong></td><td>Search and select from a predefined list with autocomplete</td></tr>
     <tr><td><strong>Date Range</strong></td><td>Dual date pickers for start/end dates (e.g., event duration, booking period)</td></tr>
     <tr><td><strong>Geolocation</strong></td><td>Detect user location (with HTTPS &amp; permission) or manual map picker for address selection</td></tr>
+    <tr><td><strong>Color Picker</strong></td><td>Swatch, hue map, hex input, and preset swatches; stores a hex colour value</td></tr>
   </tbody>
 </table>
 
@@ -659,12 +660,12 @@ Each section also has a <strong>reset</strong> control to return it to the defau
 filled, the submission is rejected with a <em>"Spam detected."</em> message and <strong>no entry is saved</strong>.
 Enabled by default on all forms.</p>
 
-<h3>Captcha (Simple Math, reCAPTCHA &amp; hCaptcha)</h3>
+<h3>Captcha (Simple Math, reCAPTCHA, hCaptcha &amp; Turnstile)</h3>
 <p>Add a human verification challenge:</p>
 <ol>
   <li>Go to <strong>BoldForm &rarr; Settings &rarr; Captcha</strong></li>
-  <li>Choose a provider: <strong>Simple Math</strong> (default, no keys needed), <strong>Google reCAPTCHA v2</strong>, or <strong>hCaptcha</strong></li>
-  <li>For reCAPTCHA or hCaptcha, enter your <strong>Site Key</strong> and <strong>Secret Key</strong> (Simple Math needs none)</li>
+  <li>Choose a provider: <strong>Simple Math</strong> (default, no keys needed), <strong>Google reCAPTCHA v2</strong>, <strong>hCaptcha</strong>, or <strong>Cloudflare Turnstile</strong></li>
+  <li>For reCAPTCHA, hCaptcha, or Turnstile, enter your <strong>Site Key</strong> and <strong>Secret Key</strong> (Simple Math needs none)</li>
   <li>Add a <strong>Captcha field</strong> to your form in the builder</li>
 </ol>
 <p>When the form is submitted, the captcha response is verified server-side before the entry is accepted. See <a href="#captcha">Captcha Setup</a> for full details.</p>
@@ -838,6 +839,59 @@ you believe is spam:</p>
   <li><strong>Performance reports</strong> — exportable analytics for stakeholders</li>
 </ul>
 
+<h3>Akismet Spam Protection</h3>
+<p>Check submissions against the Akismet anti-spam service, with a per-form on/off toggle:</p>
+<ul>
+  <li><strong>Per-form toggle</strong> — enable Akismet only on the forms that need it</li>
+  <li><strong>Choose the action</strong> — move detected spam to the reviewable <strong>Spam</strong> folder (recommended; a false positive stays recoverable and the visitor still sees a normal success), or block it outright</li>
+  <li><strong>Uses your Akismet key</strong> — your Akismet API key, or a connected Akismet plugin's key</li>
+</ul>
+
+<h3>Entry Approval Workflow</h3>
+<p>Turn on <strong>approval</strong> for a form (Form Settings &rarr; Approval) and every new submission is held as
+<strong>Pending review</strong> — its admin/user notification emails, webhooks, and integrations wait until you decide.
+<strong>Approve</strong> an entry to release them (they send exactly once), or <strong>Reject</strong> it to keep it on
+record without notifying anyone. Review from the entry screen, or select several and <strong>approve/reject them in bulk</strong>
+from the Entries list, where each row shows its approval state and an <strong>Approval</strong> filter narrows the list to
+Pending, Approved, or Rejected. You can change a decision at any time — approve a rejected entry, or reject an approved
+one — and notifications are only ever sent <strong>once</strong> (re-approving never re-sends). Ideal for testimonials,
+listings, or applications that need a moderation gate before anything goes out.</p>
+
+<h3>Entry Editing</h3>
+<p>Open a submission in the admin and <strong>edit its stored field values</strong> — fix a typo, correct data, or complete a record — then save the changes back to the entry.</p>
+
+<h3>Entry Notes</h3>
+<p>Add <strong>private admin notes</strong> to any entry from the entry-detail sidebar. Notes are visible only to
+your team, never to the submitter — useful for tracking follow-ups, internal status, or context on a lead.</p>
+
+<h3>Save &amp; Resume</h3>
+<p>Let visitors <strong>save a partially-completed form and continue later</strong> from a secure resume link, so long
+or multi-step forms don't have to be finished in one sitting.</p>
+
+<h3>Draft Auto-Save</h3>
+<p>Automatically <strong>saves the visitor's progress as they type</strong>, so an accidental refresh or a dropped
+connection doesn't lose their input — the form restores unsaved progress when they return.</p>
+
+<h3>Form Locking</h3>
+<p><strong>Password-protect an individual form</strong> so only visitors with the password can view and submit it —
+ideal for private RSVPs, internal forms, or gated content.</p>
+
+<h3>Excel &amp; PDF Export</h3>
+<p>Beyond Lite's CSV export, Pro adds <strong>Excel (XLSX)</strong> and <strong>PDF</strong> export from the Entries
+list's <strong>Export Selected</strong> dropdown and the Tools screen — ready-to-share formats for reports and records.</p>
+
+<h3>Custom Email Editor</h3>
+<p><strong>Design the notification emails for each form.</strong> Open a form's builder, go to
+<strong>Form Settings &rarr; Email Notification</strong>, and under each email — the admin notification and the
+user confirmation — turn on <strong>Customize this email</strong> to write a custom <strong>subject</strong> and
+<strong>HTML message</strong>, and set a <strong>Reply-To</strong> (use <code>{user_email}</code> to reply straight to
+the submitter). A merge-tag picker inserts your form's actual fields plus general tags —
+<code>{all_fields}</code>, <code>{form_title}</code>, <code>{form_id}</code>, <code>{entry_id}</code>,
+<code>{admin_link}</code>, <code>{ip}</code>, <code>{site_title}</code>, <code>{admin_email}</code>,
+<code>{user_email}</code>, <code>{user:display_name}</code>, <code>{date}</code>, <code>{time}</code>, and
+<code>{datetime}</code>. Line breaks are preserved, and you can optionally hide empty fields from
+<code>{all_fields}</code>. Turn it on per email; leave a template blank to keep the default.</p>
+
 <!-- Shortcode -->
 <h2 id="shortcode">Shortcode</h2>
 
@@ -925,20 +979,37 @@ style controls.</p>
     <tr><td>Read</td><td>Submission has been viewed</td></tr>
     <tr><td>Starred</td><td>Marked as important</td></tr>
     <tr><td>Spam</td><td>Manually marked as spam from the entry detail view</td></tr>
+    <tr><td>Trash</td><td>Moved to the Trash; excluded from other views and from exports until restored or permanently deleted</td></tr>
   </tbody>
 </table>
 
 <h3>Filtering &amp; Actions</h3>
 <ul>
-  <li>Filter by <strong>status</strong> using the tabs: All, Unread, Read, Starred, Spam (each shows a count)</li>
+  <li>Filter by <strong>status</strong> using the tabs: All, Unread, Read, Starred, Spam, and <strong>Trash</strong> (each shows a count)</li>
   <li>Filter by <strong>form</strong> and by <strong>date range</strong> (All Time, Today, Yesterday, Last 7 Days, Last 30 Days, or a custom range)</li>
   <li><strong>Star / unstar</strong> an entry directly from the list</li>
   <li>Click an entry to open its <strong>detail view</strong> &mdash; opening an entry marks it Read</li>
-  <li>From the detail view: mark <strong>Read/Unread</strong>, mark/unmark <strong>Spam</strong>, or <strong>Delete</strong> the entry</li>
-  <li><strong>Export CSV</strong> &mdash; downloads the currently filtered entries (see below)</li>
+  <li>From the detail view: mark <strong>Read/Unread</strong>, mark/unmark <strong>Spam</strong>, or <strong>Move to Trash</strong></li>
+  <li><strong>Export CSV</strong> &mdash; downloads the currently filtered entries, or just the selected ones (see below)</li>
 </ul>
-<p class="bf-note">Entries are deleted one at a time from the entry detail view. The Entries list does not have
-multi-select or a bulk-delete action.</p>
+
+<h3>Bulk Actions</h3>
+<p>Select multiple submissions with the row checkboxes, then apply a bulk action from the toolbar:</p>
+<ul>
+  <li>Mark <strong>Read</strong>, <strong>Unread</strong>, <strong>Starred</strong>, or <strong>Spam</strong></li>
+  <li><strong>Move to Trash</strong></li>
+  <li><strong>Export Selected</strong> &mdash; a single dropdown to export the checked entries (CSV; Excel &amp; PDF with <span class="bf-badge bf-badge--pro">Pro</span>)</li>
+</ul>
+
+<h3>Trash &amp; Restore</h3>
+<p><span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">New in 1.1.3</span>
+Deleting an entry no longer removes it immediately &mdash; it moves to the <strong>Trash</strong> first, exactly like
+WordPress posts, so an accidental bulk delete is recoverable. Trashed entries collect under the <strong>Trash</strong>
+tab and are excluded from every other view and from exports. From the Trash tab you can:</p>
+<ul>
+  <li><strong>Restore</strong> an entry back to its previous status, or</li>
+  <li><strong>Delete Permanently</strong> to remove it for good (this cannot be undone).</li>
+</ul>
 
 <!-- Reports -->
 <h2 id="reports">Reports &amp; Analytics</h2>
@@ -972,8 +1043,10 @@ For CSV export of individual entries, see <strong>CSV Entry Export</strong> belo
 
 <h3>CSV Entry Export</h3>
 <ul>
-  <li>From the <strong>Entries</strong> list page, click <strong>Export CSV</strong> to download all visible entries as a spreadsheet</li>
+  <li>From the <strong>Entries</strong> list page, click <strong>Export CSV</strong> to download all currently filtered entries as a spreadsheet</li>
+  <li>To export only specific submissions, tick their checkboxes and use the <strong>Export Selected</strong> dropdown (CSV; Excel &amp; PDF with <span class="bf-badge bf-badge--pro">Pro</span>)</li>
   <li>Exported CSV includes all fields and entry metadata</li>
+  <li>Trashed entries are excluded from exports</li>
   <li>Useful for data analysis, reporting, or importing into external tools</li>
 </ul>
 
@@ -1002,17 +1075,18 @@ top-level menu item, not a Settings tab &mdash; see <a href="#integrations">Inte
 <!-- Captcha -->
 <h2 id="captcha">Captcha Setup</h2>
 
-<p>Go to <strong>BoldForm &rarr; Settings &rarr; Captcha</strong> and choose one of three providers:</p>
+<p>Go to <strong>BoldForm &rarr; Settings &rarr; Captcha</strong> and choose one of four providers:</p>
 
 <ul>
   <li><strong>Simple Math</strong> (default) &mdash; a built-in arithmetic challenge (e.g. &ldquo;3 + 4 = ?&rdquo;). Works out of the box with <em>no</em> API keys and no third-party requests.</li>
   <li><strong>Google reCAPTCHA v2</strong> &mdash; the &ldquo;I'm not a robot&rdquo; checkbox. Requires a Site Key and Secret Key.</li>
   <li><strong>hCaptcha</strong> &mdash; a privacy-focused reCAPTCHA alternative. Requires a Site Key and Secret Key.</li>
+  <li><strong>Cloudflare Turnstile</strong> <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">New in 1.1.3</span> &mdash; a modern, privacy-friendly, <em>no-puzzle</em> alternative. Most visitors are verified invisibly with no click. Requires a Site Key and Secret Key.</li>
 </ul>
 
 <p>To set up a key-based provider:</p>
 <ol>
-  <li>Choose <strong>Google reCAPTCHA v2</strong> or <strong>hCaptcha</strong></li>
+  <li>Choose <strong>Google reCAPTCHA v2</strong>, <strong>hCaptcha</strong>, or <strong>Cloudflare Turnstile</strong></li>
   <li>Enter your <strong>Site Key</strong> and <strong>Secret Key</strong></li>
   <li>Save settings</li>
   <li>Add a <strong>Captcha</strong> field to your form in the builder</li>
@@ -1021,7 +1095,9 @@ top-level menu item, not a Settings tab &mdash; see <a href="#integrations">Inte
 <p>For <strong>Simple Math</strong> there are no keys to enter &mdash; just add a <strong>Captcha</strong>
 field to your form. In every case the response is verified server-side before the entry is accepted.</p>
 
-<div class="bf-tip"><strong>Tip:</strong> Get reCAPTCHA keys at <a href="https://www.google.com/recaptcha/admin" target="_blank">google.com/recaptcha</a> and hCaptcha keys at <a href="https://dashboard.hcaptcha.com" target="_blank">dashboard.hcaptcha.com</a>.</div>
+<div class="bf-tip"><strong>Tip:</strong> Get reCAPTCHA keys at <a href="https://www.google.com/recaptcha/admin" target="_blank">google.com/recaptcha</a>, hCaptcha keys at <a href="https://dashboard.hcaptcha.com" target="_blank">dashboard.hcaptcha.com</a>, and Turnstile keys at <a href="https://dash.cloudflare.com/?to=/:account/turnstile" target="_blank">dash.cloudflare.com &rarr; Turnstile</a>.</div>
+
+<div class="bf-note"><strong>Which should I choose?</strong> <strong>Simple Math</strong> is the most private (no third-party calls). <strong>Turnstile</strong> gives the smoothest visitor experience (usually no puzzle at all) and is a great modern default. reCAPTCHA and hCaptcha remain fully supported if you already use them.</div>
 
 <!-- SMTP -->
 <h2 id="smtp">SMTP Configuration</h2>
@@ -1055,6 +1131,52 @@ even when SMTP is turned off. The remaining settings apply only when SMTP is ena
 <strong>Send Test Mail</strong> to verify your configuration.</p>
 
 <div class="bf-warn"><strong>Important:</strong> If your From Email domain doesn't match your site domain, DMARC policies may cause emails to be rejected. In this case, BoldForm automatically sets the custom email as a Reply-To address instead.</div>
+
+<h3>Sending through Gmail (App Password)</h3>
+<p>Gmail is a popular, free SMTP option. Gmail <strong>requires authentication</strong>, and you must use a
+<strong>16-character App Password</strong> &mdash; <em>not</em> your normal Gmail login password, which will be
+rejected. To create one:</p>
+<ol>
+  <li>Turn on <strong>2-Step Verification</strong> for the Google account at
+    <a href="https://myaccount.google.com/security" target="_blank">myaccount.google.com/security</a>.
+    (App Passwords are hidden until 2-Step Verification is on.)</li>
+  <li>Go to <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a>,
+    name it (e.g. <em>BoldForm SMTP</em>), and click <strong>Create</strong>.</li>
+  <li>Google shows a 16-character password like <code>abcd efgh ijkl mnop</code>. Copy it and
+    <strong>remove the spaces</strong> &rarr; <code>abcdefghijklmnop</code>.</li>
+</ol>
+<p>Then enter these values on the <strong>Configuration</strong> sub-tab:</p>
+<table>
+  <thead><tr><th>Setting</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Enable SMTP</td><td>Yes</td></tr>
+    <tr><td>SMTP Host</td><td><code>smtp.gmail.com</code></td></tr>
+    <tr><td>Encryption</td><td>TLS</td></tr>
+    <tr><td>Port</td><td><code>587</code></td></tr>
+    <tr><td>Authentication (SMTP Auth)</td><td><strong>Yes</strong></td></tr>
+    <tr><td>Username</td><td>your full Gmail address</td></tr>
+    <tr><td>Password</td><td>the 16-character App Password (no spaces)</td></tr>
+  </tbody>
+</table>
+<p>Save, then use the <strong>Mail Test</strong> tab to confirm delivery.</p>
+
+<div class="bf-tip"><strong>Avoid the spam folder:</strong> set the <strong>From Email</strong> to the same Gmail
+address you authenticate with. Sending &ldquo;from&rdquo; a different address than the login account can cause Gmail
+to file the message in Spam. Also, when the From Email and the recipient are the <em>same</em> Gmail account, Gmail
+files the copy under <strong>All Mail / Sent</strong> and skips the Inbox &mdash; test with a different recipient
+address to confirm delivery.</div>
+
+<h3 id="smtp-troubleshooting">Troubleshooting &ldquo;Failed to send email&rdquo;</h3>
+<ul>
+  <li><strong>&ldquo;Failed to send email. Check your SMTP configuration.&rdquo; with Gmail</strong> &mdash; almost always
+    means <strong>SMTP Auth is set to No</strong>, or the password is a normal Gmail password instead of an
+    App Password. Set <strong>SMTP Auth = Yes</strong> and use a 16-character App Password.</li>
+  <li><strong>The test fails even with SMTP turned off</strong> &mdash; this means the <em>server itself</em> can't
+    send mail via PHP's built-in <code>mail()</code> (common on local/dev environments and some hosts). The fix is
+    to enable SMTP and route mail through a real provider such as Gmail, Brevo, SendGrid, or Mailgun.</li>
+  <li><strong>Mail sends but never arrives</strong> &mdash; check the <strong>Spam</strong> and <strong>All Mail</strong>
+    folders, and make the From Email match your authenticated account (see tip above).</li>
+</ul>
 
 <!-- Integrations -->
 <h2 id="integrations">Integrations</h2>
@@ -1870,7 +1992,7 @@ the submission private. See <a href="#privacy-gdpr">Privacy &amp; GDPR</a> for d
 <p>Yes. Go to <strong>Settings &rarr; General</strong> to set default error messages for each field type. In the form builder, you can also set custom error messages for individual fields under <strong>Field Settings</strong>.</p>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.1 &mdash; User Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.3 &mdash; User Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>

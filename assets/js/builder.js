@@ -3121,6 +3121,240 @@ jQuery(
 		// Remembers which settings tab is active across re-renders.
 		var activeSettingsTab = 'confirmation';
 
+		// ── Upgrade teasers ──────────────────────────────────────────────────────
+		// The free plugin advertises paid features without implementing any of them:
+		// a locked button that opens an upgrade dialog explaining what the feature
+		// does. Nothing behind these buttons half-works -- Lite has no tag engine and
+		// no custom email templates, so there is deliberately no picker to browse and
+		// no toggle to flip.
+		//
+		// None of this detects an add-on. It renders whenever boldform_show_upgrade_cta
+		// is true, exactly like the Tools -> Entries export teaser; an add-on shipping
+		// the real feature turns that filter off and fills the slot itself.
+
+		/**
+		 * Whether the upgrade teasers should render.
+		 *
+		 * wp_localize_script stringifies the PHP boolean, so this is '1' or '' rather
+		 * than true/false -- hence the truthiness check rather than a strict compare.
+		 *
+		 * @return {boolean} True while the upgrade CTAs are shown.
+		 */
+		function showUpgradeCta() {
+			return !! boldformLiteBuilder.showUpgradeCta;
+		}
+
+		/**
+		 * A locked button that opens an upgrade dialog.
+		 *
+		 * aria-haspopup="dialog": it opens the dialog named by modalId, not a menu.
+		 *
+		 * @param {string} label   Button text.
+		 * @param {string} modalId Id of the dialog it opens.
+		 * @return {string} Markup.
+		 */
+		function upgradeButton( label, modalId ) {
+			return '<button type="button" class="boldform-upgrade-btn" aria-haspopup="dialog"' +
+				' data-upgrade-modal="' + escapeHtml( modalId ) + '">' +
+				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+				escapeHtml( label ) +
+			'</button>';
+		}
+
+		/**
+		 * The lock hint shown beneath a teased control.
+		 *
+		 * @param {string} text Hint.
+		 * @return {string} Markup.
+		 */
+		function upgradeHint( text ) {
+			return '<p class="boldform-upgrade-hint">' +
+				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+				escapeHtml( text ) +
+			'</p>';
+		}
+
+		/**
+		 * Teaser for the thank-you message shortcodes, sat beside the message label.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function shortcodeTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return upgradeButton(
+				boldformLiteBuilder.labels.addShortcodes || 'Add Shortcodes',
+				'boldform-shortcode-upgrade-modal'
+			);
+		}
+
+		/**
+		 * The shortcode hint under the thank-you editor.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function shortcodeHint() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return upgradeHint( boldformLiteBuilder.labels.shortcodeHint || '' );
+		}
+
+		/**
+		 * Teaser for the custom email editor, rendered into an email block's add-on
+		 * slot. Matches where the real per-email controls appear, so the block does
+		 * not change shape when the paid feature replaces it.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function emailTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<div class="boldform-email-teaser">' +
+				upgradeButton(
+					boldformLiteBuilder.labels.customizeEmail || 'Customize this email',
+					'boldform-email-upgrade-modal'
+				) +
+				upgradeHint( boldformLiteBuilder.labels.emailTeaserHint || '' ) +
+			'</div>';
+		}
+
+		/**
+		 * Opens an upgrade dialog by id.
+		 *
+		 * @param {string} id Dialog id.
+		 * @return {void}
+		 */
+		function openUpgradeModal( id ) {
+			$( document.getElementById( id ) ).removeAttr( 'hidden' );
+			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
+		}
+
+		/**
+		 * Closes every upgrade dialog.
+		 *
+		 * @return {void}
+		 */
+		function closeUpgradeModals() {
+			$( '.boldform-upgrade-modal' ).attr( 'hidden', 'hidden' );
+			$( 'body' ).removeClass( 'boldform-upgrade-modal-open' );
+		}
+
+		$( document )
+			.on( 'click.bfup', '.boldform-upgrade-btn', function ( e ) {
+				e.preventDefault();
+				openUpgradeModal( $( this ).data( 'upgrade-modal' ) );
+			} )
+			.on( 'click.bfup', '.boldform-upgrade-modal [data-boldform-upgrade-close]', function () {
+				closeUpgradeModals();
+			} )
+			.on( 'keydown.bfup', function ( e ) {
+				if ( 'Escape' === e.key ) {
+					closeUpgradeModals();
+				}
+			} );
+
+		// ── Thank-you message editor ─────────────────────────────────────────────
+		// The message is rich markup, so it is edited in the WordPress editor rather
+		// than a plain textarea. renderFormSettings() replaces the whole settings
+		// panel's HTML, so the editor has to be torn down before each render and stood
+		// back up after -- see removeThankYouEditor()/initThankYouEditor().
+
+		var THANK_YOU_EDITOR_ID = 'boldform-thank-you-message';
+
+		/**
+		 * Whether the WordPress editor API is available.
+		 *
+		 * @return {boolean} True when wp.editor can be used.
+		 */
+		function hasEditorApi() {
+			return !! ( window.wp && window.wp.editor && window.wp.editor.initialize );
+		}
+
+		/**
+		 * Tears down the thank-you editor.
+		 *
+		 * Safe to call when no instance exists, which is the common case: the panel is
+		 * re-rendered on changes that have nothing to do with this field.
+		 *
+		 * @return {void}
+		 */
+		function removeThankYouEditor() {
+			if ( ! hasEditorApi() ) {
+				return;
+			}
+
+			try {
+				window.wp.editor.remove( THANK_YOU_EDITOR_ID );
+			} catch ( e ) {
+				// No instance to remove; nothing to do.
+			}
+		}
+
+		/**
+		 * Stands the thank-you editor up and wires it back to formSettings.
+		 *
+		 * Only the AJAX submit mode renders the field, so this is a no-op in the
+		 * redirect modes.
+		 *
+		 * @return {void}
+		 */
+		function initThankYouEditor() {
+			if ( ! hasEditorApi() || ! document.getElementById( THANK_YOU_EDITOR_ID ) ) {
+				return;
+			}
+
+			// An instance can survive in TinyMCE's registry after its DOM is gone. Left
+			// registered, initialize() would bind to the corpse and the message would
+			// silently stop syncing.
+			if ( window.tinymce && window.tinymce.get( THANK_YOU_EDITOR_ID ) ) {
+				window.tinymce.remove( '#' + THANK_YOU_EDITOR_ID );
+			}
+
+			window.wp.editor.initialize( THANK_YOU_EDITOR_ID, {
+				mediaButtons: false,
+				quicktags:    true,
+				tinymce:      {
+					wpautop:  true,
+					height:   200,
+					toolbar1: 'formatselect,bold,italic,underline,bullist,numlist,alignleft,aligncenter,alignright,link,unlink,forecolor,removeformat,undo,redo',
+					toolbar2: '',
+					setup:    function ( editor ) {
+						// Mirror every keystroke: TinyMCE edits an iframe, so the
+						// textarea's own input/change events never fire and the
+						// delegated settings collector would never see the message.
+						editor.on( 'change keyup SetContent undo redo', syncThankYouMessage );
+					}
+				}
+			} );
+
+			$( '#' + THANK_YOU_EDITOR_ID + '-html' ).text( boldformLiteBuilder.labels.editorCode || 'Code' );
+			$( '#' + THANK_YOU_EDITOR_ID + '-tmce' ).text( boldformLiteBuilder.labels.editorVisual || 'Visual' );
+		}
+
+		/**
+		 * Reads the thank-you message out of whichever editor mode is active and stores it.
+		 *
+		 * wp.editor.getContent() flushes TinyMCE into the textarea first when Visual is
+		 * active, so this is correct in either mode.
+		 *
+		 * @return {void}
+		 */
+		function syncThankYouMessage() {
+			if ( ! document.getElementById( THANK_YOU_EDITOR_ID ) ) {
+				return;
+			}
+
+			state.formSettings.thank_you_message = hasEditorApi()
+				? window.wp.editor.getContent( THANK_YOU_EDITOR_ID )
+				: ( $( '#' + THANK_YOU_EDITOR_ID ).val() || '' );
+		}
+
 		function renderFormSettings() {
 			var submitMode = 'ajax';
 			if ( 'redirect' === state.formSettings.submission_type ) {
@@ -3154,8 +3388,20 @@ jQuery(
 				'</div>' +
 				( 'ajax' === submitMode
 					? '<div class="boldform-setting-group bfs-stab-field">' +
-						'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
-						'<textarea id="boldform-thank-you-message" rows="4">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
+						'<div class="boldform-ty-head">' +
+							'<label for="boldform-thank-you-message">' + escapeHtml( boldformLiteBuilder.labels.thankYouMessage ) + '</label>' +
+							// Always rendered, even when empty: an add-on shipping real
+							// shortcodes fills this slot on boldform:form_settings_rendered.
+							'<div class="boldform-shortcode-slot" data-shortcode-slot="thank_you">' +
+								shortcodeTeaser() +
+							'</div>' +
+						'</div>' +
+						// Only the bare textarea: wp.editor.initialize() builds the editor
+						// wrap, the Visual/Code tabs and the quicktags toolbar around it.
+						'<div class="boldform-rich-editor">' +
+							'<textarea id="boldform-thank-you-message" rows="6">' + escapeHtml( state.formSettings.thank_you_message ) + '</textarea>' +
+						'</div>' +
+						shortcodeHint() +
 					'</div>'
 					: ''
 				) +
@@ -3220,6 +3466,11 @@ jQuery(
 						'</div>'
 						: ''
 					) +
+					// Pro extension slot: add-ons (e.g. Custom Email Editor) inject
+					// per-email content controls here on boldform:form_settings_rendered.
+					// The teaser only occupies it while the upgrade CTAs are shown, so an
+					// add-on always finds the slot empty and ready to fill.
+					'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 				'</div>' +
 				'<div class="bfsп-email-block">' +
 					'<div class="bfsп-email-block__head">' +
@@ -3229,6 +3480,8 @@ jQuery(
 							'<span class="boldform-switch__slider"></span>' +
 						'</label>' +
 					'</div>' +
+					// Pro extension slot for the user confirmation email.
+					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';
 
 			// ── Security pane — duplicate prevention ────────────────────────────
@@ -3297,9 +3550,9 @@ jQuery(
 
 			// ── Build tabbed layout ──────────────────────────────────────────────
 			var tabs = [
-				{ id: 'confirmation',  icon: '&#10003;', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
-				{ id: 'email',         icon: '&#9993;',  label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
-				{ id: 'security',      icon: '&#128274;', label: 'Security',       desc: 'Duplicate prevention' }
+				{ id: 'confirmation',  icon: '<span class="dashicons dashicons-yes"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
+				{ id: 'email',         icon: '<span class="dashicons dashicons-email-alt"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
+				{ id: 'security',      icon: '<span class="dashicons dashicons-privacy"></span>', label: 'Security',       desc: 'Duplicate prevention' }
 			];
 
 			var navHtml = '';
@@ -3328,6 +3581,10 @@ jQuery(
 					'</div>' +
 				'</div>';
 
+			// Tear the editor down before the markup it is attached to is destroyed:
+			// TinyMCE keeps the instance (and its iframe) alive otherwise.
+			removeThankYouEditor();
+
 			$( '#boldform-form-settings-panel' ).html( html );
 
 			// ── Tab switching ────────────────────────────────────────────────────
@@ -3353,6 +3610,43 @@ jQuery(
 			 */
 			$( document ).trigger( 'boldform:form_settings_rendered', [ state.formSettings ] );
 
+			// Order the injected tabs deterministically.
+			//
+			// Listeners append in whatever order they happened to bind, which depends on
+			// how each one is loaded (inline script vs. its own file), so the resulting
+			// tab order is otherwise incidental. Instead, an add-on declares its position
+			// with a numeric `data-stab-order` on its nav item and this pass sorts by it
+			// (items without one default to 50, and equal values keep their append order,
+			// so a listener that declares nothing still behaves exactly as before).
+			//
+			// Deferred by setTimeout so it runs after every synchronous listener of the
+			// event above has finished appending — sorting inline would only see the tabs
+			// injected so far. Nothing here names a specific add-on: it is a generic
+			// ordering seam.
+			setTimeout( function () {
+				var $slots = $panel.find( '.bfs-stab-nav-pro-slots' );
+				if ( ! $slots.length ) {
+					return;
+				}
+
+				var $items = $slots.children( '.bfs-stab-nav-item' );
+				if ( $items.length < 2 ) {
+					return;
+				}
+
+				$items.get()
+					.map( function ( el, i ) {
+						var order = parseFloat( $( el ).attr( 'data-stab-order' ) );
+						return { el: el, order: isNaN( order ) ? 50 : order, i: i };
+					} )
+					.sort( function ( a, b ) {
+						return a.order - b.order || a.i - b.i;
+					} )
+					.forEach( function ( item ) {
+						$slots.append( item.el );
+					} );
+			}, 0 );
+
 			// Restore the previously active tab (Pro panes are now injected above).
 			var $restore = $panel.find( '.bfs-stab-nav-item[data-stab="' + activeSettingsTab + '"]' );
 			if ( ! $restore.length ) {
@@ -3362,6 +3656,9 @@ jQuery(
 			}
 			$restore.addClass( 'is-active' );
 			$panel.find( '.bfs-stab-pane[data-pane="' + activeSettingsTab + '"]' ).addClass( 'is-active' );
+
+			// After the active pane is set, so TinyMCE measures a visible container.
+			initThankYouEditor();
 		}
 
 		var designThemes = {
@@ -3675,9 +3972,10 @@ jQuery(
 					'<span class="bf-adv-dim-cap">' + escapeHtml( cap ) + '</span>' +
 				'</div>';
 			}
-			// Linked when all four sides are equal (or a single shorthand value) — restores
-			// the link toggle's active state on reload instead of resetting it each render.
-			var linked = '' !== nums[0] && nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
+			// Linked when all four sides are equal — including the default all-empty state,
+			// so a fresh control starts linked and one value fills every side. Only diverging
+			// side values render it unlinked. Also restores the toggle state on reload.
+			var linked = nums[0] === nums[1] && nums[1] === nums[2] && nums[2] === nums[3];
 			return '<div class="boldform-setting-group boldform-adv-field' + ( linked ? ' is-linked' : '' ) + '" data-type="dimension" data-var="' + cssVar + '">' +
 				'<label>' + escapeHtml( label ) + '</label>' +
 				'<div class="boldform-adv-dim">' +
@@ -4639,6 +4937,11 @@ jQuery(
 			// Note: an empty form (no rows/fields) is intentionally allowed to save,
 			// so a user can clear a form and have that persist. The server stores an
 			// empty structure and the renderer skips a field-less form gracefully.
+
+			// Flush the thank-you editor. Typing in Code view fires no event the editor
+			// reports, so without this a message written there and saved immediately
+			// would not be picked up.
+			syncThankYouMessage();
 
 			/**
 			 * Allow Pro modules to mutate state.formSettings before it is serialised.
@@ -6101,9 +6404,11 @@ jQuery(
 				} else if ( $( '#boldform-redirect-custom-url' ).length ) {
 					state.formSettings.redirect_url = $( '#boldform-redirect-custom-url' ).val() || '';
 				}
-				if ( $( '#boldform-thank-you-message' ).length ) {
-					state.formSettings.thank_you_message = $( '#boldform-thank-you-message' ).val() || '';
-				}
+				// Read through the editor, not the textarea: while Visual is active the
+				// textarea holds whatever it was seeded with, so a plain .val() here
+				// would overwrite the live message every time an unrelated setting on
+				// this panel changed.
+				syncThankYouMessage();
 				if ( $( '#boldform-enable-admin-email' ).length ) {
 					state.formSettings.enable_admin_email = $( '#boldform-enable-admin-email' ).is( ':checked' );
 				}
