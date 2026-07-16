@@ -355,5 +355,24 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 			</div>
 		</div>
 	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-email-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-email-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-email-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock the email editor', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends these notifications using its standard layout. Upgrade to switch on a custom email per form and write your own subject and message in a visual editor.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Turn a custom email on per notification, per form', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Write the subject and message in a visual editor, or hand-write the HTML', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert submitted data, and set a Reply-To that answers the submitter', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
 	<?php
 endif;

@@ -6661,33 +6661,16 @@
 	padding: 10px;
 }
 
-/* ── Thank-you message shortcode teaser ──────────────────────────────────────
-   The locked "Add Shortcodes" button beside the thank-you message. It opens the
-   upgrade dialog rather than a tag list, so there is no popover to style here.
+/* ── Upgrade teasers ─────────────────────────────────────────────────────────
+   Locked buttons that open an upgrade dialog: "Add Shortcodes" beside the
+   thank-you message, and "Customize this email" inside each email block. They
+   open a dialog rather than a control, so there is no popover or switch here.
 
    Scoped to the settings panel: these are generic class names, and the panel is
-   the only place the button exists. The extra specificity also keeps the
-   .boldform-setting-group control rules (width:100%, min-height:38px) off it. */
+   the only place the buttons exist. The extra specificity also keeps the
+   .boldform-setting-group control rules (width:100%, min-height:38px) off them. */
 
-#boldform-form-settings-panel .boldform-ty-head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-	margin-bottom: 6px;
-}
-
-/* The group's label rule adds a bottom margin meant for a stacked label. */
-#boldform-form-settings-panel .boldform-ty-head label {
-	margin-bottom: 0;
-}
-
-#boldform-form-settings-panel .boldform-sc {
-	display: flex;
-	flex: 0 0 auto;
-}
-
-#boldform-form-settings-panel .boldform-sc__trigger {
+#boldform-form-settings-panel .boldform-upgrade-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
@@ -6706,28 +6689,58 @@
 	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-#boldform-form-settings-panel .boldform-sc__trigger:hover {
+#boldform-form-settings-panel .boldform-upgrade-btn:hover {
 	background: #eef2ff;
 	border-color: #c7d2fe;
 	color: #4338ca;
 }
 
-#boldform-form-settings-panel .boldform-sc__trigger:focus-visible {
+#boldform-form-settings-panel .boldform-upgrade-btn:focus-visible {
 	outline: 2px solid #6366f1;
 	outline-offset: 1px;
 }
 
-#boldform-form-settings-panel .boldform-sc__trigger .dashicons {
+#boldform-form-settings-panel .boldform-upgrade-btn .dashicons {
 	width: 14px;
 	height: 14px;
 	font-size: 14px;
 	color: #94a3b8;
 }
 
-#boldform-form-settings-panel .boldform-sc__trigger:hover .dashicons {
+#boldform-form-settings-panel .boldform-upgrade-btn:hover .dashicons {
 	color: #6366f1;
 }
 
-#boldform-form-settings-panel .boldform-sc__hint {
-	margin: 6px 0 0;
+/* Thank-you message: the button sits opposite the field label. */
+#boldform-form-settings-panel .boldform-ty-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 6px;
+}
+
+/* The group's label rule adds a bottom margin meant for a stacked label. */
+#boldform-form-settings-panel .boldform-ty-head label {
+	margin-bottom: 0;
+}
+
+#boldform-form-settings-panel .boldform-shortcode-slot:empty {
+	display: none;
+}
+
+/* Email blocks: the teaser sits under the block head, where the real per-email
+   controls appear. The slot is empty (and collapses) once an add-on is active
+   and has not yet filled it. */
+#boldform-form-settings-panel .boldform-email-pro-slot:empty {
+	display: none;
+}
+
+#boldform-form-settings-panel .boldform-email-teaser {
+	padding: 14px 16px 16px;
+	border-top: 1px solid #e2e8f0;
+}
+
+#boldform-form-settings-panel .boldform-email-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
 }

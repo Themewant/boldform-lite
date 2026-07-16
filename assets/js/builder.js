@@ -3121,20 +3121,19 @@ jQuery(
 		// Remembers which settings tab is active across re-renders.
 		var activeSettingsTab = 'confirmation';
 
-		// ── Thank-you message shortcode teaser ───────────────────────────────────
-		// The free plugin advertises the shortcode feature without implementing any
-		// of it: the button opens the upgrade dialog rather than a tag list. There is
-		// deliberately no picker here -- Lite has no tag engine, the message is stored
-		// and rendered verbatim, so a browsable list of tags that cannot be inserted
-		// would only invite people to try.
+		// ── Upgrade teasers ──────────────────────────────────────────────────────
+		// The free plugin advertises paid features without implementing any of them:
+		// a locked button that opens an upgrade dialog explaining what the feature
+		// does. Nothing behind these buttons half-works -- Lite has no tag engine and
+		// no custom email templates, so there is deliberately no picker to browse and
+		// no toggle to flip.
 		//
-		// This is not gated on detecting an add-on. It renders whenever
-		// boldform_show_upgrade_cta is true, exactly like the Tools -> Entries export
-		// teaser; an add-on with the real feature turns that filter off and fills the
-		// .boldform-shortcode-slot with its own picker.
+		// None of this detects an add-on. It renders whenever boldform_show_upgrade_cta
+		// is true, exactly like the Tools -> Entries export teaser; an add-on shipping
+		// the real feature turns that filter off and fills the slot itself.
 
 		/**
-		 * Whether the upgrade teaser should render.
+		 * Whether the upgrade teasers should render.
 		 *
 		 * wp_localize_script stringifies the PHP boolean, so this is '1' or '' rather
 		 * than true/false -- hence the truthiness check rather than a strict compare.
@@ -3146,7 +3145,37 @@ jQuery(
 		}
 
 		/**
-		 * The locked "Add Shortcodes" button.
+		 * A locked button that opens an upgrade dialog.
+		 *
+		 * aria-haspopup="dialog": it opens the dialog named by modalId, not a menu.
+		 *
+		 * @param {string} label   Button text.
+		 * @param {string} modalId Id of the dialog it opens.
+		 * @return {string} Markup.
+		 */
+		function upgradeButton( label, modalId ) {
+			return '<button type="button" class="boldform-upgrade-btn" aria-haspopup="dialog"' +
+				' data-upgrade-modal="' + escapeHtml( modalId ) + '">' +
+				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+				escapeHtml( label ) +
+			'</button>';
+		}
+
+		/**
+		 * The lock hint shown beneath a teased control.
+		 *
+		 * @param {string} text Hint.
+		 * @return {string} Markup.
+		 */
+		function upgradeHint( text ) {
+			return '<p class="boldform-upgrade-hint">' +
+				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+				escapeHtml( text ) +
+			'</p>';
+		}
+
+		/**
+		 * Teaser for the thank-you message shortcodes, sat beside the message label.
 		 *
 		 * @return {string} Markup, or '' when the CTAs are off.
 		 */
@@ -3155,17 +3184,14 @@ jQuery(
 				return '';
 			}
 
-			// aria-haspopup="dialog": this opens the upgrade dialog, not a menu.
-			return '<div class="boldform-sc">' +
-				'<button type="button" class="boldform-sc__trigger" aria-haspopup="dialog">' +
-					'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
-					escapeHtml( boldformLiteBuilder.labels.addShortcodes || 'Add Shortcodes' ) +
-				'</button>' +
-			'</div>';
+			return upgradeButton(
+				boldformLiteBuilder.labels.addShortcodes || 'Add Shortcodes',
+				'boldform-shortcode-upgrade-modal'
+			);
 		}
 
 		/**
-		 * The lock hint under the editor.
+		 * The shortcode hint under the thank-you editor.
 		 *
 		 * @return {string} Markup, or '' when the CTAs are off.
 		 */
@@ -3174,43 +3200,62 @@ jQuery(
 				return '';
 			}
 
-			return '<p class="boldform-upgrade-hint boldform-sc__hint">' +
-				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
-				escapeHtml( boldformLiteBuilder.labels.shortcodeHint || '' ) +
-			'</p>';
+			return upgradeHint( boldformLiteBuilder.labels.shortcodeHint || '' );
 		}
 
 		/**
-		 * Opens the shared upgrade dialog.
+		 * Teaser for the custom email editor, rendered into an email block's add-on
+		 * slot. Matches where the real per-email controls appear, so the block does
+		 * not change shape when the paid feature replaces it.
 		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function emailTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<div class="boldform-email-teaser">' +
+				upgradeButton(
+					boldformLiteBuilder.labels.customizeEmail || 'Customize this email',
+					'boldform-email-upgrade-modal'
+				) +
+				upgradeHint( boldformLiteBuilder.labels.emailTeaserHint || '' ) +
+			'</div>';
+		}
+
+		/**
+		 * Opens an upgrade dialog by id.
+		 *
+		 * @param {string} id Dialog id.
 		 * @return {void}
 		 */
-		function openShortcodeUpgradeModal() {
-			$( '#boldform-shortcode-upgrade-modal' ).removeAttr( 'hidden' );
+		function openUpgradeModal( id ) {
+			$( document.getElementById( id ) ).removeAttr( 'hidden' );
 			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
 		}
 
 		/**
-		 * Closes the shared upgrade dialog.
+		 * Closes every upgrade dialog.
 		 *
 		 * @return {void}
 		 */
-		function closeShortcodeUpgradeModal() {
-			$( '#boldform-shortcode-upgrade-modal' ).attr( 'hidden', 'hidden' );
+		function closeUpgradeModals() {
+			$( '.boldform-upgrade-modal' ).attr( 'hidden', 'hidden' );
 			$( 'body' ).removeClass( 'boldform-upgrade-modal-open' );
 		}
 
 		$( document )
-			.on( 'click.bfsc', '.boldform-sc__trigger', function ( e ) {
+			.on( 'click.bfup', '.boldform-upgrade-btn', function ( e ) {
 				e.preventDefault();
-				openShortcodeUpgradeModal();
+				openUpgradeModal( $( this ).data( 'upgrade-modal' ) );
 			} )
-			.on( 'click.bfsc', '#boldform-shortcode-upgrade-modal [data-boldform-upgrade-close]', function () {
-				closeShortcodeUpgradeModal();
+			.on( 'click.bfup', '.boldform-upgrade-modal [data-boldform-upgrade-close]', function () {
+				closeUpgradeModals();
 			} )
-			.on( 'keydown.bfsc', function ( e ) {
+			.on( 'keydown.bfup', function ( e ) {
 				if ( 'Escape' === e.key ) {
-					closeShortcodeUpgradeModal();
+					closeUpgradeModals();
 				}
 			} );
 
@@ -3423,7 +3468,9 @@ jQuery(
 					) +
 					// Pro extension slot: add-ons (e.g. Custom Email Editor) inject
 					// per-email content controls here on boldform:form_settings_rendered.
-					'<div class="boldform-email-pro-slot" data-email-slot="admin"></div>' +
+					// The teaser only occupies it while the upgrade CTAs are shown, so an
+					// add-on always finds the slot empty and ready to fill.
+					'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 				'</div>' +
 				'<div class="bfsп-email-block">' +
 					'<div class="bfsп-email-block__head">' +
@@ -3434,7 +3481,7 @@ jQuery(
 						'</label>' +
 					'</div>' +
 					// Pro extension slot for the user confirmation email.
-					'<div class="boldform-email-pro-slot" data-email-slot="user"></div>' +
+					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';
 
 			// ── Security pane — duplicate prevention ────────────────────────────

@@ -891,6 +891,8 @@ class BoldForm_Lite_Admin {
 						'editorCode'      => __( 'Code', 'boldform-lite' ),
 						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
 						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
+						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
+						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
 						'submissionType' => __( 'After Submit', 'boldform-lite' ),
 						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
