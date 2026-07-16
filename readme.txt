@@ -16,7 +16,7 @@ Lightweight drag-and-drop WordPress form builder — contact forms and more with
 
 From a simple contact form to a form with conditional logic, spam protection, and email-marketing sync, BoldForm gives you the tools professional forms need — without the bloat that slows your site down.
 
-* [Live Demo](https://themewant.com/plugins/boldform) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://wpboldform.com/)
+* [Live Demo](https://wpboldform.com/) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://wpboldform.com/)
 
 https://www.youtube.com/watch?v=EWum_aGDAMc
 
