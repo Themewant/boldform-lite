@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.3
+Stable tag: 1.1.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -320,17 +320,25 @@ Security:
 * Fix: The confirmation message shown after a submission made without JavaScript is no longer passed through the page URL. Anyone could previously put arbitrary wording on the page with a crafted link (for example, a fake "your payment failed, call this number" notice under your own form). The message is now held server-side and fetched with a single-use token, so only a real submission can produce one.
 
 Improvements:
+* Improve: Padding, margin, radius and border-width controls now start with their four sides linked, everywhere in the Style tab — form container, input fields, labels, placeholders and every other group. Type one value and all four sides follow, instead of having to click the link icon first. A control that already has different values per side still opens unlinked.
 * Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
+* Improve: The Form Settings tabs now keep a consistent order and use standard WordPress icons, so every tab — including any added by an add-on — matches the rest of the admin and highlights correctly when selected.
+* Improve: The Add New form screen now uses the same BoldForm toolbar as every other screen, so the admin navigation no longer disappears when creating a form.
 * Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
 * Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
 * Improve: The Email Notification panel now previews the custom email editor — a locked "Customize this email" button under each notification that opens a quick upgrade dialog. Shown only in the free version.
 * Improve: In a form's Integrations tab, connections whose service the free plugin cannot send to (anything other than Mailchimp or Brevo) now appear as a locked row that opens a quick upgrade dialog, instead of a toggle that would never fire. Existing assignments are preserved. Shown only in the free version.
+
+Fixes:
+* Fix: The count badge on a form's Integrations tab now shows the number of connections actually assigned to that form.
+
 Developer:
 * Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
 * Developer: The notification email filters now pass the saved entry ID (`boldform_lite_admin_email_subject`/`_content` gain a 4th `$entry_id` arg; `boldform_lite_user_email_subject`/`_content` a 5th), and two new filters — `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` — let an add-on adjust the `wp_mail` headers (e.g. add a Reply-To). Backward-compatible (extra args are ignored by existing callbacks).
-Developer:
 * Developer: New entries-list extension points so add-ons can extend the Entries screen — `boldform_entries_list_columns` (add columns to each row's query), `boldform_entries_where_clauses` (scope the list and its counts by an add-on column), `boldform_entries_filter_controls` (add a filter control to the toolbar alongside the Form and Date filters), and `boldform_entry_status_badge_after` (append markup after a row's status badge).
 * Developer: New bulk-action extension points for the Entries list — `boldform_entries_bulk_actions` (add options to the bulk-actions dropdown) and `boldform_bulk_entry_action` (handle a custom bulk action, with the request nonce and capability already verified). Used by BoldForm Pro's Entry Approval workflow to add per-row approval badges, an Approval filter, and bulk approve/reject.
+* Developer: Form Settings tabs added on `boldform:form_settings_rendered` can declare their position with a numeric `data-stab-order` attribute on the nav item. Tabs are sorted by it after every listener has run; a tab without one defaults to 50 and ties keep insertion order.
+* Developer: New `boldform_show_upgrade_cta` filter — return false to suppress every upgrade prompt (promo notice, menu item, toolbar button, page-header link). Lets an add-on hide the free version's upgrade CTAs without Lite knowing which add-on is present.
 
 = 1.1.3 =
 New features:
@@ -486,6 +494,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.4 =
+Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, and new entries-list and email extension hooks for add-ons. Recommended for all users.
 
 = 1.1.3 =
 Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.
