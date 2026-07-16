@@ -1,6 +1,6 @@
 # BoldForm — Product Roadmap (Lite + Pro)
 
-_Last updated: 2026-07-05 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
+_Last updated: 2026-07-16 · Lite (free): 1.1.4 · Pro (paid): 1.1.1_
 
 > **In one line:** BoldForm Lite is our free WordPress form builder; BoldForm Pro is the paid add-on. This roadmap says **what we build next, in what order, and why** — for both.
 
@@ -26,61 +26,51 @@ _Last updated: 2026-07-05 · Lite (free): 1.1.x · Pro (paid): 1.0.0_
 _At-a-glance board view (matches our public roadmap columns). Numbering is per-column. Details for each live in §5 below._
 
 ### 🟢 Progress — building now
-_All of Pro 1.1, plus Save & Resume, Draft Auto-Save, and Excel & PDF Export, are already BUILT on branches (see `ROADMAP-PROGRESS.md`). Currently finalizing for release:_
-1. **Custom Email Editor** — built + QA'd; finalizing (targets Lite 1.1.4 / Pro 1.1.1). First Pro 1.2 item.
-2. **Entry Approval Workflow** — built + QA'd; finalizing (same wave).
+_Nothing in flight._ Custom Email Editor, Entry Approval and Custom Thank-You are all **merged and versioned** (Lite 1.1.4 / Pro 1.1.1) and releasing now. The next cycle starts at the head of the queue below.
 
-**▶ Next to develop (serialized 2026-07-15):** Conditional Email Routing → PDF Attachment → Custom Thank-You Page → Marketing Tracking → Scheduled Export → Conditional Logic on Pages → Abandonment Tracking → _(Wave-2, migration first)_ Email Confirmation → Custom Entry Statuses → Coupons/Tax/Multi-Currency. Full rationale in `ROADMAP-PROGRESS.md` → **NEXT-BUILD QUEUE**, and §7 below.
+**▶ Next to develop (updated 2026-07-16):** Conditional Email Routing → PDF Attachment → Marketing Tracking → Scheduled Export → Conditional Logic on Pages → Abandonment Tracking → _(Wave-2, migration first)_ Email Confirmation → Custom Entry Statuses → Coupons/Tax/Multi-Currency. Full rationale in `ROADMAP-PROGRESS.md` → **NEXT-BUILD QUEUE**, and §7 below.
+
+**Recommended first mini-release:** Conditional Email Routing + PDF Attachment — "finish the notifications story". Custom Thank-You, the third item, **shipped early** in Pro 1.1.1; it left behind a shared merge-tag engine both of the others should build on rather than re-implement.
 
 ### 🔵 UpComing — planned next (in release order)
 
 **Flagship (planning)**
 1. **AI Form Builder** — Create complete forms from a plain-language description. Simply describe the form you need, and AI instantly generates the fields, layout, and settings — ready to refine in the drag-and-drop builder.
 
-**Pro 1.1 — managing submissions** _(Entry Approval Workflow built — see Done below)_
+**Pro 1.1 — managing submissions** _(everything else in 1.1 has shipped — see Done below)_
 2. **Custom Entry Statuses** — Define your own submission statuses to match your team's workflow, beyond the built-in read, starred, and spam labels.
 
-**Pro 1.2 — smarter notifications & payments**
-11. **Custom Email Editor** ✅ _built_ — Fully customize notification email subjects and content, including dynamic values from submitted fields (merge tags). Per-form, admin + user emails independently; rides Lite's existing email filters (zero Lite changes).
-12. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
-13. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
-14. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
-15. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
-16. **Custom Thank-You Page** — Display a personalized confirmation message using submitted field values after a form is completed.
-17. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
-18. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
-19. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
-20. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
-3. **Custom Email Editor** — Fully customize notification email subjects and content, including dynamic values from submitted fields.
-4. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
-5. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
-6. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
+**Pro 1.2 — smarter notifications & payments** _(Custom Email Editor + Custom Thank-You shipped — see Done below)_
+3. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
+4. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
+5. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
+6. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
 7. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
-8. **Custom Thank-You Page** — Display a personalized confirmation message using submitted field values after a form is completed.
-9. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
-10. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
-11. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
-12. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
+8. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
+9. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
+10. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
 
 **Pro 2.0 — marquee features**
-13. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
-14. **A/B Testing** — Split traffic between two versions of a form to compare performance and identify the higher-converting design.
-15. **User Submission Portal** — Give logged-in users a dedicated area to view and manage their own past submissions.
-16. **Subscriptions & Recurring Payments** — Collect recurring payments through Stripe and PayPal for memberships, donations, and retainers.
-17. **Embed Modes** — Display forms as popups, slide-ins, or floating buttons to capture leads anywhere on the site.
-18. **Premium Template Packs** — Expand the built-in free template library with additional industry-specific, ready-to-use form packs available to Pro users.
-19. **Country & IP Blocking** — Restrict submissions from specific countries or IP addresses to reduce fraud and abuse.
-20. **REST API & WP-CLI** — Read and create entries programmatically through a REST API and manage the plugin via the command line.
-21. **Advanced Actions** — Automatically create posts, register users, or restrict form access by role upon submission.
-22. **WooCommerce Integration** — Create WooCommerce orders directly from form submissions.
-23. **AI Response Tools** — Use AI to summarize submissions or draft automated responses (separate from the flagship AI Form Builder).
-24. **Google Places Autocomplete** — Offer address autocomplete in address fields using Google Places.
-25. **Mailchimp Tags & Groups** — Apply granular Mailchimp tags and groups when syncing subscribers.
-26. **ActiveCampaign Deals** — Create deals in ActiveCampaign, not just contacts, from submissions.
+11. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
+12. **A/B Testing** — Split traffic between two versions of a form to compare performance and identify the higher-converting design.
+13. **User Submission Portal** — Give logged-in users a dedicated area to view and manage their own past submissions.
+14. **Subscriptions & Recurring Payments** — Collect recurring payments through Stripe and PayPal for memberships, donations, and retainers.
+15. **Embed Modes** — Display forms as popups, slide-ins, or floating buttons to capture leads anywhere on the site.
+16. **Premium Template Packs** — Expand the built-in free template library with additional industry-specific, ready-to-use form packs available to Pro users.
+17. **Country & IP Blocking** — Restrict submissions from specific countries or IP addresses to reduce fraud and abuse.
+18. **REST API & WP-CLI** — Read and create entries programmatically through a REST API and manage the plugin via the command line.
+19. **Advanced Actions** — Automatically create posts, register users, or restrict form access by role upon submission.
+20. **WooCommerce Integration** — Create WooCommerce orders directly from form submissions.
+21. **AI Response Tools** — Use AI to summarize submissions or draft automated responses (separate from the flagship AI Form Builder).
+22. **Google Places Autocomplete** — Offer address autocomplete in address fields using Google Places.
+23. **Mailchimp Tags & Groups** — Apply granular Mailchimp tags and groups when syncing subscribers.
+24. **ActiveCampaign Deals** — Create deals in ActiveCampaign, not just contacts, from submissions.
 
-### ⚫ Done — already shipped
+### ⚫ Done — built
 
 _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐ Pro** requires the paid add-on._
+
+> **Not all of this is public yet.** The last released tags are **Pro v1.1.0** and **Lite v1.1.3**. Items marked _(Pro 1.1.1)_ or _(Lite 1.1.4)_ are built and versioned on `development` but **await release** — don't announce them as live.
 
 **Free (Lite) — shipped**
 1. **Drag & Drop Builder** — 🆓 Free — Build forms visually with an intuitive drag-and-drop interface.
@@ -116,7 +106,7 @@ _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐
 29. **Auto-Populate & Merge Tags** — ⭐ Pro — Pre-fill fields and reuse submitted values dynamically.
 30. **Hidden Field** — ⭐ Pro — Pass hidden, pre-filled values through a form without showing them to the visitor.
 31. **Analytics** — ⭐ Pro — Track form views and conversion performance.
-32. **Entry Approval Workflow** — ⭐ Pro — Hold submissions for admin review before their notifications and integrations run; approve or reject from the entry screen or in bulk, with per-row badges and an approval filter on the Entries list. _(built — release version set at merge)_
+32. **Entry Approval Workflow** — ⭐ Pro — Hold submissions for admin review before their notifications and integrations run; approve or reject from the entry screen or in bulk, with per-row badges and an approval filter on the Entries list. _(Pro 1.1.1)_
 33. **Entry Editing** — ⭐ Pro — Edit a saved submission from the admin using each field's native control, with an edit-history audit trail. _(Pro 1.1.0)_
 34. **Entry Notes** — ⭐ Pro — Private, admin-only notes attached to any submission (never shown, exported, or emailed). _(Pro 1.1.0)_
 35. **Save & Resume** — ⭐ Pro — Visitors save a partially completed form and return via a private resume link. _(Pro 1.1.0)_
@@ -127,6 +117,8 @@ _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐
 40. **Akismet Spam Filtering** — ⭐ Pro — Check submissions against Akismet and block spam, per form. _(Pro 1.0.0)_
 41. **Color Picker Field** — ⭐ Pro — A colour-picker field (swatch, hue map, hex input) that stores a hex colour. _(Pro 1.0.0)_
 42. **Import Entries** — ⭐ Pro — Import entries from a BoldForm export onto a chosen form, with duplicates skipped. _(Pro 1.0.0)_
+43. **Custom Email Editor** — ⭐ Pro — Write a custom subject and body for the admin notification and user confirmation emails per form, with a visual/HTML editor, merge tags for any field and entry attribute, and a per-email Reply-To. _(Pro 1.1.1)_
+44. **Custom Thank-You** — ⭐ Pro — Personalise the on-screen confirmation with the visitor's own answers using the same merge tags ("Thanks, {field:first_name}!"), inserted from a picker beside the message editor. _(Pro 1.1.1)_
 
 ---
 
@@ -185,8 +177,10 @@ We are **not** adding paid features to free. Lite's one planned new extra — wh
 
 ---
 
-### 🚀 Pro 1.1 — "Managing submissions" _(quick wins, low risk)_
+### 🚀 Pro 1.1 — "Managing submissions" _(quick wins, low risk)_ — ✅ **shipped, except Custom entry statuses**
 **Goal:** turn entries from a simple list into a real workflow. These reuse systems we already have, so they ship fast.
+
+_Shipped in Pro 1.0.0: entry limit + cooldown, Akismet, colour picker, import entries. Shipped in Pro 1.1.0: save & resume, entry editing, entry notes, Excel/PDF export, form locking. Shipped in Pro 1.1.1: entry approval workflow. **Custom entry statuses is the only one left** (Wave 2 — needs a migration)._
 
 | Feature | What it does | Why it matters | ⭐ | Priority | Effort |
 |---|---|---|---|---|---|
@@ -206,10 +200,10 @@ We are **not** adding paid features to free. Lite's one planned new extra — wh
 
 ---
 
-### 🧩 Pro 1.2 — "Smarter notifications & payments"
+### 🧩 Pro 1.2 — "Smarter notifications & payments" — 🟡 **in progress** (Custom Email Editor + Custom Thank-You shipped; the rest queued)
 **Goal:** make emails flexible and payments commerce-grade. One groundwork item unlocks the rest.
 
-> **Do first (groundwork):** today emails use fixed templates with no custom subject/body. Build a **custom email editor** before the two ⭐ email features below.
+> **Groundwork — ✅ done (Pro 1.1.1):** the **Custom Email Editor** shipped (per-form custom subject/body, merge-tag engine, per-email Reply-To). It unblocks conditional email routing + PDF attachment, which are now the head of the queue.
 
 | Feature | What it does | Why it matters | ⭐ | Priority | Effort |
 |---|---|---|---|---|---|
@@ -217,9 +211,9 @@ We are **not** adding paid features to free. Lite's one planned new extra — wh
 | **PDF of the submission** | Auto-generate a PDF of each entry and attach it to the email | High perceived value; common paid feature | ⭐ | High | M |
 | **Email confirmation (double opt-in)** | Verify the submitter's email via a token link before the entry counts | Cleaner lists; blocks fake emails | | Med | M |
 | **Conditional logic on pages** | Show/hide whole pages in a multi-step form based on answers | Extends multi-step (per-field logic already exists) — smarter long forms | | Med | M |
-| **Custom thank-you page** | Personalized confirmation using answers ("Thanks, {first name}") — Lite already does basic redirect + custom success message; this adds merge-tag personalization | Better post-submit experience | | Med | M |
+| **Custom thank-you page** _(✅ shipped in Pro 1.1.1)_ | Personalized confirmation using answers ("Thanks, {first name}") — Lite already does basic redirect + custom success message; this adds merge-tag personalization | Better post-submit experience | | Med | M |
 | **Payments: coupons, tax, multi-currency** | Discount codes, tax lines, and more than one currency (today = one currency per form) | Turns basic payments into real checkout | | High | M |
-| **Auto-save draft** | Periodically saves progress in the browser | Prevents lost work on long forms | | Med | S |
+| **Auto-save draft** _(✅ shipped early in Pro 1.1.0)_ | Periodically saves progress in the browser | Prevents lost work on long forms | | Med | S |
 | **Abandonment tracking** | Records forms started but not finished | Shows where people give up | | Med | M |
 | **Marketing tracking** | Capture UTM source + fire Google/Meta events on submit | Lets marketers measure form performance | | Med | S |
 | **Scheduled export** | Auto-email a CSV/Excel export on a schedule | Hands-off reporting for teams | | Med | S |
@@ -270,7 +264,7 @@ We verified every planned item against the actual code. The architecture is safe
 Reuse hooks/systems that already exist; live entirely in Pro or use proven patterns. No risk to existing behavior.
 
 - **From Pro 1.1:** Entry Editing · Import Entries · Entry Notes · Entry Limit & Cooldown · Form Locking · Akismet · Color Picker Field · Excel & PDF Export
-- **From Pro 1.2:** Custom Email Editor _(the override filters already exist — only the UI is new)_ · Conditional Email Routing · PDF Attachment · Conditional Logic on Pages · Custom Thank-You Page · Draft Auto-Save · Abandonment Tracking · Marketing Tracking · Scheduled Export
+- **From Pro 1.2:** Custom Email Editor ✅ _(shipped 1.1.1)_ · Custom Thank-You ✅ _(shipped 1.1.1)_ · Draft Auto-Save ✅ _(shipped early, 1.1.0)_ · Conditional Email Routing · PDF Attachment · Conditional Logic on Pages · Abandonment Tracking · Marketing Tracking · Scheduled Export
 - **From Pro 2.0:** User Submission Portal · Embed Modes · Country & IP Blocking · REST API & WP-CLI · Advanced Actions · WooCommerce · AI Response Tools · Google Places · Mailchimp Tags & Groups · ActiveCampaign Deals · Premium Template Packs
 - **Free (Lite):** Cloudflare Turnstile ✅ _shipped_
 
@@ -305,12 +299,14 @@ These touch the two most fragile paths — form rendering and the payment flow. 
 
 ## 8. Feature-wishlist reconciliation (source: feature brainstorm)
 
-Every item from the original brainstorm, mapped to reality. **Key takeaway: most of the "features to add" already ship** — the brainstorm predated the current build. Legend: ✅ already shipped · 📅 planned (release) · 🆕 newly added to plan · ⏸ parked/deferred.
+Every item from the original brainstorm, mapped to reality. **Key takeaway: most of the "features to add" already ship** — the brainstorm predated the current build. Legend: ✅ released (public) · 🚢 built + versioned, **awaiting release** · 📅 planned (release) · 🆕 newly added to plan · ⏸ parked/deferred.
+
+> **Released vs built.** The last public tags are **Pro v1.1.0** and **Lite v1.1.3**. Everything marked Pro 1.1.1 or Lite 1.1.4 is 🚢 — written, versioned and on `development`, but nobody outside this repo has it yet.
 
 | Brainstormed feature | Status | Where |
 |---|---|---|
 | Password field | ✅ Shipped (Pro) | Includes confirm-and-match validation (already shipped) |
-| Color picker field | 🆕 → 📅 | Pro 1.1 |
+| Color picker field | ✅ Shipped (Pro) | Pro 1.0.0 — wp-color-picker widget |
 | Rich text field | ✅ Shipped (Pro) | — |
 | Date range picker | ✅ Shipped (Pro) | — |
 | Rating / NPS field | ✅ Shipped (Pro) | — |
@@ -319,12 +315,13 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Geolocation field | ✅ Shipped (Pro, map-pick) | — |
 | Multi-step forms | ✅ Shipped (Pro) | — |
 | Conditional logic on pages | 🆕 → 📅 | Pro 1.2 (per-field logic already shipped) |
-| Save & resume | 📅 | Pro 1.1 |
-| Form locking (password) | 🆕 → 📅 | Pro 1.1 |
-| Entry limit | 📅 | Pro 1.1 |
-| Submission cooldown | 📅 | Pro 1.1 |
-| Draft auto-save | 📅 | Pro 1.2 |
+| Save & resume | ✅ Shipped (Pro) | Pro 1.1.0 |
+| Form locking (password) | ✅ Shipped (Pro) | Pro 1.1.0 — hashed, verified server-side |
+| Entry limit | ✅ Shipped (Pro) | Pro 1.0.0 |
+| Submission cooldown | ✅ Shipped (Pro) | Pro 1.0.0 — per-visitor rate limit, with entry limit |
+| Draft auto-save | ✅ Shipped (Pro) | Pro 1.1.0 — shipped early, ahead of the 1.2 batch |
 | Partial / abandonment tracking | 📅 | Pro 1.2 |
+| Custom email editor (subject/body + merge tags) | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — not in the original brainstorm; groundwork for the two rows below |
 | Conditional email routing | 📅 | Pro 1.2 |
 | PDF attachment | 📅 | Pro 1.2 |
 | Email confirmation (token) | 🆕 → 📅 | Pro 1.2 |
@@ -333,15 +330,15 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Subscription / recurring payments | 📅 | Pro 2.0 |
 | Tax calculation | 📅 | Pro 1.2 |
 | Multi-currency | 📅 | Pro 1.2 (one currency/form ships today) |
-| Entry editing | 📅 | Pro 1.1 |
-| Import entries | 🆕 → 📅 | Pro 1.1 (Lite exports entries ✅; Pro adds import) |
+| Entry editing | ✅ Shipped (Pro) | Pro 1.1.0 — with an edit-history audit trail |
+| Import entries | ✅ Shipped (Pro) | Pro 1.0.0 — Tools → Entries, dedupe by submission key |
 | User submission portal | 📅 | Pro 2.0 |
-| Entry notes | 📅 | Pro 1.1 |
+| Entry notes | ✅ Shipped (Pro) | Pro 1.1.0 — private, never exported or emailed |
 | Custom entry statuses | 🆕 → 📅 | Pro 1.1 |
-| CSV / Excel scheduled export | 📅 | Pro 1.2 (manual Excel/PDF 📅 Pro 1.1; CSV ✅ free) |
-| Entry approval workflow | 📅 | Pro 1.1 |
+| CSV / Excel scheduled export | 📅 | Pro 1.2 — **scheduled** only; manual Excel/PDF ✅ shipped Pro 1.1.0, CSV ✅ free |
+| Entry approval workflow | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — defer → approve/reject, send-once |
 | Turnstile captcha | ✅ Shipped (Free/Lite) | **Lite (free)** — no-puzzle Cloudflare CAPTCHA |
-| Akismet | 📅 | Pro 1.1 |
+| Akismet | ✅ Shipped (Pro) | Pro 1.0.0 — per-form, fail-open |
 | Country / IP blocking | 📅 | Pro 2.0 |
 | Form token / one-time links | ⏸ | covered by Save & Resume |
 | WooCommerce | 📅 | Pro 2.0 |
@@ -355,7 +352,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Inline embed (popup/slide-in/float) | 📅 | Pro 2.0 |
 | Form templates library | ✅ shipped (Free/Lite) | Full categorized library + one-click import already in Lite; only **premium packs** remain 📅 Pro 2.0 |
 | RTL support | ⏸ Parked | polish only |
-| Custom thank-you page | 📅 | Pro 1.2 (basic redirect + custom message ✅ free in Lite; adds merge-tag personalization) |
+| Custom thank-you page | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — merge tags in the confirmation; basic redirect + custom message ✅ already free in Lite |
 | Heatmap / drop-off | ⏸ (heatmap parked) | drop-off = abandonment 📅 Pro 1.2 |
 | A/B testing | 📅 | Pro 2.0 |
 | UTM / source tracking | 📅 | Pro 1.2 (marketing tracking) |
@@ -367,7 +364,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | REST API endpoints | 📅 | Pro 2.0 (developer tools) |
 | CLI commands | 📅 | Pro 2.0 (developer tools) |
 
-**Score:** of ~58 brainstormed items, **~9 already ship**, **6 are newly added** to the plan, **~5 are parked/deferred**, and the rest were already on the roadmap.
+**Score (re-counted 2026-07-16):** of ~59 items, **~19 are released** (was ~9 when this table was written — Pro 1.0.0 and 1.1.0 landed in between), **3 more are built and awaiting release** (the Pro 1.1.1 trio: custom email editor, entry approval, custom thank-you), **~5 are parked/deferred**, and the rest remain planned. The 📅 rows left are genuinely not built: conditional email routing, PDF attachment, email confirmation, abandonment tracking, marketing/UTM tracking, scheduled export, conditional logic on pages, custom entry statuses, coupons/tax/multi-currency, and the Pro 2.0 + flagship set.
 
 ---
 
