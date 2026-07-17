@@ -2,12 +2,12 @@
 /**
  * Plugin Name:       BoldForm Lite
  * Description:       Lightweight drag and drop form builder for WordPress.
- * Version:           1.1.4
+ * Version:           1.1.5
  * Requires at least: 6.3
  * Tested up to:      7.0
  * Requires PHP:      7.4
- * Author:      Themewant
- * Author URI:  http://themewant.com/
+ * Author:            Themewant
+ * Author URI:        http://themewant.com/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       boldform-lite
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BOLDFORM_LITE_VERSION', '1.1.4' );
+define( 'BOLDFORM_LITE_VERSION', '1.1.5' );
 define( 'BOLDFORM_LITE_DB_VERSION', '1.1.3' );
 define( 'BOLDFORM_LITE_FILE', __FILE__ );
 define( 'BOLDFORM_LITE_PATH', plugin_dir_path( __FILE__ ) );
@@ -85,8 +85,8 @@ function boldform_lite_migrate_settings_autoload() {
 add_action( 'admin_init', 'boldform_lite_migrate_settings_autoload' );
 
 // Multisite: create tables for each new subsite when the plugin is network-active.
-add_action( 'wp_initialize_site', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // WP 5.1+
-add_action( 'wpmu_new_blog',      array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // legacy fallback
+add_action( 'wp_initialize_site', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // WP 5.1+.
+add_action( 'wpmu_new_blog',      array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // Legacy fallback.
 
 /**
  * Starts the plugin.

@@ -411,7 +411,7 @@ class BoldForm_Lite_Export_Import {
 			if (
 				'uninstall_data' === $setting_key
 				|| 0 === strpos( $setting_key, 'smtp_' )
-				// Substring matches for credential-like names anywhere in the key…
+				// Substring matches for credential-like names anywhere in the key.
 				|| preg_match( '/(password|secret|token|credential|oauth|client_id|client_secret|api[_-]?key|apikey)/i', $setting_key )
 				// …plus common credential suffixes (e.g. *_key, *_secret, *_token, *_auth).
 				|| preg_match( '/_(key|secret|token|auth)$/i', $setting_key )
@@ -521,8 +521,8 @@ class BoldForm_Lite_Export_Import {
 				continue;
 			}
 
-			$bytes = $this->sanitize_svg_markup( $bytes );
-			if ( '' === $bytes ) {
+			$bytes = BoldForm_Lite_Svg_Sanitizer::sanitize( $bytes );
+			if ( null === $bytes ) {
 				continue;
 			}
 
@@ -541,64 +541,6 @@ class BoldForm_Lite_Export_Import {
 		}
 
 		return $map;
-	}
-
-	/**
-	 * Strips active content (script elements, on* event handlers, javascript: hrefs)
-	 * from SVG markup so a restored icon file cannot execute if opened directly.
-	 *
-	 * @param string $svg Raw SVG markup.
-	 * @return string Sanitized SVG, or '' when the input is not a valid <svg> document.
-	 */
-	private function sanitize_svg_markup( $svg ) {
-		if ( ! class_exists( 'DOMDocument' ) ) {
-			return '';
-		}
-
-		$dom = new \DOMDocument();
-		libxml_use_internal_errors( true );
-		// LIBXML_NONET blocks network access; entities are not expanded (no NOENT).
-		$loaded = $dom->loadXML( $svg, LIBXML_NONET );
-		libxml_clear_errors();
-
-		if ( ! $loaded || ! $dom->documentElement || 'svg' !== strtolower( $dom->documentElement->nodeName ) ) {
-			return '';
-		}
-
-		// Remove every <script> element (iterate backwards over the live list).
-		$scripts = $dom->getElementsByTagName( 'script' );
-		for ( $i = $scripts->length - 1; $i >= 0; $i-- ) {
-			$node = $scripts->item( $i );
-			if ( $node && $node->parentNode ) {
-				$node->parentNode->removeChild( $node );
-			}
-		}
-
-		// Strip event-handler attributes and javascript: hrefs from every element.
-		$xpath = new \DOMXPath( $dom );
-		$nodes = $xpath->query( '//*' );
-		if ( $nodes ) {
-			foreach ( $nodes as $el ) {
-				if ( ! $el->attributes ) {
-					continue;
-				}
-				for ( $j = $el->attributes->length - 1; $j >= 0; $j-- ) {
-					$attr  = $el->attributes->item( $j );
-					$aname = strtolower( $attr->nodeName );
-					$aval  = trim( (string) $attr->nodeValue );
-					if (
-						0 === strpos( $aname, 'on' )
-						|| ( in_array( $aname, array( 'href', 'xlink:href' ), true ) && 0 === stripos( $aval, 'javascript:' ) )
-					) {
-						$el->removeAttribute( $attr->nodeName );
-					}
-				}
-			}
-		}
-
-		$out = $dom->saveXML( $dom->documentElement );
-
-		return is_string( $out ) ? $out : '';
 	}
 
 	/**

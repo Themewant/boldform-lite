@@ -1,14 +1,14 @@
 === BoldForm - Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms ===
-Contributors: themewant, maha25
+Contributors: themewant, maha25, alkesh7
 Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Lightweight drag-and-drop WordPress form builder — contact forms and more with a shortcode, Gutenberg block, Elementor widget, and email integrations.
+Lightweight drag-and-drop form builder for contact forms, surveys & multi-step forms — Gutenberg, Elementor & built-in spam protection.
 
 == Description ==
 
@@ -325,6 +325,15 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.5 =
+Security:
+* Fix: The settings/form import path used its own, weaker SVG sanitizer than the media-library upload path — it did not strip `<foreignObject>`, `<style>` (CSS exfiltration), or SMIL animation elements. Both paths now share the same, fully-hardened sanitizer, so a booby-trapped import file can no longer plant an SVG that executes active content when opened directly.
+
+Maintenance:
+* Update: Confirmed compatibility with WordPress 7.0.
+* Update: Aligned plugin-header field formatting.
+* Update: Coding-standards cleanup — added missing docblocks and parameter documentation, fixed a couple of Yoda-condition and count()-in-loop lint findings, and annotated a few intentional exceptions (a native-DOM property naming false positive, a documented global-title override) with justified `phpcs:ignore` comments. No behavior changes.
+
 = 1.1.4 =
 New features:
 * New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
@@ -510,6 +519,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.5 =
+Security fix: the settings/form import path now uses the same fully-hardened SVG sanitizer as the media upload path, closing a gap where a crafted import file could plant an SVG with active content. Also confirms WordPress 7.0 compatibility. Recommended for all users.
 
 = 1.1.4 =
 Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, a new BoldForm logo across the admin, and new entries-list and email extension hooks for add-ons. Recommended for all users.

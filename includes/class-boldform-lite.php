@@ -136,7 +136,7 @@ final class BoldForm_Lite {
 	/**
 	 * Prevent unserialize.
 	 *
-	 * @throws Exception Always throws because the plugin uses a singleton.
+	 * @throws \Exception Always throws because the plugin uses a singleton.
 	 */
 	public function __wakeup() {
 		throw new \Exception( 'Cannot unserialize singleton.' );
@@ -148,6 +148,7 @@ final class BoldForm_Lite {
 	 * @return void
 	 */
 	private function load_dependencies() {
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-svg-sanitizer.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-admin.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-shortcode.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-form-handler.php';

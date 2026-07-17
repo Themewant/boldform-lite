@@ -211,7 +211,9 @@ class BoldForm_Lite_Privacy {
 					);
 				}
 			}
-		} while ( count( $entries ) === self::PER_PAGE );
+
+			$entries_count = count( $entries );
+		} while ( self::PER_PAGE === $entries_count );
 
 		return array(
 			'items_removed'  => $items_removed,

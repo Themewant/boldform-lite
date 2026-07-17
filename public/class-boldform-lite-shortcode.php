@@ -202,8 +202,8 @@ class BoldForm_Lite_Shortcode {
 
 		// Attach the localized data at registration time so the `boldformLiteFrontend` object
 		// is always printed alongside the script — independent of when render() enqueues it.
-		// (Block/FSE themes can render the_content in a context where a render-time localize
-		// is dropped, leaving boldformLiteFrontend undefined and breaking AJAX submit.)
+		// Block/FSE themes can render the_content in a context where a render-time localize
+		// is dropped, leaving boldformLiteFrontend undefined and breaking AJAX submit.
 		$this->localize_frontend_script();
 
 		/**
@@ -1357,15 +1357,6 @@ class BoldForm_Lite_Shortcode {
 	}
 
 	/**
-	 * Returns the allowed HTML tags and attributes for form field output.
-	 *
-	 * Used with wp_kses() when echoing render_field() or filtered field HTML
-	 * to satisfy WordPress.org escaping requirements while preserving all
-	 * necessary form elements (input, select, textarea, svg, etc.).
-	 *
-	 * @return array<string, array<string, bool>>
-	 */
-	/**
 	 * Renders a BoldForm custom dropdown: the hidden native <select> (for submit)
 	 * plus the `.bf-select` widget markup that Lite's frontend JS upgrades.
 	 *
@@ -1376,6 +1367,8 @@ class BoldForm_Lite_Shortcode {
 	 * emit, so it must be echoed through the same `get_field_kses_allowed()` allowlist.
 	 *
 	 * @param array<string, mixed> $args {
+	 *     Dropdown arguments.
+	 *
 	 *     @type string       $id          Element id for the native <select>.
 	 *     @type string       $name        Submit name (without trailing []; added when multiple).
 	 *     @type array|string $options     Option values (trimmed; empties dropped).
@@ -1563,6 +1556,15 @@ class BoldForm_Lite_Shortcode {
 		return $html;
 	}
 
+	/**
+	 * Returns the allowed HTML tags and attributes for form field output.
+	 *
+	 * Used with wp_kses() when echoing render_field() or filtered field HTML
+	 * to satisfy WordPress.org escaping requirements while preserving all
+	 * necessary form elements (input, select, textarea, svg, etc.).
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
 	private function get_field_kses_allowed() {
 		$global_attrs = array(
 			'id'               => true,

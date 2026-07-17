@@ -1630,9 +1630,10 @@ class BoldForm_Lite_Form_Handler {
 	/**
 	 * Builds a normalized operation result.
 	 *
-	 * @param bool                       $success Whether the operation succeeded.
-	 * @param string                     $message Result message.
-	 * @param array<string, string>      $errors  Validation errors.
+	 * @param bool                  $success      Whether the operation succeeded.
+	 * @param string                $message      Result message.
+	 * @param array<string, string> $errors       Validation errors.
+	 * @param string                $redirect_url Optional redirect URL on success.
 	 * @return array<string, mixed>
 	 */
 	private function build_result( $success, $message, $errors, $redirect_url = '' ) {

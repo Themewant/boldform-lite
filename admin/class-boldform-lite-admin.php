@@ -409,7 +409,7 @@ class BoldForm_Lite_Admin {
 	public function set_preview_title() {
 		global $title;
 
-		$title = __( 'Preview Form', 'boldform-lite' );
+		$title = __( 'Preview Form', 'boldform-lite' ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standard WP admin pattern for setting a hidden page's title before it renders.
 	}
 
 	/**
@@ -509,7 +509,7 @@ class BoldForm_Lite_Admin {
 			return $file;
 		}
 
-		$clean = $this->sanitize_svg_markup( $markup );
+		$clean = BoldForm_Lite_Svg_Sanitizer::sanitize( $markup );
 
 		if ( null === $clean ) {
 			$file['error'] = __( 'This SVG could not be sanitized and was rejected for security reasons.', 'boldform-lite' );
@@ -520,166 +520,6 @@ class BoldForm_Lite_Admin {
 		file_put_contents( $tmp, $clean );
 
 		return $file;
-	}
-
-	/**
-	 * Strips script-bearing content from SVG markup.
-	 *
-	 * Removes dangerous elements (script/foreignObject/etc.), all on* event-handler
-	 * attributes, javascript:/vbscript: in href-like attributes, and DOCTYPE/ENTITY
-	 * declarations. Returns the cleaned SVG string, or null if the input is not a
-	 * parseable SVG (caller rejects the upload in that case).
-	 *
-	 * @param string $svg Raw SVG markup.
-	 * @return string|null Cleaned markup, or null on failure.
-	 */
-	private function sanitize_svg_markup( $svg ) {
-		$svg = trim( (string) $svg );
-
-		if ( '' === $svg || ! class_exists( 'DOMDocument' ) ) {
-			return null;
-		}
-
-		// Drop DOCTYPE/ENTITY declarations (XXE / entity-expansion) before parsing.
-		$svg = preg_replace( '/<!DOCTYPE.*?>/is', '', $svg );
-		$svg = preg_replace( '/<!ENTITY[^>]*>/i', '', (string) $svg );
-
-		$dom                     = new DOMDocument();
-		$dom->preserveWhiteSpace = false;
-		$dom->formatOutput       = false;
-
-		$libxml_prev = libxml_use_internal_errors( true );
-
-		// PHP < 8.0: explicitly disable external entity loading (default-safe on 8.0+/libxml 2.9+).
-		$entity_prev = null;
-		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			$entity_prev = libxml_disable_entity_loader( true );
-		}
-
-		$loaded = $dom->loadXML( (string) $svg, LIBXML_NONET );
-
-		if ( null !== $entity_prev ) {
-			libxml_disable_entity_loader( $entity_prev );
-		}
-		libxml_clear_errors();
-		libxml_use_internal_errors( $libxml_prev );
-
-		if ( ! $loaded || ! $dom->documentElement || 'svg' !== strtolower( $dom->documentElement->nodeName ) ) {
-			return null;
-		}
-
-		// Dangerous elements removed wholesale. Matched case-INSENSITIVELY on the local
-		// name because SVG/XML is case-sensitive (e.g. <foreignObject>, <animateMotion>),
-		// so a tag-name match must normalize case rather than rely on getElementsByTagName.
-		$dangerous_tags = array(
-			'script',
-			'foreignobject',
-			'iframe',
-			'embed',
-			'object',
-			'audio',
-			'video',
-			'handler',
-			'listener',
-			'set',
-			'animate',
-			'animatemotion',
-			'animatetransform',
-			'style', // CSS can exfiltrate via @import / url(); strip the whole block.
-		);
-
-		$href_attrs = array( 'href', 'xlink:href', 'src', 'from', 'to', 'values', 'by' );
-
-		// Single pass over every element: collect first (removal mutates the live list).
-		$xpath    = new DOMXPath( $dom );
-		$node_list = $xpath->query( '//*' );
-		$elements  = array();
-
-		if ( $node_list ) {
-			foreach ( $node_list as $el ) {
-				$elements[] = $el;
-			}
-		}
-
-		foreach ( $elements as $el ) {
-			$local = strtolower( $el->localName ? $el->localName : $el->nodeName );
-
-			if ( in_array( $local, $dangerous_tags, true ) ) {
-				if ( $el->parentNode ) {
-					$el->parentNode->removeChild( $el );
-				}
-				continue;
-			}
-
-			if ( ! $el->attributes ) {
-				continue;
-			}
-
-			$remove = array();
-
-			foreach ( $el->attributes as $attr ) {
-				$attr_name = strtolower( $attr->nodeName );
-				$attr_val  = (string) $attr->nodeValue;
-
-				if ( 0 === strpos( $attr_name, 'on' ) ) {
-					$remove[] = $attr;
-				} elseif ( in_array( $attr_name, $href_attrs, true ) && $this->svg_href_is_unsafe( $attr_val ) ) {
-					$remove[] = $attr;
-				} elseif ( 'style' === $attr_name && preg_match( '/expression\s*\(|url\s*\(|@import|javascript\s*:|vbscript\s*:/i', $attr_val ) ) {
-					$remove[] = $attr;
-				}
-			}
-
-			foreach ( $remove as $attr ) {
-				$el->removeAttributeNode( $attr );
-			}
-		}
-
-		$clean = $dom->saveXML( $dom->documentElement );
-
-		if ( false === $clean || '' === trim( (string) $clean ) ) {
-			return null;
-		}
-
-		return '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . $clean;
-	}
-
-	/**
-	 * Determines whether an SVG href/src-like value is unsafe.
-	 *
-	 * Normalizes the value (decodes entities, strips whitespace and control chars)
-	 * so obfuscated schemes like "java&#9;script:" are caught, then rejects
-	 * executable schemes, non-image data: URIs, and external/protocol-relative
-	 * references (which can fetch remote content or exfiltrate). Internal fragment
-	 * references (#id), relative paths, and safe base64 raster images are allowed.
-	 *
-	 * @param string $value Raw attribute value.
-	 * @return bool True if the reference is unsafe and should be stripped.
-	 */
-	private function svg_href_is_unsafe( $value ) {
-		$normalized = html_entity_decode( (string) $value, ENT_QUOTES, 'UTF-8' );
-		$normalized = preg_replace( '/[\s\x00-\x20]+/', '', (string) $normalized );
-		$normalized = strtolower( (string) $normalized );
-
-		if ( '' === $normalized || '#' === $normalized[0] ) {
-			return false;
-		}
-
-		if ( preg_match( '#^(javascript|vbscript|mocha|livescript):#', $normalized ) ) {
-			return true;
-		}
-
-		if ( 0 === strpos( $normalized, 'data:' ) ) {
-			// Allow only safe base64 raster images; reject data:text/html, data:image/svg+xml, etc.
-			return ! preg_match( '#^data:image/(png|jpe?g|gif|webp);base64,#', $normalized );
-		}
-
-		// Block external and protocol-relative references.
-		if ( preg_match( '#^(https?:)?//#', $normalized ) ) {
-			return true;
-		}
-
-		return false;
 	}
 
 	/**
@@ -4336,8 +4176,9 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Returns paginated entries.
 	 *
-	 * @param int $page     Current page.
-	 * @param int $per_page Items per page.
+	 * @param int                  $page     Current page.
+	 * @param int                  $per_page Items per page.
+	 * @param array<string, mixed> $filters  Query filters. See build_entries_where().
 	 * @return array<int, object>
 	 */
 	private function get_entries( $page, $per_page, $filters = array() ) {
@@ -4984,8 +4825,9 @@ class BoldForm_Lite_Admin {
 				}
 			}
 
-			$offset += $batch_size;
-		} while ( count( $batch ) === $batch_size );
+			$batch_count = count( $batch );
+			$offset     += $batch_size;
+		} while ( $batch_count === $batch_size );
 
 		call_user_func( $on_columns, $columns );
 
@@ -5036,8 +4878,9 @@ class BoldForm_Lite_Admin {
 				);
 			}
 
-			$offset += $batch_size;
-		} while ( count( $batch ) === $batch_size );
+			$batch_count = count( $batch );
+			$offset     += $batch_size;
+		} while ( $batch_count === $batch_size );
 	}
 
 	/**
@@ -5062,6 +4905,7 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Returns total entries count.
 	 *
+	 * @param array<string, mixed> $filters Query filters. See build_entries_where().
 	 * @return int
 	 */
 	private function get_entries_count( $filters = array() ) {

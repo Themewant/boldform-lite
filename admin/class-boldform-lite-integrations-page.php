@@ -28,7 +28,7 @@ class BoldForm_Lite_Integrations_Page {
 	private $plugin;
 
 	/**
-	 * wp_options key for global connections.
+	 * The wp_options key for global connections.
 	 */
 	const OPTION_KEY = 'boldform_connections';
 
@@ -166,7 +166,7 @@ class BoldForm_Lite_Integrations_Page {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'boldform_integration_nonce' ),
-				'connections' => (object) $connections, // keyed by conn_id; api_key stripped
+				'connections' => (object) $connections, // Keyed by conn_id; api_key stripped.
 				'typeDefs'    => array_values( $this->get_type_defs() ),
 				'i18n'        => array(
 					'save'           => __( 'Save', 'boldform-lite' ),
@@ -418,7 +418,11 @@ class BoldForm_Lite_Integrations_Page {
 	// Connection CRUD
 	// =====================================================================
 
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Returns every stored connection, keyed by connection ID.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
 	public function get_all_connections(): array {
 		$raw = get_option( self::OPTION_KEY, array() );
 		return is_array( $raw ) ? $raw : array();
@@ -458,13 +462,23 @@ class BoldForm_Lite_Integrations_Page {
 		return $conn;
 	}
 
-	/** @return array<string, mixed>|null */
+	/**
+	 * Returns a single stored connection by ID.
+	 *
+	 * @param string $id Connection ID.
+	 * @return array<string, mixed>|null
+	 */
 	public function get_connection( string $id ): ?array {
 		$all = $this->get_all_connections();
 		return $all[ $id ] ?? null;
 	}
 
-	/** @return string Connection ID. */
+	/**
+	 * Creates or updates a connection from submitted data.
+	 *
+	 * @param array<string, mixed> $data Raw connection data.
+	 * @return string Connection ID.
+	 */
 	public function upsert_connection( array $data ): string {
 		$all  = $this->get_all_connections();
 		$id   = ! empty( $data['id'] ) ? sanitize_key( (string) $data['id'] ) : 'conn_' . wp_generate_uuid4();
@@ -492,7 +506,12 @@ class BoldForm_Lite_Integrations_Page {
 		return $id;
 	}
 
-	/** @return void */
+	/**
+	 * Deletes a stored connection by ID.
+	 *
+	 * @param string $id Connection ID.
+	 * @return void
+	 */
 	public function delete_connection( string $id ): void {
 		$all = $this->get_all_connections();
 		unset( $all[ $id ] );
@@ -521,9 +540,13 @@ class BoldForm_Lite_Integrations_Page {
 	// Type definitions
 	// =====================================================================
 
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Returns the static definitions for every integration type, memoized after first call.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
 	public function get_type_defs(): array {
-		if ( self::$type_defs !== null ) {
+		if ( null !== self::$type_defs ) {
 			return self::$type_defs;
 		}
 
@@ -561,6 +584,7 @@ class BoldForm_Lite_Integrations_Page {
 				),
 			),
 			// Additional types — shown as static cards. Pro replaces with functional entries via filter.
+
 			// ── Newsletter ──
 			'activecampaign' => array(
 				'type'       => 'activecampaign',
@@ -1102,6 +1126,9 @@ class BoldForm_Lite_Integrations_Page {
 	/**
 	 * Dispatches list-fetch to the correct handler.
 	 *
+	 * @param string               $type    Connection type, e.g. 'mailchimp', 'brevo'.
+	 * @param string               $api_key API key for the connection.
+	 * @param array<string, mixed> $extra   Full connection config, passed through to add-on handlers.
 	 * @return array|WP_Error|null
 	 */
 	public function fetch_lists_for_type( string $type, string $api_key, array $extra = array() ) {
@@ -1138,6 +1165,12 @@ class BoldForm_Lite_Integrations_Page {
 		return '';
 	}
 
+	/**
+	 * Fetches the Mailchimp audiences (lists) available to the given API key.
+	 *
+	 * @param string $api_key Mailchimp API key.
+	 * @return array<int, array<string, string>>|WP_Error
+	 */
 	private function fetch_mailchimp_lists( string $api_key ) {
 		$api_key = trim( $api_key );
 		$dc      = self::mailchimp_datacenter( $api_key );
@@ -1161,13 +1194,19 @@ class BoldForm_Lite_Integrations_Page {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $code !== 200 || ! isset( $body['lists'] ) ) {
+		if ( 200 !== $code || ! isset( $body['lists'] ) ) {
 			return new WP_Error( 'mailchimp_error', $body['detail'] ?? __( 'Invalid API key.', 'boldform-lite' ) );
 		}
 
 		return array_map( fn( $l ) => array( 'id' => (string) $l['id'], 'name' => (string) $l['name'] ), (array) $body['lists'] );
 	}
 
+	/**
+	 * Fetches the Brevo contact lists available to the given API key.
+	 *
+	 * @param string $api_key Brevo API key.
+	 * @return array<int, array<string, string>>|WP_Error
+	 */
 	private function fetch_brevo_lists( string $api_key ) {
 		$response = wp_remote_get(
 			'https://api.brevo.com/v3/contacts/lists?limit=50&offset=0',
@@ -1182,7 +1221,7 @@ class BoldForm_Lite_Integrations_Page {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $code !== 200 || ! isset( $body['lists'] ) ) {
+		if ( 200 !== $code || ! isset( $body['lists'] ) ) {
 			return new WP_Error( 'brevo_error', $body['message'] ?? __( 'Invalid API key.', 'boldform-lite' ) );
 		}
 

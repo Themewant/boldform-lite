@@ -91,7 +91,7 @@ class BoldForm_Lite_Integrations {
 			array_filter( array_map( 'sanitize_key', $raw_ids ) )
 		);
 
-		// Field mapping per connection: { conn_id: { email, fname, lname } }
+		// Field mapping per connection: { conn_id: { email, fname, lname } }.
 		$raw_map = isset( $settings_payload['connection_field_map'] ) && is_array( $settings_payload['connection_field_map'] )
 			? $settings_payload['connection_field_map']
 			: array();
