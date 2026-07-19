@@ -583,7 +583,7 @@ names a build that lacks a seam it actually has.</p>
 }</code></pre>
 <p>The <code>method_exists()</code> guard matters &mdash; on a BoldForm older than 1.1.5 the method itself is absent,
 which correctly reads as "no capabilities". Capability names are permanent once published.</p>
-<p>Capabilities in this release: <code>admin_email_attachments</code>.</p>
+<p>Capabilities in this release: <code>admin_email_attachments</code>, <code>user_email_attachments</code>.</p>
 
 <h3>Admin notification: attachments <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
 <p>Add files to the admin notification &mdash; a generated PDF of the submission, an invoice, a copy of a contract.
@@ -607,8 +607,12 @@ path from submitted data (or is simply buggy) could otherwise mail out <code>wp-
 files under <code>wp_get_upload_dir()['basedir']</code> &mdash; ideally a subdirectory of your own with a deny-all
 <code>.htaccess</code>, since uploads is web-readable &mdash; and delete them on
 <code>boldform_after_notifications</code> once the mail has gone.</p>
-<p>Note this filter covers the <strong>admin notification only</strong>. The user confirmation email does not carry
-attachments.</p>
+<p>The same filter exists for the user confirmation &mdash; <code>boldform_lite_user_email_attachments</code>, which
+passes <code>$user_email</code> before <code>$entry_id</code> (five arguments). Its list starts <strong>empty</strong>
+rather than inheriting the visitor's uploads, so add whatever you need explicitly.</p>
+<p><strong>Think before attaching there.</strong> That email goes to an address a stranger typed into a public form, so
+whatever rides along is delivered to whoever owns that address &mdash; including when it was mistyped. The admin
+notification goes to a known inbox; this one does not.</p>
 
 <h3>User confirmation: subject &amp; content</h3>
 <p>The user confirmation email is sent to the address auto-detected from an email field in the

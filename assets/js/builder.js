@@ -3489,6 +3489,15 @@ jQuery(
 							'<span class="boldform-switch__slider"></span>' +
 						'</label>' +
 					'</div>' +
+					// A slot for what rides along with the user confirmation. Mirrors the
+					// admin block: inside the enabled branch, because there is no sense
+					// configuring what to attach to an email that is switched off.
+					( state.formSettings.enable_user_email
+						? '<div class="bfsп-email-block__body">' +
+							'<div class="boldform-email-attachment-slot" data-email-slot="user"></div>' +
+						'</div>'
+						: ''
+					) +
 					// Pro extension slot for the user confirmation email.
 					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';

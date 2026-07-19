@@ -319,8 +319,15 @@ final class BoldForm_Lite {
 		$capabilities = array(
 			// The admin notification's attachment list is filterable
 			// (boldform_lite_admin_email_attachments) and the builder renders
-			// .boldform-email-attachment-slot.
+			// .boldform-email-attachment-slot[data-email-slot="admin"].
 			'admin_email_attachments' => true,
+
+			// The same for the user confirmation
+			// (boldform_lite_user_email_attachments, and the slot with
+			// data-email-slot="user"). Separate from the admin capability because
+			// the two shipped apart: an add-on may need to support a build that
+			// has one and not the other.
+			'user_email_attachments'  => true,
 		);
 
 		return ! empty( $capabilities[ (string) $capability ] );

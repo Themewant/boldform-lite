@@ -251,12 +251,13 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Sends user confirmation email if an email field was submitted.
 	 *
-	 * @param object                           $form_record Form record.
-	 * @param array<string, array<string,mixed>> $entry_data Entry data.
-	 * @param int                              $entry_id Saved entry ID (0 if unknown).
+	 * @param object                             $form_record Form record.
+	 * @param array<string, array<string,mixed>> $entry_data  Entry data.
+	 * @param int                                $entry_id    Saved entry ID (0 if unknown).
+	 * @param array<int, string>                 $attachments File paths to attach.
 	 * @return void
 	 */
-	private function send_user_email( $form_record, $entry_data, $entry_id = 0 ) {
+	private function send_user_email( $form_record, $entry_data, $entry_id = 0, $attachments = array() ) {
 		$user_email = $this->detect_user_email( $entry_data );
 
 		if ( ! $user_email ) {
@@ -308,7 +309,44 @@ class BoldForm_Lite_Email_Handler {
 			(int) $entry_id
 		);
 
-		wp_mail( $user_email, $subject, $message, $headers );
+		/**
+		 * Filter the files attached to the user confirmation.
+		 *
+		 * The counterpart to `boldform_lite_admin_email_attachments`, for sending
+		 * the submitter their own copy of what they filed — a quote, an
+		 * application, a booking.
+		 *
+		 * Consider carefully what you attach here. This email goes to an address a
+		 * stranger typed into a public form, so whatever rides along is delivered
+		 * to whoever owns that address — including when it was mistyped. The admin
+		 * notification goes to a known inbox; this one does not.
+		 *
+		 * The list starts EMPTY rather than carrying the visitor's uploads. Mailing
+		 * someone their own upload back is rarely wanted and occasionally harmful
+		 * (it doubles the delivery of a file that may be large or sensitive), so an
+		 * add-on has to ask for anything explicitly.
+		 *
+		 * Paths are re-validated exactly as on the admin side: real, readable, and
+		 * inside the uploads directory.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param array<int, string>   $attachments Absolute file paths.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param string               $user_email  Detected recipient.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$attachments = apply_filters(
+			'boldform_lite_user_email_attachments',
+			(array) $attachments,
+			$form_record,
+			$entry_data,
+			$user_email,
+			(int) $entry_id
+		);
+
+		wp_mail( $user_email, $subject, $message, $headers, self::valid_attachments( $attachments ) );
 	}
 
 	/**
