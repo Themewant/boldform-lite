@@ -117,6 +117,42 @@ class BoldForm_Lite_Email_Handler {
 			$to = sanitize_email( (string) $settings['admin_email'] );
 		}
 
+		/**
+		 * Filter the admin-notification recipient, after the form's own settings
+		 * have been applied.
+		 *
+		 * Lets an add-on route the notification somewhere else based on what was
+		 * submitted — e.g. sending a "Sales" enquiry to a different inbox than a
+		 * "Support" one. Return a single address, or several separated by commas.
+		 *
+		 * A filtered value is only used when it survives the same validation the
+		 * built-in settings get; anything that yields no valid address falls back
+		 * to the recipient resolved above, so a notification is never lost.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param string               $to          Resolved recipient address.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$filtered_to = apply_filters(
+			'boldform_lite_admin_email_to',
+			$to,
+			$form_record,
+			$entry_data,
+			(int) $entry_id
+		);
+
+		// Re-validate rather than trust: a filter is add-on input, and an invalid or
+		// header-injecting value must never reach wp_mail(). A list that yields
+		// nothing usable leaves $to exactly as it was.
+		$valid_to = self::valid_addresses( $filtered_to );
+
+		if ( ! empty( $valid_to ) ) {
+			$to = implode( ', ', array_unique( $valid_to ) );
+		}
+
 		$subject = apply_filters(
 			'boldform_lite_admin_email_subject',
 			sprintf(
@@ -159,7 +195,94 @@ class BoldForm_Lite_Email_Handler {
 			(int) $entry_id
 		);
 
-		wp_mail( sanitize_email( $to ), $subject, $message, $headers, $attachments );
+		// Cc/Bcc added by a filter carry the same risk as the recipient, and a
+		// third-party add-on cannot be assumed to have validated them. Rebuild those
+		// header lines from validated addresses, and drop any that survive with none.
+		$headers = self::sanitize_address_headers( $headers );
+
+		// $to may now hold a comma-separated list, and sanitize_email() applied to a
+		// whole list would mangle it into one invalid address — so validate per
+		// address. A single-address $to comes through exactly as it always did.
+		$recipients = self::valid_addresses( $to );
+
+		wp_mail( implode( ', ', $recipients ), $subject, $message, $headers, $attachments );
+	}
+
+	/**
+	 * Splits a recipient string into individually validated addresses.
+	 *
+	 * Two rules, both deliberate:
+	 *
+	 *  1. A candidate containing CR/LF is discarded, not cleaned. It is a header
+	 *     injection attempt and there is no legitimate reading of it.
+	 *  2. A candidate must survive sanitize_email() UNCHANGED. That function
+	 *     repairs rather than rejects, so "a@evil.com\nBcc: v@x.com" would be
+	 *     tidied into the perfectly valid-looking "a@evil.comBccvx.com" — an
+	 *     address nobody configured, that mail would really be delivered to. A
+	 *     genuine address loses nothing to sanitizing, so "unchanged" cleanly
+	 *     separates a real address from a mangled one.
+	 *
+	 * Note this rejects the display-name form ("Sales <sales@example.com>"), which
+	 * sanitize_email() rewrites. Addresses only.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param string $list One address, or several separated by commas.
+	 * @return array<int, string> Valid addresses, possibly empty.
+	 */
+	private static function valid_addresses( $list ) {
+		$valid = array();
+
+		foreach ( explode( ',', (string) $list ) as $candidate ) {
+			$candidate = trim( $candidate );
+
+			if ( '' === $candidate || preg_match( '/[\r\n]/', $candidate ) ) {
+				continue;
+			}
+
+			$sanitized = sanitize_email( $candidate );
+
+			if ( '' !== $sanitized && $sanitized === $candidate && is_email( $sanitized ) ) {
+				$valid[] = $sanitized;
+			}
+		}
+
+		return array_values( array_unique( $valid ) );
+	}
+
+	/**
+	 * Re-validates the address lists inside Cc / Bcc headers.
+	 *
+	 * The headers filter is an open extension point, so its Cc/Bcc values are
+	 * add-on input exactly like the recipient is — and an add-on building one from
+	 * submitted data may not have applied the checks above. Every other header is
+	 * passed through untouched.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param array<int, string> $headers wp_mail headers.
+	 * @return array<int, string>
+	 */
+	private static function sanitize_address_headers( $headers ) {
+		$clean = array();
+
+		foreach ( (array) $headers as $header ) {
+			$header = (string) $header;
+
+			if ( ! preg_match( '/^\s*(cc|bcc)\s*:(.*)$/is', $header, $matches ) ) {
+				$clean[] = $header;
+				continue;
+			}
+
+			$addresses = self::valid_addresses( $matches[2] );
+
+			// A Cc/Bcc that validates to nothing is dropped rather than emitted empty.
+			if ( ! empty( $addresses ) ) {
+				$clean[] = ucfirst( strtolower( $matches[1] ) ) . ': ' . implode( ', ', $addresses );
+			}
+		}
+
+		return $clean;
 	}
 
 	/**

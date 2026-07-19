@@ -1085,7 +1085,18 @@ class BoldForm_Lite_Form_Handler {
 
 			// A provided-but-malformed email would otherwise be blanked by sanitize_email()
 			// and reported as "required" (or silently saved empty). Flag it as invalid instead.
-			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw ) && ( '' === $value || ! is_email( (string) $value ) ) ) {
+			//
+			// The third clause covers the opposite failure, which is worse than blanking:
+			// sanitize_email() REPAIRS as readily as it blanks. "a@b.com\nBcc: x@y.com"
+			// comes back as the perfectly is_email()-valid "a@b.comBccxy.com", so without
+			// this the submission is accepted and a DIFFERENT address than the visitor
+			// typed is stored — one that can later be mailed (a merge tag pointing at the
+			// field, say). Requiring the value to survive sanitizing unchanged rejects
+			// anything carrying characters an address cannot contain, while leaving every
+			// real address untouched — verified against the usual awkward-but-valid forms
+			// (plus-tags, subdomains, mixed case, leading/trailing spaces).
+			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw )
+				&& ( '' === $value || ! is_email( (string) $value ) || (string) $value !== trim( (string) $raw ) ) ) {
 				$errors[ $field_id ] = sprintf(
 					/* translators: %s: field label */
 					__( '%s must be a valid email address.', 'boldform-lite' ),

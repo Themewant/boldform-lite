@@ -3463,6 +3463,16 @@ jQuery(
 								'</div>'
 								: ''
 							) +
+							// A slot for who the admin notification goes to (e.g.
+							// Conditional Email Routing). Kept distinct from the content
+							// slot below so two add-ons can fill the same email block
+							// without one overwriting the other, and left empty — no
+							// teaser — so an add-on that is absent leaves no gap.
+							//
+							// Inside this branch on purpose: there is no sense
+							// configuring who an email goes to while that email is
+							// switched off.
+							'<div class="boldform-email-routing-slot" data-email-slot="admin"></div>' +
 						'</div>'
 						: ''
 					) +

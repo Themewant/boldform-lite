@@ -573,6 +573,31 @@ add_filter( 'boldform_lite_admin_email_content', function( $message, $form_recor
     return $message;
 }, 10, 3 );</code></pre>
 
+<h3>Admin notification: recipient <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
+<p>Choose who the admin notification goes to, after the form's own settings have been applied &mdash; so a
+submission can be routed to different people based on what was answered. Return a single address, or several
+separated by commas.</p>
+<pre><code>// Route "Sales" enquiries to a different inbox.
+add_filter( 'boldform_lite_admin_email_to', function( $to, $form_record, $entry_data, $entry_id ) {
+    foreach ( $entry_data as $field ) {
+        if ( 'Department' === $field['label'] &amp;&amp; 'Sales' === $field['value'] ) {
+            return 'sales@example.com, manager@example.com';
+        }
+    }
+    return $to;
+}, 10, 4 );</code></pre>
+<p><strong>Whatever you return is re-validated before it is used.</strong> Each address must pass
+<code>is_email()</code> <em>and</em> survive <code>sanitize_email()</code> unchanged; any candidate containing
+CR/LF is discarded outright rather than cleaned up. That second rule matters because
+<code>sanitize_email()</code> repairs as readily as it rejects &mdash; a header-injection attempt such as
+<code>a@evil.com\nBcc: v@x.com</code> would otherwise be tidied into the valid-looking
+<code>a@evil.comBccvx.com</code>, an address nobody configured but that mail would really be delivered to.
+The same validation is applied to any <code>Cc</code>/<code>Bcc</code> line added via
+<code>boldform_lite_admin_email_headers</code>.</p>
+<p>If the filtered value yields no valid address at all, the recipient the form already resolved is kept, so a
+notification is never lost. Note that the display-name form (<code>Sales &lt;sales@example.com&gt;</code>) is
+rejected &mdash; bare addresses only.</p>
+
 <h3>User confirmation: subject &amp; content</h3>
 <p>The user confirmation email is sent to the address auto-detected from an email field in the
 submission. Its filters receive a fourth argument, <code>$user_email</code> (the detected recipient).</p>
