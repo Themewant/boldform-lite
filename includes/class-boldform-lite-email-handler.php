@@ -159,7 +159,93 @@ class BoldForm_Lite_Email_Handler {
 			(int) $entry_id
 		);
 
-		wp_mail( sanitize_email( $to ), $subject, $message, $headers, $attachments );
+		/**
+		 * Filter the files attached to the admin notification.
+		 *
+		 * Receives the visitor's uploaded files, and can add generated documents —
+		 * a PDF of the submission, say. Return absolute paths to files that already
+		 * exist on disk; wp_mail() reads them while sending, so a path that is not
+		 * readable at that moment is simply not attached.
+		 *
+		 * Paths are re-validated before use and anything outside the uploads
+		 * directory is dropped. That is deliberate: this filter's return value ends
+		 * up as an outbound email attachment, so an add-on that builds a path from
+		 * submitted data — or is simply buggy — could otherwise mail out wp-config.php
+		 * or a file from outside the site. Generated attachments belong in uploads
+		 * anyway, which is where Lite's own uploaded files already live.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param array<int, string>   $attachments Absolute file paths.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$attachments = apply_filters(
+			'boldform_lite_admin_email_attachments',
+			$attachments,
+			$form_record,
+			$entry_data,
+			(int) $entry_id
+		);
+
+		wp_mail( sanitize_email( $to ), $subject, $message, $headers, self::valid_attachments( $attachments ) );
+	}
+
+	/**
+	 * Keeps only the attachment paths that are safe to mail out.
+	 *
+	 * A path has to be a real, readable file that resolves inside the uploads
+	 * directory. Symlinks and `../` are handled by comparing realpath() output on
+	 * both sides, so a path is judged by where it actually lands rather than by
+	 * how it is spelled — `wp-content/uploads/../../wp-config.php` does not pass
+	 * a string check but does resolve outside uploads.
+	 *
+	 * Silently dropping a bad path is the right failure here: the alternative is
+	 * refusing to send a notification because one attachment was wrong, and the
+	 * notification itself matters more than the file riding along with it.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param mixed $attachments Filtered attachment list.
+	 * @return array<int, string> Paths that are safe to attach, possibly empty.
+	 */
+	private static function valid_attachments( $attachments ) {
+		$uploads = wp_get_upload_dir();
+
+		// No usable uploads directory means nothing can be proven safe.
+		if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
+			return array();
+		}
+
+		$basedir = realpath( $uploads['basedir'] );
+
+		if ( false === $basedir ) {
+			return array();
+		}
+
+		$basedir .= DIRECTORY_SEPARATOR;
+		$valid    = array();
+
+		foreach ( (array) $attachments as $path ) {
+			if ( ! is_string( $path ) || '' === $path ) {
+				continue;
+			}
+
+			$real = realpath( $path );
+
+			if ( false === $real || ! is_file( $real ) || ! is_readable( $real ) ) {
+				continue;
+			}
+
+			if ( 0 !== strpos( $real, $basedir ) ) {
+				continue;
+			}
+
+			$valid[] = $real;
+		}
+
+		return array_values( array_unique( $valid ) );
 	}
 
 	/**

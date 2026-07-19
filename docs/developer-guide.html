@@ -573,6 +573,31 @@ add_filter( 'boldform_lite_admin_email_content', function( $message, $form_recor
     return $message;
 }, 10, 3 );</code></pre>
 
+<h3>Admin notification: attachments <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
+<p>Add files to the admin notification &mdash; a generated PDF of the submission, an invoice, a copy of a contract.
+The filter receives the visitor's uploaded files, which BoldForm attaches already, so add to the array rather than
+replacing it. Return absolute paths to files that <strong>already exist on disk</strong>; <code>wp_mail()</code>
+reads them while sending.</p>
+<pre><code>add_filter( 'boldform_lite_admin_email_attachments', function( $attachments, $form_record, $entry_data, $entry_id ) {
+    $path = my_addon_write_pdf( $entry_id );   // must live under wp-content/uploads
+
+    if ( $path ) {
+        $attachments[] = $path;
+    }
+
+    return $attachments;
+}, 10, 4 );</code></pre>
+<p><strong>Paths are re-validated before use.</strong> Each one must resolve &mdash; through <code>realpath()</code>,
+so symlinks and <code>../</code> are followed to where they actually land &mdash; to a readable regular file
+<em>inside the uploads directory</em>. Anything else is dropped silently and the email still sends.</p>
+<p>That boundary is deliberate. The return value becomes an outbound email attachment, so an add-on that builds a
+path from submitted data (or is simply buggy) could otherwise mail out <code>wp-config.php</code>. Write generated
+files under <code>wp_get_upload_dir()['basedir']</code> &mdash; ideally a subdirectory of your own with a deny-all
+<code>.htaccess</code>, since uploads is web-readable &mdash; and delete them on
+<code>boldform_after_notifications</code> once the mail has gone.</p>
+<p>Note this filter covers the <strong>admin notification only</strong>. The user confirmation email does not carry
+attachments.</p>
+
 <h3>User confirmation: subject &amp; content</h3>
 <p>The user confirmation email is sent to the address auto-detected from an email field in the
 submission. Its filters receive a fourth argument, <code>$user_email</code> (the detected recipient).</p>

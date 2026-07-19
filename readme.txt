@@ -325,6 +325,11 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.5 =
+Developer:
+* Developer: New `boldform_lite_admin_email_attachments` filter — lets an add-on add files to the admin notification, such as a generated PDF of the submission. Receives the visitor's uploaded files and passes `$form_record`, `$entry_data` and `$entry_id`. Return absolute paths to files that already exist on disk. Whatever a filter returns is re-validated before it is used: each path must resolve (via `realpath()`, so symlinks and `../` are followed) to a readable file inside the uploads directory, and anything else is dropped without stopping the email. That boundary is deliberate — the return value becomes an outbound attachment, so an add-on that builds a path from submitted data could otherwise mail out `wp-config.php`. Used by BoldForm Pro's PDF Attachment.
+* Developer: The form builder's Email Notification tab now renders a `.boldform-email-attachment-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure what rides along with the email. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
+
 = 1.1.4 =
 New features:
 * New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.

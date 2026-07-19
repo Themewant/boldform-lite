@@ -3463,6 +3463,15 @@ jQuery(
 								'</div>'
 								: ''
 							) +
+						// A slot for what rides along with the admin notification (e.g. a
+						// generated PDF of the submission). Kept distinct from the content
+						// slot below so two add-ons can fill the same email block without
+						// one overwriting the other, and left empty — no teaser — so an
+						// add-on that is absent leaves no gap.
+						//
+						// Inside this branch on purpose: there is no sense configuring what
+						// to attach to an email that is switched off.
+						'<div class="boldform-email-attachment-slot" data-email-slot="admin"></div>' +
 						'</div>'
 						: ''
 					) +
