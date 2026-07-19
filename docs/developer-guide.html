@@ -573,6 +573,18 @@ add_filter( 'boldform_lite_admin_email_content', function( $message, $form_recor
     return $message;
 }, 10, 3 );</code></pre>
 
+<h3>Checking a hook exists <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
+<p>Before hooking a newer extension point, ask BoldForm whether it provides it &mdash; rather than comparing
+<code>BOLDFORM_LITE_VERSION</code>. That constant marks the last <em>released</em> version, so between releases it
+names a build that lacks a seam it actually has.</p>
+<pre><code>if ( method_exists( 'BoldForm_Lite', 'supports' )
+    &amp;&amp; BoldForm_Lite::supports( 'admin_email_attachments' ) ) {
+    add_filter( 'boldform_lite_admin_email_attachments', 'my_addon_attach', 10, 4 );
+}</code></pre>
+<p>The <code>method_exists()</code> guard matters &mdash; on a BoldForm older than 1.1.5 the method itself is absent,
+which correctly reads as "no capabilities". Capability names are permanent once published.</p>
+<p>Capabilities in this release: <code>admin_email_attachments</code>.</p>
+
 <h3>Admin notification: attachments <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
 <p>Add files to the admin notification &mdash; a generated PDF of the submission, an invoice, a copy of a contract.
 The filter receives the visitor's uploaded files, which BoldForm attaches already, so add to the array rather than

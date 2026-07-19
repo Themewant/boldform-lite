@@ -280,7 +280,54 @@ final class BoldForm_Lite {
 	}
 
 	/**
-	 * Flattens a stored entry field value into a human-readable display string.
+	 * Whether this build provides a named extension point.
+	 *
+	 * The way for an add-on to ask "can I hook that?" without guessing from a
+	 * version number:
+	 *
+	 *     if ( method_exists( 'BoldForm_Lite', 'supports' )
+	 *         && BoldForm_Lite::supports( 'admin_email_attachments' ) ) {
+	 *         add_filter( 'boldform_lite_admin_email_attachments', … );
+	 *     }
+	 *
+	 * The method_exists() guard matters: on a BoldForm older than this one the
+	 * method itself is absent, which correctly reads as "no capabilities".
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param string $capability Capability name.
+	 * @return bool
+	 */
+	public static function supports( $capability ) {
+		/*
+		 * Extension points this build provides, by name.
+		 *
+		 * An add-on that needs a seam should ask for it here rather than compare
+		 * version numbers. The version constant marks what has been *released*,
+		 * so between releases it names a build that does not have the seam yet —
+		 * which made add-ons hide working features during development, and made
+		 * "does this hook exist" unanswerable without knowing the release
+		 * calendar. A name is true the moment the seam is real.
+		 *
+		 * Names, not a number, because features are built on parallel branches:
+		 * two branches each adding one key merge cleanly, whereas two branches
+		 * each bumping the same integer to 2 do not.
+		 *
+		 * Entries are permanent. Removing one breaks the add-ons that ask for it,
+		 * which is exactly what this is meant to prevent.
+		 */
+		$capabilities = array(
+			// The admin notification's attachment list is filterable
+			// (boldform_lite_admin_email_attachments) and the builder renders
+			// .boldform-email-attachment-slot.
+			'admin_email_attachments' => true,
+		);
+
+		return ! empty( $capabilities[ (string) $capability ] );
+	}
+
+	/**
+	 * Flattens a stored field value into a readable string.
 	 *
 	 * Multi-part values are stored as arrays: composite fields as associative
 	 * arrays (name => {first,middle,last}; address => {street,city,…}) and
