@@ -227,14 +227,24 @@ class BoldForm_Lite_Email_Handler {
 	 *
 	 * @since 1.1.5
 	 *
-	 * @param string $list One address, or several separated by commas.
+	 * Accepts an array as readily as a comma-separated string. A filter whose whole
+	 * purpose is "send this to several people" invites returning a list, and casting
+	 * an array to string yields "Array" — which validates to nothing, so the routing
+	 * would be dropped in silence with a PHP warning on the public submission path.
+	 *
+	 * @param string|array<int, string>|mixed $list One address, several separated by
+	 *                                              commas, or an array of addresses.
 	 * @return array<int, string> Valid addresses, possibly empty.
 	 */
 	private static function valid_addresses( $list ) {
 		$valid = array();
 
-		foreach ( explode( ',', (string) $list ) as $candidate ) {
-			$candidate = trim( $candidate );
+		$candidates = is_array( $list )
+			? $list
+			: explode( ',', is_scalar( $list ) ? (string) $list : '' );
+
+		foreach ( $candidates as $candidate ) {
+			$candidate = is_scalar( $candidate ) ? trim( (string) $candidate ) : '';
 
 			if ( '' === $candidate || preg_match( '/[\r\n]/', $candidate ) ) {
 				continue;
@@ -345,7 +355,10 @@ class BoldForm_Lite_Email_Handler {
 			(int) $entry_id
 		);
 
-		wp_mail( $user_email, $subject, $message, $headers );
+		// Same treatment as the admin notification's headers. This seam is just as
+		// open, reached on the same unauthenticated path, and an add-on building a
+		// Bcc from submitted data is no more trustworthy here than there.
+		wp_mail( $user_email, $subject, $message, self::sanitize_address_headers( $headers ) );
 	}
 
 	/**
