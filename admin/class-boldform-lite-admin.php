@@ -893,6 +893,10 @@ class BoldForm_Lite_Admin {
 						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
 						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
 						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
+					// Labelled with the real control's wording, so the block reads the
+					// same before and after the paid feature replaces the teaser.
+					'attachDocument'  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
+					'attachmentTeaserHint' => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
 						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
 						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
 						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),

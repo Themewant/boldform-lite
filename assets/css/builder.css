@@ -6755,3 +6755,19 @@
 #boldform-form-settings-panel .boldform-email-teaser .boldform-upgrade-hint {
 	margin: 8px 0 0;
 }
+
+/* Collapses when an add-on has replaced the teaser with nothing, and when the
+   CTAs are off, so the block keeps its shape either way. */
+#boldform-form-settings-panel .boldform-email-attachment-slot:empty {
+	display: none;
+}
+
+/* No border-top here, unlike .boldform-email-teaser: this sits inside the
+   block body among the other controls rather than closing the block off. */
+#boldform-form-settings-panel .boldform-attachment-teaser {
+	margin-top: 4px;
+}
+
+#boldform-form-settings-panel .boldform-attachment-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
+}
