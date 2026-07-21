@@ -179,6 +179,52 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 									</div>
 								</div>
 							<?php endforeach; ?>
+
+								<?php
+								// Premium-fields teaser. Advertises the field types the paid add-on
+								// adds to this palette: the chips are inert (display only) and the
+								// overlay opens the shared upgrade dialog. Shown only while the
+								// upgrade CTAs are on — the add-on turns boldform_show_upgrade_cta off
+								// and registers its own draggable fields under a "Pro Fields" group
+								// (via boldform_builder_field_groups), so this teaser and the real
+								// fields never appear at the same time.
+								if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
+									$boldform_lite_premium_fields = array(
+										array( 'label' => __( 'Page Break', 'boldform-lite' ), 'icon' => 'dashicons-layout' ),
+										array( 'label' => __( 'Payment Item', 'boldform-lite' ), 'icon' => 'dashicons-tag' ),
+										array( 'label' => __( 'Quantity', 'boldform-lite' ), 'icon' => 'dashicons-plus-alt2' ),
+										array( 'label' => __( 'Order Summary', 'boldform-lite' ), 'icon' => 'dashicons-list-view' ),
+										array( 'label' => __( 'Calculation', 'boldform-lite' ), 'icon' => 'dashicons-calculator' ),
+										array( 'label' => __( 'Image Choice', 'boldform-lite' ), 'icon' => 'dashicons-format-image' ),
+										array( 'label' => __( 'Repeater', 'boldform-lite' ), 'icon' => 'dashicons-editor-table' ),
+										array( 'label' => __( 'Signature', 'boldform-lite' ), 'icon' => 'dashicons-edit' ),
+										array( 'label' => __( 'Matrix / Grid', 'boldform-lite' ), 'icon' => 'dashicons-grid-view' ),
+										array( 'label' => __( 'Geolocation', 'boldform-lite' ), 'icon' => 'dashicons-location' ),
+									);
+								?>
+								<div class="boldform-library-group boldform-library-group--locked">
+									<h3><?php esc_html_e( 'Pro Fields', 'boldform-lite' ); ?></h3>
+									<div class="boldform-library-lockwrap">
+										<div class="boldform-library-grid boldform-library-grid--locked" aria-hidden="true">
+											<?php foreach ( $boldform_lite_premium_fields as $boldform_lite_pf ) : ?>
+												<span class="boldform-library-item is-locked">
+													<span class="dashicons <?php echo esc_attr( $boldform_lite_pf['icon'] ); ?>"></span>
+													<span><?php echo esc_html( $boldform_lite_pf['label'] ); ?></span>
+												</span>
+											<?php endforeach; ?>
+										</div>
+										<div class="boldform-library-lock">
+											<span class="boldform-library-lock__badge dashicons dashicons-lock" aria-hidden="true"></span>
+											<strong class="boldform-library-lock__title"><?php esc_html_e( 'Unlock premium fields', 'boldform-lite' ); ?></strong>
+											<p class="boldform-library-lock__text"><?php esc_html_e( 'Payments, multi-page breaks, repeaters, signatures and more — drag them straight into your forms with an upgrade.', 'boldform-lite' ); ?></p>
+											<button type="button" class="boldform-upgrade-btn boldform-library-lock__cta" aria-haspopup="dialog" data-upgrade-modal="boldform-fields-upgrade-modal">
+												<span class="dashicons dashicons-lock" aria-hidden="true"></span>
+												<?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?>
+											</button>
+										</div>
+									</div>
+								</div>
+								<?php endif; ?>
 						</div>
 					</section>
 
@@ -348,6 +394,25 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert any field from this form by name', 'boldform-lite' ); ?></li>
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Show every answer back as a table with {all_fields}', 'boldform-lite' ); ?></li>
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Add entry, site and submitter details to the message', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-fields-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-fields-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-fields-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock premium fields', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite ships all the everyday fields you need. Upgrade to add payment and advanced fields to the same drag-and-drop palette — take payments, split long forms across pages, collect signatures, and more.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Payment Item, Quantity, Custom Amount and Order Summary', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Page Break, Repeater, Signature and Image Choice', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Calculation, Matrix / Grid, Geolocation and more', 'boldform-lite' ); ?></li>
 			</ul>
 			<div class="boldform-upgrade-modal__actions">
 				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>

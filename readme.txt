@@ -344,6 +344,7 @@ Improvements:
 * Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
 * Improve: The Email Notification panel now previews the custom email editor — a locked "Customize this email" button under each notification that opens a quick upgrade dialog. Shown only in the free version.
 * Improve: In a form's Integrations tab, connections whose service the free plugin cannot send to (anything other than Mailchimp or Brevo) now appear as a locked row that opens a quick upgrade dialog, instead of a toggle that would never fire. Existing assignments are preserved. Shown only in the free version.
+* Improve: The builder's Field Library now previews premium fields — a "Pro Fields" section lists the paid field types (Payment Item, Page Break, Repeater, Signature and more) as locked chips behind an overlay that opens a quick upgrade dialog. Shown only in the free version.
 
 Fixes:
 * Fix: The count badge on a form's Integrations tab now shows the number of connections actually assigned to that form.
