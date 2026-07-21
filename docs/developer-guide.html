@@ -585,6 +585,31 @@ names a build that lacks a seam it actually has.</p>
 which correctly reads as "no capabilities". Capability names are permanent once published.</p>
 <p>Capabilities in this release: <code>admin_email_attachments</code>, <code>user_email_attachments</code>.</p>
 
+<h3>Admin notification: recipient <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
+<p>Choose who the admin notification goes to, after the form's own settings have been applied &mdash; so a
+submission can be routed to different people based on what was answered. Return a single address, or several
+separated by commas.</p>
+<pre><code>// Route "Sales" enquiries to a different inbox.
+add_filter( 'boldform_lite_admin_email_to', function( $to, $form_record, $entry_data, $entry_id ) {
+    foreach ( $entry_data as $field ) {
+        if ( 'Department' === $field['label'] &amp;&amp; 'Sales' === $field['value'] ) {
+            return 'sales@example.com, manager@example.com';
+        }
+    }
+    return $to;
+}, 10, 4 );</code></pre>
+<p><strong>Whatever you return is re-validated before it is used.</strong> Each address must pass
+<code>is_email()</code> <em>and</em> survive <code>sanitize_email()</code> unchanged; any candidate containing
+CR/LF is discarded outright rather than cleaned up. That second rule matters because
+<code>sanitize_email()</code> repairs as readily as it rejects &mdash; a header-injection attempt such as
+<code>a@evil.com\nBcc: v@x.com</code> would otherwise be tidied into the valid-looking
+<code>a@evil.comBccvx.com</code>, an address nobody configured but that mail would really be delivered to.
+The same validation is applied to any <code>Cc</code>/<code>Bcc</code> line added via
+<code>boldform_lite_admin_email_headers</code>.</p>
+<p>If the filtered value yields no valid address at all, the recipient the form already resolved is kept, so a
+notification is never lost. Note that the display-name form (<code>Sales &lt;sales@example.com&gt;</code>) is
+rejected &mdash; bare addresses only.</p>
+
 <h3>Admin notification: attachments <span class="bf-badge" style="background:var(--bf-accent,#2563eb);color:#fff">1.1.5</span></h3>
 <p>Add files to the admin notification &mdash; a generated PDF of the submission, an invoice, a copy of a contract.
 The filter receives the visitor's uploaded files, which BoldForm attaches already, so add to the array rather than

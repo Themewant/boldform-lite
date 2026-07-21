@@ -299,7 +299,7 @@ These touch the two most fragile paths — form rendering and the payment flow. 
 
 ## 8. Feature-wishlist reconciliation (source: feature brainstorm)
 
-Every item from the original brainstorm, mapped to reality. **Key takeaway: most of the "features to add" already ship** — the brainstorm predated the current build. Legend: ✅ released (public) · 🚢 built + versioned, **awaiting release** · 📅 planned (release) · 🆕 newly added to plan · ⏸ parked/deferred.
+Every item from the original brainstorm, mapped to reality. **Key takeaway: most of the "features to add" already ship** — the brainstorm predated the current build. Legend: ✅ released (public) · 🚢 built + versioned, **awaiting release** · 🚧 in progress (partly built) · 📅 planned (release) · 🆕 newly added to plan · ⏸ parked/deferred.
 
 > **Released vs built.** The last public tags are **Pro v1.1.0** and **Lite v1.1.3**. Everything marked Pro 1.1.1 or Lite 1.1.4 is 🚢 — written, versioned and on `development`, but nobody outside this repo has it yet.
 
@@ -322,7 +322,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Draft auto-save | ✅ Shipped (Pro) | Pro 1.1.0 — shipped early, ahead of the 1.2 batch |
 | Partial / abandonment tracking | 📅 | Pro 1.2 |
 | Custom email editor (subject/body + merge tags) | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — not in the original brainstorm; groundwork for the two rows below |
-| Conditional email routing | 📅 | Pro 1.2 |
+| Conditional email routing | 🚧 | Pro 1.2 — Lite seams built + verified (changelog `= 1.1.5 =` open, version still 1.1.4); Pro module on `feature/conditional-email-routing` |
 | PDF attachment | 🚧 | Pro 1.2 — Lite seam + Pro module built & verified on `feature/pdf-attachment` (changelogs open at Lite 1.1.5 / Pro 1.1.2; versions unchanged until release) |
 | Email confirmation (token) | 🆕 → 📅 | Pro 1.2 |
 | WhatsApp / SMS | ⏸ Parked | cost/fit |
