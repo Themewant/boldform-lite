@@ -6868,3 +6868,18 @@
 #boldform-form-settings-panel .boldform-email-teaser .boldform-upgrade-hint {
 	margin: 8px 0 0;
 }
+
+/* The routing teaser sits inside the block body, after the recipient field, so
+   it needs spacing above rather than the edge padding the pro-slot teaser has.
+   Collapses once an add-on fills the slot. */
+#boldform-form-settings-panel .boldform-email-routing-slot:empty {
+	display: none;
+}
+
+#boldform-form-settings-panel .boldform-routing-teaser {
+	margin-top: 14px;
+}
+
+#boldform-form-settings-panel .boldform-routing-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
+}

@@ -458,5 +458,24 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 			</div>
 		</div>
 	</div>
+
+	<div class="boldform-upgrade-modal" id="boldform-routing-upgrade-modal" hidden>
+		<div class="boldform-upgrade-modal__backdrop" data-boldform-upgrade-close></div>
+		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-routing-upgrade-modal-title">
+			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
+			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
+			<h2 id="boldform-routing-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock conditional routing', 'boldform-lite' ); ?></h2>
+			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends every admin notification to the same address. Upgrade to route each submission to different people based on what the visitor answered — sales enquiries to one inbox, support to another.', 'boldform-lite' ); ?></p>
+			<ul class="boldform-upgrade-modal__list">
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Send to different people based on the answers, with rules checked in order', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Match on any field, and add Cc and Bcc addresses per rule', 'boldform-lite' ); ?></li>
+				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Route back to the submitter, or to an address collected in the form', 'boldform-lite' ); ?></li>
+			</ul>
+			<div class="boldform-upgrade-modal__actions">
+				<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+				<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
+			</div>
+		</div>
+	</div>
 	<?php
 endif;
