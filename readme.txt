@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -524,6 +524,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.5 =
+Security: an email field now rejects a malformed address instead of silently correcting it (closing a header-injection route), and Cc/Bcc on the visitor's confirmation email are re-validated the same way the admin notification's already were. Also adds recipient and attachment extension hooks and a capability API for add-ons, used by BoldForm Pro's Conditional Email Routing and PDF Attachment. Recommended for all users.
 
 = 1.1.4 =
 Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, a new BoldForm logo across the admin, and new entries-list and email extension hooks for add-ons. Recommended for all users.
