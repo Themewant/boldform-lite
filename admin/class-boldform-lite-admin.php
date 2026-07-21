@@ -895,6 +895,8 @@ class BoldForm_Lite_Admin {
 						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
 						// Labelled with the real control's wording, so the block reads the
 						// same before and after the paid feature replaces the teaser.
+						'attachDocument'  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
+						'attachmentTeaserHint' => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
 						'routeRecipients'   => __( 'Send to different people based on the answers', 'boldform-lite' ),
 						'routingTeaserHint' => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
 						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),

@@ -205,7 +205,93 @@ class BoldForm_Lite_Email_Handler {
 		// address. A single-address $to comes through exactly as it always did.
 		$recipients = self::valid_addresses( $to );
 
-		wp_mail( implode( ', ', $recipients ), $subject, $message, $headers, $attachments );
+		/**
+		 * Filter the files attached to the admin notification.
+		 *
+		 * Receives the visitor's uploaded files, and can add generated documents —
+		 * a PDF of the submission, say. Return absolute paths to files that already
+		 * exist on disk; wp_mail() reads them while sending, so a path that is not
+		 * readable at that moment is simply not attached.
+		 *
+		 * Paths are re-validated before use and anything outside the uploads
+		 * directory is dropped. That is deliberate: this filter's return value ends
+		 * up as an outbound email attachment, so an add-on that builds a path from
+		 * submitted data — or is simply buggy — could otherwise mail out wp-config.php
+		 * or a file from outside the site. Generated attachments belong in uploads
+		 * anyway, which is where Lite's own uploaded files already live.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param array<int, string>   $attachments Absolute file paths.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$attachments = apply_filters(
+			'boldform_lite_admin_email_attachments',
+			$attachments,
+			$form_record,
+			$entry_data,
+			(int) $entry_id
+		);
+
+		wp_mail( implode( ', ', $recipients ), $subject, $message, $headers, self::valid_attachments( $attachments ) );
+	}
+
+	/**
+	 * Keeps only the attachment paths that are safe to mail out.
+	 *
+	 * A path has to be a real, readable file that resolves inside the uploads
+	 * directory. Symlinks and `../` are handled by comparing realpath() output on
+	 * both sides, so a path is judged by where it actually lands rather than by
+	 * how it is spelled — `wp-content/uploads/../../wp-config.php` does not pass
+	 * a string check but does resolve outside uploads.
+	 *
+	 * Silently dropping a bad path is the right failure here: the alternative is
+	 * refusing to send a notification because one attachment was wrong, and the
+	 * notification itself matters more than the file riding along with it.
+	 *
+	 * @since 1.1.5
+	 *
+	 * @param mixed $attachments Filtered attachment list.
+	 * @return array<int, string> Paths that are safe to attach, possibly empty.
+	 */
+	private static function valid_attachments( $attachments ) {
+		$uploads = wp_get_upload_dir();
+
+		// No usable uploads directory means nothing can be proven safe.
+		if ( ! empty( $uploads['error'] ) || empty( $uploads['basedir'] ) ) {
+			return array();
+		}
+
+		$basedir = realpath( $uploads['basedir'] );
+
+		if ( false === $basedir ) {
+			return array();
+		}
+
+		$basedir .= DIRECTORY_SEPARATOR;
+		$valid    = array();
+
+		foreach ( (array) $attachments as $path ) {
+			if ( ! is_string( $path ) || '' === $path ) {
+				continue;
+			}
+
+			$real = realpath( $path );
+
+			if ( false === $real || ! is_file( $real ) || ! is_readable( $real ) ) {
+				continue;
+			}
+
+			if ( 0 !== strpos( $real, $basedir ) ) {
+				continue;
+			}
+
+			$valid[] = $real;
+		}
+
+		return array_values( array_unique( $valid ) );
 	}
 
 	/**
@@ -298,12 +384,13 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Sends user confirmation email if an email field was submitted.
 	 *
-	 * @param object                           $form_record Form record.
-	 * @param array<string, array<string,mixed>> $entry_data Entry data.
-	 * @param int                              $entry_id Saved entry ID (0 if unknown).
+	 * @param object                             $form_record Form record.
+	 * @param array<string, array<string,mixed>> $entry_data  Entry data.
+	 * @param int                                $entry_id    Saved entry ID (0 if unknown).
+	 * @param array<int, string>                 $attachments File paths to attach.
 	 * @return void
 	 */
-	private function send_user_email( $form_record, $entry_data, $entry_id = 0 ) {
+	private function send_user_email( $form_record, $entry_data, $entry_id = 0, $attachments = array() ) {
 		$user_email = $this->detect_user_email( $entry_data );
 
 		if ( ! $user_email ) {
@@ -355,10 +442,47 @@ class BoldForm_Lite_Email_Handler {
 			(int) $entry_id
 		);
 
+		/**
+		 * Filter the files attached to the user confirmation.
+		 *
+		 * The counterpart to `boldform_lite_admin_email_attachments`, for sending
+		 * the submitter their own copy of what they filed — a quote, an
+		 * application, a booking.
+		 *
+		 * Consider carefully what you attach here. This email goes to an address a
+		 * stranger typed into a public form, so whatever rides along is delivered
+		 * to whoever owns that address — including when it was mistyped. The admin
+		 * notification goes to a known inbox; this one does not.
+		 *
+		 * The list starts EMPTY rather than carrying the visitor's uploads. Mailing
+		 * someone their own upload back is rarely wanted and occasionally harmful
+		 * (it doubles the delivery of a file that may be large or sensitive), so an
+		 * add-on has to ask for anything explicitly.
+		 *
+		 * Paths are re-validated exactly as on the admin side: real, readable, and
+		 * inside the uploads directory.
+		 *
+		 * @since 1.1.5
+		 *
+		 * @param array<int, string>   $attachments Absolute file paths.
+		 * @param object               $form_record Form record.
+		 * @param array<string, mixed> $entry_data  Saved entry data.
+		 * @param string               $user_email  Detected recipient.
+		 * @param int                  $entry_id    Saved entry ID (0 if unknown).
+		 */
+		$attachments = apply_filters(
+			'boldform_lite_user_email_attachments',
+			(array) $attachments,
+			$form_record,
+			$entry_data,
+			$user_email,
+			(int) $entry_id
+		);
+
 		// Same treatment as the admin notification's headers. This seam is just as
 		// open, reached on the same unauthenticated path, and an add-on building a
 		// Bcc from submitted data is no more trustworthy here than there.
-		wp_mail( $user_email, $subject, $message, self::sanitize_address_headers( $headers ) );
+		wp_mail( $user_email, $subject, $message, self::sanitize_address_headers( $headers ), self::valid_attachments( $attachments ) );
 	}
 
 	/**
