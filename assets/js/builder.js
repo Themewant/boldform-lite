@@ -3225,6 +3225,27 @@ jQuery(
 		}
 
 		/**
+		 * Teaser for conditional recipient routing, rendered into the admin block's
+		 * routing slot — where the real "send to different people" control appears,
+		 * so the block does not change shape when the paid feature replaces it.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function routingTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<div class="boldform-routing-teaser">' +
+				upgradeButton(
+					boldformLiteBuilder.labels.routeRecipients || 'Send to different people based on the answers',
+					'boldform-routing-upgrade-modal'
+				) +
+				upgradeHint( boldformLiteBuilder.labels.routingTeaserHint || '' ) +
+			'</div>';
+		}
+
+		/**
 		 * Opens an upgrade dialog by id.
 		 *
 		 * @param {string} id Dialog id.
@@ -3466,13 +3487,15 @@ jQuery(
 							// A slot for who the admin notification goes to (e.g.
 							// Conditional Email Routing). Kept distinct from the content
 							// slot below so two add-ons can fill the same email block
-							// without one overwriting the other, and left empty — no
-							// teaser — so an add-on that is absent leaves no gap.
+							// without one overwriting the other.
 							//
 							// Inside this branch on purpose: there is no sense
 							// configuring who an email goes to while that email is
 							// switched off.
-							'<div class="boldform-email-routing-slot" data-email-slot="admin"></div>' +
+							//
+							// Carries the teaser only while the upgrade CTAs are shown,
+							// so an add-on always finds the slot empty and ready to fill.
+							'<div class="boldform-email-routing-slot" data-email-slot="admin">' + routingTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
