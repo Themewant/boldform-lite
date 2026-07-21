@@ -1138,6 +1138,119 @@
 	color: #0f766e;
 }
 
+/* ── Premium-fields teaser ────────────────────────────────────────────────
+   A locked palette group advertising the paid field types. The chips behind
+   are inert and dimmed; the overlay carries the pitch and a CTA that opens the
+   shared upgrade dialog. The whole group is gated on boldform_show_upgrade_cta
+   in the template, so it disappears once an add-on is active and renders its
+   real, draggable fields in a group of their own instead. */
+.boldform-library-group--locked .boldform-library-lockwrap {
+	position: relative;
+	min-height: 160px;
+}
+
+.boldform-library-group--locked .boldform-library-grid {
+	opacity: 0.55;
+	filter: blur(1px);
+	pointer-events: none;
+	user-select: none;
+}
+
+.boldform-library-item.is-locked {
+	/* Spans default to content-box, so the inherited width:100% plus padding and
+	   border would overflow the grid cell and force a horizontal scrollbar — the
+	   real palette items dodge this only because <button> is border-box. */
+	box-sizing: border-box;
+	cursor: default;
+}
+
+.boldform-library-item.is-locked:hover {
+	border-color: #edf2f7;
+	background: rgba(255, 255, 255, 0.86);
+	box-shadow: none;
+	transform: none;
+}
+
+.boldform-library-item.is-locked .dashicons {
+	color: #94a3b8;
+}
+
+.boldform-library-lock {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 18px 16px;
+	text-align: center;
+	border-radius: 14px;
+	background: linear-gradient(180deg, rgba(248, 250, 252, 0.7) 0%, rgba(248, 250, 252, 0.94) 55%);
+}
+
+.boldform-library-lock__badge {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	margin: 0;
+	font-size: 22px;
+	color: #0f766e;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
+.boldform-library-lock__title {
+	font-size: 14px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.boldform-library-lock__text {
+	margin: 0;
+	max-width: 250px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: #475569;
+}
+
+.boldform-library-lock__cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	padding: 9px 16px;
+	border: 0;
+	border-radius: 8px;
+	background: #0f766e;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 1;
+	cursor: pointer;
+	transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.boldform-library-lock__cta:hover {
+	background: #0d5f58;
+	transform: translateY(-1px);
+}
+
+.boldform-library-lock__cta:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: 2px;
+}
+
+.boldform-library-lock__cta .dashicons {
+	width: 15px;
+	height: 15px;
+	font-size: 15px;
+	color: #fff;
+}
+
 .boldform-canvas-panel {
 	position: relative;
 	min-height: 640px;
@@ -6753,5 +6866,36 @@
 }
 
 #boldform-form-settings-panel .boldform-email-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
+}
+
+/* Collapses when an add-on has replaced the teaser with nothing, and when the
+   CTAs are off, so the block keeps its shape either way. */
+#boldform-form-settings-panel .boldform-email-attachment-slot:empty {
+	display: none;
+}
+
+/* No border-top here, unlike .boldform-email-teaser: this sits inside the
+   block body among the other controls rather than closing the block off. */
+#boldform-form-settings-panel .boldform-attachment-teaser {
+	margin-top: 4px;
+}
+
+#boldform-form-settings-panel .boldform-attachment-teaser .boldform-upgrade-hint {
+	margin: 8px 0 0;
+}
+
+/* The routing teaser sits inside the block body, after the recipient field, so
+   it needs spacing above rather than the edge padding the pro-slot teaser has.
+   Collapses once an add-on fills the slot. */
+#boldform-form-settings-panel .boldform-email-routing-slot:empty {
+	display: none;
+}
+
+#boldform-form-settings-panel .boldform-routing-teaser {
+	margin-top: 14px;
+}
+
+#boldform-form-settings-panel .boldform-routing-teaser .boldform-upgrade-hint {
 	margin: 8px 0 0;
 }

@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.4
+Stable tag: 1.1.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -325,6 +325,19 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.5 =
+Security:
+* Fix: An email field now rejects an address that is not one, instead of quietly correcting it. Typing something like "you@example.com" followed by a line break and more text used to be accepted and saved as a different address than was typed — WordPress's email sanitizer strips the offending characters and hands back an address that still looks valid. The form now reports "must be a valid email address" and saves nothing. Every genuine address is unaffected, including plus-tags, subdomains, mixed case, stray spaces, and addresses pasted out of Word, Outlook or a web page (which often carry an invisible character along with them).
+* Fix: Cc and Bcc headers on the confirmation email sent to the visitor are now re-validated the same way the admin notification's already were, so the two are no longer protected differently.
+
+Developer:
+* Developer: New `BoldForm_Lite::supports( $capability )` — asks whether this build provides a named extension point, so an add-on can check for a hook instead of comparing version numbers. Guard the call with `method_exists( 'BoldForm_Lite', 'supports' )`, which correctly reads as "no capabilities" on an older BoldForm. Capability names are permanent once published. This release declares `admin_email_attachments` and `user_email_attachments`.
+* Developer: New `boldform_lite_admin_email_attachments` filter — lets an add-on add files to the admin notification, such as a generated PDF of the submission. Receives the visitor's uploaded files and passes `$form_record`, `$entry_data` and `$entry_id`. Return absolute paths to files that already exist on disk. Whatever a filter returns is re-validated before it is used: each path must resolve (via `realpath()`, so symlinks and `../` are followed) to a readable file inside the uploads directory, and anything else is dropped without stopping the email. That boundary is deliberate — the return value becomes an outbound attachment, so an add-on that builds a path from submitted data could otherwise mail out `wp-config.php`. Used by BoldForm Pro's PDF Attachment.
+* Developer: New `boldform_lite_user_email_attachments` filter — the counterpart for the user confirmation, so an add-on can send the submitter their own copy of what they filed. Passes `$user_email` before `$entry_id`. `send_user_email()` now takes an `$attachments` argument and passes it to `wp_mail()`; before this the confirmation could not carry a file at all, not even the visitor's own upload. The list starts empty rather than inheriting those uploads — mailing someone their own file back is rarely wanted — so an add-on has to ask for anything explicitly. Same validation as the admin side. The builder renders a matching `.boldform-email-attachment-slot` with data-email-slot="user". Capability: `user_email_attachments`.
+* Developer: The form builder's Email Notification tab now renders a `.boldform-email-attachment-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure what rides along with the email. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
+* Developer: New `boldform_lite_admin_email_to` filter — lets an add-on choose the admin notification's recipient after the form's own settings have been applied, so a submission can be routed to different people based on what was answered. Return one address, several separated by commas, or an array of addresses. Whatever a filter returns is re-validated before it is used: each address must survive `sanitize_email()` unchanged and pass `is_email()`, and a value carrying CR/LF is discarded outright rather than cleaned up — otherwise a header-injection attempt could be silently "repaired" into a different, valid-looking address. If nothing usable comes back, the recipient the form already resolved is kept, so a notification is never lost. Used by BoldForm Pro's Conditional Email Routing.
+* Developer: The form builder's Email Notification tab now renders a second, separate `.boldform-email-routing-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure who an email goes to. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
+
 = 1.1.4 =
 New features:
 * New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
@@ -344,6 +357,7 @@ Improvements:
 * Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
 * Improve: The Email Notification panel now previews the custom email editor — a locked "Customize this email" button under each notification that opens a quick upgrade dialog. Shown only in the free version.
 * Improve: In a form's Integrations tab, connections whose service the free plugin cannot send to (anything other than Mailchimp or Brevo) now appear as a locked row that opens a quick upgrade dialog, instead of a toggle that would never fire. Existing assignments are preserved. Shown only in the free version.
+* Improve: The builder's Field Library now previews premium fields — a "Pro Fields" section lists the paid field types (Payment Item, Page Break, Repeater, Signature and more) as locked chips behind an overlay that opens a quick upgrade dialog. Shown only in the free version.
 
 Fixes:
 * Fix: The count badge on a form's Integrations tab now shows the number of connections actually assigned to that form.
@@ -510,6 +524,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.5 =
+Security: an email field now rejects a malformed address instead of silently correcting it (closing a header-injection route), and Cc/Bcc on the visitor's confirmation email are re-validated the same way the admin notification's already were. Also adds recipient and attachment extension hooks and a capability API for add-ons, used by BoldForm Pro's Conditional Email Routing and PDF Attachment. Recommended for all users.
 
 = 1.1.4 =
 Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, a new BoldForm logo across the admin, and new entries-list and email extension hooks for add-ons. Recommended for all users.

@@ -3225,6 +3225,51 @@ jQuery(
 		}
 
 		/**
+		 * Teaser for attaching a generated document, rendered into an email
+		 * block's attachment slot. Same placement as the real control, so the
+		 * block does not change shape when the paid feature replaces it.
+		 *
+		 * Rendered into both blocks because the real control appears in both:
+		 * the two notifications are attached to independently.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function attachmentTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<div class="boldform-attachment-teaser">' +
+				upgradeButton(
+					boldformLiteBuilder.labels.attachDocument || 'Attach a PDF of the submission',
+					'boldform-attachment-upgrade-modal'
+				) +
+				upgradeHint( boldformLiteBuilder.labels.attachmentTeaserHint || '' ) +
+			'</div>';
+		}
+
+		/**
+		 * Teaser for conditional recipient routing, rendered into the admin block's
+		 * routing slot — where the real "send to different people" control appears,
+		 * so the block does not change shape when the paid feature replaces it.
+		 *
+		 * @return {string} Markup, or '' when the CTAs are off.
+		 */
+		function routingTeaser() {
+			if ( ! showUpgradeCta() ) {
+				return '';
+			}
+
+			return '<div class="boldform-routing-teaser">' +
+				upgradeButton(
+					boldformLiteBuilder.labels.routeRecipients || 'Send to different people based on the answers',
+					'boldform-routing-upgrade-modal'
+				) +
+				upgradeHint( boldformLiteBuilder.labels.routingTeaserHint || '' ) +
+			'</div>';
+		}
+
+		/**
 		 * Opens an upgrade dialog by id.
 		 *
 		 * @param {string} id Dialog id.
@@ -3463,6 +3508,31 @@ jQuery(
 								'</div>'
 								: ''
 							) +
+						// A slot for what rides along with the admin notification (e.g. a
+						// generated PDF of the submission). Kept distinct from the content
+						// slot below so two add-ons can fill the same email block without
+						// one overwriting the other.
+						//
+						// Carries the teaser when the CTAs are on and nothing when they
+						// are off, so an add-on always finds this slot empty and can
+						// never overwrite a working control with one that only
+						// advertises it.
+						//
+						// Inside this branch on purpose: there is no sense configuring what
+						// to attach to an email that is switched off.
+						'<div class="boldform-email-attachment-slot" data-email-slot="admin">' + attachmentTeaser() + '</div>' +
+						// A slot for who the admin notification goes to (e.g.
+						// Conditional Email Routing). Kept distinct from the content
+						// slot below so two add-ons can fill the same email block
+						// without one overwriting the other.
+						//
+						// Inside this branch on purpose: there is no sense
+						// configuring who an email goes to while that email is
+						// switched off.
+						//
+						// Carries the teaser only while the upgrade CTAs are shown,
+						// so an add-on always finds the slot empty and ready to fill.
+						'<div class="boldform-email-routing-slot" data-email-slot="admin">' + routingTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
@@ -3480,6 +3550,15 @@ jQuery(
 							'<span class="boldform-switch__slider"></span>' +
 						'</label>' +
 					'</div>' +
+					// A slot for what rides along with the user confirmation. Mirrors the
+					// admin block: inside the enabled branch, because there is no sense
+					// configuring what to attach to an email that is switched off.
+					( state.formSettings.enable_user_email
+						? '<div class="bfsп-email-block__body">' +
+							'<div class="boldform-email-attachment-slot" data-email-slot="user">' + attachmentTeaser() + '</div>' +
+						'</div>'
+						: ''
+					) +
 					// Pro extension slot for the user confirmation email.
 					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';
@@ -5049,7 +5128,9 @@ jQuery(
 				);
 			}
 
-			$( '.boldform-library-grid' ).each(
+			// The premium-fields teaser reuses .boldform-library-grid for layout but its
+			// chips are inert adverts, so it is excluded here — never a drag source.
+			$( '.boldform-library-grid' ).not( '.boldform-library-grid--locked' ).each(
 				function () {
 					Sortable.create(
 						this,

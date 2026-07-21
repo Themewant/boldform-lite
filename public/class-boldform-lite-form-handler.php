@@ -1085,7 +1085,33 @@ class BoldForm_Lite_Form_Handler {
 
 			// A provided-but-malformed email would otherwise be blanked by sanitize_email()
 			// and reported as "required" (or silently saved empty). Flag it as invalid instead.
-			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw ) && ( '' === $value || ! is_email( (string) $value ) ) ) {
+			//
+			// The third clause covers the opposite failure, which is worse than blanking:
+			// sanitize_email() REPAIRS as readily as it blanks. "a@b.com\nBcc: x@y.com"
+			// comes back as the perfectly is_email()-valid "a@b.comBccxy.com", so without
+			// this the submission is accepted and a DIFFERENT address than the visitor
+			// typed is stored.
+			//
+			// It tests for control characters rather than requiring the value to survive
+			// sanitizing unchanged. "Unchanged" looks stricter and is, but it rejects
+			// addresses that are perfectly real: PHP's trim() only strips ASCII
+			// whitespace while sanitize_email() strips everything an address cannot
+			// contain, so the two disagree on a trailing NBSP, a BOM, a zero-width
+			// space or a curly apostrophe — every one of which arrives routinely from
+			// pasting an address out of Outlook, Word or a web page. The front-end
+			// validator uses jQuery's $.trim(), which DOES strip those, so such a
+			// submission passes the client and is refused by the server while looking
+			// flawless on screen.
+			//
+			// Control characters are what actually make a value dangerous, and nothing
+			// else here needs to be rejected: an address that survives with a stray
+			// invisible character is still mailed to the right place, and a value that
+			// sanitizing repaired can never become a recipient anyway — the email
+			// handler's valid_addresses() re-checks byte-identity at the point of
+			// sending, which is where it matters.
+			if ( 'email' === $type && is_string( $raw ) && '' !== trim( (string) $raw )
+				&& ( '' === $value || ! is_email( (string) $value )
+					|| preg_match( '/[\x00-\x1F\x7F]/', (string) $raw ) ) ) {
 				$errors[ $field_id ] = sprintf(
 					/* translators: %s: field label */
 					__( '%s must be a valid email address.', 'boldform-lite' ),
