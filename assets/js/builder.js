@@ -5128,7 +5128,9 @@ jQuery(
 				);
 			}
 
-			$( '.boldform-library-grid' ).each(
+			// The premium-fields teaser reuses .boldform-library-grid for layout but its
+			// chips are inert adverts, so it is excluded here — never a drag source.
+			$( '.boldform-library-grid' ).not( '.boldform-library-grid--locked' ).each(
 				function () {
 					Sortable.create(
 						this,

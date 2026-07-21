@@ -322,8 +322,8 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Draft auto-save | ✅ Shipped (Pro) | Pro 1.1.0 — shipped early, ahead of the 1.2 batch |
 | Partial / abandonment tracking | 📅 | Pro 1.2 |
 | Custom email editor (subject/body + merge tags) | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — not in the original brainstorm; groundwork for the two rows below |
-| Conditional email routing | 🚧 | Pro 1.2 — Lite seams built + verified (changelog `= 1.1.5 =` open, version still 1.1.4); Pro module on `feature/conditional-email-routing` |
-| PDF attachment | 🚧 | Pro 1.2 — Lite seam + Pro module built & verified on `feature/pdf-attachment` (changelogs open at Lite 1.1.5 / Pro 1.1.2; versions unchanged until release) |
+| Conditional email routing | 🚢 Awaiting release | Merged to `development`; Lite seam + Pro module built, verified, versioned (Lite 1.1.5 / Pro 1.1.2). Pending SVN release |
+| PDF attachment | 🚢 Awaiting release | Merged to `development`; Lite seam + Pro module built, verified, versioned (Lite 1.1.5 / Pro 1.1.2). Pending SVN release |
 | Email confirmation (token) | 🆕 → 📅 | Pro 1.2 |
 | WhatsApp / SMS | ⏸ Parked | cost/fit |
 | Coupon / discount codes | 📅 | Pro 1.2 |
