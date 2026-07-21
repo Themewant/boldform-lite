@@ -325,6 +325,15 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.5 =
+Security:
+* Fix: An email field now rejects an address that is not one, instead of quietly correcting it. Typing something like "you@example.com" followed by a line break and more text used to be accepted and saved as a different address than was typed — WordPress's email sanitizer strips the offending characters and hands back an address that still looks valid. The form now reports "must be a valid email address" and saves nothing. Every genuine address is unaffected, including plus-tags, subdomains, mixed case, stray spaces, and addresses pasted out of Word, Outlook or a web page (which often carry an invisible character along with them).
+* Fix: Cc and Bcc headers on the confirmation email sent to the visitor are now re-validated the same way the admin notification's already were, so the two are no longer protected differently.
+
+Developer:
+* Developer: New `boldform_lite_admin_email_to` filter — lets an add-on choose the admin notification's recipient after the form's own settings have been applied, so a submission can be routed to different people based on what was answered. Return one address, several separated by commas, or an array of addresses. Whatever a filter returns is re-validated before it is used: each address must survive `sanitize_email()` unchanged and pass `is_email()`, and a value carrying CR/LF is discarded outright rather than cleaned up — otherwise a header-injection attempt could be silently "repaired" into a different, valid-looking address. If nothing usable comes back, the recipient the form already resolved is kept, so a notification is never lost. Used by BoldForm Pro's Conditional Email Routing.
+* Developer: The form builder's Email Notification tab now renders a second, separate `.boldform-email-routing-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure who an email goes to. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
+
 = 1.1.4 =
 New features:
 * New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
