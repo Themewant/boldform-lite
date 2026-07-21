@@ -317,6 +317,12 @@ final class BoldForm_Lite {
 		 * which is exactly what this is meant to prevent.
 		 */
 		$capabilities = array(
+			// The admin notification's recipient is filterable
+			// (boldform_lite_admin_email_to), re-validated per address, and the
+			// builder renders .boldform-email-routing-slot[data-email-slot="admin"].
+			// Lets an add-on route a notification by what was answered.
+			'admin_email_recipient'   => true,
+
 			// The admin notification's attachment list is filterable
 			// (boldform_lite_admin_email_attachments) and the builder renders
 			// .boldform-email-attachment-slot[data-email-slot="admin"].
