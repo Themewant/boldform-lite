@@ -158,7 +158,7 @@ pre code{background:none;padding:0;color:inherit}
 <!-- Introduction -->
 <h1 id="introduction">BoldForm Lite &mdash; User Guide</h1>
 <p class="bf-subtitle">A complete guide to building, styling, and managing forms with BoldForm Lite for WordPress.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.3 · Updated 2026-07-13</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.5 · Pro v1.1.2 · Updated 2026-07-21</p>
 
 <p>BoldForm Lite is a lightweight, drag-and-drop form builder for WordPress. Build contact forms, feedback forms, registration forms, surveys, and more &mdash; with no coding required.</p>
 
@@ -891,6 +891,62 @@ the submitter). A merge-tag picker inserts your form's actual fields plus genera
 <code>{user_email}</code>, <code>{user:display_name}</code>, <code>{date}</code>, <code>{time}</code>, and
 <code>{datetime}</code>. Line breaks are preserved, and you can optionally hide empty fields from
 <code>{all_fields}</code>. Turn it on per email; leave a template blank to keep the default.</p>
+
+<h3>Conditional Email Routing</h3>
+<p><strong>Send the admin notification to different people based on what the visitor answered.</strong> Open a
+form's builder, go to <strong>Form Settings &rarr; Email Notification</strong>, and switch on
+<strong>Send to different people based on the answers</strong>. Then add rules — for example
+&ldquo;<em>Department is Sales &rarr; sales@example.com</em>&rdquo;,
+&ldquo;<em>Department is Support &rarr; support@example.com</em>&rdquo;:</p>
+<ul>
+  <li><strong>Multi-condition rules</strong> — each rule can test several fields at once, matching when
+  <strong>all</strong> of them are true or when <strong>any</strong> of them is.</li>
+  <li><strong>Per-rule Cc and Bcc</strong> — copy extra people on a specific route.</li>
+  <li><strong>First match wins</strong> — rules are checked top to bottom, so a rule with <em>no</em> conditions at
+  the bottom makes a handy catch-all.</li>
+  <li><strong>Merge tags in recipients</strong> — route back to the submitter with <code>{user_email}</code>, or to
+  an address the form itself collected with <code>{field:manager_email}</code>.</li>
+  <li><strong>Checkbox-aware</strong> — a rule on a checkbox field (where several answers can be ticked at once)
+  automatically switches to a &ldquo;contains&rdquo; match, so &ldquo;Department is Sales&rdquo; still routes a
+  visitor who picked Sales <em>and</em> Support.</li>
+</ul>
+<div class="bf-note"><strong>Safe by design:</strong> a rule whose field was later deleted is ignored rather than
+matching everything, and if no rule matches — or anything goes wrong — the notification still goes to the address the
+form would have used anyway. Nothing changes for a form you don't switch it on for.</div>
+
+<h3>PDF Attachment</h3>
+<p><strong>Attach a PDF of each submission to your notification emails, and download one from any entry.</strong>
+Under <strong>Form Settings &rarr; Email Notification</strong>, a separate <strong>Attach a PDF</strong> checkbox
+sits in the <em>Admin Notifications</em> and the <em>User Confirmation</em> blocks — tick it on whichever emails should
+carry the document:</p>
+<ul>
+  <li><strong>Named however you like</strong> — merge tags work in the filename, so
+  <code>quote-{entry_id}</code> or <code>{field:company}-enquiry</code> names each PDF after the submission it holds.</li>
+  <li><strong>Matches the email</strong> — the document lists every field with its label and value; one PDF is
+  generated per submission and shared by both emails.</li>
+  <li><strong>Download from any entry</strong> — every entry gets a <strong>Download PDF</strong> button that builds
+  the document on the spot, so it always reflects the entry as it stands (including any admin corrections) — no files
+  are stored on your server.</li>
+  <li><strong>Optional password</strong> — for a confidential submission, set a password and the PDF cannot be opened
+  without it.</li>
+</ul>
+<div class="bf-note"><strong>Notes:</strong> sending the PDF to the <em>visitor</em> mails it to the address they
+typed, so BoldForm shows a reminder beside that checkbox. If a PDF can't be produced for any reason, the email still
+sends without it. This feature needs <strong>BoldForm Lite 1.1.5 or newer</strong>; on an older Lite it simply doesn't
+appear. The bundled PDF font covers Latin, Latin Extended, Cyrillic, Greek, Arabic and common symbols — Chinese,
+Japanese and Korean text is not rendered.</div>
+
+<h3>Custom Thank-You</h3>
+<p><strong>Personalise the on-screen confirmation with the visitor's own answers.</strong> The thank-you message shown
+after a submission can now use merge tags, so it can greet the visitor by name and quote what they filed:
+&ldquo;<em>Thanks, {field:first_name}! Your reference is {entry_id}.</em>&rdquo; The <strong>Add Shortcodes</strong>
+picker sits beside the message editor under <strong>Form Settings &rarr; Confirmation</strong>, offering your form's
+own fields plus <code>{all_fields}</code>, <code>{form_title}</code>, <code>{form_id}</code>, <code>{entry_id}</code>,
+<code>{site_title}</code>, <code>{user_email}</code>, <code>{user:display_name}</code>, <code>{date}</code>,
+<code>{time}</code> and <code>{datetime}</code>, with an optional &ldquo;hide empty fields&rdquo; for
+<code>{all_fields}</code>. There is nothing to enable and nothing to migrate — a message without tags renders exactly
+as before. (<code>{admin_email}</code>, <code>{admin_link}</code> and <code>{ip}</code> are intentionally unavailable
+here, since the confirmation is shown to the public rather than to your team.)</p>
 
 <!-- Shortcode -->
 <h2 id="shortcode">Shortcode</h2>
@@ -1992,7 +2048,7 @@ the submission private. See <a href="#privacy-gdpr">Privacy &amp; GDPR</a> for d
 <p>Yes. Go to <strong>Settings &rarr; General</strong> to set default error messages for each field type. In the form builder, you can also set custom error messages for individual fields under <strong>Field Settings</strong>.</p>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.3 &mdash; User Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.5 &mdash; User Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>
