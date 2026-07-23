@@ -415,8 +415,33 @@ field type registers through <code>boldform_allowed_field_types</code> + <code>b
     <tr><td><code>boldform_form_saved</code></td><td>action</td><td>Fires after a form is saved in the builder (admin context)</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_form_settings_extra</code></td><td>filter</td><td>Add custom settings fields to the form Settings tab</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_show_upgrade_cta</code></td><td>filter</td><td>Return <code>false</code> to suppress every free-version upgrade prompt (promo notice, menu item, toolbar button, page-header link). The master teaser gate. <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.1.4</td></tr>
+    <tr><td><code>boldform_migration_sources</code></td><td>filter</td><td>Register a Form Migrator source (importer for another form plugin). Append an object implementing <code>BoldForm_Lite_Migration_Source</code>.</td><td>1.1.6</td></tr>
   </tbody>
 </table>
+
+<h3>Form Migrator sources</h3>
+<p>The Form Migrator (<strong>Settings &rarr; Tools &rarr; Migrator</strong>) imports forms from other
+plugins into BoldForm. Contact Form 7 ships as the first source; each additional source is one class
+implementing <code>BoldForm_Lite_Migration_Source</code> and registered through the
+<code>boldform_migration_sources</code> filter. The controller stays source-agnostic: it lists every
+available source as a tab, and runs each imported form's plain <code>rows</code>/<code>settings</code>
+through the builder's own save path (<code>BoldForm_Lite_Ajax_Save::prepare_rows()</code> and
+<code>::normalize_form_settings()</code>) &mdash; a source never writes <code>fields_json</code> directly.</p>
+<pre><code>interface BoldForm_Lite_Migration_Source {
+    public function get_slug();        // 'cf7' — used in URLs, nonces, the migration marker
+    public function get_label();       // 'Contact Form 7' (translatable)
+    public function is_available();    // true when the source plugin/data is present
+    public function get_forms();       // [ { id, title, imported } ]
+    public function import_form( $id ); // { title, rows, settings, skipped[], source_id } | WP_Error
+}
+
+add_filter( 'boldform_migration_sources', function ( $sources ) {
+    $sources[] = new My_WPForms_Migration_Source();
+    return $sources;
+} );</code></pre>
+<p>Idempotency is handled by the controller via an autoloaded <code>boldform_migration_map</code> option
+(<code>"{slug}:{source_id}" =&gt; form_id</code>), so a re-import updates the previously created form
+instead of duplicating it. A source only needs to describe how to read its own forms.</p>
 
 <h3>Block &amp; Elementor</h3>
 <table>

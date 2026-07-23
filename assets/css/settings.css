@@ -3682,3 +3682,106 @@ body.boldform-upgrade-modal-open {
 	font-size: 14px;
 	color: #94a3b8;
 }
+
+/* Form Migrator (Settings → Tools → Migrator) */
+.boldform-migrator-sources {
+	margin-bottom: 16px;
+}
+
+.boldform-migrator-note {
+	margin: 0 0 12px;
+}
+
+.boldform-migrator-table-wrap {
+	overflow-x: auto;
+}
+
+.boldform-migrator-table {
+	margin: 0 0 16px;
+}
+
+.boldform-migrator-table th,
+.boldform-migrator-table td {
+	vertical-align: middle;
+	padding-top: 12px;
+	padding-bottom: 12px;
+}
+
+.boldform-migrator-table .check-column {
+	width: 2.5em;
+	text-align: center;
+	vertical-align: middle;
+	padding: 0 !important;
+}
+
+.boldform-migrator-table .check-column input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	padding: 0;
+	accent-color: #2271b1;
+	vertical-align: middle;
+	float: none;
+	cursor: pointer;
+}
+
+.boldform-migrator-table__action {
+	text-align: right !important;
+	white-space: nowrap;
+}
+
+.boldform-migrator-table__action .button {
+	min-width: 110px;
+}
+
+.boldform-migrator-badge {
+	display: inline-block;
+	font-size: 12px;
+	color: #64748b;
+}
+
+.boldform-migrator-badge--done {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #dcfce7;
+	color: #166534;
+	font-weight: 600;
+}
+
+.boldform-migrator-empty {
+	color: #64748b;
+}
+
+/* Match the secondary "Import Selected" button to the primary's height/size
+   (the primary already gets custom padding via .boldform-submit-area .button-primary,
+   so a plain .button would otherwise be shorter). Scoped to the migrator form so
+   other Settings pages are untouched. */
+.boldform-migrator-form .boldform-submit-area .button {
+	height: auto;
+	min-height: 0;
+	padding: 6px 24px;
+	font-size: 13px;
+	line-height: 1.8;
+	border-radius: 6px;
+}
+
+.boldform-migrator-result__form {
+	margin-top: 10px;
+	padding-top: 10px;
+	border-top: 1px solid #e2e8f0;
+}
+
+.boldform-migrator-result__form:first-of-type {
+	border-top: 0;
+}
+
+.boldform-migrator-result__error {
+	color: #b91c1c;
+}
+
+.boldform-migrator-result__skipped {
+	margin: 6px 0 0 18px;
+	list-style: disc;
+	color: #64748b;
+	font-size: 13px;
+}
