@@ -116,12 +116,38 @@ class BoldForm_Lite_Migrator {
 		$available = $this->get_available_sources();
 
 		if ( empty( $available ) ) {
+			// Every registered source (installed or not) so the visitor sees what
+			// they can migrate from. New sources added via boldform_migration_sources
+			// appear here automatically — no per-plugin markup to maintain.
+			$all_sources = $this->get_sources();
 			?>
 			<div class="boldform-card boldform-card--spaced">
-				<h3><?php esc_html_e( 'Import from another form plugin', 'boldform-lite' ); ?></h3>
-				<p class="boldform-tab-description">
-					<?php esc_html_e( 'No supported form plugins were detected. Install and activate Contact Form 7 to migrate its forms into BoldForm.', 'boldform-lite' ); ?>
-				</p>
+				<div class="boldform-migrator-empty">
+					<span class="boldform-migrator-empty__icon dashicons dashicons-database-import" aria-hidden="true"></span>
+					<h3 class="boldform-migrator-empty__title"><?php esc_html_e( 'Import your forms into BoldForm', 'boldform-lite' ); ?></h3>
+					<p class="boldform-migrator-empty__text">
+						<?php esc_html_e( 'Already built forms in another plugin? Bring them over in a few clicks — fields, options, and basic settings are mapped for you. Activate one of the supported plugins below and its forms will appear here, ready to import.', 'boldform-lite' ); ?>
+					</p>
+
+					<?php if ( ! empty( $all_sources ) ) : ?>
+						<div class="boldform-migrator-empty__sources">
+							<span class="boldform-migrator-empty__sources-label"><?php esc_html_e( 'Supported sources', 'boldform-lite' ); ?></span>
+							<ul class="boldform-migrator-source-list">
+								<?php foreach ( $all_sources as $source ) : ?>
+									<li class="boldform-migrator-source-chip">
+										<span class="dashicons dashicons-marker" aria-hidden="true"></span>
+										<span class="boldform-migrator-source-chip__name"><?php echo esc_html( $source->get_label() ); ?></span>
+										<span class="boldform-migrator-source-chip__status"><?php esc_html_e( 'Not detected', 'boldform-lite' ); ?></span>
+									</li>
+								<?php endforeach; ?>
+							</ul>
+						</div>
+					<?php endif; ?>
+
+					<p class="boldform-migrator-empty__hint">
+						<?php esc_html_e( 'More form plugins are being added over time.', 'boldform-lite' ); ?>
+					</p>
+				</div>
 			</div>
 			<?php
 			return;
