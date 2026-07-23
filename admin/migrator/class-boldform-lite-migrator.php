@@ -186,6 +186,11 @@ class BoldForm_Lite_Migrator {
 			<?php
 			return;
 		}
+
+		// Resolve the imported state of every row in one query (avoids an N+1
+		// SELECT per row). Behaviour matches get_mapped_form_id() row-by-row,
+		// including the self-healing prune of stale mappings.
+		$imported_ids = $this->get_imported_source_ids( $slug, $forms );
 		?>
 		<form method="post" class="boldform-migrator-form">
 			<?php wp_nonce_field( 'boldform_migrate', 'boldform_migrate_nonce' ); ?>
@@ -210,7 +215,7 @@ class BoldForm_Lite_Migrator {
 					<tbody>
 						<?php
 						foreach ( $forms as $form ) :
-							$imported = $this->get_mapped_form_id( $slug, $form['id'] ) > 0;
+							$imported = isset( $imported_ids[ $form['id'] ] );
 							?>
 							<tr>
 								<th scope="row" class="check-column">
@@ -514,6 +519,13 @@ class BoldForm_Lite_Migrator {
 		$fields_json   = wp_json_encode( array( 'rows' => $prepared_rows ) );
 		$settings_json = wp_json_encode( BoldForm_Lite_Ajax_Save::normalize_form_settings( isset( $data['settings'] ) && is_array( $data['settings'] ) ? $data['settings'] : array() ) );
 
+		// Never write a form whose JSON failed to encode — that would store an
+		// empty, field-less form yet report success.
+		if ( false === $fields_json || false === $settings_json ) {
+			$result->error = new WP_Error( 'boldform_migrator_encode_failed', __( 'The form could not be saved.', 'boldform-lite' ) );
+			return $result;
+		}
+
 		$forms_table  = $this->plugin->get_forms_table_name();
 		$existing_id  = $this->get_mapped_form_id( $slug, $source_id );
 
@@ -612,6 +624,72 @@ class BoldForm_Lite_Migrator {
 		}
 
 		return $form_id;
+	}
+
+	/**
+	 * Resolves which of the given source forms have a live imported BoldForm
+	 * form, in a single query, for the listing table.
+	 *
+	 * This is the batched equivalent of calling get_mapped_form_id() once per
+	 * row: it collects the mapped BoldForm IDs for the rows on screen, checks
+	 * them all with one `IN (...)` SELECT, and self-heals the map by pruning
+	 * mappings whose target form no longer exists (or is trashed).
+	 *
+	 * @param string                          $slug  Source slug.
+	 * @param array<int, array<string, mixed>> $forms Source forms ({id,title,...}).
+	 * @return array<int|string, true> Set of source IDs that are imported.
+	 */
+	private function get_imported_source_ids( $slug, $forms ) {
+		$map = $this->get_migration_map();
+
+		// Map the BoldForm form IDs of the rows on screen back to their source IDs.
+		$form_id_to_source = array();
+		foreach ( $forms as $form ) {
+			$key = $this->map_key( $slug, $form['id'] );
+			if ( ! empty( $map[ $key ] ) ) {
+				$form_id_to_source[ (int) $map[ $key ] ] = $form['id'];
+			}
+		}
+
+		if ( empty( $form_id_to_source ) ) {
+			return array();
+		}
+
+		global $wpdb;
+
+		$forms_table  = esc_sql( $this->plugin->get_forms_table_name() );
+		$ids          = array_map( 'intval', array_keys( $form_id_to_source ) );
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// $placeholders is a run of `%d` sized to $ids (all ints), so the query is safe;
+		// the sniffs can't see placeholders built dynamically, hence the ignores.
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, status FROM `{$forms_table}` WHERE id IN ({$placeholders})", $ids ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		$live_status = array();
+		foreach ( (array) $rows as $row ) {
+			$live_status[ (int) $row['id'] ] = $row['status'];
+		}
+
+		$imported = array();
+		$changed  = false;
+
+		foreach ( $form_id_to_source as $form_id => $source_id ) {
+			$status = isset( $live_status[ $form_id ] ) ? $live_status[ $form_id ] : null;
+
+			if ( null !== $status && 'trash' !== $status ) {
+				$imported[ $source_id ] = true;
+			} else {
+				// Self-heal: the target form was deleted or trashed — drop the mapping.
+				unset( $map[ $this->map_key( $slug, $source_id ) ] );
+				$changed = true;
+			}
+		}
+
+		if ( $changed ) {
+			update_option( self::MAP_OPTION, $map, false );
+		}
+
+		return $imported;
 	}
 
 	/**
