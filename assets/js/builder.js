@@ -4948,8 +4948,18 @@ jQuery(
 
 			Object.keys( grouped ).forEach( function ( cat ) {
 				if ( ! grouped[ cat ].length ) return;
-				listMarkup += '<div class="boldform-template-group">';
-				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</div>';
+				// Accordion: the group holding the currently-selected template starts
+				// open, the rest start collapsed. On first open the selection defaults
+				// to 'contact', so the first (General) group is the one shown. Keeping
+				// the selected group open means it stays expanded across the re-render
+				// that fires when a template is picked.
+				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1;
+				listMarkup += '<div class="boldform-template-group' + ( groupOpen ? ' is-open' : '' ) + '">';
+				listMarkup += '<button type="button" class="boldform-template-group__header" data-template-group-toggle aria-expanded="' + ( groupOpen ? 'true' : 'false' ) + '">';
+				listMarkup += '<span class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</span>';
+				listMarkup += '<span class="boldform-template-group__chevron dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>';
+				listMarkup += '</button>';
+				listMarkup += '<div class="boldform-template-group__body"><div class="boldform-template-group__inner">';
 				grouped[ cat ].forEach( function ( key ) {
 					var tpl = templates[ key ];
 					var isActive = key === selectedKey;
@@ -4959,6 +4969,7 @@ jQuery(
 					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
 					listMarkup += '</button>';
 				} );
+				listMarkup += '</div></div>';
 				listMarkup += '</div>';
 			} );
 
@@ -6917,6 +6928,20 @@ jQuery(
 			function () {
 				state.selectedTemplate = String( $( this ).data( 'template-option' ) || 'contact' );
 				renderTemplateModal();
+			}
+		);
+
+		// Accordion: toggle a template category open/closed on header click. Purely
+		// DOM-driven (no re-render), so categories toggle independently — several can
+		// be open at once, and the state persists until the modal is re-rendered.
+		$( document ).on(
+			'click',
+			'[data-template-group-toggle]',
+			function () {
+				var open = $( this ).closest( '.boldform-template-group' )
+					.toggleClass( 'is-open' )
+					.hasClass( 'is-open' );
+				$( this ).attr( 'aria-expanded', open ? 'true' : 'false' );
 			}
 		);
 
