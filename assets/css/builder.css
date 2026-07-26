@@ -4653,6 +4653,28 @@
 	color: #64748b;
 }
 
+.boldform-template-module-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	margin-top: 10px;
+	padding: 8px 12px;
+	border: 1px solid #fcd34d;
+	border-radius: 6px;
+	background: #fffbeb;
+	color: #92400e;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.boldform-template-module-notice .dashicons {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	color: #d97706;
+}
+
 .boldform-template-preview__canvas {
 	display: grid;
 	gap: 14px;

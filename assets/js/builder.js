@@ -4889,6 +4889,8 @@ jQuery(
 			business:  'Business',
 			events:    'Events & Booking',
 			hr_survey: 'HR & Surveys',
+			health:    'Health & Medical',
+			education: 'Education & Nonprofit',
 			payment:   'Payment & Calculation',
 			multi_step: 'Multi-Step'
 		};
@@ -4899,6 +4901,27 @@ jQuery(
 			job_application: 'hr_survey', customer_survey: 'hr_survey',
 			// Additional template category mappings can be added dynamically.
 		};
+
+		// Labels of any feature modules a template needs that are currently disabled.
+		// A template declares dependencies via `requires_modules` (an array of module
+		// keys); the live on/off state comes from boldformLiteBuilder.proModules (set
+		// by the Pro add-on). Returns [] when nothing is missing — so the notice shows
+		// only while a required module is off and disappears once it is re-enabled.
+		function bfTemplateMissingModules( tpl ) {
+			var req  = ( tpl && Array.isArray( tpl.requires_modules ) ) ? tpl.requires_modules : [];
+			if ( ! req.length ) return [];
+			var mods = ( boldformLiteBuilder.proModules && typeof boldformLiteBuilder.proModules === 'object' )
+				? boldformLiteBuilder.proModules
+				: {};
+			var missing = [];
+			req.forEach( function ( key ) {
+				var m = mods[ key ];
+				// Only flag a module we actually know about AND that is off. If Pro
+				// isn't present, req is empty for Lite templates, so this never fires.
+				if ( m && ! m.active ) missing.push( m.label || key );
+			} );
+			return missing;
+		}
 
 		function renderTemplateModal() {
 			var templates = getAllTemplateDefinitions();
@@ -4914,7 +4937,11 @@ jQuery(
 			var grouped = {};
 			Object.keys( tplCategories ).forEach( function ( cat ) { grouped[ cat ] = []; } );
 			Object.keys( templates ).forEach( function ( key ) {
-				var cat = tplCategoryMap[ key ] || 'general';
+				// A template may declare its own `category` (this is how Pro
+				// templates land in the right group without editing tplCategoryMap);
+				// fall back to the built-in map, then to 'general'.
+				var tpl = templates[ key ];
+				var cat = ( tpl && tpl.category ) || tplCategoryMap[ key ] || 'general';
 				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
 				grouped[ cat ].push( key );
 			} );
@@ -4922,7 +4949,7 @@ jQuery(
 			Object.keys( grouped ).forEach( function ( cat ) {
 				if ( ! grouped[ cat ].length ) return;
 				listMarkup += '<div class="boldform-template-group">';
-				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] ) + '</div>';
+				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</div>';
 				grouped[ cat ].forEach( function ( key ) {
 					var tpl = templates[ key ];
 					var isActive = key === selectedKey;
@@ -4953,9 +4980,18 @@ jQuery(
 			$( '#boldform-template-list' ).html( listMarkup );
 			$( '#boldform-template-preview-canvas' ).html( previewMarkup );
 			applyPreviewStyleBlock();
+			var missingModules = bfTemplateMissingModules( selectedTemplate );
+			var moduleNotice   = '';
+			if ( missingModules.length ) {
+				var noticeText = ( boldformLiteBuilder.labels.templateNeedsModule || 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.' )
+					.replace( '%s', missingModules.join( ', ' ) );
+				moduleNotice = '<div class="boldform-template-module-notice"><span class="dashicons dashicons-warning" aria-hidden="true"></span> ' + escapeHtml( noticeText ) + '</div>';
+			}
+
 			$( '#boldform-template-preview__head' ).html(
 				'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
-				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>'
+				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>' +
+				moduleNotice
 			);
 
 			$( '#boldform-import-template' )

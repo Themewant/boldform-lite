@@ -881,6 +881,8 @@ class BoldForm_Lite_Admin {
 						'registrationTemplateTitle' => __( 'Registration Form', 'boldform-lite' ),
 						'registrationTemplateDescription' => __( 'Event or account registration with full details.', 'boldform-lite' ),
 						'importTemplate' => __( 'Import Template', 'boldform-lite' ),
+						/* translators: %s: comma-separated list of feature names that must be enabled. */
+						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
 						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
