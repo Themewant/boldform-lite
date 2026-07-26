@@ -866,12 +866,29 @@ jQuery(
 			return html;
 		}
 
-		// Convert a stored "{id}" formula to a readable "{Label}" string (plain text)
-		// for the canvas preview badge. Falls back to "(id)" for deleted fields.
+		// Convert a stored "{id}" formula to a readable "Label" string (plain text)
+		// for the canvas preview badge. Two deliberate transforms:
+		//   1. Curly braces are dropped — they are formula syntax the user never
+		//      types (fields are inserted as pills in the editor), and showing them
+		//      in the read-only badge made users think they had to close a brace.
+		//   2. Operators are prettified to friendly math symbols with even spacing
+		//      (× ÷ + -), so "{Weight}/({Height}*{Height})" reads as
+		//      "Weight ÷ (Height × Height)".
+		// Both are DISPLAY-ONLY — the stored formula keeps its ASCII "*" and "/".
+		// Operators are formatted BEFORE labels are substituted, so a field label
+		// that itself contains a hyphen or operator character is never mangled.
+		// Deleted fields fall back to "(id)" so a broken reference stays visible.
 		function bfCalcFormulaToLabels( formula ) {
-			return String( formula || '' ).replace( /\{([^}]+)\}/g, function ( match, id ) {
+			var text = String( formula || '' )
+				.replace( /\s*\*\s*/g, ' × ' )
+				.replace( /\s*\/\s*/g, ' ÷ ' )
+				.replace( /\s*\+\s*/g, ' + ' )
+				.replace( /\s*-\s*/g, ' - ' )
+				.replace( /\(\s+/g, '(' )
+				.replace( /\s+\)/g, ')' );
+			return text.replace( /\{([^}]+)\}/g, function ( match, id ) {
 				var label = bfCalcLabelById( id );
-				return '{' + ( label || ( '(' + id + ')' ) ) + '}';
+				return label || ( '(' + id + ')' );
 			} );
 		}
 
