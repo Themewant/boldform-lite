@@ -1256,7 +1256,13 @@ jQuery(
 		}
 
 		function renderInputPreview( field ) {
-			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement ) ? '' : '<label>' + escapeHtml( field.label || getLibraryItem( field.type ).label ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
+			// Match the front-end renderer (shortcode.php render_control): a field
+			// whose label the user has intentionally cleared shows NO <label> at all.
+			// New fields keep their real saved label (createField stores the library
+			// name), so this only affects deliberately-emptied labels — keeping the
+			// canvas WYSIWYG instead of falling back to the field-type name.
+			var labelText = field.label || '';
+			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement || '' === labelText ) ? '' : '<label>' + escapeHtml( labelText ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
 			var html = '';
 
 			// Shared theme tokens so the advanced (Pro) field previews adopt the active
