@@ -1859,6 +1859,39 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_responsive_control(
+			'button_align',
+			array(
+				'label'                => __( 'Button Alignment', 'boldform-lite' ),
+				'type'                 => \Elementor\Controls_Manager::CHOOSE,
+				'options'              => array(
+					'left'   => array(
+						'title' => __( 'Left', 'boldform-lite' ),
+						'icon'  => 'eicon-text-align-left',
+					),
+					'center' => array(
+						'title' => __( 'Center', 'boldform-lite' ),
+						'icon'  => 'eicon-text-align-center',
+					),
+					'right'  => array(
+						'title' => __( 'Right', 'boldform-lite' ),
+						'icon'  => 'eicon-text-align-right',
+					),
+				),
+				'selectors_dictionary' => array(
+					'left'   => 'flex-start',
+					'center' => 'center',
+					'right'  => 'flex-end',
+				),
+				'selectors'            => array(
+					'{{WRAPPER}} .boldform-lite-form__actions' => 'display: flex; justify-content: {{VALUE}};',
+				),
+				'condition'            => array(
+					'button_full_width!' => 'yes',
+				),
+			)
+		);
+
 		$this->add_control(
 			'button_full_width',
 			array(

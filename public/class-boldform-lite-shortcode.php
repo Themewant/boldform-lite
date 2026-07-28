@@ -958,7 +958,8 @@ class BoldForm_Lite_Shortcode {
 			$button_label  = $this->get_button_accessible_label( $form_settings );
 			$aria_label    = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
 			$button_type   = $this->is_editor_preview() ? 'button' : 'submit';
-			return '<div class="boldform-lite-form__actions"><button type="' . $button_type . '" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
+			$button_align  = isset( $form_settings['button_alignment'] ) && in_array( $form_settings['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $form_settings['button_alignment'] : 'left';
+			return '<div class="boldform-lite-form__actions is-align-' . esc_attr( $button_align ) . '"><button type="' . $button_type . '" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
 		}
 
 		/**

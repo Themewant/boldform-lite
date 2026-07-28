@@ -1294,7 +1294,7 @@ jQuery(
 			} else if ( field.type === 'file' ) {
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
-				return '<div class="boldform-canvas-submit is-inline"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
+				return '<div class="boldform-canvas-submit is-inline is-align-' + escapeHtml( state.formSettings.button_alignment || 'left' ) + '"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
 			} else if ( field.type === 'product' ) {
 				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
 				if ( 'select' === field.product_style ) {
