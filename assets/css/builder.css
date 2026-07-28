@@ -3232,12 +3232,20 @@
 	padding: 16px;
 }
 
-/* An empty Pro extension slot is still a sibling of the head, so it defeats the
-   `:only-child` rule above. When a block has no body and its slot is empty (e.g.
-   Lite without the Custom Email add-on), keep the head borderless as before so
-   no divider dangles under a lone toggle. */
-.bfsп-email-block:not( :has( .bfsп-email-block__body ) ):not( :has( .boldform-email-pro-slot > * ) ) .bfsп-email-block__head {
+/* The head's bottom divider is only meaningful when visible body content sits below
+   it. Drop it whenever the block has no visible body content — the toggle is off (no
+   body element at all) OR the body holds only empty, collapsed slots (e.g. User
+   Confirmation with every add-on slot inactive) — so a lone toggle never has a
+   dangling line under it. */
+.bfsп-email-block:not( :has( .bfsп-email-block__body > :not( :empty ) ) ) .bfsп-email-block__head {
 	border-bottom: none;
+}
+
+/* When the body holds only empty (collapsed) slots it is just blank padding —
+   collapse the body itself so the block is nothing but its head, instead of showing
+   an empty strip below an enabled toggle. */
+.bfsп-email-block__body:not( :has( > :not( :empty ) ) ) {
+	display: none;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
@@ -6945,8 +6953,33 @@
 	display: none;
 }
 
+/* The FIRST section inside an email-block body has nothing above it, so drop the
+   top divider that an add-on block (PDF attachment / routing / custom email) or a
+   teaser draws on its top edge — a lone divider right under the block head reads as
+   meaningless. The Admin block opens with the recipient chooser, so its slots are
+   never :first-child (their dividers stay meaningful); the User block opens straight
+   with the attachment slot, so its first slot must not draw one. `> *` keeps this
+   decoupled from the add-on block class names. Empty slots collapse (display:none)
+   but remain :first-child in the DOM, so the last two selectors clear the divider on
+   the first VISIBLE slot when the attachment slot before it is empty (e.g. the PDF
+   module is off). */
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-routing-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-pro-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:empty:first-child + .boldform-email-routing-slot > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:empty:first-child + .boldform-email-pro-slot > * {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: none;
+}
+
+/* The pro-slot upgrade teaser (shown in Lite-only) now lives inside the block
+   body, alongside the attachment/routing teasers, so it must NOT carry its own
+   horizontal/bottom padding — the body's 16px inset provides both. Keep only the
+   top-border divider + top padding so it lines up flush with the sibling slots
+   (mirrors .bf-ce-block when the Custom Email add-on is active). */
 #boldform-form-settings-panel .boldform-email-teaser {
-	padding: 14px 16px 16px;
+	padding: 14px 0 0;
 	border-top: 1px solid #e2e8f0;
 }
 

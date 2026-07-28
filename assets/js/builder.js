@@ -3556,14 +3556,19 @@ jQuery(
 						// Carries the teaser only while the upgrade CTAs are shown,
 						// so an add-on always finds the slot empty and ready to fill.
 						'<div class="boldform-email-routing-slot" data-email-slot="admin">' + routingTeaser() + '</div>' +
+							// Pro extension slot: add-ons (e.g. Custom Email Editor) inject per-email
+							// content controls here on boldform:form_settings_rendered. It lives INSIDE
+							// __body alongside the attachment/routing slots so all three align
+							// identically — the add-on styles its own block with a top-border divider
+							// and NO horizontal padding (the body's 16px provides the inset), matching
+							// .bf-pdf-block / .bf-er-block. Inside the enabled branch, so "Customize
+							// this email" only shows when the notification is on. The teaser only
+							// occupies it while the upgrade CTAs are shown, so an add-on always finds
+							// the slot empty and ready to fill.
+							'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
-					// Pro extension slot: add-ons (e.g. Custom Email Editor) inject
-					// per-email content controls here on boldform:form_settings_rendered.
-					// The teaser only occupies it while the upgrade CTAs are shown, so an
-					// add-on always finds the slot empty and ready to fill.
-					'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 				'</div>' +
 				'<div class="bfsп-email-block">' +
 					'<div class="bfsп-email-block__head">' +
@@ -3579,11 +3584,13 @@ jQuery(
 					( state.formSettings.enable_user_email
 						? '<div class="bfsп-email-block__body">' +
 							'<div class="boldform-email-attachment-slot" data-email-slot="user">' + attachmentTeaser() + '</div>' +
+							// Pro extension slot for the user confirmation email — inside __body
+							// alongside the attachment slot so both align identically (see the admin
+							// block above). Inside the enabled branch, so it only shows when on.
+							'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
-					// Pro extension slot for the user confirmation email.
-					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';
 
 			// ── Security pane — duplicate prevention ────────────────────────────
@@ -6646,6 +6653,7 @@ jQuery(
 				if (
 					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
+					$( event.target ).is( '#boldform-enable-user-email' ) ||
 					$( event.target ).is( 'input[name="boldform-admin-email-type"]' ) ||
 					$( event.target ).is( '#boldform-dup-enabled' ) ||
 					$( event.target ).is( 'input[name="boldform-dup-method"]' )
