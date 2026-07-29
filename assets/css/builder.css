@@ -6312,7 +6312,8 @@
    The shell rules are scoped to .boldform-canvas-field-choices (the checkbox/
    radio wrapper) so product/terms/template choice previews keep their own look. */
 .boldform-canvas .boldform-canvas-field-body label.boldform-choice,
-.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice {
+.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices label.boldform-lite-form__choice {
 	display: flex;
 	align-items: center;
 	gap: var(--bf-choice-gap, 10px);
@@ -6326,13 +6327,18 @@
 	text-transform: var(--bf-choice-tt, none);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
 	--bf-choice-accent-r: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	cursor: default;
 }
 
-/* Native input hidden; the shell span is the visible control. */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
+/* Native input hidden; the shell span is the visible control. Scoped to the
+   builder canvas AND the template preview (both render this markup) so the
+   wp-admin core checkbox — its own tick plus forms.css's :checked::before
+   checkmark — never shows through as a second icon beside the custom shell. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
 	position: absolute;
 	opacity: 0;
 	width: 0;
@@ -6341,7 +6347,8 @@
 	margin: 0;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
@@ -6356,22 +6363,26 @@
 	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
 	border-radius: 50%;
 }
 
 /* Checked = the Accent colour. */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: var(--bf-choice-accent-r);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: #fff;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 5px;
@@ -6381,7 +6392,8 @@
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 8px;
@@ -6391,18 +6403,21 @@
 }
 
 /* Hover = the Hover border + background colours (fall back to normal). */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
 	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
 	flex: 1;
 	min-width: 0;
 }
 
 /* ---- Terms & Conditions ---- */
-.boldform-canvas .boldform-canvas-terms {
+.boldform-canvas .boldform-canvas-terms,
+.boldform-template-preview__canvas .boldform-canvas-terms {
 	gap: var(--bf-terms-gap, 10px);
 	margin: var(--bf-terms-margin, var(--bf-field-margin, 0));
 	color: var(--bf-terms-color, inherit);
@@ -6410,8 +6425,12 @@
 
 /* Terms checkbox uses the same custom shell as the choice fields (mirrors the
    front-end) so Border/Background/Hover/Checked/Icon all preview. Native input
-   hidden; the .boldform-lite-form__choice-control span is the visible box. */
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"] {
+   hidden — in BOTH the builder canvas and the template preview — so the wp-admin
+   core checkbox (its native tick plus forms.css's :checked::before checkmark)
+   never shows as a second icon; the .boldform-lite-form__choice-control span is
+   the only visible box. */
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"],
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"] {
 	position: absolute;
 	opacity: 0;
 	width: 0;
@@ -6420,13 +6439,14 @@
 	margin: 0;
 }
 
-.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
 	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin-top: 2px;
+	margin-top: 0;
 	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
@@ -6437,12 +6457,14 @@
 	transition: border-color 0.16s ease, background 0.16s ease;
 }
 
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: var(--bf-choice-accent-r);
 }
 
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 5px;
@@ -6452,7 +6474,8 @@
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
 	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
 	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
 }
