@@ -3232,12 +3232,20 @@
 	padding: 16px;
 }
 
-/* An empty Pro extension slot is still a sibling of the head, so it defeats the
-   `:only-child` rule above. When a block has no body and its slot is empty (e.g.
-   Lite without the Custom Email add-on), keep the head borderless as before so
-   no divider dangles under a lone toggle. */
-.bfsп-email-block:not( :has( .bfsп-email-block__body ) ):not( :has( .boldform-email-pro-slot > * ) ) .bfsп-email-block__head {
+/* The head's bottom divider is only meaningful when visible body content sits below
+   it. Drop it whenever the block has no visible body content — the toggle is off (no
+   body element at all) OR the body holds only empty, collapsed slots (e.g. User
+   Confirmation with every add-on slot inactive) — so a lone toggle never has a
+   dangling line under it. */
+.bfsп-email-block:not( :has( .bfsп-email-block__body > :not( :empty ) ) ) .bfsп-email-block__head {
 	border-bottom: none;
+}
+
+/* When the body holds only empty (collapsed) slots it is just blank padding —
+   collapse the body itself so the block is nothing but its head, instead of showing
+   an empty strip below an enabled toggle. */
+.bfsп-email-block__body:not( :has( > :not( :empty ) ) ) {
+	display: none;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
@@ -4611,16 +4619,79 @@
 }
 
 .boldform-template-group {
-	margin-bottom: 6px;
+	margin-bottom: 4px;
+	border-bottom: 1px solid #eef2f6;
+}
+
+/* Accordion header — the clickable category row. */
+.boldform-template-group__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+	margin: 0;
+	padding: 10px 10px 10px 12px;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	border-radius: 6px;
+	transition: background-color 0.15s ease;
+}
+
+.boldform-template-group__header:hover {
+	background: #f1f5f9;
+}
+
+.boldform-template-group__header:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: -2px;
 }
 
 .boldform-template-group__title {
-	padding: 8px 12px 6px;
 	font-size: 11px;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.06em;
+	color: #64748b;
+}
+
+.boldform-template-group.is-open .boldform-template-group__title {
+	color: #4338ca;
+}
+
+/* Chevron rotates when the section is open. */
+.boldform-template-group__chevron {
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
 	color: #94a3b8;
+	transition: transform 0.2s ease;
+}
+
+.boldform-template-group.is-open .boldform-template-group__chevron {
+	transform: rotate(180deg);
+	color: #6366f1;
+}
+
+/* Animated collapse using the grid 0fr -> 1fr technique (no JS height math). */
+.boldform-template-group__body {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 0.22s ease;
+}
+
+.boldform-template-group.is-open .boldform-template-group__body {
+	grid-template-rows: 1fr;
+}
+
+.boldform-template-group__inner {
+	overflow: hidden;
+	min-height: 0;
+	padding: 0 0 6px;
 }
 
 .boldform-template-preview {
@@ -4651,6 +4722,28 @@
 	margin: 0;
 	font-size: 13px;
 	color: #64748b;
+}
+
+.boldform-template-module-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	margin-top: 10px;
+	padding: 8px 12px;
+	border: 1px solid #fcd34d;
+	border-radius: 6px;
+	background: #fffbeb;
+	color: #92400e;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.boldform-template-module-notice .dashicons {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	color: #d97706;
 }
 
 .boldform-template-preview__canvas {
@@ -6219,7 +6312,8 @@
    The shell rules are scoped to .boldform-canvas-field-choices (the checkbox/
    radio wrapper) so product/terms/template choice previews keep their own look. */
 .boldform-canvas .boldform-canvas-field-body label.boldform-choice,
-.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice {
+.boldform-canvas .boldform-canvas-field-body label.boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices label.boldform-lite-form__choice {
 	display: flex;
 	align-items: center;
 	gap: var(--bf-choice-gap, 10px);
@@ -6233,13 +6327,18 @@
 	text-transform: var(--bf-choice-tt, none);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice {
 	--bf-choice-accent-r: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	cursor: default;
 }
 
-/* Native input hidden; the shell span is the visible control. */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
+/* Native input hidden; the shell span is the visible control. Scoped to the
+   builder canvas AND the template preview (both render this markup) so the
+   wp-admin core checkbox — its own tick plus forms.css's :checked::before
+   checkmark — never shows through as a second icon beside the custom shell. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input {
 	position: absolute;
 	opacity: 0;
 	width: 0;
@@ -6248,7 +6347,8 @@
 	margin: 0;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice-control {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
@@ -6263,22 +6363,26 @@
 	transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"] ~ .boldform-lite-form__choice-control {
 	border-radius: 50%;
 }
 
 /* Checked = the Accent colour. */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: var(--bf-choice-accent-r);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: #fff;
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 5px;
@@ -6288,7 +6392,8 @@
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice input[type="radio"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 8px;
@@ -6298,18 +6403,21 @@
 }
 
 /* Hover = the Hover border + background colours (fall back to normal). */
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-hover-border, var(--bf-choice-accent-r));
 	background: var(--bf-choice-hover-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
 }
 
-.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice-label {
 	flex: 1;
 	min-width: 0;
 }
 
 /* ---- Terms & Conditions ---- */
-.boldform-canvas .boldform-canvas-terms {
+.boldform-canvas .boldform-canvas-terms,
+.boldform-template-preview__canvas .boldform-canvas-terms {
 	gap: var(--bf-terms-gap, 10px);
 	margin: var(--bf-terms-margin, var(--bf-field-margin, 0));
 	color: var(--bf-terms-color, inherit);
@@ -6317,8 +6425,12 @@
 
 /* Terms checkbox uses the same custom shell as the choice fields (mirrors the
    front-end) so Border/Background/Hover/Checked/Icon all preview. Native input
-   hidden; the .boldform-lite-form__choice-control span is the visible box. */
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"] {
+   hidden — in BOTH the builder canvas and the template preview — so the wp-admin
+   core checkbox (its native tick plus forms.css's :checked::before checkmark)
+   never shows as a second icon; the .boldform-lite-form__choice-control span is
+   the only visible box. */
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"],
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"] {
 	position: absolute;
 	opacity: 0;
 	width: 0;
@@ -6327,13 +6439,14 @@
 	margin: 0;
 }
 
-.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms .boldform-lite-form__choice-control {
 	--bf-choice-accent-r: var(--bf-terms-box-checked, var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
 	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	margin-top: 2px;
+	margin-top: 0;
 	width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	height: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
 	min-width: var(--bf-terms-box-size, var(--bf-choice-size, 18px));
@@ -6344,12 +6457,14 @@
 	transition: border-color 0.16s ease, background 0.16s ease;
 }
 
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	border-color: var(--bf-choice-accent-r);
 	background: var(--bf-choice-accent-r);
 }
 
-.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+.boldform-canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after,
+.boldform-template-preview__canvas .boldform-canvas-terms input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
 	content: '';
 	display: block;
 	width: 5px;
@@ -6359,7 +6474,8 @@
 	transform: rotate(45deg) translate(-1px, -1px);
 }
 
-.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
+.boldform-canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-terms:hover .boldform-lite-form__choice-control {
 	border-color: var(--bf-terms-box-hover-border, var(--bf-terms-box-border, var(--bf-field-border, #cbd5e1)));
 	background: var(--bf-terms-box-hover-bg, var(--bf-terms-box-bg, var(--bf-field-bg, #fff)));
 }
@@ -6860,8 +6976,33 @@
 	display: none;
 }
 
+/* The FIRST section inside an email-block body has nothing above it, so drop the
+   top divider that an add-on block (PDF attachment / routing / custom email) or a
+   teaser draws on its top edge — a lone divider right under the block head reads as
+   meaningless. The Admin block opens with the recipient chooser, so its slots are
+   never :first-child (their dividers stay meaningful); the User block opens straight
+   with the attachment slot, so its first slot must not draw one. `> *` keeps this
+   decoupled from the add-on block class names. Empty slots collapse (display:none)
+   but remain :first-child in the DOM, so the last two selectors clear the divider on
+   the first VISIBLE slot when the attachment slot before it is empty (e.g. the PDF
+   module is off). */
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-routing-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-pro-slot:first-child > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:empty:first-child + .boldform-email-routing-slot > *,
+#boldform-form-settings-panel .bfsп-email-block__body > .boldform-email-attachment-slot:empty:first-child + .boldform-email-pro-slot > * {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: none;
+}
+
+/* The pro-slot upgrade teaser (shown in Lite-only) now lives inside the block
+   body, alongside the attachment/routing teasers, so it must NOT carry its own
+   horizontal/bottom padding — the body's 16px inset provides both. Keep only the
+   top-border divider + top padding so it lines up flush with the sibling slots
+   (mirrors .bf-ce-block when the Custom Email add-on is active). */
 #boldform-form-settings-panel .boldform-email-teaser {
-	padding: 14px 16px 16px;
+	padding: 14px 0 0;
 	border-top: 1px solid #e2e8f0;
 }
 

@@ -866,12 +866,29 @@ jQuery(
 			return html;
 		}
 
-		// Convert a stored "{id}" formula to a readable "{Label}" string (plain text)
-		// for the canvas preview badge. Falls back to "(id)" for deleted fields.
+		// Convert a stored "{id}" formula to a readable "Label" string (plain text)
+		// for the canvas preview badge. Two deliberate transforms:
+		//   1. Curly braces are dropped — they are formula syntax the user never
+		//      types (fields are inserted as pills in the editor), and showing them
+		//      in the read-only badge made users think they had to close a brace.
+		//   2. Operators are prettified to friendly math symbols with even spacing
+		//      (× ÷ + -), so "{Weight}/({Height}*{Height})" reads as
+		//      "Weight ÷ (Height × Height)".
+		// Both are DISPLAY-ONLY — the stored formula keeps its ASCII "*" and "/".
+		// Operators are formatted BEFORE labels are substituted, so a field label
+		// that itself contains a hyphen or operator character is never mangled.
+		// Deleted fields fall back to "(id)" so a broken reference stays visible.
 		function bfCalcFormulaToLabels( formula ) {
-			return String( formula || '' ).replace( /\{([^}]+)\}/g, function ( match, id ) {
+			var text = String( formula || '' )
+				.replace( /\s*\*\s*/g, ' × ' )
+				.replace( /\s*\/\s*/g, ' ÷ ' )
+				.replace( /\s*\+\s*/g, ' + ' )
+				.replace( /\s*-\s*/g, ' - ' )
+				.replace( /\(\s+/g, '(' )
+				.replace( /\s+\)/g, ')' );
+			return text.replace( /\{([^}]+)\}/g, function ( match, id ) {
 				var label = bfCalcLabelById( id );
-				return '{' + ( label || ( '(' + id + ')' ) ) + '}';
+				return label || ( '(' + id + ')' );
 			} );
 		}
 
@@ -1239,7 +1256,13 @@ jQuery(
 		}
 
 		function renderInputPreview( field ) {
-			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement ) ? '' : '<label>' + escapeHtml( field.label || getLibraryItem( field.type ).label ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
+			// Match the front-end renderer (shortcode.php render_control): a field
+			// whose label the user has intentionally cleared shows NO <label> at all.
+			// New fields keep their real saved label (createField stores the library
+			// name), so this only affects deliberately-emptied labels — keeping the
+			// canvas WYSIWYG instead of falling back to the field-type name.
+			var labelText = field.label || '';
+			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement || '' === labelText ) ? '' : '<label>' + escapeHtml( labelText ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
 			var html = '';
 
 			// Shared theme tokens so the advanced (Pro) field previews adopt the active
@@ -1271,7 +1294,7 @@ jQuery(
 			} else if ( field.type === 'file' ) {
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
-				return '<div class="boldform-canvas-submit is-inline"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
+				return '<div class="boldform-canvas-submit is-inline is-align-' + escapeHtml( state.formSettings.button_alignment || 'left' ) + '"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
 			} else if ( field.type === 'product' ) {
 				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
 				if ( 'select' === field.product_style ) {
@@ -3533,14 +3556,19 @@ jQuery(
 						// Carries the teaser only while the upgrade CTAs are shown,
 						// so an add-on always finds the slot empty and ready to fill.
 						'<div class="boldform-email-routing-slot" data-email-slot="admin">' + routingTeaser() + '</div>' +
+							// Pro extension slot: add-ons (e.g. Custom Email Editor) inject per-email
+							// content controls here on boldform:form_settings_rendered. It lives INSIDE
+							// __body alongside the attachment/routing slots so all three align
+							// identically — the add-on styles its own block with a top-border divider
+							// and NO horizontal padding (the body's 16px provides the inset), matching
+							// .bf-pdf-block / .bf-er-block. Inside the enabled branch, so "Customize
+							// this email" only shows when the notification is on. The teaser only
+							// occupies it while the upgrade CTAs are shown, so an add-on always finds
+							// the slot empty and ready to fill.
+							'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
-					// Pro extension slot: add-ons (e.g. Custom Email Editor) inject
-					// per-email content controls here on boldform:form_settings_rendered.
-					// The teaser only occupies it while the upgrade CTAs are shown, so an
-					// add-on always finds the slot empty and ready to fill.
-					'<div class="boldform-email-pro-slot" data-email-slot="admin">' + emailTeaser() + '</div>' +
 				'</div>' +
 				'<div class="bfsп-email-block">' +
 					'<div class="bfsп-email-block__head">' +
@@ -3556,11 +3584,13 @@ jQuery(
 					( state.formSettings.enable_user_email
 						? '<div class="bfsп-email-block__body">' +
 							'<div class="boldform-email-attachment-slot" data-email-slot="user">' + attachmentTeaser() + '</div>' +
+							// Pro extension slot for the user confirmation email — inside __body
+							// alongside the attachment slot so both align identically (see the admin
+							// block above). Inside the enabled branch, so it only shows when on.
+							'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 						'</div>'
 						: ''
 					) +
-					// Pro extension slot for the user confirmation email.
-					'<div class="boldform-email-pro-slot" data-email-slot="user">' + emailTeaser() + '</div>' +
 				'</div>';
 
 			// ── Security pane — duplicate prevention ────────────────────────────
@@ -4866,6 +4896,8 @@ jQuery(
 			business:  'Business',
 			events:    'Events & Booking',
 			hr_survey: 'HR & Surveys',
+			health:    'Health & Medical',
+			education: 'Education & Nonprofit',
 			payment:   'Payment & Calculation',
 			multi_step: 'Multi-Step'
 		};
@@ -4876,6 +4908,27 @@ jQuery(
 			job_application: 'hr_survey', customer_survey: 'hr_survey',
 			// Additional template category mappings can be added dynamically.
 		};
+
+		// Labels of any feature modules a template needs that are currently disabled.
+		// A template declares dependencies via `requires_modules` (an array of module
+		// keys); the live on/off state comes from boldformLiteBuilder.proModules (set
+		// by the Pro add-on). Returns [] when nothing is missing — so the notice shows
+		// only while a required module is off and disappears once it is re-enabled.
+		function bfTemplateMissingModules( tpl ) {
+			var req  = ( tpl && Array.isArray( tpl.requires_modules ) ) ? tpl.requires_modules : [];
+			if ( ! req.length ) return [];
+			var mods = ( boldformLiteBuilder.proModules && typeof boldformLiteBuilder.proModules === 'object' )
+				? boldformLiteBuilder.proModules
+				: {};
+			var missing = [];
+			req.forEach( function ( key ) {
+				var m = mods[ key ];
+				// Only flag a module we actually know about AND that is off. If Pro
+				// isn't present, req is empty for Lite templates, so this never fires.
+				if ( m && ! m.active ) missing.push( m.label || key );
+			} );
+			return missing;
+		}
 
 		function renderTemplateModal() {
 			var templates = getAllTemplateDefinitions();
@@ -4891,15 +4944,29 @@ jQuery(
 			var grouped = {};
 			Object.keys( tplCategories ).forEach( function ( cat ) { grouped[ cat ] = []; } );
 			Object.keys( templates ).forEach( function ( key ) {
-				var cat = tplCategoryMap[ key ] || 'general';
+				// A template may declare its own `category` (this is how Pro
+				// templates land in the right group without editing tplCategoryMap);
+				// fall back to the built-in map, then to 'general'.
+				var tpl = templates[ key ];
+				var cat = ( tpl && tpl.category ) || tplCategoryMap[ key ] || 'general';
 				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
 				grouped[ cat ].push( key );
 			} );
 
 			Object.keys( grouped ).forEach( function ( cat ) {
 				if ( ! grouped[ cat ].length ) return;
-				listMarkup += '<div class="boldform-template-group">';
-				listMarkup += '<div class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] ) + '</div>';
+				// Accordion: the group holding the currently-selected template starts
+				// open, the rest start collapsed. On first open the selection defaults
+				// to 'contact', so the first (General) group is the one shown. Keeping
+				// the selected group open means it stays expanded across the re-render
+				// that fires when a template is picked.
+				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1;
+				listMarkup += '<div class="boldform-template-group' + ( groupOpen ? ' is-open' : '' ) + '">';
+				listMarkup += '<button type="button" class="boldform-template-group__header" data-template-group-toggle aria-expanded="' + ( groupOpen ? 'true' : 'false' ) + '">';
+				listMarkup += '<span class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</span>';
+				listMarkup += '<span class="boldform-template-group__chevron dashicons dashicons-arrow-down-alt2" aria-hidden="true"></span>';
+				listMarkup += '</button>';
+				listMarkup += '<div class="boldform-template-group__body"><div class="boldform-template-group__inner">';
 				grouped[ cat ].forEach( function ( key ) {
 					var tpl = templates[ key ];
 					var isActive = key === selectedKey;
@@ -4909,6 +4976,7 @@ jQuery(
 					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
 					listMarkup += '</button>';
 				} );
+				listMarkup += '</div></div>';
 				listMarkup += '</div>';
 			} );
 
@@ -4930,9 +4998,18 @@ jQuery(
 			$( '#boldform-template-list' ).html( listMarkup );
 			$( '#boldform-template-preview-canvas' ).html( previewMarkup );
 			applyPreviewStyleBlock();
+			var missingModules = bfTemplateMissingModules( selectedTemplate );
+			var moduleNotice   = '';
+			if ( missingModules.length ) {
+				var noticeText = ( boldformLiteBuilder.labels.templateNeedsModule || 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.' )
+					.replace( '%s', missingModules.join( ', ' ) );
+				moduleNotice = '<div class="boldform-template-module-notice"><span class="dashicons dashicons-warning" aria-hidden="true"></span> ' + escapeHtml( noticeText ) + '</div>';
+			}
+
 			$( '#boldform-template-preview__head' ).html(
 				'<h3>' + escapeHtml( selectedTemplate.title ) + '</h3>' +
-				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>'
+				'<p>' + escapeHtml( selectedTemplate.description ) + '</p>' +
+				moduleNotice
 			);
 
 			$( '#boldform-import-template' )
@@ -6576,6 +6653,7 @@ jQuery(
 				if (
 					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
+					$( event.target ).is( '#boldform-enable-user-email' ) ||
 					$( event.target ).is( 'input[name="boldform-admin-email-type"]' ) ||
 					$( event.target ).is( '#boldform-dup-enabled' ) ||
 					$( event.target ).is( 'input[name="boldform-dup-method"]' )
@@ -6858,6 +6936,20 @@ jQuery(
 			function () {
 				state.selectedTemplate = String( $( this ).data( 'template-option' ) || 'contact' );
 				renderTemplateModal();
+			}
+		);
+
+		// Accordion: toggle a template category open/closed on header click. Purely
+		// DOM-driven (no re-render), so categories toggle independently — several can
+		// be open at once, and the state persists until the modal is re-rendered.
+		$( document ).on(
+			'click',
+			'[data-template-group-toggle]',
+			function () {
+				var open = $( this ).closest( '.boldform-template-group' )
+					.toggleClass( 'is-open' )
+					.hasClass( 'is-open' );
+				$( this ).attr( 'aria-expanded', open ? 'true' : 'false' );
 			}
 		);
 
