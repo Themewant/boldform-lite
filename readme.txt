@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.5
+Stable tag: 1.1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -329,6 +329,14 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 New features:
 * New: Form Migrator — bring your existing forms into BoldForm instead of rebuilding them by hand. Under Settings → Tools → Migrator, any supported form plugin you have installed appears as a source; this release imports Contact Form 7. Pick a single form, tick several, or import them all at once — each form's fields (text, email, URL, phone, number, date, dropdown, checkbox, radio, file upload, an "I agree" acceptance, and a range slider) come across with their labels, whether they were required, their options and placeholders, and the submit button's wording. The recipient address and the "thank you" message are carried over too, and anything that could not be mapped — a hidden field, a CAPTCHA, or a custom email subject and body — is listed clearly after each import so nothing disappears silently. Re-importing a form updates the one you brought over before rather than making a duplicate. More source plugins will follow, each as a simple addition.
 
+Improvements:
+* Improve: The "Choose a Template" library is now organised into collapsible categories — General, Business, Events & Booking, HR & Surveys and more — so the right starting point is easier to find. A template that relies on a premium module you have turned off now says so clearly before you import it, rather than loading half-configured.
+
+Fixes:
+* Fix: The submit button's alignment (left, centre or right) is now honoured when the button sits as a field inside the form layout, not only as the fixed button at the bottom. The Elementor widget gains a matching alignment control so the same choice is available there.
+* Fix: The Email Notification tab's User Confirmation section now reveals its options reliably when switched on — the toggle sometimes failed to show them — and "Customize this email" together with the add-on slots now sit inside the toggle, appearing only when the email is enabled. Empty sections no longer leave a stray divider or a blank strip.
+* Fix: A checkbox or radio option shown in the template preview no longer displays a doubled tick, and its label now sits a proper distance from the box.
+
 Developer:
 * Developer: New `boldform_migration_sources` filter — register an importer for another form plugin by appending an object that implements the `BoldForm_Lite_Migration_Source` interface (get_slug / get_label / is_available / get_forms / import_form). The Form Migrator lists every available source as a tab and runs each imported form through the builder's own save path, so a new source only has to describe how to read its forms.
 
@@ -531,6 +539,9 @@ Developer:
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.6 =
+Adds the Form Migrator (import your Contact Form 7 forms into BoldForm in a few clicks) and a categorised template library. Also fixes submit-button alignment when the button is a field, the Email Notification tab's User Confirmation toggle, and a doubled checkbox in the template preview. Recommended for all users.
 
 = 1.1.5 =
 Security: an email field now rejects a malformed address instead of silently correcting it (closing a header-injection route), and Cc/Bcc on the visitor's confirmation email are re-validated the same way the admin notification's already were. Also adds recipient and attachment extension hooks and a capability API for add-ons, used by BoldForm Pro's Conditional Email Routing and PDF Attachment. Recommended for all users.
