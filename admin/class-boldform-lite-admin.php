@@ -3278,7 +3278,7 @@ class BoldForm_Lite_Admin {
 									<div class="boldform-field-label"><label for="boldform-<?php echo esc_attr( $setting_key ); ?>"><?php echo esc_html( $msg_label ); ?></label></div>
 									<div class="boldform-field-control">
 										<?php
-										/* translators: %s: field type label (e.g. "Email field") */
+										/* translators: %s: field label */
 										$placeholder_text = sprintf( __( '%s is required.', 'boldform-lite' ), $msg_label );
 										?>
 										<input type="text" id="boldform-<?php echo esc_attr( $setting_key ); ?>" name="boldform_<?php echo esc_attr( $setting_key ); ?>" value="<?php echo esc_attr( $settings[ $setting_key ] ); ?>" placeholder="<?php echo esc_attr( $placeholder_text ); ?>">
@@ -3366,7 +3366,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-hcaptcha-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['hcaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: hCaptcha URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
@@ -3385,7 +3385,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: Cloudflare Turnstile dashboard URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
