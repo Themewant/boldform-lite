@@ -135,6 +135,7 @@ pre code{background:none;padding:0;color:inherit}
     <a href="#managing-entries" class="bf-sidebar__link">Managing Entries</a>
     <a href="#reports" class="bf-sidebar__link">Reports &amp; Analytics</a>
     <a href="#export-import" class="bf-sidebar__link">Export &amp; Import</a>
+    <a href="#migrator" class="bf-sidebar__link">Migrator (Import from CF7)</a>
 
     <div class="bf-sidebar__group">Settings</div>
     <a href="#global-settings" class="bf-sidebar__link">Global Settings</a>
@@ -321,7 +322,7 @@ pre code{background:none;padding:0;color:inherit}
     <tr><td><strong>Product</strong></td><td>Select a product with price; auto-updates order total</td></tr>
     <tr><td><strong>Quantity</strong></td><td>Number input linked to product; auto-updates order total</td></tr>
     <tr><td><strong>Custom Amount</strong></td><td>User-entered price (e.g., donation amount, custom fee)</td></tr>
-    <tr><td><strong>Order Summary</strong></td><td>Displays itemized order with total (read-only; updates live as user selects products)</td></tr>
+    <tr><td><strong>Order Summary</strong></td><td>Displays itemized order with total (read-only; updates live as user selects products). Needs at least one priced field (Product or Custom Amount) to charge &mdash; on its own it simply shows a $0 total and the form submits as a normal free entry.</td></tr>
     <tr><td><strong>Calculation</strong></td><td>Formula-based field; displays calculated result based on other field values</td></tr>
   </tbody>
 </table>
@@ -1112,6 +1113,28 @@ For CSV export of individual entries, see <strong>CSV Entry Export</strong> belo
   <li>Forms are imported with new IDs (original IDs are not overwritten)</li>
   <li>Settings are merged with existing settings</li>
 </ul>
+
+<h3 id="migrator">Migrator &mdash; Import from Contact Form 7</h3>
+<p>If you already have forms in another plugin, the <strong>Migrator</strong> tab
+(<strong>BoldForm &rarr; Settings &rarr; Tools &rarr; Migrator</strong>) rebuilds them in
+BoldForm for you. This release imports <strong>Contact Form 7</strong>; more source plugins
+will follow. The tab only appears for form plugins you actually have installed.</p>
+<ul>
+  <li>Each Contact Form 7 form is listed with an <strong>Import Form</strong> button; you can
+      also tick several and use <strong>Import Selected</strong>, or <strong>Import All Forms</strong>.</li>
+  <li>Fields are mapped automatically &mdash; text, email, URL, phone, number, date, dropdown,
+      checkbox, radio, file upload, a range slider, and an acceptance checkbox &mdash; keeping
+      their labels, required state, options and placeholders. The submit button's wording and the
+      form's recipient address and confirmation ("thank you") message come across too.</li>
+  <li>Anything that can't be mapped &mdash; a hidden field, a CAPTCHA, or a custom email subject
+      and body &mdash; is listed after the import so you know exactly what to set up by hand.</li>
+  <li>Each imported form gets an <strong>Edit form</strong> link so you can fine-tune it right away.</li>
+  <li><strong>Re-importing</strong> a form updates the one you brought over before instead of
+      creating a duplicate &mdash; note that it overwrites that form's fields with the source version,
+      so any manual edits you made after importing are replaced.</li>
+</ul>
+<p>The Migrator copies the form's <em>structure and basic settings</em>; existing submissions in
+the other plugin are not moved.</p>
 
 <!-- Global Settings -->
 <h2 id="global-settings">Global Settings</h2>

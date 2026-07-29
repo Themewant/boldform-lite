@@ -54,7 +54,7 @@ class BoldForm_Lite_Export_Import {
 		if ( in_array( $tools_sub, array( 'export', 'import' ), true ) ) {
 			$tools_sub = 'forms';
 		}
-		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries' ), true ) ? $tools_sub : 'forms';
+		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries', 'migrator' ), true ) ? $tools_sub : 'forms';
 
 		$notice = '';
 
@@ -89,6 +89,9 @@ class BoldForm_Lite_Export_Import {
 			</a>
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=entries' ) ); ?>" class="<?php echo 'entries' === $tools_sub ? 'active' : ''; ?>">
 				<?php esc_html_e( 'Entries', 'boldform-lite' ); ?>
+			</a>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=migrator' ) ); ?>" class="<?php echo 'migrator' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Migrator', 'boldform-lite' ); ?>
 			</a>
 		</div>
 
@@ -199,6 +202,10 @@ class BoldForm_Lite_Export_Import {
 					</div>
 				</form>
 			</div>
+
+		<?php elseif ( 'migrator' === $tools_sub ) : ?>
+
+			<?php $this->plugin->get_migrator()->render_tab(); ?>
 
 		<?php else : ?>
 

@@ -78,6 +78,13 @@ final class BoldForm_Lite {
 	private $export_import;
 
 	/**
+	 * Form Migrator controller.
+	 *
+	 * @var BoldForm_Lite_Migrator
+	 */
+	private $migrator;
+
+	/**
 	 * Integrations page handler.
 	 *
 	 * @var BoldForm_Lite_Integrations_Page
@@ -155,6 +162,9 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-elementor.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-email-handler.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-export-import.php';
+		require_once BOLDFORM_LITE_PATH . 'admin/migrator/interface-boldform-lite-migration-source.php';
+		require_once BOLDFORM_LITE_PATH . 'admin/migrator/class-boldform-lite-migration-result.php';
+		require_once BOLDFORM_LITE_PATH . 'admin/migrator/class-boldform-lite-migrator.php';
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-integrations-page.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-privacy.php';
@@ -168,6 +178,7 @@ final class BoldForm_Lite {
 		$this->block             = new BoldForm_Lite_Block( $this );
 		$this->elementor         = new BoldForm_Lite_Elementor( $this );
 		$this->export_import     = new BoldForm_Lite_Export_Import( $this );
+		$this->migrator          = new BoldForm_Lite_Migrator( $this );
 		$this->integrations_page = new BoldForm_Lite_Integrations_Page( $this );
 		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
 		$this->privacy           = new BoldForm_Lite_Privacy( $this );
@@ -242,6 +253,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'boldform_form_saved', $this->cache, 'purge_on_form_saved', 10, 3 );
 
 		$this->export_import->init();
+		$this->migrator->init();
 		$this->integrations_page->init();
 		$this->integrations->init();
 
@@ -438,6 +450,15 @@ final class BoldForm_Lite {
 	 */
 	public function get_export_import() {
 		return $this->export_import;
+	}
+
+	/**
+	 * Returns the Form Migrator controller.
+	 *
+	 * @return BoldForm_Lite_Migrator
+	 */
+	public function get_migrator() {
+		return $this->migrator;
 	}
 
 	/**
