@@ -99,7 +99,7 @@ pre code{background:none;padding:0;color:inherit}
 
 <h1 id="introduction">BoldForm Lite &mdash; Developer Guide</h1>
 <p class="bf-subtitle">Extend, customize, and integrate with BoldForm using hooks, filters, and the plugin's architecture.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to v1.1.3 · Updated 2026-07-13</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.5 · Pro v1.1.2 · Updated 2026-07-21</p>
 
 <p>BoldForm Lite is designed with extensibility in mind. Every major operation &mdash; rendering, saving, validation, email &mdash; passes through WordPress filters and actions. This guide covers the public API surface available to developers.</p>
 
@@ -148,6 +148,24 @@ add_action( 'plugins_loaded', 'boldform_lite' );</code></pre>
 
 <p><strong>Important:</strong> This is the canonical bootstrap hook for all extensions. It runs after BoldForm's own hooks are in place, ensuring a stable foundation for your customizations.</p>
 
+<h3>Freemium teaser seams</h3>
+<p>Lite renders its upgrade prompts <strong>unconditionally</strong> — it never detects whether Pro is installed.
+An add-on removes or replaces a teaser by hooking a seam; there are two shapes:</p>
+<ul>
+  <li><strong>Boolean gate — <code>boldform_show_upgrade_cta</code>:</strong> a single filter (default <code>true</code>)
+  that guards every &ldquo;Upgrade&rdquo; prompt — the promo notice, admin menu item, toolbar button and page-header
+  link, plus the builder's locked email/attachment/routing teasers. Pro simply calls
+  <code>add_filter( 'boldform_show_upgrade_cta', '__return_false' )</code> to hide them all at once, without Lite
+  knowing which add-on is present.</li>
+  <li><strong>Registry/data filter — <code>boldform_integration_type_defs</code>:</strong> Lite lists paid services as
+  <em>static</em> teaser cards by flagging them <code>'pro' =&gt; true</code> with empty <code>fields</code>. Pro's
+  callback injects the real <code>fields</code> and <code>unset()</code>s the <code>'pro'</code> flag, so the very same
+  card renders as a live, configurable control instead of a locked teaser. (See <a href="#integration-hooks">Integration
+  Hooks</a>.)</li>
+</ul>
+<p>Rule of thumb: a yes/no &ldquo;show or hide&rdquo; decision is a boolean gate; adding or modifying a <em>set</em>
+(fields, services, columns) is a registry filter. Both are standard WordPress filter idioms.</p>
+
 <!-- Pro Architecture -->
 <h2 id="pro-architecture">BoldForm Pro — Architecture &amp; Extension Model <span style="background:#fef3c7;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></h2>
 
@@ -180,7 +198,7 @@ class BoldForm_Pro_Payments implements BoldForm_Pro_Module_Interface {
 <strong>Scheduling</strong> module boots slightly earlier via <code>BoldForm_Pro_Scheduling::boot()</code> so it
 can gate form output before render.</p>
 
-<h3>Pro Modules (24)</h3>
+<h3>Pro Modules (28)</h3>
 <p>Pro ships its features as self-contained modules, each registering its own fields and hooks:</p>
 <ul>
   <li><strong>Multi-Page</strong> — <code>page_break</code> field, progress bar, step navigation</li>
@@ -207,6 +225,10 @@ can gate form output before render.</p>
   <li><strong>Draft Auto-Save</strong> — auto-save in-progress input and restore on return</li>
   <li><strong>Form Locking</strong> — password-protect an individual form</li>
   <li><strong>Entry Approval</strong> — hold submissions for admin review before notifications/integrations fire; approve/reject per entry or in bulk (uses the deferral + entries-list seams)</li>
+  <li><strong>Custom Email</strong> — per-form custom subject/body for the admin &amp; user emails, merge-tag engine, per-email Reply-To (fills the <code>.boldform-email-pro-slot</code> on <code>boldform:form_settings_rendered</code>)</li>
+  <li><strong>Custom Confirmation</strong> — merge tags in the on-screen thank-you message (Custom Thank-You), sharing the merge-tag engine</li>
+  <li><strong>Email Routing</strong> — Conditional Email Routing; picks the admin recipient from the answers via <code>boldform_lite_admin_email_to</code> (fills the <code>.boldform-email-routing-slot</code>)</li>
+  <li><strong>PDF Attachment</strong> — generates a per-submission PDF and attaches it to either email via <code>boldform_lite_admin_email_attachments</code> / <code>boldform_lite_user_email_attachments</code> (fills the <code>.boldform-email-attachment-slot</code>); also a Download PDF button per entry</li>
 </ul>
 <p class="bf-note">Several of these modules plug into Lite via the extension hooks documented below — e.g. Entry Notes
 uses <code>boldform_entry_detail_sidebar</code> / <code>boldform_entry_detail_enqueue_assets</code>, and every Pro
@@ -349,6 +371,13 @@ field type registers through <code>boldform_allowed_field_types</code> + <code>b
   <tbody>
     <tr><td><code>boldform_before_notifications</code></td><td>action</td><td>Fires before any admin/user emails are sent</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_after_notifications</code></td><td>action</td><td>Fires after all notifications (emails) have been sent</td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_lite_admin_email_subject</code> / <code>_content</code></td><td>filter</td><td>Subject/HTML body of the admin notification (4th <code>$entry_id</code> arg since 1.1.4). <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_lite_admin_email_headers</code></td><td>filter</td><td>Adjust the admin email <code>wp_mail</code> headers (e.g. Reply-To)</td><td>1.1.4</td></tr>
+    <tr><td><code>boldform_lite_admin_email_to</code></td><td>filter</td><td>Choose the admin recipient after form settings apply (re-validated; used by Conditional Email Routing). <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.1.5</td></tr>
+    <tr><td><code>boldform_lite_admin_email_attachments</code></td><td>filter</td><td>Add files to the admin email; each path re-validated to a readable file inside uploads (used by PDF Attachment). <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.1.5</td></tr>
+    <tr><td><code>boldform_lite_user_email_subject</code> / <code>_content</code></td><td>filter</td><td>Subject/HTML body of the user confirmation (5th <code>$entry_id</code> arg since 1.1.4). <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_lite_user_email_headers</code></td><td>filter</td><td>Adjust the user confirmation <code>wp_mail</code> headers</td><td>1.1.4</td></tr>
+    <tr><td><code>boldform_lite_user_email_attachments</code></td><td>filter</td><td>Add files to the user confirmation (starts empty; same uploads-boundary validation). <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.1.5</td></tr>
   </tbody>
 </table>
 
@@ -385,8 +414,34 @@ field type registers through <code>boldform_allowed_field_types</code> + <code>b
     <tr><td><code>boldform_admin_bar_items</code></td><td>filter</td><td>Add items to the BoldForm WordPress admin bar dropdown</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_form_saved</code></td><td>action</td><td>Fires after a form is saved in the builder (admin context)</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_form_settings_extra</code></td><td>filter</td><td>Add custom settings fields to the form Settings tab</td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_show_upgrade_cta</code></td><td>filter</td><td>Return <code>false</code> to suppress every free-version upgrade prompt (promo notice, menu item, toolbar button, page-header link). The master teaser gate. <span style="background:#ecfdf5;padding:2px 6px;border-radius:3px;font-size:11px"><strong>PRO</strong></span></td><td>1.1.4</td></tr>
+    <tr><td><code>boldform_migration_sources</code></td><td>filter</td><td>Register a Form Migrator source (importer for another form plugin). Append an object implementing <code>BoldForm_Lite_Migration_Source</code>.</td><td>1.1.6</td></tr>
   </tbody>
 </table>
+
+<h3>Form Migrator sources</h3>
+<p>The Form Migrator (<strong>Settings &rarr; Tools &rarr; Migrator</strong>) imports forms from other
+plugins into BoldForm. Contact Form 7 ships as the first source; each additional source is one class
+implementing <code>BoldForm_Lite_Migration_Source</code> and registered through the
+<code>boldform_migration_sources</code> filter. The controller stays source-agnostic: it lists every
+available source as a tab, and runs each imported form's plain <code>rows</code>/<code>settings</code>
+through the builder's own save path (<code>BoldForm_Lite_Ajax_Save::prepare_rows()</code> and
+<code>::normalize_form_settings()</code>) &mdash; a source never writes <code>fields_json</code> directly.</p>
+<pre><code>interface BoldForm_Lite_Migration_Source {
+    public function get_slug();        // 'cf7' — used in URLs, nonces, the migration marker
+    public function get_label();       // 'Contact Form 7' (translatable)
+    public function is_available();    // true when the source plugin/data is present
+    public function get_forms();       // [ { id, title, imported } ]
+    public function import_form( $id ); // { title, rows, settings, skipped[], source_id } | WP_Error
+}
+
+add_filter( 'boldform_migration_sources', function ( $sources ) {
+    $sources[] = new My_WPForms_Migration_Source();
+    return $sources;
+} );</code></pre>
+<p>Idempotency is handled by the controller via an autoloaded <code>boldform_migration_map</code> option
+(<code>"{slug}:{source_id}" =&gt; form_id</code>), so a re-import updates the previously created form
+instead of duplicating it. A source only needs to describe how to read its own forms.</p>
 
 <h3>Block &amp; Elementor</h3>
 <table>
@@ -1158,7 +1213,7 @@ initializer so it only runs once per form element:</p>
     developer-guide.html  # This file</code></pre>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.3 &mdash; Developer Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.5 &mdash; Developer Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>

@@ -325,6 +325,13 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.6 =
+New features:
+* New: Form Migrator — bring your existing forms into BoldForm instead of rebuilding them by hand. Under Settings → Tools → Migrator, any supported form plugin you have installed appears as a source; this release imports Contact Form 7. Pick a single form, tick several, or import them all at once — each form's fields (text, email, URL, phone, number, date, dropdown, checkbox, radio, file upload, an "I agree" acceptance, and a range slider) come across with their labels, whether they were required, their options and placeholders, and the submit button's wording. The recipient address and the "thank you" message are carried over too, and anything that could not be mapped — a hidden field, a CAPTCHA, or a custom email subject and body — is listed clearly after each import so nothing disappears silently. Re-importing a form updates the one you brought over before rather than making a duplicate. More source plugins will follow, each as a simple addition.
+
+Developer:
+* Developer: New `boldform_migration_sources` filter — register an importer for another form plugin by appending an object that implements the `BoldForm_Lite_Migration_Source` interface (get_slug / get_label / is_available / get_forms / import_form). The Form Migrator lists every available source as a tab and runs each imported form through the builder's own save path, so a new source only has to describe how to read its forms.
+
 = 1.1.5 =
 Security:
 * Fix: An email field now rejects an address that is not one, instead of quietly correcting it. Typing something like "you@example.com" followed by a line break and more text used to be accepted and saved as a different address than was typed — WordPress's email sanitizer strips the offending characters and hands back an address that still looks valid. The form now reports "must be a valid email address" and saves nothing. Every genuine address is unaffected, including plus-tags, subdomains, mixed case, stray spaces, and addresses pasted out of Word, Outlook or a web page (which often carry an invisible character along with them).
