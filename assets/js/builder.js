@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation', 'page_break' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -1295,6 +1295,12 @@ jQuery(
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
 				return '<div class="boldform-canvas-submit is-inline is-align-' + escapeHtml( state.formSettings.button_alignment || 'left' ) + '"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
+			} else if ( field.type === 'page_break' ) {
+				// Shows the Step Title set in the settings panel directly on the canvas
+				// row, so which step starts here is visible without opening Settings.
+				return '<div class="boldform-canvas-page-break"><span class="dashicons dashicons-layout"></span><strong>' + escapeHtml( boldformLiteBuilder.labels.pageBreak || 'Page Break' ) + '</strong>' +
+					( field.step_title ? '<span class="boldform-canvas-page-break__title">&#8212; ' + escapeHtml( field.step_title ) + '</span>' : '' ) +
+				'</div>';
 			} else if ( field.type === 'product' ) {
 				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
 				if ( 'select' === field.product_style ) {
@@ -2536,20 +2542,110 @@ jQuery(
 				'<div class="boldform-field-accordion' + ( activeAccordion === 'settings' ? ' is-open' : '' ) + '" data-accordion="settings">' +
 					'<button type="button" class="boldform-field-accordion__head">' + escapeHtml( boldformLiteBuilder.labels.settings || 'Settings' ) + ' <span class="dashicons dashicons-arrow-down-alt2"></span></button>' +
 					'<div class="boldform-field-accordion__body">' +
-					'<div class="boldform-setting-group">' +
-						'<label for="boldform-setting-label">' + escapeHtml( boldformLiteBuilder.labels.label ) + '</label>' +
-						'<input type="text" id="boldform-setting-label" value="' + escapeHtml( selected.field.label ) + '">' +
-					'</div>' +
-					'<div class="boldform-setting-group">' +
-						'<label>' + escapeHtml( boldformLiteBuilder.labels.labelPlacement || 'Label Placement' ) + '</label>' +
-						'<div class="boldform-btn-group" id="boldform-setting-label-placement">' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'top' === ( selected.field.label_placement || 'top' ) ? ' is-active' : '' ) + '" data-value="top">' + escapeHtml( boldformLiteBuilder.labels.top || 'Top' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'left' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="left">' + escapeHtml( boldformLiteBuilder.labels.left || 'Left' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'right' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="right">' + escapeHtml( boldformLiteBuilder.labels.right || 'Right' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'bottom' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="bottom">' + escapeHtml( boldformLiteBuilder.labels.below || 'Below' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
+					( 'page_break' === selected.field.type ?
+						// A Page Break is a structural divider between steps, not an input --
+						// it has no visible label, placeholder or default value of its own.
+						// Its only real settings are the step's title and how the multi-step
+						// progress indicator looks (a form-wide choice, set from here since
+						// this is the field users think of as "the step").
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-step-title">Step Title</label>' +
+							'<input type="text" id="boldform-setting-step-title" value="' + escapeHtml( selected.field.step_title || '' ) + '" placeholder="' + escapeHtml( selected.field.label || 'Page Break' ) + '">' +
+							'<p class="boldform-setting-desc">Shown in the multi-step progress indicator for the step that follows.</p>' +
 						'</div>' +
-					'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-page-break-progress-style">Progress Style</label>' +
+							'<select id="boldform-page-break-progress-style">' +
+								'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
+								'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Numbers</option>' +
+								'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Headings</option>' +
+							'</select>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-progress-color">Progress Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '">' +
+										'<input type="color" id="boldform-page-break-progress-color" value="' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '" data-color-for="boldform-page-break-progress-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-progress-bg-color">Progress Background</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '">' +
+										'<input type="color" id="boldform-page-break-progress-bg-color" value="' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '" data-color-for="boldform-page-break-progress-bg-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+						'<p class="boldform-setting-desc">Progress Color highlights the active/completed step; Progress Background is the unfilled track behind it. Both apply to Progress Bar, Numbers and Headings alike.</p>' +
+						'<div class="boldform-setting-group">' +
+							'<p class="boldform-setting-desc" style="margin:8px 0 0;font-weight:600;color:#374151">Step Navigation Buttons</p>' +
+							'<p class="boldform-setting-desc">The Next/Previous buttons render for every style above — these settings are not tied to the Progress Style choice.</p>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-color">Nav Button Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '">' +
+										'<input type="color" id="boldform-page-break-btn-color" value="' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '" data-color-for="boldform-page-break-btn-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-text-color">Nav Button Text Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '">' +
+										'<input type="color" id="boldform-page-break-btn-text-color" value="' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '" data-color-for="boldform-page-break-btn-text-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-size">Nav Button Size</label>' +
+								'<select id="boldform-page-break-btn-size">' +
+									'<option value="small"' + ( 'small' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Small</option>' +
+									'<option value="medium"' + ( 'medium' === ( state.formSettings.step_btn_size || 'medium' ) ? ' selected' : '' ) + '>Medium</option>' +
+									'<option value="large"' + ( 'large' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Large</option>' +
+								'</select>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-radius">Nav Button Radius (px)</label>' +
+								'<input type="number" id="boldform-page-break-btn-radius" min="0" max="50" value="' + escapeHtml( '' === ( state.formSettings.step_btn_radius || '' ) ? '' : String( state.formSettings.step_btn_radius ) ) + '" placeholder="6">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-next-text">Next Button Text</label>' +
+								'<input type="text" id="boldform-page-break-next-text" value="' + escapeHtml( state.formSettings.step_next_text || '' ) + '" placeholder="Next">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-prev-text">Previous Button Text</label>' +
+								'<input type="text" id="boldform-page-break-prev-text" value="' + escapeHtml( state.formSettings.step_prev_text || '' ) + '" placeholder="Previous">' +
+							'</div>' +
+						'</div>'
+					:
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-label">' + escapeHtml( boldformLiteBuilder.labels.label ) + '</label>' +
+							'<input type="text" id="boldform-setting-label" value="' + escapeHtml( selected.field.label ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label>' + escapeHtml( boldformLiteBuilder.labels.labelPlacement || 'Label Placement' ) + '</label>' +
+							'<div class="boldform-btn-group" id="boldform-setting-label-placement">' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'top' === ( selected.field.label_placement || 'top' ) ? ' is-active' : '' ) + '" data-value="top">' + escapeHtml( boldformLiteBuilder.labels.top || 'Top' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'left' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="left">' + escapeHtml( boldformLiteBuilder.labels.left || 'Left' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'right' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="right">' + escapeHtml( boldformLiteBuilder.labels.right || 'Right' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'bottom' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="bottom">' + escapeHtml( boldformLiteBuilder.labels.below || 'Below' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
+							'</div>' +
+						'</div>'
+					) +
 					( specialFieldTypes.indexOf( selected.field.type ) !== -1 || 'star_rating' === selected.field.type ? '' :
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder ) + '</label>' +
@@ -3081,24 +3177,26 @@ jQuery(
 				'<div class="boldform-field-accordion' + ( activeAccordion === 'advanced' ? ' is-open' : '' ) + '" data-accordion="advanced">' +
 					'<button type="button" class="boldform-field-accordion__head">' + escapeHtml( boldformLiteBuilder.labels.advanced || 'Advanced' ) + ' <span class="dashicons dashicons-arrow-down-alt2"></span></button>' +
 					'<div class="boldform-field-accordion__body">' +
-					'<div class="boldform-switch-item">' +
-						'<label class="boldform-switch__row">' +
-							'<span class="boldform-switch__text">' + escapeHtml( boldformLiteBuilder.labels.required ) + '</span>' +
-							'<input type="checkbox" id="boldform-setting-required"' + ( selected.field.required ? ' checked' : '' ) + '>' +
-							'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
-						'</label>' +
-					'</div>' +
-					( selected.field.required ?
+					( 'page_break' === selected.field.type ? '' :
+						'<div class="boldform-switch-item">' +
+							'<label class="boldform-switch__row">' +
+								'<span class="boldform-switch__text">' + escapeHtml( boldformLiteBuilder.labels.required ) + '</span>' +
+								'<input type="checkbox" id="boldform-setting-required"' + ( selected.field.required ? ' checked' : '' ) + '>' +
+								'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+							'</label>' +
+						'</div>' +
+						( selected.field.required ?
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-custom-error">' + escapeHtml( boldformLiteBuilder.labels.customError || 'Custom error message' ) + '</label>' +
+								'<input type="text" id="boldform-setting-custom-error" value="' + escapeHtml( selected.field.custom_error || '' ) + '" placeholder="' + escapeHtml( ( selected.field.label || 'This field' ) + ' is required.' ) + '">' +
+							'</div>' : ''
+						) +
 						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-custom-error">' + escapeHtml( boldformLiteBuilder.labels.customError || 'Custom error message' ) + '</label>' +
-							'<input type="text" id="boldform-setting-custom-error" value="' + escapeHtml( selected.field.custom_error || '' ) + '" placeholder="' + escapeHtml( ( selected.field.label || 'This field' ) + ' is required.' ) + '">' +
-						'</div>' : ''
+							'<label for="boldform-setting-auto-populate-key">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateKey || 'Auto Populate Key' ) + '</label>' +
+							'<input type="text" id="boldform-setting-auto-populate-key" value="' + escapeHtml( selected.field.auto_populate_key || '' ) + '" placeholder="e.g. name, email, user_email">' +
+							'<p class="boldform-setting-desc">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateDesc || 'Pre-fill from URL parameter (?key=value) or logged-in user data.' ) + '</p>' +
+						'</div>'
 					) +
-					'<div class="boldform-setting-group">' +
-						'<label for="boldform-setting-auto-populate-key">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateKey || 'Auto Populate Key' ) + '</label>' +
-						'<input type="text" id="boldform-setting-auto-populate-key" value="' + escapeHtml( selected.field.auto_populate_key || '' ) + '" placeholder="e.g. name, email, user_email">' +
-						'<p class="boldform-setting-desc">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateDesc || 'Pre-fill from URL parameter (?key=value) or logged-in user data.' ) + '</p>' +
-					'</div>' +
 					'<div class="boldform-setting-group">' +
 						'<label for="boldform-setting-css-class">' + escapeHtml( boldformLiteBuilder.labels.cssClass || 'CSS Class' ) + '</label>' +
 						'<input type="text" id="boldform-setting-css-class" value="' + escapeHtml( selected.field.css_class || '' ) + '" placeholder="my-custom-class">' +
@@ -6107,7 +6205,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-max-stars, #boldform-setting-star-color, #boldform-setting-star-inactive-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high, #boldform-setting-nps-detractor-color, #boldform-setting-nps-passive-color, #boldform-setting-nps-promoter-color',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-max-stars, #boldform-setting-star-color, #boldform-setting-star-inactive-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-page-break-progress-style, #boldform-page-break-progress-color, #boldform-page-break-progress-bg-color, #boldform-page-break-btn-color, #boldform-page-break-btn-text-color, #boldform-page-break-btn-size, #boldform-page-break-btn-radius, #boldform-page-break-next-text, #boldform-page-break-prev-text, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high, #boldform-setting-nps-detractor-color, #boldform-setting-nps-passive-color, #boldform-setting-nps-promoter-color',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -6174,6 +6272,37 @@ jQuery(
 				}
 				if ( $( '#boldform-setting-step-title' ).length ) {
 					selected.field.step_title = $( '#boldform-setting-step-title' ).val();
+				}
+				// Progress style is a form-wide setting (there is one indicator for the
+				// whole multi-step form), not a per-field one -- edited from the Page
+				// Break panel since that's where users look for it, but stored on
+				// formSettings like the submit button's settings are above.
+				if ( $( '#boldform-page-break-progress-style' ).length ) {
+					state.formSettings.step_progress_style = $( '#boldform-page-break-progress-style' ).val() || 'bar';
+				}
+				if ( $( '#boldform-page-break-progress-color' ).length ) {
+					state.formSettings.step_progress_color = $( '#boldform-page-break-progress-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-progress-bg-color' ).length ) {
+					state.formSettings.step_progress_bg_color = $( '#boldform-page-break-progress-bg-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-color' ).length ) {
+					state.formSettings.step_btn_color = $( '#boldform-page-break-btn-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-text-color' ).length ) {
+					state.formSettings.step_btn_text_color = $( '#boldform-page-break-btn-text-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-size' ).length ) {
+					state.formSettings.step_btn_size = $( '#boldform-page-break-btn-size' ).val() || 'medium';
+				}
+				if ( $( '#boldform-page-break-btn-radius' ).length ) {
+					state.formSettings.step_btn_radius = '' === $( '#boldform-page-break-btn-radius' ).val() ? '' : Math.max( 0, Math.min( 50, parseInt( $( '#boldform-page-break-btn-radius' ).val(), 10 ) || 0 ) );
+				}
+				if ( $( '#boldform-page-break-next-text' ).length ) {
+					state.formSettings.step_next_text = $( '#boldform-page-break-next-text' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-prev-text' ).length ) {
+					state.formSettings.step_prev_text = $( '#boldform-page-break-prev-text' ).val() || '';
 				}
 				if ( $( '#boldform-setting-product-style' ).length ) {
 					selected.field.product_style = $( '#boldform-setting-product-style' ).val();

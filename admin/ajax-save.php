@@ -515,6 +515,7 @@ class BoldForm_Lite_Ajax_Save {
 			// Multi-step settings (saved by Pro's builder UI, passed through for Pro's rendering).
 			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
+			'step_progress_bg_color' => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
 			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
 			'step_btn_text_color' => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
 			'step_btn_size'       => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
