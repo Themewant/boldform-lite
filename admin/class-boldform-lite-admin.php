@@ -2400,29 +2400,21 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_forms_page() {
-		$current_view   = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$is_trash       = 'trash' === $current_view;
-		$forms          = $this->get_forms( $current_view );
-		$all_count      = $this->get_forms_count();
-		$trash_count    = $this->get_forms_count( 'trash' );
-		$entry_counts   = $this->get_entry_counts_by_form();
-		$notice         = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_view    = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$is_trash        = 'trash' === $current_view;
+		$all_count       = $this->get_forms_count();
+		$trash_count     = $this->get_forms_count( 'trash' );
+		$notice          = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form_action_url = $is_trash ? admin_url( 'admin.php?page=boldform-lite&form_status=trash' ) : admin_url( 'admin.php?page=boldform-lite' );
 
 		// Status filter (Active/Inactive) — applies to the non-trash view only.
 		$status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( wp_unslash( $_GET['status_filter'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! in_array( $status_filter, array( 'active', 'inactive' ), true ) ) {
+		if ( ! in_array( $status_filter, array( 'active', 'inactive' ), true ) || $is_trash ) {
 			$status_filter = '';
-		}
-		if ( '' !== $status_filter && ! $is_trash ) {
-			$forms = $this->filter_forms_by_status( $forms, $status_filter );
 		}
 
 		// Search (matches against the form title).
 		$search_term = isset( $_GET['s'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['s'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( '' !== $search_term ) {
-			$forms = $this->filter_forms_by_search( $forms, $search_term );
-		}
 
 		// Sorting (server-side, WP-style): allowlisted column + direction.
 		$allowed_orderby = array( 'title', 'entries', 'updated' );
@@ -2431,11 +2423,22 @@ class BoldForm_Lite_Admin {
 			$orderby = '';
 		}
 		$order = ( isset( $_GET['order'] ) && 'asc' === strtolower( sanitize_key( wp_unslash( $_GET['order'] ) ) ) ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( '' !== $orderby ) {
-			$forms = $this->sort_forms_list( $forms, $orderby, $order, $entry_counts );
-		}
 
-		// Sort links must preserve the active status filter and search term in the URL.
+		// Pagination — server-side, fixed 10-per-page (mirrors the Entries list).
+		// Filtering/searching/sorting all run in SQL (see get_forms()/get_forms_total()),
+		// which is required for pagination to be correct: applying them in PHP after a
+		// LIMIT/OFFSET slice would only filter/sort the current page's rows.
+		$per_page     = 10;
+		$total_items  = $this->get_forms_total( $current_view, $status_filter, $search_term );
+		$total_pages  = max( 1, (int) ceil( $total_items / $per_page ) );
+		$current_page = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_page = min( $current_page, $total_pages );
+		$offset       = ( $current_page - 1 ) * $per_page;
+
+		$forms = $this->get_forms( $current_view, $status_filter, $search_term, $orderby, $order, $per_page, $offset );
+
+		// Sort/search/filter links must preserve the active status filter and search term
+		// in the URL. They deliberately don't carry `paged` — changing them resets to page 1.
 		$sort_base_url = ( '' !== $status_filter ) ? add_query_arg( 'status_filter', $status_filter, $form_action_url ) : $form_action_url;
 		if ( '' !== $search_term ) {
 			$sort_base_url = add_query_arg( 's', rawurlencode( $search_term ), $sort_base_url );
@@ -2561,7 +2564,7 @@ class BoldForm_Lite_Admin {
 								<?php foreach ( $forms as $form ) : ?>
 									<?php
 									$form_id_int   = absint( $form->id );
-									$form_entries  = absint( $entry_counts[ (int) $form->id ] ?? 0 );
+									$form_entries  = absint( $form->entry_count ?? 0 );
 									$form_fields   = count( $this->extract_fields_from_record( $form ) );
 									$shortcode_str = '[boldform id="' . $form_id_int . '"]';
 									?>
@@ -2642,6 +2645,43 @@ class BoldForm_Lite_Admin {
 					</table>
 					</div>
 				</form>
+
+				<?php if ( $total_pages > 1 ) : ?>
+					<div class="boldform-pagination">
+						<?php
+						$paginate_args = array(
+							'form_status'   => $is_trash ? 'trash' : '',
+							'status_filter' => $status_filter,
+							's'             => $search_term,
+							'orderby'       => $orderby,
+							'order'         => '' !== $orderby ? $order : '',
+						);
+						$paginate_args = array_filter( $paginate_args, 'strlen' );
+
+						echo wp_kses_post(
+							paginate_links(
+								array(
+									'base'      => add_query_arg(
+										array_merge(
+											array(
+												'page'  => 'boldform-lite',
+												'paged' => '%#%',
+											),
+											$paginate_args
+										),
+										admin_url( 'admin.php' )
+									),
+									'format'    => '',
+									'current'   => min( $current_page, $total_pages ),
+									'total'     => $total_pages,
+									'prev_text' => __( '&laquo;', 'boldform-lite' ),
+									'next_text' => __( '&raquo;', 'boldform-lite' ),
+								)
+							)
+						);
+						?>
+					</div>
+				<?php endif; ?>
 			</div>
 
 		</div>
@@ -4067,98 +4107,126 @@ class BoldForm_Lite_Admin {
 	 * @param string $view 'all' for non-trashed forms, 'trash' for trashed forms.
 	 * @return array<int, object>
 	 */
-	private function get_forms( $view = 'all' ) {
+	private function get_forms( $view = 'all', $status_filter = '', $search_term = '', $orderby = '', $order = 'desc', $per_page = null, $offset = 0 ) {
 		global $wpdb;
 
-		$table_name = $this->plugin->get_forms_table_name();
+		$forms_table   = esc_sql( $this->plugin->get_forms_table_name() );
+		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$safe_table = esc_sql( $table_name );
+		list( $where, $params ) = $this->build_forms_where( $view, $status_filter, $search_term );
 
-		if ( 'trash' === $view ) {
-			return $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, fields_json, updated_at FROM `{$safe_table}` WHERE status = %s ORDER BY id DESC", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$order_sql = $this->forms_order_sql( $orderby, $order );
+
+		$limit_sql = '';
+		if ( null !== $per_page ) {
+			$limit_sql = 'LIMIT %d OFFSET %d';
+			$params[]  = (int) $per_page;
+			$params[]  = (int) $offset;
 		}
 
-		return $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, fields_json, updated_at FROM `{$safe_table}` WHERE status != %s ORDER BY id DESC", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above; $order_sql/$limit_sql are built from allowlists, never raw user input.
+		$sql = $wpdb->prepare(
+			"SELECT f.id, f.title, f.status, f.fields_json, f.updated_at, COALESCE(ec.total, 0) AS entry_count
+			FROM `{$forms_table}` f
+			LEFT JOIN ( SELECT form_id, COUNT(*) AS total FROM `{$entries_table}` WHERE trashed_at IS NULL GROUP BY form_id ) ec ON ec.form_id = f.id
+			WHERE " . implode( ' AND ', $where ) . "
+			ORDER BY {$order_sql}
+			{$limit_sql}",
+			$params
+		);
+
+		return $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 	}
 
 	/**
-	 * Filters the forms list by active/inactive status (PHP-side; the list is
-	 * not paginated). 'active' means published; anything else counts as inactive.
+	 * Returns the total number of forms matching a view/status/search combination
+	 * (for computing pagination — must reflect the same WHERE clause as get_forms()).
 	 *
-	 * @param array<int, object> $forms         Forms to filter.
-	 * @param string             $status_filter 'active' or 'inactive'.
-	 * @return array<int, object>
+	 * @param string $view          'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string $status_filter 'active', 'inactive', or '' for no filter (non-trash view only).
+	 * @param string $search_term   Search term matched against the title, or ''.
+	 * @return int
 	 */
-	private function filter_forms_by_status( $forms, $status_filter ) {
-		return array_values(
-			array_filter(
-				$forms,
-				function ( $form ) use ( $status_filter ) {
-					$is_active = 'publish' === ( $form->status ?? 'publish' );
-					return ( 'active' === $status_filter ) ? $is_active : ! $is_active;
-				}
+	private function get_forms_total( $view, $status_filter, $search_term ) {
+		global $wpdb;
+
+		$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
+
+		list( $where, $params ) = $this->build_forms_where( $view, $status_filter, $search_term );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name sanitized via esc_sql() above; aliased "f" to match build_forms_where()'s column prefixes.
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM `{$forms_table}` f WHERE " . implode( ' AND ', $where ),
+				$params
 			)
 		);
 	}
 
 	/**
-	 * Filters the forms list by a search term matched against the form title
-	 * (PHP-side; the list is not paginated).
+	 * Builds the shared WHERE clause + bound params for the forms list, used by
+	 * both get_forms() and get_forms_total() so the paginated rows and the total
+	 * count can never drift apart.
 	 *
-	 * @param array<int, object> $forms       Forms to filter.
-	 * @param string             $search_term Search term.
-	 * @return array<int, object>
+	 * @param string $view          'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string $status_filter 'active', 'inactive', or '' for no filter (non-trash view only).
+	 * @param string $search_term   Search term matched against the title, or ''.
+	 * @return array{0: string[], 1: array<int, string>} [ $where_clauses, $params ].
 	 */
-	private function filter_forms_by_search( $forms, $search_term ) {
-		return array_values(
-			array_filter(
-				$forms,
-				function ( $form ) use ( $search_term ) {
-					return false !== stripos( (string) ( $form->title ?? '' ), $search_term );
-				}
-			)
-		);
-	}
+	private function build_forms_where( $view, $status_filter, $search_term ) {
+		global $wpdb;
 
-	/**
-	 * Sorts the forms list in PHP (the list is not paginated) by an allowlisted
-	 * column. Entry counts are not a forms-table column, so they are compared
-	 * via the pre-fetched counts map rather than in SQL.
-	 *
-	 * @param array<int, object> $forms        Forms to sort.
-	 * @param string             $orderby      One of 'title', 'entries', 'updated'.
-	 * @param string             $order        'asc' or 'desc'.
-	 * @param array<int, int>    $entry_counts Entry counts keyed by form ID.
-	 * @return array<int, object>
-	 */
-	private function sort_forms_list( $forms, $orderby, $order, $entry_counts ) {
-		$dir = ( 'asc' === $order ) ? 1 : -1;
+		$where  = array();
+		$params = array();
 
-		usort(
-			$forms,
-			function ( $a, $b ) use ( $orderby, $entry_counts, $dir ) {
-				if ( 'title' === $orderby ) {
-					$cmp = strcasecmp( (string) $a->title, (string) $b->title );
-				} elseif ( 'entries' === $orderby ) {
-					$count_a = (int) ( $entry_counts[ (int) $a->id ] ?? 0 );
-					$count_b = (int) ( $entry_counts[ (int) $b->id ] ?? 0 );
-					$cmp     = $count_a <=> $count_b;
-				} else {
-					$time_a = isset( $a->updated_at ) ? (int) strtotime( (string) $a->updated_at ) : 0;
-					$time_b = isset( $b->updated_at ) ? (int) strtotime( (string) $b->updated_at ) : 0;
-					$cmp    = $time_a <=> $time_b;
-				}
+		if ( 'trash' === $view ) {
+			$where[]  = 'f.status = %s';
+			$params[] = 'trash';
+		} else {
+			$where[]  = 'f.status != %s';
+			$params[] = 'trash';
 
-				// Stable tiebreaker so equal values keep a deterministic order.
-				if ( 0 === $cmp ) {
-					$cmp = (int) $a->id <=> (int) $b->id;
-				}
-
-				return $cmp * $dir;
+			// Only two non-trash statuses exist ('publish'/'draft'), so "inactive" maps
+			// directly to 'draft' rather than a PHP-side "anything but published" check.
+			if ( 'active' === $status_filter ) {
+				$where[]  = 'f.status = %s';
+				$params[] = 'publish';
+			} elseif ( 'inactive' === $status_filter ) {
+				$where[]  = 'f.status = %s';
+				$params[] = 'draft';
 			}
-		);
+		}
 
-		return $forms;
+		if ( '' !== $search_term ) {
+			$where[]  = 'f.title LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $search_term ) . '%';
+		}
+
+		return array( $where, $params );
+	}
+
+	/**
+	 * Resolves an allowlisted orderby/order pair to an ORDER BY fragment for the
+	 * forms list query. entry_count is a SELECT alias (from the entries JOIN in
+	 * get_forms()), which MySQL allows ordering by directly.
+	 *
+	 * @param string $orderby One of 'title', 'entries', 'updated', or '' for the default.
+	 * @param string $order   'asc' or 'desc'.
+	 * @return string
+	 */
+	private function forms_order_sql( $orderby, $order ) {
+		$dir = ( 'asc' === $order ) ? 'ASC' : 'DESC';
+
+		switch ( $orderby ) {
+			case 'title':
+				return 'f.title ' . $dir . ', f.id DESC';
+			case 'entries':
+				return 'entry_count ' . $dir . ', f.id DESC';
+			case 'updated':
+				return 'f.updated_at ' . $dir . ', f.id DESC';
+			default:
+				return 'f.id DESC';
+		}
 	}
 
 	/**
@@ -4223,29 +4291,6 @@ class BoldForm_Lite_Admin {
 		}
 
 		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$safe_table}` WHERE status != %s", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-	}
-
-	/**
-	 * Returns entry counts grouped by form ID.
-	 *
-	 * @return array<int, int> Map of form_id => count.
-	 */
-	private function get_entry_counts_by_form() {
-		global $wpdb;
-
-		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
-
-		// Exclude trashed entries — a trashed entry is on its way out and must not inflate
-		// the per-form count shown on the Forms list.
-		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` WHERE trashed_at IS NULL GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-		$counts = array();
-
-		foreach ( $results as $row ) {
-			$counts[ (int) $row->form_id ] = (int) $row->total;
-		}
-
-		return $counts;
 	}
 
 	/**
