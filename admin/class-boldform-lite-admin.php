@@ -130,6 +130,8 @@ class BoldForm_Lite_Admin {
 			56
 		);
 
+		$this->force_submenu_highlight( $this->list_page_hook, 'boldform-lite' );
+
 		add_submenu_page(
 			'boldform-lite',
 			__( 'All Forms', 'boldform-lite' ),
@@ -147,6 +149,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-builder',
 			array( $this, 'render_builder_page' )
 		);
+		$this->force_submenu_highlight( $this->builder_page_hook, 'boldform-lite-builder' );
 
 		$this->entries_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -156,6 +159,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-entries',
 			array( $this, 'render_entries_page' )
 		);
+		$this->force_submenu_highlight( $this->entries_page_hook, 'boldform-lite-entries' );
 
 		$this->settings_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -165,6 +169,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-settings',
 			array( $this, 'render_settings_page' )
 		);
+		$this->force_submenu_highlight( $this->settings_page_hook, 'boldform-lite-settings' );
 
 		$this->reports_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -174,6 +179,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-reports',
 			array( $this, 'render_reports_page' )
 		);
+		$this->force_submenu_highlight( $this->reports_page_hook, 'boldform-lite-reports' );
 
 		$this->preview_page_hook = add_submenu_page(
 			'',
@@ -195,6 +201,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-docs',
 			array( $this, 'render_docs_page' )
 		);
+		$this->force_submenu_highlight( $this->docs_page_hook, 'boldform-lite-docs' );
 
 		/**
 		 * Fires after BoldForm Lite registers all its admin submenu pages.
@@ -223,6 +230,37 @@ class BoldForm_Lite_Admin {
 			'manage_options',
 			'boldform-lite-upgrade',
 			array( $this, 'render_upgrade_page' )
+		);
+		if ( $show_upgrade_cta ) {
+			$this->force_submenu_highlight( $this->upgrade_page_hook, 'boldform-lite-upgrade' );
+		}
+	}
+
+	/**
+	 * Forces a submenu item to be marked "current" in the sidebar, on load-{$hook}
+	 * (which fires before wp-admin/admin-header.php renders the menu).
+	 *
+	 * WordPress normally resolves this itself via a file_exists() fallback in
+	 * wp-admin/menu-header.php when $submenu_file is never set — that fallback is
+	 * relative to the PHP process's current working directory, which some server
+	 * setups (php-fpm pools that don't chdir to the script's own directory) leave
+	 * pointed somewhere the check can't reliably resolve, so the active submenu
+	 * item silently loses its highlight even on the right page. Setting
+	 * $submenu_file explicitly makes the highlight deterministic on every server.
+	 *
+	 * @param string $hook Hook suffix returned by add_menu_page()/add_submenu_page().
+	 * @param string $slug Menu slug that should be marked current.
+	 * @return void
+	 */
+	private function force_submenu_highlight( $hook, $slug ) {
+		if ( ! $hook ) {
+			return;
+		}
+		add_action(
+			'load-' . $hook,
+			function () use ( $slug ) {
+				$GLOBALS['submenu_file'] = $slug;
+			}
 		);
 	}
 
@@ -2380,6 +2418,12 @@ class BoldForm_Lite_Admin {
 			$forms = $this->filter_forms_by_status( $forms, $status_filter );
 		}
 
+		// Search (matches against the form title).
+		$search_term = isset( $_GET['s'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['s'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( '' !== $search_term ) {
+			$forms = $this->filter_forms_by_search( $forms, $search_term );
+		}
+
 		// Sorting (server-side, WP-style): allowlisted column + direction.
 		$allowed_orderby = array( 'title', 'entries', 'updated' );
 		$orderby         = isset( $_GET['orderby'] ) ? sanitize_key( wp_unslash( $_GET['orderby'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -2391,8 +2435,11 @@ class BoldForm_Lite_Admin {
 			$forms = $this->sort_forms_list( $forms, $orderby, $order, $entry_counts );
 		}
 
-		// Sort links must preserve the active status filter in the URL.
+		// Sort links must preserve the active status filter and search term in the URL.
 		$sort_base_url = ( '' !== $status_filter ) ? add_query_arg( 'status_filter', $status_filter, $form_action_url ) : $form_action_url;
+		if ( '' !== $search_term ) {
+			$sort_base_url = add_query_arg( 's', rawurlencode( $search_term ), $sort_base_url );
+		}
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite' ); ?>
 		<div class="wrap">
@@ -2441,6 +2488,9 @@ class BoldForm_Lite_Admin {
 								<input type="hidden" name="orderby" value="<?php echo esc_attr( $orderby ); ?>">
 								<input type="hidden" name="order" value="<?php echo esc_attr( $order ); ?>">
 							<?php endif; ?>
+							<?php if ( '' !== $search_term ) : ?>
+								<input type="hidden" name="s" value="<?php echo esc_attr( $search_term ); ?>">
+							<?php endif; ?>
 							<select name="status_filter" id="boldform-status-filter">
 								<option value=""><?php esc_html_e( 'All Status', 'boldform-lite' ); ?></option>
 								<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'boldform-lite' ); ?></option>
@@ -2449,6 +2499,22 @@ class BoldForm_Lite_Admin {
 							<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Filter', 'boldform-lite' ); ?></button>
 						</form>
 					<?php endif; ?>
+					<form method="get" class="boldform-search-form" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+						<input type="hidden" name="page" value="boldform-lite">
+						<?php if ( $is_trash ) : ?>
+							<input type="hidden" name="form_status" value="trash">
+						<?php endif; ?>
+						<?php if ( '' !== $status_filter ) : ?>
+							<input type="hidden" name="status_filter" value="<?php echo esc_attr( $status_filter ); ?>">
+						<?php endif; ?>
+						<?php if ( '' !== $orderby ) : ?>
+							<input type="hidden" name="orderby" value="<?php echo esc_attr( $orderby ); ?>">
+							<input type="hidden" name="order" value="<?php echo esc_attr( $order ); ?>">
+						<?php endif; ?>
+						<label class="screen-reader-text" for="boldform-search-input"><?php esc_html_e( 'Search Forms', 'boldform-lite' ); ?></label>
+						<input type="search" id="boldform-search-input" class="boldform-search-input" name="s" value="<?php echo esc_attr( $search_term ); ?>" placeholder="<?php esc_attr_e( 'Search forms…', 'boldform-lite' ); ?>">
+						<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Search Forms', 'boldform-lite' ); ?></button>
+					</form>
 				</div>
 
 				<form method="post" id="boldform-bulk-form" action="<?php echo esc_url( $form_action_url ); ?>">
@@ -2470,7 +2536,18 @@ class BoldForm_Lite_Admin {
 							<?php if ( empty( $forms ) ) : ?>
 								<tr>
 									<td colspan="7" class="boldform-forms-empty">
-										<?php if ( $is_trash ) : ?>
+										<?php if ( '' !== $search_term ) : ?>
+											<span class="dashicons dashicons-search"></span>
+											<p>
+												<?php
+												printf(
+													/* translators: %s: search term. */
+													esc_html__( 'No forms found for "%s".', 'boldform-lite' ),
+													esc_html( $search_term )
+												);
+												?>
+											</p>
+										<?php elseif ( $is_trash ) : ?>
 											<span class="dashicons dashicons-trash"></span>
 											<p><?php esc_html_e( 'Trash is empty.', 'boldform-lite' ); ?></p>
 										<?php else : ?>
@@ -4019,6 +4096,25 @@ class BoldForm_Lite_Admin {
 				function ( $form ) use ( $status_filter ) {
 					$is_active = 'publish' === ( $form->status ?? 'publish' );
 					return ( 'active' === $status_filter ) ? $is_active : ! $is_active;
+				}
+			)
+		);
+	}
+
+	/**
+	 * Filters the forms list by a search term matched against the form title
+	 * (PHP-side; the list is not paginated).
+	 *
+	 * @param array<int, object> $forms       Forms to filter.
+	 * @param string             $search_term Search term.
+	 * @return array<int, object>
+	 */
+	private function filter_forms_by_search( $forms, $search_term ) {
+		return array_values(
+			array_filter(
+				$forms,
+				function ( $form ) use ( $search_term ) {
+					return false !== stripos( (string) ( $form->title ?? '' ), $search_term );
 				}
 			)
 		);

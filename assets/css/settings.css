@@ -1207,6 +1207,54 @@
 	box-shadow: 0 0 0 1px #2271b1;
 }
 
+.boldform-search-form {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
+/* WP core's wp-admin/css/forms.css styles input[type="search"] directly
+   (element + attribute selector, specificity 0,1,1), which beats a bare
+   single-class selector (0,1,0) — that's what was overriding our height/
+   border/border-radius/padding. Match core's own selector shape so ours
+   wins deterministically regardless of stylesheet load order. */
+input[type="search"].boldform-search-input {
+	height: 36px;
+	min-height: 36px;
+	width: 220px;
+	max-width: 100%;
+	padding: 0 12px;
+	border: 1px solid #8c8f94;
+	border-radius: 8px;
+	background: #fff;
+	font-size: 13px;
+	color: #2c3338;
+	box-sizing: border-box;
+	/* Chrome/Safari draw a native "searchfield" appearance for type="search" with
+	   its own rounded frame underneath any author-supplied border/border-radius —
+	   without resetting it the two frames render as a visible double border and
+	   the custom radius never actually applies. */
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+input[type="search"].boldform-search-input::-webkit-search-cancel-button,
+input[type="search"].boldform-search-input::-webkit-search-decoration {
+	-webkit-appearance: none;
+	appearance: none;
+}
+
+input[type="search"].boldform-search-input:hover {
+	border-color: #1e1e1e;
+}
+
+input[type="search"].boldform-search-input:focus {
+	outline: 2px solid transparent;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
 /* ── Forms table ── */
 .boldform-forms-table {
 	width: 100%;
@@ -2072,7 +2120,7 @@
 	padding: 10px 14px;
 	background: #fff;
 	border: 1px solid #e2e8f0;
-	border-radius: 10px;
+	border-radius: 6px;
 	box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
 }
 
@@ -3218,6 +3266,15 @@
 	.boldform-table-card .boldform-bulk-bar,
 	.boldform-table-card .boldform-filter-form {
 		flex-wrap: wrap;
+	}
+
+	.boldform-search-form {
+		margin-left: 0;
+		flex-basis: 100%;
+	}
+
+	input[type="search"].boldform-search-input {
+		width: 100%;
 	}
 }
 
