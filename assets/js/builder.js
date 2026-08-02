@@ -1386,7 +1386,10 @@ jQuery(
 				// Intentional raw-HTML sink: field.content is admin-authored rich text
 				// (builder is manage_options-only) and is re-sanitized server-side with
 				// wp_kses_post() on save, so it is emitted unescaped here to preserve markup.
-				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
+				// A consent field has no heading, so the shared label above never draws
+				// the required asterisk for it — mirror the front end and append one to
+				// the copy instead, or a required consent box looks entirely optional.
+				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</div></div>';
 			} else if ( field.type === 'captcha' ) {
 				html = '<div class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</div>';
 			} else if ( field.type === 'textarea' ) {

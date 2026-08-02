@@ -1139,6 +1139,21 @@ will follow. The tab only appears for form plugins you actually have installed.<
       form's recipient address and confirmation ("thank you") message come across too.</li>
   <li>Anything that can't be mapped &mdash; a hidden field, a CAPTCHA, or a custom email subject
       and body &mdash; is listed after the import so you know exactly what to set up by hand.</li>
+  <li><strong>Acceptance ("I agree…") checkboxes follow Contact Form 7's rule, which surprises people.</strong>
+      Unlike every other field, an acceptance checkbox does <em>not</em> use the <code>*</code> to mean
+      required. A plain <code>[acceptance consent]</code> is <em>already</em> mandatory &mdash; Contact Form 7
+      refuses the submission when it is left unticked &mdash; and the only way to relax it is the
+      <code>optional</code> keyword, as in <code>[acceptance consent optional]</code>. Contact Form 7 blocks
+      such a form with no message beside the box, so a mandatory consent can easily look optional there. The
+      Migrator imports it as required to match.</li>
+  <li><strong>A tag written <code>[acceptance* consent]</code> is not valid Contact Form 7 syntax.</strong>
+      There is no starred acceptance tag, so Contact Form 7 cannot read that line at all: it shows as plain
+      text rather than a checkbox, and ticking it would change nothing even if it did. The Migrator still
+      brings it across as a real consent checkbox &mdash; but as an <em>optional</em> one, because the source
+      form does not require it, and marking it required would add a rule your Contact Form 7 form never had.
+      The import report flags every such tag. To make it genuinely required, either tick
+      <strong>Required</strong> on the field in the builder, or drop the <code>*</code> in Contact Form 7 and
+      import again.</li>
   <li>Each imported form gets an <strong>Edit form</strong> link so you can fine-tune it right away.</li>
   <li><strong>Re-importing</strong> a form updates the one you brought over before instead of
       creating a duplicate &mdash; note that it overwrites that form's fields with the source version,

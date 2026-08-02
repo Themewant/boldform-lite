@@ -361,6 +361,7 @@ class BoldForm_Lite_Migrator {
 				$title       = isset( $form['title'] ) ? (string) $form['title'] : '';
 				$edit_url    = ! empty( $form['form_id'] ) ? admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . (int) $form['form_id'] ) : '';
 				$skipped     = isset( $form['skipped'] ) && is_array( $form['skipped'] ) ? $form['skipped'] : array();
+				$warnings    = isset( $form['warnings'] ) && is_array( $form['warnings'] ) ? $form['warnings'] : array();
 				$row_error   = isset( $form['error'] ) ? (string) $form['error'] : '';
 				?>
 				<div class="boldform-migrator-result__form">
@@ -370,10 +371,18 @@ class BoldForm_Lite_Migrator {
 					<?php elseif ( '' !== $edit_url ) : ?>
 						&mdash; <a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit form', 'boldform-lite' ); ?></a>
 					<?php endif; ?>
-					<?php if ( ! empty( $skipped ) ) : ?>
+					<?php if ( ! empty( $skipped ) || ! empty( $warnings ) ) : ?>
+						<?php
+						// Warnings sit in the same list as the skip notes but describe a
+						// field that DID come across, so they are labelled to keep the
+						// distinction clear — "not imported" versus "imported, but look".
+						?>
 						<ul class="boldform-migrator-result__skipped">
 							<?php foreach ( $skipped as $note ) : ?>
 								<li><?php echo esc_html( (string) $note ); ?></li>
+							<?php endforeach; ?>
+							<?php foreach ( $warnings as $note ) : ?>
+								<li><em><?php esc_html_e( 'Check:', 'boldform-lite' ); ?></em> <?php echo esc_html( (string) $note ); ?></li>
 							<?php endforeach; ?>
 						</ul>
 					<?php endif; ?>
@@ -492,9 +501,10 @@ class BoldForm_Lite_Migrator {
 			}
 
 			$forms[] = array(
-				'title'   => $result->title,
-				'form_id' => $result->form_id,
-				'skipped' => $result->skipped,
+				'title'    => $result->title,
+				'form_id'  => $result->form_id,
+				'skipped'  => $result->skipped,
+				'warnings' => $result->warnings,
 			);
 		}
 
@@ -525,8 +535,9 @@ class BoldForm_Lite_Migrator {
 			return $result;
 		}
 
-		$result->title   = isset( $data['title'] ) ? (string) $data['title'] : '';
-		$result->skipped = isset( $data['skipped'] ) && is_array( $data['skipped'] ) ? $data['skipped'] : array();
+		$result->title    = isset( $data['title'] ) ? (string) $data['title'] : '';
+		$result->skipped  = isset( $data['skipped'] ) && is_array( $data['skipped'] ) ? $data['skipped'] : array();
+		$result->warnings = isset( $data['warnings'] ) && is_array( $data['warnings'] ) ? $data['warnings'] : array();
 
 		// Re-sanitize through the builder's own save path — never hand-write fields_json.
 		$rows_payload   = array( 'rows' => isset( $data['rows'] ) && is_array( $data['rows'] ) ? $data['rows'] : array() );

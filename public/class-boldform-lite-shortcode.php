@@ -1350,6 +1350,16 @@ class BoldForm_Lite_Shortcode {
 					<?php if ( '' !== $content ) : ?>
 						<span class="boldform-lite-form__terms-copy"><?php echo wp_kses_post( $content ); ?></span>
 					<?php endif; ?>
+					<?php if ( $required ) : ?>
+						<?php
+						// This renderer returns early from render_field(), so it never reaches
+						// the shared label block that draws the required asterisk — and a
+						// consent field's heading is normally blank, so there was no label to
+						// carry one anyway. Without this the checkbox was required in the
+						// markup and enforced on submit, yet looked entirely optional.
+						?>
+						<span class="boldform-lite-form__required">*</span>
+					<?php endif; ?>
 				</span>
 			</label>
 		</div>
