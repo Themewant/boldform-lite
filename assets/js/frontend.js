@@ -171,9 +171,12 @@ jQuery(
 		$( '.boldform-lite-form' ).attr( 'novalidate', 'novalidate' );
 
 		// ── File upload drop-zone ──
-		// The native <input type="file"> is hidden but stretched over the zone, so its
-		// click target and native drag-and-drop already work; here we just reflect the
-		// chosen filename in the label and toggle the drag-over highlight.
+		// The native <input type="file"> is hidden but stretched over the zone for its
+		// click target. Its native drag-and-drop is NOT enough on its own: once a
+		// 'dragover' listener calls preventDefault() (required below so the zone shows
+		// the drag-over highlight instead of the browser's reject cursor), the browser
+		// treats the drop as handled by page script and no longer auto-populates the
+		// input — so the 'drop' handler must manually transfer the files itself.
 		$( document ).on( 'change', '.boldform-lite-form__file-input', function () {
 			var $zone = $( this ).closest( '.boldform-lite-form__file' );
 			var $text = $zone.find( '.boldform-lite-form__file-text' );
@@ -190,8 +193,20 @@ jQuery(
 			e.preventDefault();
 			$( this ).addClass( 'is-dragover' );
 		} );
-		$( document ).on( 'dragleave dragend drop', '.boldform-lite-form__file', function () {
+		$( document ).on( 'dragleave dragend', '.boldform-lite-form__file', function () {
 			$( this ).removeClass( 'is-dragover' );
+		} );
+		$( document ).on( 'drop', '.boldform-lite-form__file', function ( e ) {
+			e.preventDefault();
+			$( this ).removeClass( 'is-dragover' );
+
+			var dt    = e.originalEvent && e.originalEvent.dataTransfer;
+			var input = this.querySelector( '.boldform-lite-form__file-input' );
+
+			if ( input && dt && dt.files && dt.files.length ) {
+				input.files = dt.files;
+				input.dispatchEvent( new Event( 'change', { bubbles: true } ) );
+			}
 		} );
 
 		// ── Live email validation ──
