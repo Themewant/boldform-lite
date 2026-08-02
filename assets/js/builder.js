@@ -162,6 +162,7 @@ jQuery(
 				default_value: '',
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
 				options_layout: optionFieldTypes.indexOf( type ) !== -1 ? 'block' : '',
+				checkbox_style: 'checkbox' === type ? 'default' : '',
 				content: 'terms_conditions' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.termsContent || 'I agree to the <a href="#">terms and conditions</a>.' ) : '',
 				description: 'section_break' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.sectionDesc || 'Add a short description for this section.' ) : '',
 				custom_error: '',
@@ -237,6 +238,7 @@ jQuery(
 			normalized.default_value = field && typeof field.default_value !== 'undefined' ? field.default_value : '';
 			normalized.options = field && Array.isArray( field.options ) ? field.options : normalized.options;
 			normalized.options_layout = field && field.options_layout ? field.options_layout : normalized.options_layout;
+			normalized.checkbox_style = field && 'switch' === field.checkbox_style ? 'switch' : normalized.checkbox_style;
 			normalized.content = field && typeof field.content !== 'undefined' ? field.content : normalized.content;
 			normalized.description = field && typeof field.description !== 'undefined' ? field.description : normalized.description;
 			normalized.custom_error = field && typeof field.custom_error !== 'undefined' ? field.custom_error : '';
@@ -1312,8 +1314,13 @@ jQuery(
 					// stacks rows with min-width:0 (no overflow). Frontend __choices alone
 					// leaves native radios styled as full-width input lines.
 					html += '<div class="boldform-canvas-field-choices">';
+					// The price <em> must use the button-bg-FIRST accent chain, mirroring
+					// the front end's .bfp-product-price rule (Pro payments.css). Keying
+					// off --bf-focus-color alone renders teal under every theme whose
+					// primary isn't blue/green/dark, because applyDesignTheme()'s focusMap
+					// only covers those and leaves --bf-focus-color unset otherwise.
 					prodOpts.slice( 0, 4 ).forEach( function ( opt, idx ) {
-						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-focus-color,#0d9488);font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
+						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-button-bg, var(--bf-focus-color, #0d9488));font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
 					} );
 					if ( prodOpts.length > 4 ) { html += '<label class="boldform-lite-form__choice"><span class="boldform-lite-form__choice-label" style="color:#9ca3af">…and ' + ( prodOpts.length - 4 ) + ' more</span></label>'; }
 					html += '</div>';
@@ -1418,7 +1425,8 @@ jQuery(
 				html += '</div></div>';
 			} else if ( field.type === 'checkbox' || field.type === 'radio' ) {
 				var choiceDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
-				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + '">';
+				var isSwitchStyle = 'checkbox' === field.type && 'switch' === field.checkbox_style;
+				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + '">';
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
@@ -2285,6 +2293,18 @@ jQuery(
 						'<select id="boldform-setting-options-layout">' +
 							'<option value="block"' + ( 'inline' !== selected.field.options_layout ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.optionsLayoutBlock || 'Stacked (default)' ) + '</option>' +
 							'<option value="inline"' + ( 'inline' === selected.field.options_layout ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.optionsLayoutInline || 'Inline' ) + '</option>' +
+						'</select>' +
+					'</div>';
+			}
+
+			// Checkbox-only: render as a toggle switch instead of a square box.
+			if ( selected.field.type === 'checkbox' ) {
+				optionsMarkup +=
+					'<div class="boldform-setting-group">' +
+						'<label>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyle || 'Style' ) + '</label>' +
+						'<select id="boldform-setting-checkbox-style">' +
+							'<option value="default"' + ( 'switch' !== selected.field.checkbox_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyleDefault || 'Checkbox' ) + '</option>' +
+							'<option value="switch"' + ( 'switch' === selected.field.checkbox_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyleSwitch || 'Switch' ) + '</option>' +
 						'</select>' +
 					'</div>';
 			}
@@ -3879,9 +3899,16 @@ jQuery(
 			'rose-pink':      { label: 'Rose Pink',      primary: '#e11d48', focus: '#e11d48', btnBg: '#e11d48', btnText: '#fff', fieldBorder: '#fecdd3', fieldBg: '#fff1f2', fieldRadius: 16 }
 		};
 
-		function applyDesignTheme( themeKey ) {
+		// Apply a Design Theme. When clearColorOverrides is true, per-control colour
+		// overrides stored in the style layer are dropped first — without that a
+		// single explicit colour (e.g. --bf-choice-accent) outranks the theme's
+		// --bf-button-bg for the rest of the form's life and the theme looks broken.
+		// Callers should route through bfApplyThemeWithConflictCheck() so the user is
+		// asked before anything is discarded.
+		function applyDesignTheme( themeKey, clearColorOverrides ) {
 			var theme = designThemes[ themeKey ];
 			if ( ! theme ) return;
+			if ( clearColorOverrides ) { bfClearThemeColorOverrides(); }
 			state.formSettings.design_theme = themeKey;
 			state.formSettings.button_background_color = theme.btnBg;
 			state.formSettings.button_border_color = theme.btnBg;
@@ -3893,6 +3920,83 @@ jQuery(
 			var focusMap = { '#2f80ed': 'blue', '#2563eb': 'blue', '#0f766e': '', '#16a34a': 'green', '#334155': 'dark' };
 			state.formSettings.field_focus_color = focusMap[ theme.focus ] || '';
 			renderAll();
+		}
+
+		// Small localized-label reader for the theme dialog.
+		function bfThemeLabel( key, fallback ) {
+			var l = boldformLiteBuilder.labels || {};
+			return l[ key ] ? l[ key ] : fallback;
+		}
+
+		// Entry point for every "apply a Design Theme" interaction. Applies straight
+		// away when nothing is in the way; otherwise asks before discarding the
+		// colour overrides that would outrank the theme.
+		function bfApplyThemeWithConflictCheck( themeKey ) {
+			if ( ! designThemes[ themeKey ] ) { return; }
+			var conflicts = bfThemeColorConflicts();
+			if ( ! conflicts.length ) {
+				applyDesignTheme( themeKey, false );
+				return;
+			}
+			bfShowThemeConflictDialog( themeKey, conflicts );
+		}
+
+		function bfShowThemeConflictDialog( themeKey, conflicts ) {
+			$( '#boldform-theme-confirm' ).remove();
+
+			var themeName = designThemes[ themeKey ] ? designThemes[ themeKey ].label : themeKey;
+			var listHtml = conflicts.map( function ( c ) {
+				return '<li style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+					'<span aria-hidden="true" style="flex:0 0 auto;width:14px;height:14px;border-radius:3px;border:1px solid rgba(15,23,42,.2);background:' + escapeHtml( c.value ) + '"></span>' +
+					'<span style="flex:1 1 auto;min-width:0;color:#334155">' + escapeHtml( c.label ) + '</span>' +
+					'<code style="flex:0 0 auto;background:#f1f5f9;border-radius:3px;padding:1px 5px;font-size:11px;color:#475569">' + escapeHtml( c.value ) + '</code>' +
+				'</li>';
+			} ).join( '' );
+
+			var intro = bfThemeLabel( 'themeConflictBody', 'These custom colors are overriding the theme. Applying it will replace them:' );
+
+			var $overlay = $(
+				'<div id="boldform-theme-confirm" role="dialog" aria-modal="true" aria-labelledby="boldform-theme-confirm-title" ' +
+					'style="position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55)">' +
+					'<div style="background:#fff;max-width:460px;width:calc(100% - 40px);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px">' +
+						'<h2 id="boldform-theme-confirm-title" style="margin:0 0 8px;font-size:18px;line-height:1.3">' +
+							escapeHtml( bfThemeLabel( 'themeConflictTitle', 'Apply theme?' ).replace( '%s', themeName ) ) +
+						'</h2>' +
+						'<p style="margin:0 0 12px;color:#475569;line-height:1.5">' + escapeHtml( intro ) + '</p>' +
+						'<ul style="margin:0 0 20px;padding:0;list-style:none;max-height:180px;overflow-y:auto">' + listHtml + '</ul>' +
+						'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">' +
+							'<button type="button" class="button" data-bf-theme="cancel">' +
+								escapeHtml( bfThemeLabel( 'cancel', 'Cancel' ) ) +
+							'</button>' +
+							'<button type="button" class="button button-primary" data-bf-theme="apply">' +
+								escapeHtml( bfThemeLabel( 'themeConflictApply', 'Apply theme' ) ) +
+							'</button>' +
+						'</div>' +
+					'</div>' +
+				'</div>'
+			);
+
+			function closeDialog() {
+				$overlay.remove();
+				$( document ).off( 'keydown.bftheme' );
+			}
+
+			$overlay.on( 'click', function ( e ) {
+				var action = $( e.target ).closest( '[data-bf-theme]' ).attr( 'data-bf-theme' );
+				if ( e.target === $overlay[ 0 ] ) { action = 'cancel'; }
+				if ( ! action ) { return; }
+				closeDialog();
+				if ( 'apply' === action ) {
+					applyDesignTheme( themeKey, true );
+				}
+			} );
+
+			$( document ).on( 'keydown.bftheme', function ( e ) {
+				if ( 27 === e.keyCode ) { closeDialog(); }
+			} );
+
+			$( 'body' ).append( $overlay );
+			$overlay.find( '[data-bf-theme="apply"]' ).trigger( 'focus' );
 		}
 
 		function renderStylingSettings() {
@@ -4692,6 +4796,80 @@ jQuery(
 			return vars;
 		}
 
+		// Every schema var that carries a COLOUR, as { name, label } — the set a
+		// Design Theme is entitled to reclaim.
+		//
+		// Why this exists: the colour fallback chain is
+		//   var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, …)))
+		// and a Design Theme only writes position 2 (--bf-button-bg, via the legacy
+		// button_background_color key). An explicit style-layer value in position 1
+		// therefore outranks the theme permanently, so switching themes appears to do
+		// nothing for that control. Clearing these lets the theme's value through.
+		//
+		// Deliberately EXCLUDES:
+		//  - 'shadow' — its var holds a composite "x y blur spread colour", so clearing
+		//    one would discard geometry the user tuned, not just a colour.
+		//  - border -width / -style — only the colour half of a border control is taken.
+		//  - typography / slider / dimension / align / switch — not colours.
+		// Memoized: the schema and its labels are static for the life of the page, and
+		// this is walked on every colour edit via bfRefreshResetStates().
+		var bfThemeColorVarsCache = null;
+		function bfThemeColorVars() {
+			if ( bfThemeColorVarsCache ) { return bfThemeColorVarsCache; }
+			var out = [];
+			bfStyleSchema().forEach( function ( sec ) {
+				function expand( c ) {
+					if ( 'stateTabs' === c.type && c.states ) {
+						c.states.forEach( function ( s ) { ( s.controls || [] ).forEach( expand ); } );
+						return;
+					}
+					if ( ! c.var ) { return; }
+					var name = null;
+					if ( 'color' === c.type || 'background' === c.type ) {
+						name = c.var;
+					} else if ( 'border' === c.type ) {
+						name = c.colorVar || ( c.var + '-color' );
+					}
+					if ( ! name ) { return; }
+					out.push( { name: name, label: sec.title + ' · ' + advLabel( c.label ) } );
+				}
+				( sec.controls || [] ).forEach( expand );
+			} );
+			bfThemeColorVarsCache = out;
+			return out;
+		}
+
+		// Non-empty colour overrides across EVERY device layer (not just the active
+		// one) — a tablet-only override would otherwise silently survive a theme
+		// switch and reappear at that breakpoint. Deduped by var name so one entry
+		// is reported per colour regardless of how many breakpoints carry it.
+		function bfThemeColorConflicts() {
+			var style = state.formSettings.style || {};
+			var seen = {}, out = [];
+			bfThemeColorVars().forEach( function ( v ) {
+				Object.keys( style ).forEach( function ( device ) {
+					var layer = style[ device ] || {};
+					var val = layer[ v.name ];
+					if ( 'string' !== typeof val || '' === val || seen[ v.name ] ) { return; }
+					seen[ v.name ] = true;
+					out.push( { name: v.name, label: v.label, value: val } );
+				} );
+			} );
+			return out;
+		}
+
+		// Drop every colour override from all three device layers so the freshly
+		// applied theme is what actually renders.
+		function bfClearThemeColorOverrides() {
+			var style = state.formSettings.style || {};
+			var names = bfThemeColorVars().map( function ( v ) { return v.name; } );
+			Object.keys( style ).forEach( function ( device ) {
+				var layer = style[ device ];
+				if ( ! layer ) { return; }
+				names.forEach( function ( n ) { delete layer[ n ]; } );
+			} );
+		}
+
 		// True when the active device layer holds any non-empty value for this
 		// section's vars — i.e. there is something for its reset button to clear.
 		function bfSectionHasValues( sec ) {
@@ -4712,7 +4890,11 @@ jQuery(
 					.prop( 'disabled', ! has )
 					.attr( 'aria-disabled', has ? 'false' : 'true' );
 			} );
-			var themeChanged = !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme;
+			// Enabled when the active theme differs from the default, OR when colour
+			// overrides are currently outranking the theme — otherwise a form sitting
+			// on Default Blue with stale overrides would have no way to reclaim them.
+			var themeChanged = ( !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme ) ||
+				bfThemeColorConflicts().length > 0;
 			$( '.boldform-theme-reset' )
 				.toggleClass( 'is-disabled', ! themeChanged )
 				.prop( 'disabled', ! themeChanged )
@@ -5455,7 +5637,7 @@ jQuery(
 			e.preventDefault();
 			e.stopPropagation();
 			if ( $( this ).is( '.is-disabled, :disabled' ) ) { return; }
-			applyDesignTheme( 'default-blue' );
+			bfApplyThemeWithConflictCheck( 'default-blue' );
 		} );
 
 		$( document ).on( 'click', '.boldform-style-section__reset', function ( e ) {
@@ -6479,7 +6661,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-icon-color, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-icon-color, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-checkbox-style, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -6518,6 +6700,10 @@ jQuery(
 
 				if ( $( '#boldform-setting-options-layout' ).length ) {
 					selected.field.options_layout = $( '#boldform-setting-options-layout' ).val() || 'block';
+				}
+
+				if ( $( '#boldform-setting-checkbox-style' ).length ) {
+					selected.field.checkbox_style = $( '#boldform-setting-checkbox-style' ).val() || 'default';
 				}
 
 				if ( $( '#boldform-setting-select-searchable' ).length ) {
@@ -6832,7 +7018,7 @@ jQuery(
 
 		// Design theme card click.
 		$( document ).on( 'click', '.boldform-theme-card', function () {
-			applyDesignTheme( $( this ).data( 'theme' ) );
+			bfApplyThemeWithConflictCheck( $( this ).data( 'theme' ) );
 		} );
 
 		// Choice card click — ensure radio toggles reliably on all browsers.

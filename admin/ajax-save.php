@@ -266,6 +266,7 @@ class BoldForm_Lite_Ajax_Save {
 						}
 
 						$options_layout = isset( $field['options_layout'] ) && 'inline' === $field['options_layout'] ? 'inline' : 'block';
+						$checkbox_style = isset( $field['checkbox_style'] ) && 'switch' === $field['checkbox_style'] ? 'switch' : 'default';
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
 						$core_field = array(
@@ -277,6 +278,7 @@ class BoldForm_Lite_Ajax_Save {
 							'required'       => ! empty( $field['required'] ),
 							'options'        => $options,
 							'options_layout' => $options_layout,
+							'checkbox_style' => $checkbox_style,
 							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
 							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
 							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',

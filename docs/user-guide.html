@@ -627,6 +627,17 @@ concepts (interaction states, gradients, and responsive breakpoints) that apply 
 coordinated colors for fields, labels, buttons, focus states, and error messages. After applying a theme you can
 still fine-tune any individual setting in the sections below; the theme is just a starting point.</p>
 
+<p><strong>Custom colors take priority over the theme.</strong> Once you set a color yourself in any section below
+(a checkbox accent, a label color, a field background, and so on), that color is kept even when you switch themes
+&mdash; otherwise switching a theme would quietly discard your work. Because of this, a form with custom colors can
+look only partly re-themed.</p>
+
+<p>To avoid the confusion, BoldForm checks before applying: if any custom colors are currently overriding the theme,
+it lists them and asks whether to replace them. Choose <strong>Apply theme</strong> to clear those colors so the
+theme takes full effect, or <strong>Cancel</strong> to leave everything exactly as it is. Only colors are affected
+&mdash; your typography, spacing, borders, sizes, and shadows are never touched. The same prompt appears when you
+use the Design Theme <strong>reset</strong> control, so you can reclaim theme colors without switching theme.</p>
+
 <h3>State-Based Styling</h3>
 <p>Control the appearance of fields in different user interaction states:</p>
 <ul>

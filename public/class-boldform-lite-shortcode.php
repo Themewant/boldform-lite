@@ -1831,7 +1831,8 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'checkbox' === $type || 'radio' === $type ) {
-			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' );
+			$checkbox_style = isset( $field['checkbox_style'] ) ? (string) $field['checkbox_style'] : 'default';
+			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' ) . ( 'checkbox' === $type && 'switch' === $checkbox_style ? ' is-switch' : '' );
 			// Group semantics so SRs announce the option set as one labelled group
 			// (no <fieldset>/<legend>, which would restyle the form). Points at the
 			// field's visible <label> via aria-labelledby when one is rendered.
