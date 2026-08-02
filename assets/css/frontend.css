@@ -585,6 +585,60 @@ input[data-boldform-picker] {
 	min-width: 0;
 }
 
+/* ── Checkbox "Style: Switch" variant ──
+   Checkbox-only. Reshapes the same .boldform-lite-form__choice-control shell
+   into a track + thumb switch instead of new markup, so it stays driven by
+   the same --bf-choice-* accent tokens as the default checkbox look. */
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice {
+	justify-content: space-between;
+}
+
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice-control {
+	width: 40px;
+	height: 22px;
+	min-width: 40px;
+	border: none;
+	border-radius: 999px;
+	background: var(--bf-choice-switch-off, var(--bf-choice-border, #cbd5e1));
+	justify-content: flex-start;
+	padding: 2px;
+	box-sizing: border-box;
+}
+
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	border: none;
+	background: var(--bf-choice-accent-r);
+}
+
+/* input[type="checkbox"] is included (even though unconditional on :checked) purely to
+   out-specify the default checkbox tick rule above (…input:checked ~ .control::after,
+   0,4,1) — without it, the tick's own width/height/border win on the checked state and
+   the thumb renders as a 5×9 sliver instead of an 18×18 circle. */
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice input[type="checkbox"] ~ .boldform-lite-form__choice-control::after {
+	content: '';
+	display: block;
+	width: 18px;
+	height: 18px;
+	border: none;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.35);
+	transform: translateX(0);
+	transition: transform 0.16s ease;
+}
+
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control::after {
+	transform: translateX(18px);
+}
+
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice:hover .boldform-lite-form__choice-control {
+	background: var(--bf-choice-switch-off, var(--bf-choice-border, #cbd5e1));
+}
+
+.boldform-lite-form__choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
+	background: var(--bf-choice-accent-r);
+}
+
 /* Terms & conditions */
 .boldform-lite-form__terms {
 	align-items: flex-start;
@@ -629,12 +683,12 @@ input[data-boldform-picker] {
 }
 
 .boldform-lite-form__terms-copy a {
-	color: var(--bf-terms-link, var(--bf-focus-color, #0f766e));
+	color: var(--bf-terms-link, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
 	text-decoration: underline;
 }
 
 .boldform-lite-form__terms-copy a:hover {
-	color: var(--bf-terms-link-hover, var(--bf-terms-link, var(--bf-focus-color, #0f766e)));
+	color: var(--bf-terms-link-hover, var(--bf-terms-link, var(--bf-button-bg, var(--bf-focus-color, #0f766e))));
 }
 
 .boldform-lite-form__submit {
@@ -1268,7 +1322,8 @@ input[data-boldform-picker] {
 
 .bf-select__active-mark {
 	flex-shrink: 0;
-	color: var(--bf-focus-color, #0f766e);
+	/* Decorative accent — theme primary first, matching .bf-select__check below. */
+	color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 	display: inline-flex;
 	margin-left: auto;
 }
@@ -1330,7 +1385,8 @@ input[data-boldform-picker] {
 	padding: 3px 10px;
 	border-radius: 999px;
 	background: var(--bf-focus-ring, rgba(15, 118, 110, 0.1));
-	color: var(--bf-focus-color, #0f766e);
+	/* Decorative accent — theme primary first. */
+	color: var(--bf-button-bg, var(--bf-focus-color, #0f766e));
 	font-size: 0.85em;
 	font-weight: 600;
 	line-height: 1.5;

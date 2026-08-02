@@ -4,7 +4,7 @@
 
 ![WordPress](https://img.shields.io/badge/WordPress-6.3%2B-21759b)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4)
-![Version](https://img.shields.io/badge/version-1.1.5-0a9396)
+![Version](https://img.shields.io/badge/version-1.1.6-0a9396)
 ![License](https://img.shields.io/badge/license-GPLv2%2B-green)
 
 BoldForm Lite is the free tier of **BoldForm**, a freemium form builder. Build any kind of form visually, embed it anywhere, and manage every submission inside the WordPress dashboard — with zero bloat. **BoldForm Pro** (a separate plugin) extends Lite through hooks; Lite never depends on Pro.

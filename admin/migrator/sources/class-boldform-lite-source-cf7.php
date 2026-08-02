@@ -117,6 +117,7 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 
 		$mapped      = array();
 		$skipped     = array();
+		$warnings    = array();
 		$button_text = '';
 
 		foreach ( $tags as $tag ) {
@@ -132,8 +133,19 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 			$field = $this->map_tag( $tag, $skipped );
 
 			if ( null !== $field ) {
+				if ( ! empty( $tag['recovered'] ) ) {
+					$warnings[] = sprintf(
+						/* translators: 1: CF7 tag name, e.g. acceptance-required. 2: CF7 tag base type, e.g. acceptance. */
+						__( '"%1$s" was imported as an optional field. Its Contact Form 7 tag is written as [%2$s*…], which Contact Form 7 cannot read — there is no starred %2$s tag, so it shows as plain text and is not required there either. To make it required, tick Required on the field here, or drop the * in Contact Form 7 (an %2$s tag is required unless you add the "optional" option) and import again.', 'boldform-lite' ),
+						'' !== (string) $tag['name'] ? $tag['name'] : $tag['basetype'],
+						$tag['basetype']
+					);
+				}
+
 				$mapped[] = array(
-					'line'  => isset( $tag['line'] ) ? (int) $tag['line'] : 0,
+					// -1, not 0: a tag with no recorded line is unlocatable, and 0 is a
+					// real first line that build_rows() must be free to group.
+					'line'  => isset( $tag['line'] ) ? (int) $tag['line'] : -1,
 					'field' => $field,
 				);
 			}
@@ -157,6 +169,7 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 			'rows'      => $rows,
 			'settings'  => $settings,
 			'skipped'   => $skipped,
+			'warnings'  => $warnings,
 			'source_id' => $post_id,
 		);
 	}
@@ -177,9 +190,10 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 			$line  = $mapped[ $i ]['line'];
 			$j     = $i + 1;
 
-			// Collect the following fields that share this line (line 0 = unknown,
-			// never grouped, so a locate failure can't merge unrelated fields).
-			if ( $line > 0 ) {
+			// Collect the following fields that share this line. A negative line means
+			// the tag could not be located in the template, so it is never grouped —
+			// otherwise two unlocatable fields would merge into one row by accident.
+			if ( $line >= 0 ) {
 				while ( $j < $count && $mapped[ $j ]['line'] === $line ) {
 					$group[] = $mapped[ $j ]['field'];
 					++$j;
@@ -284,6 +298,15 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 		if ( '' !== $recipient && false === strpos( $recipient, '[' ) && is_email( $recipient ) ) {
 			$settings['admin_email_type'] = 'custom';
 			$settings['admin_email']      = sanitize_email( $recipient );
+		} elseif ( '' !== $recipient && false === strpos( $recipient, '[' ) ) {
+			// A literal address list ("sales@x.com, ops@y.com") is not a single valid
+			// address, so it cannot be carried over — say so rather than quietly
+			// dropping every recipient back to the site administrator.
+			$skipped[] = sprintf(
+				/* translators: %s: the recipient value configured in Contact Form 7. */
+				__( 'The notification goes to more than one address in Contact Form 7 ("%s"). Notifications will go to the site administrator instead — set the address under Form Settings → Email Notification.', 'boldform-lite' ),
+				$recipient
+			);
 		}
 
 		// Confirmation message.
@@ -323,11 +346,115 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 			$cf7 = WPCF7_ContactForm::get_instance( $post_id );
 
 			if ( $cf7 && method_exists( $cf7, 'scan_form_tags' ) ) {
-				return $this->normalize_api_tags( $cf7->scan_form_tags(), $form_template );
+				return $this->recover_unscanned_tags(
+					$this->normalize_api_tags( $cf7->scan_form_tags(), $form_template ),
+					$form_template
+				);
 			}
 		}
 
 		return $this->normalize_regex_tags( $form_template );
+	}
+
+	/**
+	 * Adds back the named fields CF7's own scanner silently dropped.
+	 *
+	 * CF7 builds its scan regex from the tag types it has REGISTERED, and a type is
+	 * only starrable if the starred spelling was registered too. `acceptance` never
+	 * was — CF7 treats acceptance as required by default and uses an `optional`
+	 * option for the inverse — so `[acceptance* consent]` matches no registered type
+	 * at all. CF7 leaves it as literal text on its own front end and scan_form_tags()
+	 * never reports it, which meant the field vanished from the import with nothing
+	 * said, while `[acceptance consent]` beside it came across fine. It also made the
+	 * two scan paths disagree: the regex fallback below (used when CF7 is inactive)
+	 * does accept the star, so the same form imported differently depending on
+	 * whether CF7 happened to be switched on.
+	 *
+	 * This is additive — every tag CF7 did parse is kept exactly as it parsed it, and
+	 * only a NAMED tag whose base type CF7 actually knows is recovered. Square
+	 * brackets in the form's prose, and another plugin's shortcodes, stay ignored
+	 * rather than turning into fields or skip notes.
+	 *
+	 * @param array<int, array<string, mixed>> $api_tags      Tags CF7's scanner returned.
+	 * @param string                           $form_template Raw `_form` meta.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function recover_unscanned_tags( $api_tags, $form_template ) {
+		$known = array();
+
+		foreach ( $api_tags as $tag ) {
+			if ( empty( $tag['is_submit'] ) && '' !== (string) $tag['name'] ) {
+				$known[ (string) $tag['name'] ] = true;
+			}
+		}
+
+		foreach ( $this->normalize_regex_tags( $form_template ) as $tag ) {
+			$name = isset( $tag['name'] ) ? (string) $tag['name'] : '';
+
+			// A nameless construct is one of CF7's own output tags ([response],
+			// [count]) — the scanner already reported those, so only a named field
+			// can legitimately be missing here.
+			if ( ! empty( $tag['is_submit'] ) || '' === $name || isset( $known[ $name ] ) ) {
+				continue;
+			}
+
+			if ( ! $this->cf7_knows_tag_type( $tag['basetype'] ) ) {
+				continue;
+			}
+
+			$known[ $name ]   = true;
+			$tag['recovered'] = true;
+			$api_tags         = $this->insert_by_line( $api_tags, $tag );
+		}
+
+		return $api_tags;
+	}
+
+	/**
+	 * Inserts a recovered tag at its real position in the template.
+	 *
+	 * Appending would put it after the submit button, and build_rows() groups
+	 * consecutive fields that share a line into one row — so document order has to
+	 * hold. A tag with no `line` (the submit) sorts last.
+	 *
+	 * @param array<int, array<string, mixed>> $tags Tags in document order.
+	 * @param array<string, mixed>             $tag  The tag to place.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function insert_by_line( $tags, $tag ) {
+		// Clamped at 0: an unlocatable tag (-1) has no meaningful position, so place it
+		// with the first line rather than ahead of everything.
+		$line = max( 0, isset( $tag['line'] ) ? (int) $tag['line'] : 0 );
+
+		foreach ( $tags as $index => $existing ) {
+			$existing_line = isset( $existing['line'] ) ? (int) $existing['line'] : PHP_INT_MAX;
+
+			if ( $existing_line > $line ) {
+				array_splice( $tags, $index, 0, array( $tag ) );
+
+				return $tags;
+			}
+		}
+
+		$tags[] = $tag;
+
+		return $tags;
+	}
+
+	/**
+	 * Whether CF7 has a form-tag type registered under this base name.
+	 *
+	 * @param string $basetype Tag base type, e.g. 'acceptance'.
+	 * @return bool
+	 */
+	private function cf7_knows_tag_type( $basetype ) {
+		if ( ! class_exists( 'WPCF7_FormTagsManager' ) ) {
+			return false;
+		}
+
+		$manager = WPCF7_FormTagsManager::get_instance();
+
+		return method_exists( $manager, 'tag_type_exists' ) && $manager->tag_type_exists( (string) $basetype );
 	}
 
 	/**
@@ -558,12 +685,19 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 				}
 
 				// CF7 acceptance is required by default; the `optional` option makes it
-				// submittable unchecked.
+				// submittable unchecked. The star plays NO part — CF7 has no starred
+				// acceptance tag, so a recovered `[acceptance* …]` is one CF7 could not
+				// parse and therefore does not enforce at all: verified by running its own
+				// submission pipeline, where ticking only the plain box sends the form and
+				// ticking only the starred one still returns `acceptance_missing`. Marking
+				// a recovered tag required would impose an obligation the source form does
+				// not have, so it comes in unticked-friendly and the import report explains
+				// how to make it required for real.
 				return array(
 					'type'     => 'terms_conditions',
 					'label'    => $heading,
 					'content'  => $consent,
-					'required' => ! $this->has_opt( $options, 'optional' ),
+					'required' => empty( $tag['recovered'] ) && ! $this->has_opt( $options, 'optional' ),
 				);
 
 			case 'file':
@@ -616,6 +750,13 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 
 		$before = substr( $form_template, 0, (int) $match[0][1] );
 
+		// A <br> between the caption and its field is a line break, not a container
+		// boundary. `Your name<br>[text* your-name]` is one of the commonest Contact
+		// Form 7 layouts, and cutting at that <br>'s ">" threw the caption away and
+		// left the field labelled from its tag name instead. Drop any trailing <br>
+		// (including <br /> and repeats) before looking for the real boundary.
+		$before = (string) preg_replace( '#(?:<br\s*/?>\s*)+$#i', '', $before );
+
 		// Cut at the nearest preceding tag boundary — the end of an HTML tag (>)
 		// or the end of the previous CF7 tag (]) — so only this field's own label
 		// text remains.
@@ -642,12 +783,16 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 	 * @return int Line number, or 0 when the tag can't be located.
 	 */
 	private function tag_line( $form_template, $name ) {
+		// -1 means "could not locate", which is NOT the same as line 0. Returning 0
+		// for both made build_rows() distrust every genuine first line, so
+		// `[text a] [text b]` written on line one was stacked instead of sharing a
+		// row — while the identical markup one line lower grouped correctly.
 		if ( '' === $name || '' === $form_template ) {
-			return 0;
+			return -1;
 		}
 
 		if ( ! preg_match( '/\[[a-z][0-9a-z_]*\*?\s+' . preg_quote( $name, '/' ) . '[\s\]\/]/i', $form_template, $match, PREG_OFFSET_CAPTURE ) ) {
-			return 0;
+			return -1;
 		}
 
 		return substr_count( substr( $form_template, 0, (int) $match[0][1] ), "\n" );
@@ -671,8 +816,11 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 		// Prefer the full body up to [/acceptance]; fall back to text up to the next
 		// tag for a self-closed acceptance. HTML (e.g. a linked privacy policy) is
 		// kept — the terms field's content is wp_kses_post'd downstream.
-		if ( preg_match( '/\[acceptance\s+' . $quoted . '[^\]]*\](.*?)\[\/acceptance\]/is', $form_template, $match )
-			|| preg_match( '/\[acceptance\s+' . $quoted . '[^\]]*\]([^\[]*)/i', $form_template, $match )
+		// `\*?` matches the invalid-but-common `[acceptance* …]` spelling, whose
+		// consent sentence would otherwise be lost and replaced by the generic
+		// default — see recover_unscanned_tags() for why that spelling reaches here.
+		if ( preg_match( '/\[acceptance\*?\s+' . $quoted . '[^\]]*\](.*?)\[\/acceptance\]/is', $form_template, $match )
+			|| preg_match( '/\[acceptance\*?\s+' . $quoted . '[^\]]*\]([^\[]*)/i', $form_template, $match )
 		) {
 			return trim( (string) preg_replace( '/\s+/', ' ', $match[1] ) );
 		}

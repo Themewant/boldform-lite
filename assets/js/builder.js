@@ -1,7 +1,7 @@
 jQuery(
 	function ( $ ) {
 		var optionFieldTypes = [ 'select', 'multiselect', 'checkbox', 'radio' ];
-		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation' ];
+		var specialFieldTypes = [ 'captcha', 'section_break', 'terms_conditions', 'file', 'submit', 'paragraph', 'html_editor', 'name', 'address', 'product', 'quantity', 'custom_amount', 'order_summary', 'signature', 'hidden_field', 'image_choice', 'repeater', 'password_field', 'rich_text', 'date_range', 'nps', 'matrix', 'lookup', 'geolocation', 'page_break' ];
 		var submitButtonId = '__boldform_submit_button__';
 		var state = {
 			formId: Number( boldformLiteBuilder.formId || 0 ),
@@ -162,6 +162,7 @@ jQuery(
 				default_value: '',
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
 				options_layout: optionFieldTypes.indexOf( type ) !== -1 ? 'block' : '',
+				checkbox_style: 'checkbox' === type ? 'default' : '',
 				content: 'terms_conditions' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.termsContent || 'I agree to the <a href="#">terms and conditions</a>.' ) : '',
 				description: 'section_break' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.sectionDesc || 'Add a short description for this section.' ) : '',
 				custom_error: '',
@@ -237,6 +238,7 @@ jQuery(
 			normalized.default_value = field && typeof field.default_value !== 'undefined' ? field.default_value : '';
 			normalized.options = field && Array.isArray( field.options ) ? field.options : normalized.options;
 			normalized.options_layout = field && field.options_layout ? field.options_layout : normalized.options_layout;
+			normalized.checkbox_style = field && 'switch' === field.checkbox_style ? 'switch' : normalized.checkbox_style;
 			normalized.content = field && typeof field.content !== 'undefined' ? field.content : normalized.content;
 			normalized.description = field && typeof field.description !== 'undefined' ? field.description : normalized.description;
 			normalized.custom_error = field && typeof field.custom_error !== 'undefined' ? field.custom_error : '';
@@ -1295,6 +1297,12 @@ jQuery(
 				return label + '<div class="boldform-canvas-file-preview"><span class="dashicons dashicons-upload"></span> <span>' + escapeHtml( boldformLiteBuilder.labels.fileUploadHint || 'Choose file or drag & drop' ) + '</span></div>';
 			} else if ( field.type === 'submit' ) {
 				return '<div class="boldform-canvas-submit is-inline is-align-' + escapeHtml( state.formSettings.button_alignment || 'left' ) + '"><button type="button" class="boldform-canvas-submit__button">' + buildButtonContent() + '</button></div>';
+			} else if ( field.type === 'page_break' ) {
+				// Shows the Step Title set in the settings panel directly on the canvas
+				// row, so which step starts here is visible without opening Settings.
+				return '<div class="boldform-canvas-page-break"><span class="dashicons dashicons-layout"></span><strong>' + escapeHtml( boldformLiteBuilder.labels.pageBreak || 'Page Break' ) + '</strong>' +
+					( field.step_title ? '<span class="boldform-canvas-page-break__title">&#8212; ' + escapeHtml( field.step_title ) + '</span>' : '' ) +
+				'</div>';
 			} else if ( field.type === 'product' ) {
 				var prodOpts = Array.isArray( field.product_options ) ? field.product_options : [];
 				if ( 'select' === field.product_style ) {
@@ -1306,8 +1314,13 @@ jQuery(
 					// stacks rows with min-width:0 (no overflow). Frontend __choices alone
 					// leaves native radios styled as full-width input lines.
 					html += '<div class="boldform-canvas-field-choices">';
+					// The price <em> must use the button-bg-FIRST accent chain, mirroring
+					// the front end's .bfp-product-price rule (Pro payments.css). Keying
+					// off --bf-focus-color alone renders teal under every theme whose
+					// primary isn't blue/green/dark, because applyDesignTheme()'s focusMap
+					// only covers those and leaves --bf-focus-color unset otherwise.
 					prodOpts.slice( 0, 4 ).forEach( function ( opt, idx ) {
-						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-focus-color,#0d9488);font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
+						html += '<label class="boldform-lite-form__choice"><input type="radio"' + ( 0 === idx ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( opt.label || '' ) + ' <em style="color:var(--bf-button-bg, var(--bf-focus-color, #0d9488));font-weight:600">— $' + escapeHtml( parseFloat( opt.price || 0 ).toFixed( 2 ) ) + '</em></span></label>';
 					} );
 					if ( prodOpts.length > 4 ) { html += '<label class="boldform-lite-form__choice"><span class="boldform-lite-form__choice-label" style="color:#9ca3af">…and ' + ( prodOpts.length - 4 ) + ' more</span></label>'; }
 					html += '</div>';
@@ -1373,7 +1386,10 @@ jQuery(
 				// Intentional raw-HTML sink: field.content is admin-authored rich text
 				// (builder is manage_options-only) and is re-sanitized server-side with
 				// wp_kses_post() on save, so it is emitted unescaped here to preserve markup.
-				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + '</div></div>';
+				// A consent field has no heading, so the shared label above never draws
+				// the required asterisk for it — mirror the front end and append one to
+				// the copy instead, or a required consent box looks entirely optional.
+				html = '<div class="boldform-canvas-terms"><input type="checkbox"' + ( field.required ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><div class="boldform-canvas-terms__copy">' + ( field.content || '' ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</div></div>';
 			} else if ( field.type === 'captcha' ) {
 				html = '<div class="boldform-canvas-field-note">' + escapeHtml( boldformLiteBuilder.labels.captchaNotice || 'This field will use the captcha provider selected in global settings.' ) + '</div>';
 			} else if ( field.type === 'textarea' ) {
@@ -1412,7 +1428,8 @@ jQuery(
 				html += '</div></div>';
 			} else if ( field.type === 'checkbox' || field.type === 'radio' ) {
 				var choiceDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
-				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + '">';
+				var isSwitchStyle = 'checkbox' === field.type && 'switch' === field.checkbox_style;
+				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + '">';
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
@@ -2283,6 +2300,18 @@ jQuery(
 					'</div>';
 			}
 
+			// Checkbox-only: render as a toggle switch instead of a square box.
+			if ( selected.field.type === 'checkbox' ) {
+				optionsMarkup +=
+					'<div class="boldform-setting-group">' +
+						'<label>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyle || 'Style' ) + '</label>' +
+						'<select id="boldform-setting-checkbox-style">' +
+							'<option value="default"' + ( 'switch' !== selected.field.checkbox_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyleDefault || 'Checkbox' ) + '</option>' +
+							'<option value="switch"' + ( 'switch' === selected.field.checkbox_style ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.checkboxStyleSwitch || 'Switch' ) + '</option>' +
+						'</select>' +
+					'</div>';
+			}
+
 			if ( selected.field.type === 'select' ) {
 				optionsMarkup +=
 					'<div class="boldform-switch-item">' +
@@ -2536,20 +2565,110 @@ jQuery(
 				'<div class="boldform-field-accordion' + ( activeAccordion === 'settings' ? ' is-open' : '' ) + '" data-accordion="settings">' +
 					'<button type="button" class="boldform-field-accordion__head">' + escapeHtml( boldformLiteBuilder.labels.settings || 'Settings' ) + ' <span class="dashicons dashicons-arrow-down-alt2"></span></button>' +
 					'<div class="boldform-field-accordion__body">' +
-					'<div class="boldform-setting-group">' +
-						'<label for="boldform-setting-label">' + escapeHtml( boldformLiteBuilder.labels.label ) + '</label>' +
-						'<input type="text" id="boldform-setting-label" value="' + escapeHtml( selected.field.label ) + '">' +
-					'</div>' +
-					'<div class="boldform-setting-group">' +
-						'<label>' + escapeHtml( boldformLiteBuilder.labels.labelPlacement || 'Label Placement' ) + '</label>' +
-						'<div class="boldform-btn-group" id="boldform-setting-label-placement">' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'top' === ( selected.field.label_placement || 'top' ) ? ' is-active' : '' ) + '" data-value="top">' + escapeHtml( boldformLiteBuilder.labels.top || 'Top' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'left' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="left">' + escapeHtml( boldformLiteBuilder.labels.left || 'Left' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'right' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="right">' + escapeHtml( boldformLiteBuilder.labels.right || 'Right' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'bottom' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="bottom">' + escapeHtml( boldformLiteBuilder.labels.below || 'Below' ) + '</button>' +
-							'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
+					( 'page_break' === selected.field.type ?
+						// A Page Break is a structural divider between steps, not an input --
+						// it has no visible label, placeholder or default value of its own.
+						// Its only real settings are the step's title and how the multi-step
+						// progress indicator looks (a form-wide choice, set from here since
+						// this is the field users think of as "the step").
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-step-title">Step Title</label>' +
+							'<input type="text" id="boldform-setting-step-title" value="' + escapeHtml( selected.field.step_title || '' ) + '" placeholder="' + escapeHtml( selected.field.label || 'Page Break' ) + '">' +
+							'<p class="boldform-setting-desc">Shown in the multi-step progress indicator for the step that follows.</p>' +
 						'</div>' +
-					'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-page-break-progress-style">Progress Style</label>' +
+							'<select id="boldform-page-break-progress-style">' +
+								'<option value="bar"' + ( 'bar' === ( state.formSettings.step_progress_style || 'bar' ) ? ' selected' : '' ) + '>Progress Bar</option>' +
+								'<option value="steps"' + ( 'steps' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Numbers</option>' +
+								'<option value="headings"' + ( 'headings' === state.formSettings.step_progress_style ? ' selected' : '' ) + '>Headings</option>' +
+							'</select>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-progress-color">Progress Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '">' +
+										'<input type="color" id="boldform-page-break-progress-color" value="' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_progress_color || '#2f80ed' ) + '" data-color-for="boldform-page-break-progress-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-progress-bg-color">Progress Background</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '">' +
+										'<input type="color" id="boldform-page-break-progress-bg-color" value="' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_progress_bg_color || '#e5e7eb' ) + '" data-color-for="boldform-page-break-progress-bg-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+						'<p class="boldform-setting-desc">Progress Color highlights the active/completed step; Progress Background is the unfilled track behind it. Both apply to Progress Bar, Numbers and Headings alike.</p>' +
+						'<div class="boldform-setting-group">' +
+							'<p class="boldform-setting-desc" style="margin:8px 0 0;font-weight:600;color:#374151">Step Navigation Buttons</p>' +
+							'<p class="boldform-setting-desc">The Next/Previous buttons render for every style above — these settings are not tied to the Progress Style choice.</p>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-color">Nav Button Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '">' +
+										'<input type="color" id="boldform-page-break-btn-color" value="' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_btn_color || '#2f80ed' ) + '" data-color-for="boldform-page-break-btn-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-text-color">Nav Button Text Color</label>' +
+								'<div class="boldform-color-field">' +
+									'<div class="boldform-color-swatch" style="background:' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '">' +
+										'<input type="color" id="boldform-page-break-btn-text-color" value="' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '">' +
+									'</div>' +
+									'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( state.formSettings.step_btn_text_color || '#ffffff' ) + '" data-color-for="boldform-page-break-btn-text-color" spellcheck="false">' +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-size">Nav Button Size</label>' +
+								'<select id="boldform-page-break-btn-size">' +
+									'<option value="small"' + ( 'small' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Small</option>' +
+									'<option value="medium"' + ( 'medium' === ( state.formSettings.step_btn_size || 'medium' ) ? ' selected' : '' ) + '>Medium</option>' +
+									'<option value="large"' + ( 'large' === state.formSettings.step_btn_size ? ' selected' : '' ) + '>Large</option>' +
+								'</select>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-btn-radius">Nav Button Radius (px)</label>' +
+								'<input type="number" id="boldform-page-break-btn-radius" min="0" max="50" value="' + escapeHtml( '' === ( state.formSettings.step_btn_radius || '' ) ? '' : String( state.formSettings.step_btn_radius ) ) + '" placeholder="6">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-next-text">Next Button Text</label>' +
+								'<input type="text" id="boldform-page-break-next-text" value="' + escapeHtml( state.formSettings.step_next_text || '' ) + '" placeholder="Next">' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-page-break-prev-text">Previous Button Text</label>' +
+								'<input type="text" id="boldform-page-break-prev-text" value="' + escapeHtml( state.formSettings.step_prev_text || '' ) + '" placeholder="Previous">' +
+							'</div>' +
+						'</div>'
+					:
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-label">' + escapeHtml( boldformLiteBuilder.labels.label ) + '</label>' +
+							'<input type="text" id="boldform-setting-label" value="' + escapeHtml( selected.field.label ) + '">' +
+						'</div>' +
+						'<div class="boldform-setting-group">' +
+							'<label>' + escapeHtml( boldformLiteBuilder.labels.labelPlacement || 'Label Placement' ) + '</label>' +
+							'<div class="boldform-btn-group" id="boldform-setting-label-placement">' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'top' === ( selected.field.label_placement || 'top' ) ? ' is-active' : '' ) + '" data-value="top">' + escapeHtml( boldformLiteBuilder.labels.top || 'Top' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'left' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="left">' + escapeHtml( boldformLiteBuilder.labels.left || 'Left' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'right' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="right">' + escapeHtml( boldformLiteBuilder.labels.right || 'Right' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'bottom' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="bottom">' + escapeHtml( boldformLiteBuilder.labels.below || 'Below' ) + '</button>' +
+								'<button type="button" class="boldform-btn-group__btn' + ( 'hidden' === selected.field.label_placement ? ' is-active' : '' ) + '" data-value="hidden">' + escapeHtml( boldformLiteBuilder.labels.hidden || 'Hide' ) + '</button>' +
+							'</div>' +
+						'</div>'
+					) +
 					( specialFieldTypes.indexOf( selected.field.type ) !== -1 || 'star_rating' === selected.field.type ? '' :
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder ) + '</label>' +
@@ -3081,24 +3200,26 @@ jQuery(
 				'<div class="boldform-field-accordion' + ( activeAccordion === 'advanced' ? ' is-open' : '' ) + '" data-accordion="advanced">' +
 					'<button type="button" class="boldform-field-accordion__head">' + escapeHtml( boldformLiteBuilder.labels.advanced || 'Advanced' ) + ' <span class="dashicons dashicons-arrow-down-alt2"></span></button>' +
 					'<div class="boldform-field-accordion__body">' +
-					'<div class="boldform-switch-item">' +
-						'<label class="boldform-switch__row">' +
-							'<span class="boldform-switch__text">' + escapeHtml( boldformLiteBuilder.labels.required ) + '</span>' +
-							'<input type="checkbox" id="boldform-setting-required"' + ( selected.field.required ? ' checked' : '' ) + '>' +
-							'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
-						'</label>' +
-					'</div>' +
-					( selected.field.required ?
+					( 'page_break' === selected.field.type ? '' :
+						'<div class="boldform-switch-item">' +
+							'<label class="boldform-switch__row">' +
+								'<span class="boldform-switch__text">' + escapeHtml( boldformLiteBuilder.labels.required ) + '</span>' +
+								'<input type="checkbox" id="boldform-setting-required"' + ( selected.field.required ? ' checked' : '' ) + '>' +
+								'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+							'</label>' +
+						'</div>' +
+						( selected.field.required ?
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-custom-error">' + escapeHtml( boldformLiteBuilder.labels.customError || 'Custom error message' ) + '</label>' +
+								'<input type="text" id="boldform-setting-custom-error" value="' + escapeHtml( selected.field.custom_error || '' ) + '" placeholder="' + escapeHtml( ( selected.field.label || 'This field' ) + ' is required.' ) + '">' +
+							'</div>' : ''
+						) +
 						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-custom-error">' + escapeHtml( boldformLiteBuilder.labels.customError || 'Custom error message' ) + '</label>' +
-							'<input type="text" id="boldform-setting-custom-error" value="' + escapeHtml( selected.field.custom_error || '' ) + '" placeholder="' + escapeHtml( ( selected.field.label || 'This field' ) + ' is required.' ) + '">' +
-						'</div>' : ''
+							'<label for="boldform-setting-auto-populate-key">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateKey || 'Auto Populate Key' ) + '</label>' +
+							'<input type="text" id="boldform-setting-auto-populate-key" value="' + escapeHtml( selected.field.auto_populate_key || '' ) + '" placeholder="e.g. name, email, user_email">' +
+							'<p class="boldform-setting-desc">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateDesc || 'Pre-fill from URL parameter (?key=value) or logged-in user data.' ) + '</p>' +
+						'</div>'
 					) +
-					'<div class="boldform-setting-group">' +
-						'<label for="boldform-setting-auto-populate-key">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateKey || 'Auto Populate Key' ) + '</label>' +
-						'<input type="text" id="boldform-setting-auto-populate-key" value="' + escapeHtml( selected.field.auto_populate_key || '' ) + '" placeholder="e.g. name, email, user_email">' +
-						'<p class="boldform-setting-desc">' + escapeHtml( boldformLiteBuilder.labels.autoPopulateDesc || 'Pre-fill from URL parameter (?key=value) or logged-in user data.' ) + '</p>' +
-					'</div>' +
 					'<div class="boldform-setting-group">' +
 						'<label for="boldform-setting-css-class">' + escapeHtml( boldformLiteBuilder.labels.cssClass || 'CSS Class' ) + '</label>' +
 						'<input type="text" id="boldform-setting-css-class" value="' + escapeHtml( selected.field.css_class || '' ) + '" placeholder="my-custom-class">' +
@@ -3781,9 +3902,16 @@ jQuery(
 			'rose-pink':      { label: 'Rose Pink',      primary: '#e11d48', focus: '#e11d48', btnBg: '#e11d48', btnText: '#fff', fieldBorder: '#fecdd3', fieldBg: '#fff1f2', fieldRadius: 16 }
 		};
 
-		function applyDesignTheme( themeKey ) {
+		// Apply a Design Theme. When clearColorOverrides is true, per-control colour
+		// overrides stored in the style layer are dropped first — without that a
+		// single explicit colour (e.g. --bf-choice-accent) outranks the theme's
+		// --bf-button-bg for the rest of the form's life and the theme looks broken.
+		// Callers should route through bfApplyThemeWithConflictCheck() so the user is
+		// asked before anything is discarded.
+		function applyDesignTheme( themeKey, clearColorOverrides ) {
 			var theme = designThemes[ themeKey ];
 			if ( ! theme ) return;
+			if ( clearColorOverrides ) { bfClearThemeColorOverrides(); }
 			state.formSettings.design_theme = themeKey;
 			state.formSettings.button_background_color = theme.btnBg;
 			state.formSettings.button_border_color = theme.btnBg;
@@ -3795,6 +3923,83 @@ jQuery(
 			var focusMap = { '#2f80ed': 'blue', '#2563eb': 'blue', '#0f766e': '', '#16a34a': 'green', '#334155': 'dark' };
 			state.formSettings.field_focus_color = focusMap[ theme.focus ] || '';
 			renderAll();
+		}
+
+		// Small localized-label reader for the theme dialog.
+		function bfThemeLabel( key, fallback ) {
+			var l = boldformLiteBuilder.labels || {};
+			return l[ key ] ? l[ key ] : fallback;
+		}
+
+		// Entry point for every "apply a Design Theme" interaction. Applies straight
+		// away when nothing is in the way; otherwise asks before discarding the
+		// colour overrides that would outrank the theme.
+		function bfApplyThemeWithConflictCheck( themeKey ) {
+			if ( ! designThemes[ themeKey ] ) { return; }
+			var conflicts = bfThemeColorConflicts();
+			if ( ! conflicts.length ) {
+				applyDesignTheme( themeKey, false );
+				return;
+			}
+			bfShowThemeConflictDialog( themeKey, conflicts );
+		}
+
+		function bfShowThemeConflictDialog( themeKey, conflicts ) {
+			$( '#boldform-theme-confirm' ).remove();
+
+			var themeName = designThemes[ themeKey ] ? designThemes[ themeKey ].label : themeKey;
+			var listHtml = conflicts.map( function ( c ) {
+				return '<li style="display:flex;align-items:center;gap:8px;padding:4px 0">' +
+					'<span aria-hidden="true" style="flex:0 0 auto;width:14px;height:14px;border-radius:3px;border:1px solid rgba(15,23,42,.2);background:' + escapeHtml( c.value ) + '"></span>' +
+					'<span style="flex:1 1 auto;min-width:0;color:#334155">' + escapeHtml( c.label ) + '</span>' +
+					'<code style="flex:0 0 auto;background:#f1f5f9;border-radius:3px;padding:1px 5px;font-size:11px;color:#475569">' + escapeHtml( c.value ) + '</code>' +
+				'</li>';
+			} ).join( '' );
+
+			var intro = bfThemeLabel( 'themeConflictBody', 'These custom colors are overriding the theme. Applying it will replace them:' );
+
+			var $overlay = $(
+				'<div id="boldform-theme-confirm" role="dialog" aria-modal="true" aria-labelledby="boldform-theme-confirm-title" ' +
+					'style="position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;background:rgba(15,23,42,.55)">' +
+					'<div style="background:#fff;max-width:460px;width:calc(100% - 40px);border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px">' +
+						'<h2 id="boldform-theme-confirm-title" style="margin:0 0 8px;font-size:18px;line-height:1.3">' +
+							escapeHtml( bfThemeLabel( 'themeConflictTitle', 'Apply theme?' ).replace( '%s', themeName ) ) +
+						'</h2>' +
+						'<p style="margin:0 0 12px;color:#475569;line-height:1.5">' + escapeHtml( intro ) + '</p>' +
+						'<ul style="margin:0 0 20px;padding:0;list-style:none;max-height:180px;overflow-y:auto">' + listHtml + '</ul>' +
+						'<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">' +
+							'<button type="button" class="button" data-bf-theme="cancel">' +
+								escapeHtml( bfThemeLabel( 'cancel', 'Cancel' ) ) +
+							'</button>' +
+							'<button type="button" class="button button-primary" data-bf-theme="apply">' +
+								escapeHtml( bfThemeLabel( 'themeConflictApply', 'Apply theme' ) ) +
+							'</button>' +
+						'</div>' +
+					'</div>' +
+				'</div>'
+			);
+
+			function closeDialog() {
+				$overlay.remove();
+				$( document ).off( 'keydown.bftheme' );
+			}
+
+			$overlay.on( 'click', function ( e ) {
+				var action = $( e.target ).closest( '[data-bf-theme]' ).attr( 'data-bf-theme' );
+				if ( e.target === $overlay[ 0 ] ) { action = 'cancel'; }
+				if ( ! action ) { return; }
+				closeDialog();
+				if ( 'apply' === action ) {
+					applyDesignTheme( themeKey, true );
+				}
+			} );
+
+			$( document ).on( 'keydown.bftheme', function ( e ) {
+				if ( 27 === e.keyCode ) { closeDialog(); }
+			} );
+
+			$( 'body' ).append( $overlay );
+			$overlay.find( '[data-bf-theme="apply"]' ).trigger( 'focus' );
 		}
 
 		function renderStylingSettings() {
@@ -4594,6 +4799,80 @@ jQuery(
 			return vars;
 		}
 
+		// Every schema var that carries a COLOUR, as { name, label } — the set a
+		// Design Theme is entitled to reclaim.
+		//
+		// Why this exists: the colour fallback chain is
+		//   var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, …)))
+		// and a Design Theme only writes position 2 (--bf-button-bg, via the legacy
+		// button_background_color key). An explicit style-layer value in position 1
+		// therefore outranks the theme permanently, so switching themes appears to do
+		// nothing for that control. Clearing these lets the theme's value through.
+		//
+		// Deliberately EXCLUDES:
+		//  - 'shadow' — its var holds a composite "x y blur spread colour", so clearing
+		//    one would discard geometry the user tuned, not just a colour.
+		//  - border -width / -style — only the colour half of a border control is taken.
+		//  - typography / slider / dimension / align / switch — not colours.
+		// Memoized: the schema and its labels are static for the life of the page, and
+		// this is walked on every colour edit via bfRefreshResetStates().
+		var bfThemeColorVarsCache = null;
+		function bfThemeColorVars() {
+			if ( bfThemeColorVarsCache ) { return bfThemeColorVarsCache; }
+			var out = [];
+			bfStyleSchema().forEach( function ( sec ) {
+				function expand( c ) {
+					if ( 'stateTabs' === c.type && c.states ) {
+						c.states.forEach( function ( s ) { ( s.controls || [] ).forEach( expand ); } );
+						return;
+					}
+					if ( ! c.var ) { return; }
+					var name = null;
+					if ( 'color' === c.type || 'background' === c.type ) {
+						name = c.var;
+					} else if ( 'border' === c.type ) {
+						name = c.colorVar || ( c.var + '-color' );
+					}
+					if ( ! name ) { return; }
+					out.push( { name: name, label: sec.title + ' · ' + advLabel( c.label ) } );
+				}
+				( sec.controls || [] ).forEach( expand );
+			} );
+			bfThemeColorVarsCache = out;
+			return out;
+		}
+
+		// Non-empty colour overrides across EVERY device layer (not just the active
+		// one) — a tablet-only override would otherwise silently survive a theme
+		// switch and reappear at that breakpoint. Deduped by var name so one entry
+		// is reported per colour regardless of how many breakpoints carry it.
+		function bfThemeColorConflicts() {
+			var style = state.formSettings.style || {};
+			var seen = {}, out = [];
+			bfThemeColorVars().forEach( function ( v ) {
+				Object.keys( style ).forEach( function ( device ) {
+					var layer = style[ device ] || {};
+					var val = layer[ v.name ];
+					if ( 'string' !== typeof val || '' === val || seen[ v.name ] ) { return; }
+					seen[ v.name ] = true;
+					out.push( { name: v.name, label: v.label, value: val } );
+				} );
+			} );
+			return out;
+		}
+
+		// Drop every colour override from all three device layers so the freshly
+		// applied theme is what actually renders.
+		function bfClearThemeColorOverrides() {
+			var style = state.formSettings.style || {};
+			var names = bfThemeColorVars().map( function ( v ) { return v.name; } );
+			Object.keys( style ).forEach( function ( device ) {
+				var layer = style[ device ];
+				if ( ! layer ) { return; }
+				names.forEach( function ( n ) { delete layer[ n ]; } );
+			} );
+		}
+
 		// True when the active device layer holds any non-empty value for this
 		// section's vars — i.e. there is something for its reset button to clear.
 		function bfSectionHasValues( sec ) {
@@ -4614,7 +4893,11 @@ jQuery(
 					.prop( 'disabled', ! has )
 					.attr( 'aria-disabled', has ? 'false' : 'true' );
 			} );
-			var themeChanged = !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme;
+			// Enabled when the active theme differs from the default, OR when colour
+			// overrides are currently outranking the theme — otherwise a form sitting
+			// on Default Blue with stale overrides would have no way to reclaim them.
+			var themeChanged = ( !! state.formSettings.design_theme && 'default-blue' !== state.formSettings.design_theme ) ||
+				bfThemeColorConflicts().length > 0;
 			$( '.boldform-theme-reset' )
 				.toggleClass( 'is-disabled', ! themeChanged )
 				.prop( 'disabled', ! themeChanged )
@@ -4865,6 +5148,14 @@ jQuery(
 			var template = templates[ templateName ];
 
 			if ( ! template ) {
+				// A locked row advertises a template that is not installed. The Import
+				// button is hidden while one is selected, so this is belt-and-braces:
+				// without it an advertised key would fall through to the blank-row
+				// modal, which reads as the upgrade having silently done something.
+				if ( lockedTemplate( templateName ) ) {
+					openUpgradeModal( 'boldform-templates-upgrade-modal' );
+					return;
+				}
 				openRowModal();
 				return;
 			}
@@ -4930,10 +5221,61 @@ jQuery(
 			return missing;
 		}
 
+		/**
+		 * Locked template rows advertised in the library, keyed by category.
+		 *
+		 * Empty whenever the upgrade CTAs are off, which is also when the add-on
+		 * supplies the real versions — so a locked row never sits beside the template
+		 * it advertises. A locked entry whose key already exists as a real template is
+		 * dropped as a second guarantee of that.
+		 *
+		 * @param {Object} realTemplates Templates that can actually be imported.
+		 * @return {Object} Category key => array of {key,title,description}.
+		 */
+		function groupedTemplateTeasers( realTemplates ) {
+			var grouped = {};
+
+			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+				return grouped;
+			}
+
+			boldformLiteBuilder.premiumTemplates.forEach( function ( tpl ) {
+				if ( ! tpl || ! tpl.key || realTemplates[ tpl.key ] ) {
+					return;
+				}
+				var cat = tpl.category || 'general';
+				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
+				grouped[ cat ].push( tpl );
+			} );
+
+			return grouped;
+		}
+
+		/**
+		 * Looks a locked entry up by key, or null when it is not one.
+		 *
+		 * @param {string} key Template key.
+		 * @return {Object|null} The locked entry, or null.
+		 */
+		function lockedTemplate( key ) {
+			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+				return null;
+			}
+			var found = null;
+			boldformLiteBuilder.premiumTemplates.forEach( function ( tpl ) {
+				if ( tpl && tpl.key === key ) found = tpl;
+			} );
+			return found;
+		}
+
 		function renderTemplateModal() {
 			var templates = getAllTemplateDefinitions();
+			var teasers   = groupedTemplateTeasers( templates );
 
-			var selectedKey = templates[ state.selectedTemplate ]
+			// A locked row can be "selected" to preview what it offers, so the
+			// selection is valid if it names either a real template or a locked one.
+			var lockedSelection = templates[ state.selectedTemplate ] ? null : lockedTemplate( state.selectedTemplate );
+			var selectedKey = ( templates[ state.selectedTemplate ] || lockedSelection )
 				? state.selectedTemplate
 				: 'contact';
 			var selectedTemplate = templates[ selectedKey ];
@@ -4953,14 +5295,23 @@ jQuery(
 				grouped[ cat ].push( key );
 			} );
 
+			// Categories the add-on fills but this plugin does not — Health & Medical,
+			// Education & Nonprofit, Payment & Calculation, Multi-Step — hold nothing but
+			// locked rows, so they have to be walked too or they never render at all.
+			Object.keys( teasers ).forEach( function ( cat ) {
+				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
+			} );
+
 			Object.keys( grouped ).forEach( function ( cat ) {
-				if ( ! grouped[ cat ].length ) return;
+				var catTeasers = teasers[ cat ] || [];
+				if ( ! grouped[ cat ].length && ! catTeasers.length ) return;
 				// Accordion: the group holding the currently-selected template starts
 				// open, the rest start collapsed. On first open the selection defaults
 				// to 'contact', so the first (General) group is the one shown. Keeping
 				// the selected group open means it stays expanded across the re-render
 				// that fires when a template is picked.
-				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1;
+				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1 ||
+					catTeasers.some( function ( t ) { return t.key === selectedKey; } );
 				listMarkup += '<div class="boldform-template-group' + ( groupOpen ? ' is-open' : '' ) + '">';
 				listMarkup += '<button type="button" class="boldform-template-group__header" data-template-group-toggle aria-expanded="' + ( groupOpen ? 'true' : 'false' ) + '">';
 				listMarkup += '<span class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</span>';
@@ -4976,9 +5327,53 @@ jQuery(
 					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
 					listMarkup += '</button>';
 				} );
+				// Locked rows sit under the importable ones so the free templates always
+				// come first. They are real buttons, not inert chips: selecting one shows
+				// what the form does in the preview pane, which is the whole point.
+				catTeasers.forEach( function ( tpl ) {
+					var isActive = tpl.key === selectedKey;
+					listMarkup += '<button type="button" class="boldform-template-option is-locked' +
+						( isActive ? ' is-active' : '' ) +
+						'" data-template-option="' + escapeHtml( tpl.key ) + '">';
+					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
+					listMarkup += '<span class="boldform-template-option__lock dashicons dashicons-lock" aria-hidden="true"></span>';
+					listMarkup += '</button>';
+				} );
 				listMarkup += '</div></div>';
 				listMarkup += '</div>';
 			} );
+
+			// A locked row has no structure to draw — it is an advertisement, not a
+			// template — so the canvas shows what the form is for and how to get it,
+			// and the Import button is swapped for the upgrade call to action.
+			if ( ! selectedTemplate ) {
+				var lockedTpl = lockedSelection || lockedTemplate( selectedKey );
+
+				$( '#boldform-template-list' ).html( listMarkup );
+				$( '#boldform-template-preview__head' ).html(
+					'<h3>' + escapeHtml( lockedTpl ? lockedTpl.title : '' ) + '</h3>' +
+					'<p>' + escapeHtml( lockedTpl ? lockedTpl.description : '' ) + '</p>'
+				);
+				$( '#boldform-template-preview-canvas' ).html(
+					'<div class="boldform-template-lock">' +
+						'<span class="boldform-template-lock__badge dashicons dashicons-lock" aria-hidden="true"></span>' +
+						'<strong class="boldform-template-lock__title">' +
+							escapeHtml( boldformLiteBuilder.labels.templateLockTitle || 'Available with an upgrade' ) +
+						'</strong>' +
+						'<p class="boldform-template-lock__text">' +
+							escapeHtml( boldformLiteBuilder.labels.templateLockText || '' ) +
+						'</p>' +
+						'<button type="button" class="boldform-upgrade-btn boldform-template-lock__cta" aria-haspopup="dialog" data-upgrade-modal="boldform-templates-upgrade-modal">' +
+							'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+							escapeHtml( boldformLiteBuilder.labels.upgradeNow || 'Upgrade Now' ) +
+						'</button>' +
+					'</div>'
+				);
+				$( '#boldform-import-template' ).attr( 'hidden', 'hidden' );
+				return;
+			}
+
+			$( '#boldform-import-template' ).removeAttr( 'hidden' );
 
 			selectedTemplate.rows.forEach( function ( row ) {
 				previewMarkup += '<div class="boldform-template-preview-row">';
@@ -5357,7 +5752,7 @@ jQuery(
 			e.preventDefault();
 			e.stopPropagation();
 			if ( $( this ).is( '.is-disabled, :disabled' ) ) { return; }
-			applyDesignTheme( 'default-blue' );
+			bfApplyThemeWithConflictCheck( 'default-blue' );
 		} );
 
 		$( document ).on( 'click', '.boldform-style-section__reset', function ( e ) {
@@ -6107,7 +6502,7 @@ jQuery(
 
 		$( document ).on(
 			'input',
-			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-max-stars, #boldform-setting-star-color, #boldform-setting-star-inactive-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high, #boldform-setting-nps-detractor-color, #boldform-setting-nps-passive-color, #boldform-setting-nps-promoter-color',
+			'#boldform-setting-label, #boldform-setting-placeholder, #boldform-setting-default, #boldform-setting-button-text, #boldform-setting-content, #boldform-setting-description, #boldform-setting-custom-error, #boldform-setting-allowed-types, #boldform-setting-max-file-size, #boldform-setting-button-icon-gap, #boldform-setting-css-class, #boldform-setting-auto-populate-key, #boldform-setting-min-value, #boldform-setting-max-value, #boldform-setting-step-value, #boldform-setting-mask-custom, #boldform-setting-max-stars, #boldform-setting-star-color, #boldform-setting-star-inactive-color, #boldform-setting-star-size, #boldform-setting-slider-color, #boldform-setting-slider-height, #boldform-setting-step-title, #boldform-setting-next-text, #boldform-setting-prev-text, #boldform-setting-btn-color, #boldform-setting-btn-text-color, #boldform-setting-btn-size, #boldform-setting-btn-radius, #boldform-setting-progress-color, #boldform-setting-progress-style, #boldform-setting-button-icon-size, #boldform-setting-button-icon-color, #boldform-step-progress-style-field, #boldform-page-break-progress-style, #boldform-page-break-progress-color, #boldform-page-break-progress-bg-color, #boldform-page-break-btn-color, #boldform-page-break-btn-text-color, #boldform-page-break-btn-size, #boldform-page-break-btn-radius, #boldform-page-break-next-text, #boldform-page-break-prev-text, #boldform-setting-product-style, #boldform-setting-qty-linked-product, #boldform-setting-qty-min, #boldform-setting-qty-max, #boldform-setting-qty-default, #boldform-setting-amount-min, #boldform-setting-amount-max, #boldform-setting-amount-default, #boldform-calc-formula, #boldform-calc-decimals, #boldform-calc-prefix, #boldform-calc-suffix, #boldform-setting-sig-pen-color, #boldform-setting-sig-pen-width, #boldform-setting-sig-bg-color, #boldform-setting-sig-height, #boldform-setting-hidden-value, #boldform-setting-rep-min, #boldform-setting-rep-max, #boldform-setting-rep-add-label, #boldform-setting-rep-remove-label, #boldform-setting-ic-img-height, #boldform-setting-matrix-rows, #boldform-setting-matrix-cols, #boldform-setting-lookup-items, #boldform-setting-lookup-placeholder, #boldform-setting-lookup-min-chars, #boldform-setting-lookup-max-results, #boldform-setting-geo-map-height, #boldform-setting-rte-height, #boldform-setting-pw-placeholder, #boldform-setting-dr-placeholder, #boldform-setting-dr-separator, #boldform-setting-dr-min-days, #boldform-setting-dr-max-days, #boldform-setting-nps-low, #boldform-setting-nps-high, #boldform-setting-nps-detractor-color, #boldform-setting-nps-passive-color, #boldform-setting-nps-promoter-color',
 			function () {
 				var selected = getSelectedFieldLocation();
 
@@ -6174,6 +6569,37 @@ jQuery(
 				}
 				if ( $( '#boldform-setting-step-title' ).length ) {
 					selected.field.step_title = $( '#boldform-setting-step-title' ).val();
+				}
+				// Progress style is a form-wide setting (there is one indicator for the
+				// whole multi-step form), not a per-field one -- edited from the Page
+				// Break panel since that's where users look for it, but stored on
+				// formSettings like the submit button's settings are above.
+				if ( $( '#boldform-page-break-progress-style' ).length ) {
+					state.formSettings.step_progress_style = $( '#boldform-page-break-progress-style' ).val() || 'bar';
+				}
+				if ( $( '#boldform-page-break-progress-color' ).length ) {
+					state.formSettings.step_progress_color = $( '#boldform-page-break-progress-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-progress-bg-color' ).length ) {
+					state.formSettings.step_progress_bg_color = $( '#boldform-page-break-progress-bg-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-color' ).length ) {
+					state.formSettings.step_btn_color = $( '#boldform-page-break-btn-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-text-color' ).length ) {
+					state.formSettings.step_btn_text_color = $( '#boldform-page-break-btn-text-color' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-btn-size' ).length ) {
+					state.formSettings.step_btn_size = $( '#boldform-page-break-btn-size' ).val() || 'medium';
+				}
+				if ( $( '#boldform-page-break-btn-radius' ).length ) {
+					state.formSettings.step_btn_radius = '' === $( '#boldform-page-break-btn-radius' ).val() ? '' : Math.max( 0, Math.min( 50, parseInt( $( '#boldform-page-break-btn-radius' ).val(), 10 ) || 0 ) );
+				}
+				if ( $( '#boldform-page-break-next-text' ).length ) {
+					state.formSettings.step_next_text = $( '#boldform-page-break-next-text' ).val() || '';
+				}
+				if ( $( '#boldform-page-break-prev-text' ).length ) {
+					state.formSettings.step_prev_text = $( '#boldform-page-break-prev-text' ).val() || '';
 				}
 				if ( $( '#boldform-setting-product-style' ).length ) {
 					selected.field.product_style = $( '#boldform-setting-product-style' ).val();
@@ -6350,7 +6776,7 @@ jQuery(
 
 		$( document ).on(
 			'change',
-			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-icon-color, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
+			'#boldform-setting-required, #boldform-setting-button-icon-type, #boldform-setting-button-icon-dashicon, #boldform-setting-button-icon-position, #boldform-setting-button-icon-color, #boldform-setting-button-color-global, #boldform-setting-options-layout, #boldform-setting-checkbox-style, #boldform-setting-select-searchable, #boldform-setting-mask-pattern, #boldform-setting-show-middle-name, #boldform-setting-show-last-name, #boldform-setting-hidden-source, #boldform-setting-ic-type, #boldform-setting-ic-columns, #boldform-setting-rep-columns, #boldform-setting-pw-confirm, #boldform-setting-lookup-allow-custom, #boldform-setting-geo-show-map, #boldform-setting-matrix-type, #boldform-setting-dr-format, #boldform-setting-geo-store-format, #boldform-setting-dual-handle',
 			function () {
 				var selected = getSelectedFieldLocation();
 				var isSubmitSel = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -6389,6 +6815,10 @@ jQuery(
 
 				if ( $( '#boldform-setting-options-layout' ).length ) {
 					selected.field.options_layout = $( '#boldform-setting-options-layout' ).val() || 'block';
+				}
+
+				if ( $( '#boldform-setting-checkbox-style' ).length ) {
+					selected.field.checkbox_style = $( '#boldform-setting-checkbox-style' ).val() || 'default';
 				}
 
 				if ( $( '#boldform-setting-select-searchable' ).length ) {
@@ -6703,7 +7133,7 @@ jQuery(
 
 		// Design theme card click.
 		$( document ).on( 'click', '.boldform-theme-card', function () {
-			applyDesignTheme( $( this ).data( 'theme' ) );
+			bfApplyThemeWithConflictCheck( $( this ).data( 'theme' ) );
 		} );
 
 		// Choice card click — ensure radio toggles reliably on all browsers.

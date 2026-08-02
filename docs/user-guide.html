@@ -159,7 +159,7 @@ pre code{background:none;padding:0;color:inherit}
 <!-- Introduction -->
 <h1 id="introduction">BoldForm Lite &mdash; User Guide</h1>
 <p class="bf-subtitle">A complete guide to building, styling, and managing forms with BoldForm Lite for WordPress.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.5 · Pro v1.1.2 · Updated 2026-07-21</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.6 · Pro v1.1.3 · Updated 2026-08-02</p>
 
 <p>BoldForm Lite is a lightweight, drag-and-drop form builder for WordPress. Build contact forms, feedback forms, registration forms, surveys, and more &mdash; with no coding required.</p>
 
@@ -399,7 +399,7 @@ the extra settings each field type exposes when selected on the canvas.</p>
     <tr><td>Name</td><td>Show Middle Name toggle; Show Last Name toggle</td></tr>
     <tr><td>Select</td><td>Options list (drag-reorder, set a default option); Enable search toggle</td></tr>
     <tr><td>Multi Select</td><td>Options list (drag-reorder, set one or more default options)</td></tr>
-    <tr><td>Checkbox</td><td>Options list (set default checked options); Layout: Stacked or Inline</td></tr>
+    <tr><td>Checkbox</td><td>Options list (set default checked options); Layout: Stacked or Inline; Style: Checkbox or Switch</td></tr>
     <tr><td>Radio</td><td>Options list (set a default option); Layout: Stacked or Inline</td></tr>
     <tr><td>Numeric</td><td>Min Value; Max Value; Step</td></tr>
     <tr><td>Input Mask</td><td>Mask Pattern (Phone, Date, Card, Time, CPF, or Custom); Custom Mask field (9 = digit, A = letter, * = any) when Custom is selected</td></tr>
@@ -427,7 +427,7 @@ the extra settings each field type exposes when selected on the canvas.</p>
 <table>
   <thead><tr><th>Field</th><th>Additional settings</th></tr></thead>
   <tbody>
-    <tr><td><strong>Page Break</strong></td><td>Step title, Next/Previous button text, and progress-bar style (configured per step)</td></tr>
+    <tr><td><strong>Page Break</strong></td><td>Step Title (per step). Form-wide from any Page Break: Progress Style (Progress Bar, Numbers or Headings), Progress Color (the active/completed part) and Progress Background (the unfilled track), plus Nav Button Color, Nav Button Text Color, Nav Button Size, Nav Button Radius, and the Next/Previous button text</td></tr>
     <tr><td><strong>Product</strong></td><td>Product Options list (each row: label + price, drag-reorder); Display Style: Radio buttons or Dropdown</td></tr>
     <tr><td><strong>Quantity</strong></td><td>Linked Product Field; Min Qty; Max Qty; Default Qty</td></tr>
     <tr><td><strong>Custom Amount</strong></td><td>Min Amount; Max Amount; Default Amount</td></tr>
@@ -626,6 +626,17 @@ concepts (interaction states, gradients, and responsive breakpoints) that apply 
 <p>The first section in the Form Styling panel. Apply a pre-built color theme with one click &mdash; themes set
 coordinated colors for fields, labels, buttons, focus states, and error messages. After applying a theme you can
 still fine-tune any individual setting in the sections below; the theme is just a starting point.</p>
+
+<p><strong>Custom colors take priority over the theme.</strong> Once you set a color yourself in any section below
+(a checkbox accent, a label color, a field background, and so on), that color is kept even when you switch themes
+&mdash; otherwise switching a theme would quietly discard your work. Because of this, a form with custom colors can
+look only partly re-themed.</p>
+
+<p>To avoid the confusion, BoldForm checks before applying: if any custom colors are currently overriding the theme,
+it lists them and asks whether to replace them. Choose <strong>Apply theme</strong> to clear those colors so the
+theme takes full effect, or <strong>Cancel</strong> to leave everything exactly as it is. Only colors are affected
+&mdash; your typography, spacing, borders, sizes, and shadows are never touched. The same prompt appears when you
+use the Design Theme <strong>reset</strong> control, so you can reclaim theme colors without switching theme.</p>
 
 <h3>State-Based Styling</h3>
 <p>Control the appearance of fields in different user interaction states:</p>
@@ -1128,6 +1139,21 @@ will follow. The tab only appears for form plugins you actually have installed.<
       form's recipient address and confirmation ("thank you") message come across too.</li>
   <li>Anything that can't be mapped &mdash; a hidden field, a CAPTCHA, or a custom email subject
       and body &mdash; is listed after the import so you know exactly what to set up by hand.</li>
+  <li><strong>Acceptance ("I agree…") checkboxes follow Contact Form 7's rule, which surprises people.</strong>
+      Unlike every other field, an acceptance checkbox does <em>not</em> use the <code>*</code> to mean
+      required. A plain <code>[acceptance consent]</code> is <em>already</em> mandatory &mdash; Contact Form 7
+      refuses the submission when it is left unticked &mdash; and the only way to relax it is the
+      <code>optional</code> keyword, as in <code>[acceptance consent optional]</code>. Contact Form 7 blocks
+      such a form with no message beside the box, so a mandatory consent can easily look optional there. The
+      Migrator imports it as required to match.</li>
+  <li><strong>A tag written <code>[acceptance* consent]</code> is not valid Contact Form 7 syntax.</strong>
+      There is no starred acceptance tag, so Contact Form 7 cannot read that line at all: it shows as plain
+      text rather than a checkbox, and ticking it would change nothing even if it did. The Migrator still
+      brings it across as a real consent checkbox &mdash; but as an <em>optional</em> one, because the source
+      form does not require it, and marking it required would add a rule your Contact Form 7 form never had.
+      The import report flags every such tag. To make it genuinely required, either tick
+      <strong>Required</strong> on the field in the builder, or drop the <code>*</code> in Contact Form 7 and
+      import again.</li>
   <li>Each imported form gets an <strong>Edit form</strong> link so you can fine-tune it right away.</li>
   <li><strong>Re-importing</strong> a form updates the one you brought over before instead of
       creating a duplicate &mdash; note that it overwrites that form's fields with the source version,
@@ -2071,7 +2097,7 @@ the submission private. See <a href="#privacy-gdpr">Privacy &amp; GDPR</a> for d
 <p>Yes. Go to <strong>Settings &rarr; General</strong> to set default error messages for each field type. In the form builder, you can also set custom error messages for individual fields under <strong>Field Settings</strong>.</p>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.5 &mdash; User Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.6 &mdash; User Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>
