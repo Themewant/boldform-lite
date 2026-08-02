@@ -929,6 +929,10 @@ class BoldForm_Lite_Admin {
 						'importTemplate' => __( 'Import Template', 'boldform-lite' ),
 						/* translators: %s: comma-separated list of feature names that must be enabled. */
 						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
+						// Shown in the preview pane when a locked template row is selected.
+						'templateLockTitle' => __( 'Available with an upgrade', 'boldform-lite' ),
+						'templateLockText'  => __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ),
+						'upgradeNow'        => __( 'Upgrade Now', 'boldform-lite' ),
 						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
@@ -1188,6 +1192,11 @@ class BoldForm_Lite_Admin {
 					// as the string '0', which is truthy, and the teaser would then show
 					// even with an add-on active.
 					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
+					// Locked entries advertised in the "Choose a Template" library. Empty
+					// once an add-on turns the upgrade CTAs off, at which point that add-on
+					// supplies the real templates through proTemplates instead — the two
+					// never show together. See premium_template_teasers().
+					'premiumTemplates'   => $this->premium_template_teasers(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
@@ -1645,6 +1654,76 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
+	}
+
+	/**
+	 * Ready-made forms advertised in the template library but not included here.
+	 *
+	 * Four of the library's eight categories — Health & Medical, Education & Nonprofit,
+	 * Payment & Calculation and Multi-Step — have no template in this plugin, so the
+	 * category never rendered and there was nothing to tell anyone those forms exist.
+	 * These entries fill the gap: they list as locked rows that preview their
+	 * description and offer an upgrade instead of an import.
+	 *
+	 * Nothing here detects an add-on. The list is emptied by the same
+	 * `boldform_show_upgrade_cta` filter every other teaser respects, and an add-on
+	 * that turns that filter off supplies the real, importable versions of these very
+	 * templates through `proTemplates` — so a locked row and its real counterpart can
+	 * never appear at the same time. Keep the keys identical to the add-on's template
+	 * slugs: that is what makes the swap exact rather than approximate.
+	 *
+	 * @return array<int, array<string, string>> Locked entries, or [] when the CTAs are off.
+	 */
+	private function premium_template_teasers() {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return array();
+		}
+
+		return array(
+			// --- General ---------------------------------------------------------
+			array( 'key' => 'contest_entry', 'category' => 'general', 'title' => __( 'Contest / Giveaway Entry', 'boldform-lite' ), 'description' => __( 'Run a contest or giveaway with entrant details and a skill-testing question.', 'boldform-lite' ) ),
+
+			// --- Business --------------------------------------------------------
+			array( 'key' => 'quote_request', 'category' => 'business', 'title' => __( 'Project Quote Request', 'boldform-lite' ), 'description' => __( 'Let prospects describe a project and request a price quote with budget and timeline.', 'boldform-lite' ) ),
+			array( 'key' => 'file_upload', 'category' => 'business', 'title' => __( 'File Upload / Document Submission', 'boldform-lite' ), 'description' => __( 'Collect documents from users — resumes, contracts, invoices — with contact details.', 'boldform-lite' ) ),
+			array( 'key' => 'consent_waiver', 'category' => 'business', 'title' => __( 'Consent / Waiver Form', 'boldform-lite' ), 'description' => __( 'Capture agreement and a signature for waivers, consents, and release forms.', 'boldform-lite' ) ),
+			array( 'key' => 'real_estate_inquiry', 'category' => 'business', 'title' => __( 'Real Estate Inquiry', 'boldform-lite' ), 'description' => __( 'Capture buyer and seller leads with inquiry type, property type, budget, and timeline.', 'boldform-lite' ) ),
+			array( 'key' => 'testimonial_submission', 'category' => 'business', 'title' => __( 'Testimonial Submission', 'boldform-lite' ), 'description' => __( 'Collect customer testimonials with a star rating, quote, and optional photo.', 'boldform-lite' ) ),
+			array( 'key' => 'rental_application', 'category' => 'business', 'title' => __( 'Rental Application', 'boldform-lite' ), 'description' => __( 'Screen rental applicants with contact, employment, occupancy, and document details.', 'boldform-lite' ) ),
+			array( 'key' => 'rma_request', 'category' => 'business', 'title' => __( 'Product Return / RMA Request', 'boldform-lite' ), 'description' => __( 'Handle returns with order number, reason, preferred resolution, and a photo.', 'boldform-lite' ) ),
+
+			// --- Events & Booking ------------------------------------------------
+			array( 'key' => 'restaurant_reservation', 'category' => 'events', 'title' => __( 'Restaurant Reservation', 'boldform-lite' ), 'description' => __( 'Take table bookings with party size, date, time, and seating preferences.', 'boldform-lite' ) ),
+			array( 'key' => 'wedding_rsvp', 'category' => 'events', 'title' => __( 'Wedding RSVP', 'boldform-lite' ), 'description' => __( 'Collect RSVPs with guest count, meal choice, and a note to the couple.', 'boldform-lite' ) ),
+			array( 'key' => 'event_ticket', 'category' => 'events', 'title' => __( 'Event Ticket Purchase', 'boldform-lite' ), 'description' => __( 'Sell event tickets with ticket tiers, quantity, and an order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'catering_estimate', 'category' => 'events', 'title' => __( 'Catering Request Estimate', 'boldform-lite' ), 'description' => __( 'Request catering and see a live estimate from guest count multiplied by price per person.', 'boldform-lite' ) ),
+
+			// --- HR & Surveys ----------------------------------------------------
+			array( 'key' => 'time_off_request', 'category' => 'hr_survey', 'title' => __( 'Time-Off / Leave Request', 'boldform-lite' ), 'description' => __( 'Employees request leave with dates and a reason, ready for an approval workflow.', 'boldform-lite' ) ),
+			array( 'key' => 'employee_onboarding', 'category' => 'hr_survey', 'title' => __( 'Employee Onboarding', 'boldform-lite' ), 'description' => __( 'Onboard new hires: personal details, document upload, and a policy signature.', 'boldform-lite' ) ),
+			array( 'key' => 'nps_survey', 'category' => 'hr_survey', 'title' => __( 'NPS Feedback Survey', 'boldform-lite' ), 'description' => __( 'Measure loyalty with a Net Promoter Score question and follow-up feedback.', 'boldform-lite' ) ),
+
+			// --- Health & Medical ------------------------------------------------
+			array( 'key' => 'patient_intake', 'category' => 'health', 'title' => __( 'Patient Intake / Medical History', 'boldform-lite' ), 'description' => __( 'Gather patient details, medical history, and a consent signature before an appointment.', 'boldform-lite' ) ),
+
+			// --- Education & Nonprofit -------------------------------------------
+			array( 'key' => 'course_enrollment', 'category' => 'education', 'title' => __( 'Course Enrollment', 'boldform-lite' ), 'description' => __( 'Enroll students in a course with plan selection, level, and an order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'volunteer_signup', 'category' => 'education', 'title' => __( 'Volunteer Signup', 'boldform-lite' ), 'description' => __( 'Recruit volunteers with areas of interest, availability, and experience.', 'boldform-lite' ) ),
+			array( 'key' => 'petition', 'category' => 'education', 'title' => __( 'Petition / Signature Drive', 'boldform-lite' ), 'description' => __( 'Gather supporters with a name, location, comment, and a signature.', 'boldform-lite' ) ),
+
+			// --- Payment & Calculation -------------------------------------------
+			array( 'key' => 'payment_order', 'category' => 'payment', 'title' => __( 'Payment Order Form', 'boldform-lite' ), 'description' => __( 'Collect product orders with a payment item, quantity, custom amount, and order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'donation_form', 'category' => 'payment', 'title' => __( 'Donation Form', 'boldform-lite' ), 'description' => __( 'Accept donations with preset amounts or a custom amount, plus donor details.', 'boldform-lite' ) ),
+			array( 'key' => 'service_calculator', 'category' => 'payment', 'title' => __( 'Service Price Calculator', 'boldform-lite' ), 'description' => __( 'Let users calculate a service price from quantity multiplied by rate, with an instant total.', 'boldform-lite' ) ),
+			array( 'key' => 'loan_calculator', 'category' => 'payment', 'title' => __( 'Loan Repayment Calculator', 'boldform-lite' ), 'description' => __( 'Estimate simple-interest loan cost from amount, rate, and term.', 'boldform-lite' ) ),
+			array( 'key' => 'subscription_signup', 'category' => 'payment', 'title' => __( 'Subscription Signup', 'boldform-lite' ), 'description' => __( 'Let customers pick a subscription plan and sign up, ready for recurring billing.', 'boldform-lite' ) ),
+			array( 'key' => 'gym_membership', 'category' => 'payment', 'title' => __( 'Gym Membership Signup', 'boldform-lite' ), 'description' => __( 'Sign up new members with a plan, add-ons, emergency contact, and payment.', 'boldform-lite' ) ),
+
+			// --- Multi-Step -------------------------------------------------------
+			array( 'key' => 'multi_step_registration', 'category' => 'multi_step', 'title' => __( 'Multi-Step Registration', 'boldform-lite' ), 'description' => __( 'Three-step registration: personal information, account setup, and preferences.', 'boldform-lite' ) ),
+			array( 'key' => 'multi_step_survey', 'category' => 'multi_step', 'title' => __( 'Multi-Step Survey', 'boldform-lite' ), 'description' => __( 'A two-step satisfaction survey split across pages for better completion.', 'boldform-lite' ) ),
+			array( 'key' => 'multi_step_booking', 'category' => 'multi_step', 'title' => __( 'Multi-Step Booking + Payment', 'boldform-lite' ), 'description' => __( 'Service booking with date and time selection, attendee details, and payment.', 'boldform-lite' ) ),
+		);
 	}
 
 	/**

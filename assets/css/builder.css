@@ -4709,6 +4709,108 @@
 	padding-bottom: 6px;
 }
 
+/* Locked rows: templates advertised but not installed. Muted so the importable
+   ones stay visually first, but still fully clickable — selecting one shows what
+   the form does, which is the point of listing it at all. */
+.boldform-template-option.is-locked strong {
+	color: #64748b;
+	font-weight: 500;
+}
+
+.boldform-template-option.is-locked .boldform-template-option__lock {
+	flex: 0 0 auto;
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 14px;
+	color: #94a3b8;
+}
+
+.boldform-template-option.is-locked:hover strong,
+.boldform-template-option.is-locked.is-active strong {
+	color: #4338ca;
+}
+
+.boldform-template-option.is-locked:hover .boldform-template-option__lock,
+.boldform-template-option.is-locked.is-active .boldform-template-option__lock {
+	color: #6366f1;
+}
+
+.boldform-template-option.is-locked.is-active {
+	background: #eef2ff;
+}
+
+/* Preview pane for a locked row — replaces the form canvas, which has nothing to
+   draw, with what the template is for and how to get it. */
+.boldform-template-lock {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 240px;
+	padding: 32px 28px;
+	border: 1px dashed #c7d2fe;
+	border-radius: 12px;
+	background: #f8fafc;
+	text-align: center;
+}
+
+.boldform-template-lock__badge {
+	width: 34px;
+	height: 34px;
+	font-size: 34px;
+	line-height: 34px;
+	color: #6366f1;
+}
+
+.boldform-template-lock__title {
+	font-size: 15px;
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.boldform-template-lock__text {
+	max-width: 46ch;
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.6;
+	color: #64748b;
+}
+
+.boldform-template-lock__cta {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	padding: 9px 18px;
+	border: 0;
+	border-radius: 8px;
+	background: #4338ca;
+	color: #fff;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.boldform-template-lock__cta:hover {
+	background: #3730a3;
+	color: #fff;
+}
+
+.boldform-template-lock__cta:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: 2px;
+}
+
+.boldform-template-lock__cta .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
 .boldform-template-preview {
 	display: flex;
 	flex-direction: column;

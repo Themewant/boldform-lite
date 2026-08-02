@@ -5148,6 +5148,14 @@ jQuery(
 			var template = templates[ templateName ];
 
 			if ( ! template ) {
+				// A locked row advertises a template that is not installed. The Import
+				// button is hidden while one is selected, so this is belt-and-braces:
+				// without it an advertised key would fall through to the blank-row
+				// modal, which reads as the upgrade having silently done something.
+				if ( lockedTemplate( templateName ) ) {
+					openUpgradeModal( 'boldform-templates-upgrade-modal' );
+					return;
+				}
 				openRowModal();
 				return;
 			}
@@ -5213,10 +5221,61 @@ jQuery(
 			return missing;
 		}
 
+		/**
+		 * Locked template rows advertised in the library, keyed by category.
+		 *
+		 * Empty whenever the upgrade CTAs are off, which is also when the add-on
+		 * supplies the real versions — so a locked row never sits beside the template
+		 * it advertises. A locked entry whose key already exists as a real template is
+		 * dropped as a second guarantee of that.
+		 *
+		 * @param {Object} realTemplates Templates that can actually be imported.
+		 * @return {Object} Category key => array of {key,title,description}.
+		 */
+		function groupedTemplateTeasers( realTemplates ) {
+			var grouped = {};
+
+			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+				return grouped;
+			}
+
+			boldformLiteBuilder.premiumTemplates.forEach( function ( tpl ) {
+				if ( ! tpl || ! tpl.key || realTemplates[ tpl.key ] ) {
+					return;
+				}
+				var cat = tpl.category || 'general';
+				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
+				grouped[ cat ].push( tpl );
+			} );
+
+			return grouped;
+		}
+
+		/**
+		 * Looks a locked entry up by key, or null when it is not one.
+		 *
+		 * @param {string} key Template key.
+		 * @return {Object|null} The locked entry, or null.
+		 */
+		function lockedTemplate( key ) {
+			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+				return null;
+			}
+			var found = null;
+			boldformLiteBuilder.premiumTemplates.forEach( function ( tpl ) {
+				if ( tpl && tpl.key === key ) found = tpl;
+			} );
+			return found;
+		}
+
 		function renderTemplateModal() {
 			var templates = getAllTemplateDefinitions();
+			var teasers   = groupedTemplateTeasers( templates );
 
-			var selectedKey = templates[ state.selectedTemplate ]
+			// A locked row can be "selected" to preview what it offers, so the
+			// selection is valid if it names either a real template or a locked one.
+			var lockedSelection = templates[ state.selectedTemplate ] ? null : lockedTemplate( state.selectedTemplate );
+			var selectedKey = ( templates[ state.selectedTemplate ] || lockedSelection )
 				? state.selectedTemplate
 				: 'contact';
 			var selectedTemplate = templates[ selectedKey ];
@@ -5236,14 +5295,23 @@ jQuery(
 				grouped[ cat ].push( key );
 			} );
 
+			// Categories the add-on fills but this plugin does not — Health & Medical,
+			// Education & Nonprofit, Payment & Calculation, Multi-Step — hold nothing but
+			// locked rows, so they have to be walked too or they never render at all.
+			Object.keys( teasers ).forEach( function ( cat ) {
+				if ( ! grouped[ cat ] ) grouped[ cat ] = [];
+			} );
+
 			Object.keys( grouped ).forEach( function ( cat ) {
-				if ( ! grouped[ cat ].length ) return;
+				var catTeasers = teasers[ cat ] || [];
+				if ( ! grouped[ cat ].length && ! catTeasers.length ) return;
 				// Accordion: the group holding the currently-selected template starts
 				// open, the rest start collapsed. On first open the selection defaults
 				// to 'contact', so the first (General) group is the one shown. Keeping
 				// the selected group open means it stays expanded across the re-render
 				// that fires when a template is picked.
-				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1;
+				var groupOpen = grouped[ cat ].indexOf( selectedKey ) !== -1 ||
+					catTeasers.some( function ( t ) { return t.key === selectedKey; } );
 				listMarkup += '<div class="boldform-template-group' + ( groupOpen ? ' is-open' : '' ) + '">';
 				listMarkup += '<button type="button" class="boldform-template-group__header" data-template-group-toggle aria-expanded="' + ( groupOpen ? 'true' : 'false' ) + '">';
 				listMarkup += '<span class="boldform-template-group__title">' + escapeHtml( tplCategories[ cat ] || cat ) + '</span>';
@@ -5259,9 +5327,53 @@ jQuery(
 					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
 					listMarkup += '</button>';
 				} );
+				// Locked rows sit under the importable ones so the free templates always
+				// come first. They are real buttons, not inert chips: selecting one shows
+				// what the form does in the preview pane, which is the whole point.
+				catTeasers.forEach( function ( tpl ) {
+					var isActive = tpl.key === selectedKey;
+					listMarkup += '<button type="button" class="boldform-template-option is-locked' +
+						( isActive ? ' is-active' : '' ) +
+						'" data-template-option="' + escapeHtml( tpl.key ) + '">';
+					listMarkup += '<span class="boldform-tpl-option-label"><strong>' + escapeHtml( tpl.title ) + '</strong></span>';
+					listMarkup += '<span class="boldform-template-option__lock dashicons dashicons-lock" aria-hidden="true"></span>';
+					listMarkup += '</button>';
+				} );
 				listMarkup += '</div></div>';
 				listMarkup += '</div>';
 			} );
+
+			// A locked row has no structure to draw — it is an advertisement, not a
+			// template — so the canvas shows what the form is for and how to get it,
+			// and the Import button is swapped for the upgrade call to action.
+			if ( ! selectedTemplate ) {
+				var lockedTpl = lockedSelection || lockedTemplate( selectedKey );
+
+				$( '#boldform-template-list' ).html( listMarkup );
+				$( '#boldform-template-preview__head' ).html(
+					'<h3>' + escapeHtml( lockedTpl ? lockedTpl.title : '' ) + '</h3>' +
+					'<p>' + escapeHtml( lockedTpl ? lockedTpl.description : '' ) + '</p>'
+				);
+				$( '#boldform-template-preview-canvas' ).html(
+					'<div class="boldform-template-lock">' +
+						'<span class="boldform-template-lock__badge dashicons dashicons-lock" aria-hidden="true"></span>' +
+						'<strong class="boldform-template-lock__title">' +
+							escapeHtml( boldformLiteBuilder.labels.templateLockTitle || 'Available with an upgrade' ) +
+						'</strong>' +
+						'<p class="boldform-template-lock__text">' +
+							escapeHtml( boldformLiteBuilder.labels.templateLockText || '' ) +
+						'</p>' +
+						'<button type="button" class="boldform-upgrade-btn boldform-template-lock__cta" aria-haspopup="dialog" data-upgrade-modal="boldform-templates-upgrade-modal">' +
+							'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
+							escapeHtml( boldformLiteBuilder.labels.upgradeNow || 'Upgrade Now' ) +
+						'</button>' +
+					'</div>'
+				);
+				$( '#boldform-import-template' ).attr( 'hidden', 'hidden' );
+				return;
+			}
+
+			$( '#boldform-import-template' ).removeAttr( 'hidden' );
 
 			selectedTemplate.rows.forEach( function ( row ) {
 				previewMarkup += '<div class="boldform-template-preview-row">';
