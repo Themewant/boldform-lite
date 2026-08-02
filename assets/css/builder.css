@@ -4623,6 +4623,10 @@
 	border-bottom: 1px solid #eef2f6;
 }
 
+.boldform-template-group:hover {
+	border-radius: 0 0 6px 6px;
+}
+
 /* Accordion header — the clickable category row. */
 .boldform-template-group__header {
 	display: flex;
@@ -4688,10 +4692,21 @@
 	grid-template-rows: 1fr;
 }
 
+/* No padding while collapsed. `overflow: hidden` clips to the PADDING box, not the
+   content box, so a bottom padding here survives grid-template-rows: 0fr — the
+   category stayed 6px tall and the selected template's highlight showed through it
+   as a stray coloured strip under the header. The breathing space is only needed
+   when the section is actually open. */
 .boldform-template-group__inner {
 	overflow: hidden;
 	min-height: 0;
-	padding: 0 0 6px;
+	padding: 0;
+	/* Matches the body's row transition so the padding doesn't snap in ahead of it. */
+	transition: padding-bottom 0.22s ease;
+}
+
+.boldform-template-group.is-open .boldform-template-group__inner {
+	padding-bottom: 6px;
 }
 
 .boldform-template-preview {
