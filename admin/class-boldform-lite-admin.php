@@ -4152,7 +4152,12 @@ class BoldForm_Lite_Admin {
 			$params[]  = (int) $offset;
 		}
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above; $order_sql/$limit_sql are built from allowlists, never raw user input.
+		// Every interpolated part of this query is code, not data: the table names are
+		// esc_sql()'d above, $order_sql and $limit_sql come from allowlists, and $where
+		// is an array of literal fragments whose only variables are %s/%d placeholders
+		// bound from $params by prepare(). `phpcs:ignore` covers a single line, so a
+		// disable/enable pair is needed to span the whole multi-line statement.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
 		$sql = $wpdb->prepare(
 			"SELECT f.id, f.title, f.status, f.fields_json, f.updated_at, COALESCE(ec.total, 0) AS entry_count
 			FROM `{$forms_table}` f
@@ -4163,7 +4168,10 @@ class BoldForm_Lite_Admin {
 			$params
 		);
 
-		return $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$results = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		return $results;
 	}
 
 	/**
@@ -4182,13 +4190,19 @@ class BoldForm_Lite_Admin {
 
 		list( $where, $params ) = $this->build_forms_where( $view, $status_filter, $search_term );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name sanitized via esc_sql() above; aliased "f" to match build_forms_where()'s column prefixes.
-		return (int) $wpdb->get_var(
+		// Same reasoning as get_forms(): the table name is esc_sql()'d and $where holds
+		// literal fragments with bound placeholders. Aliased "f" to match the column
+		// prefixes build_forms_where() emits.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$total = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM `{$forms_table}` f WHERE " . implode( ' AND ', $where ),
 				$params
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		return $total;
 	}
 
 	/**
