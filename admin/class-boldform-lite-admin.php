@@ -1400,6 +1400,7 @@ class BoldForm_Lite_Admin {
 						'exportUrl'        => admin_url( 'admin.php?page=boldform-lite-entries' ),
 						'exportNonce'      => wp_create_nonce( 'boldform_lite_csv_export' ),
 						'selectedText'     => __( 'selected', 'boldform-lite' ),
+					'applyHintText'    => __( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ),
 						/* translators: %d: number of selected entries to delete. */
 						'confirmDelete'    => __( 'Permanently delete %d selected entries? This cannot be undone.', 'boldform-lite' ),
 						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
@@ -1450,6 +1451,13 @@ class BoldForm_Lite_Admin {
 						function selectedIds(){
 							return $(".boldform-entry-checkbox:checked").map(function(){return $(this).val();}).get();
 						}
+						// Apply is only actionable with BOTH a selection and an action, which is
+						// exactly the pair the click handler used to bail on silently.
+						function refreshApplyState(){
+							var ready=selectedIds().length>0&&!!$("#boldform-bulk-action").val();
+							$("#boldform-bulk-apply").prop("disabled",!ready)
+								.attr("title",ready?"":boldformAdminEntries.applyHintText);
+						}
 						function refreshBulkBar(){
 							var ids=selectedIds(),n=ids.length;
 							var $count=$("#boldform-bulk-count");
@@ -1458,7 +1466,9 @@ class BoldForm_Lite_Admin {
 							else{$count.attr("hidden",true);$("#boldform-bulk-export-dd").attr("hidden",true).removeClass("is-open");}
 							var total=$(".boldform-entry-checkbox").length;
 							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
+							refreshApplyState();
 						}
+						$("#boldform-bulk-action").on("change",refreshApplyState);
 						// Export CSV (dropdown item) — POST the chosen ids to the CSV endpoint (a POST
 						// form, not a GET URL, so any number of selected ids works without URL limits).
 						$("#boldform-bulk-export-csv").on("click",function(){
@@ -1484,9 +1494,13 @@ class BoldForm_Lite_Admin {
 							var $btn=$(this).prop("disabled",true);
 							$.post(ajaxurl,{action:"boldform_lite_bulk_entry_action",_ajax_nonce:nonce,bulk_action:action,entry_ids:ids},function(r){
 								if(r&&r.success){location.reload();}
-								else{$btn.prop("disabled",false);window.alert((r&&r.data&&r.data.message)||boldformAdminEntries.errorText);}
-							}).fail(function(){$btn.prop("disabled",false);window.alert(boldformAdminEntries.errorText);});
+								else{refreshApplyState();window.alert((r&&r.data&&r.data.message)||boldformAdminEntries.errorText);}
+							}).fail(function(){refreshApplyState();window.alert(boldformAdminEntries.errorText);});
 						});
+						// Sync on load: browsers restore ticked checkboxes across the reload this
+						// handler triggers (and on back/refresh), so the bar and the Apply state
+						// must reflect that restored selection rather than assuming none.
+						refreshBulkBar();
 					});'
 				);
 			}
@@ -3147,7 +3161,13 @@ class BoldForm_Lite_Admin {
 							?>
 						<?php endif; ?>
 					</select>
-					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
+					<?php
+					// Rendered disabled: on load nothing is selected and no action is chosen, so
+					// Apply has nothing to do. The JS enables it as soon as both are true. Starting
+					// disabled also avoids a brief window where it looks clickable but silently
+					// no-ops before the inline script runs.
+					?>
+					<button type="button" class="button button-primary" id="boldform-bulk-apply" disabled title="<?php esc_attr_e( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ); ?>"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
 					<?php // Export-selected menu: a single dropdown replaces the row of format buttons. Shown only while rows are selected (JS toggles the `hidden` attribute). ?>
 					<div class="boldform-dropdown boldform-bulk-export-dd" id="boldform-bulk-export-dd" hidden>
 						<button type="button" class="boldform-dropdown__trigger">

@@ -2137,6 +2137,15 @@ input[type="search"].boldform-search-input:focus {
 	font-size: 13px;
 }
 
+/* Apply is disabled until a row AND an action are chosen, so it must clearly
+   read as unavailable. WP core's .button-primary:disabled is easy to miss on a
+   solid fill, so dim the whole control and drop the pointer cursor. */
+.boldform-bulk-bar .button-primary:disabled,
+.boldform-bulk-bar .button-primary[disabled] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 /* The descendant + element-qualified selector (.boldform-bulk-bar select.x) is
    intentional: WP core's `.wp-core-ui select` (specificity 0,1,1) overrides a plain
    single-class rule, so we must out-specify it (0,2,1+) for the border/radius/height
