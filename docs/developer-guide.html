@@ -99,7 +99,7 @@ pre code{background:none;padding:0;color:inherit}
 
 <h1 id="introduction">BoldForm Lite &mdash; Developer Guide</h1>
 <p class="bf-subtitle">Extend, customize, and integrate with BoldForm using hooks, filters, and the plugin's architecture.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.6 · Pro v1.1.3 · Updated 2026-08-02</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.6 · Pro v1.1.3 · Updated 2026-08-03</p>
 
 <p>BoldForm Lite is designed with extensibility in mind. Every major operation &mdash; rendering, saving, validation, email &mdash; passes through WordPress filters and actions. This guide covers the public API surface available to developers.</p>
 
@@ -882,12 +882,20 @@ add_filter( 'boldform_field_control_html', function( $html, $type, $name, $field
 <!-- Adding a Template -->
 <h2 id="add-template">Adding a Template</h2>
 
-<p>Inject templates via the builder localize data:</p>
+<p>Inject templates via the builder localize data. Every template needs a <code>category</code> &mdash; one of
+<code>general</code>, <code>business</code>, <code>events</code>, <code>hr_survey</code>, <code>health</code>,
+<code>education</code>, <code>payment</code> or <code>multi_step</code> &mdash; so the template modal groups it
+correctly instead of dumping it into General. If the form only makes sense with a toggleable Pro module turned
+on (payments, multi-page, etc.), declare it with <code>requires_modules</code>: the modal then shows a
+padlock/warning for that template until the module is enabled, rather than letting someone import a
+half-configured form.</p>
 <pre><code>add_filter( 'boldform_builder_localize_data', function( $data ) {
     $data['proTemplates']['my_template'] = array(
-        'title'       =&gt; 'My Custom Template',
-        'description' =&gt; 'A specialized form for...',
-        'rows'        =&gt; array(
+        'category'         =&gt; 'business',
+        'requires_modules' =&gt; array( 'payments' ), // omit if the template needs no module
+        'title'            =&gt; 'My Custom Template',
+        'description'      =&gt; 'A specialized form for...',
+        'rows'             =&gt; array(
             array( 'columns' =&gt; array(
                 array( 'width' =&gt; '100%', 'fields' =&gt; array(
                     array( 'type' =&gt; 'text',  'label' =&gt; 'Full Name', 'required' =&gt; true ),
@@ -898,6 +906,10 @@ add_filter( 'boldform_field_control_html', function( $html, $type, $name, $field
     );
     return $data;
 } );</code></pre>
+
+<p>BoldForm Pro's own 28-template library is built this way too, in <code>BoldForm_Pro_Templates::get_all()</code>
+&mdash; use it as a reference for the row/column/field contract, including the stable-field-ID rule that lets a
+Calculation field's formula work immediately on import.</p>
 
 <!-- Custom Validation -->
 <h2 id="custom-validation">Custom Validation</h2>
