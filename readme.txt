@@ -325,6 +325,11 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+= 1.1.7 =
+Improvements:
+* Improve: Add-ons can now render their own admin notices on BoldForm's screens through a new `boldform_admin_notices` action. Notices registered the usual way were cleared by the filtering that keeps these screens free of unrelated plugins' messages.
+* Improve: The template library's locked rows and the Field Library's premium teaser now have their own switches, so an add-on that is installed but not yet activated can keep showing them — and word them for activation — without turning every other upgrade prompt back on. New filters: `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_library_lock_title`, `boldform_library_lock_text`, `boldform_template_lock_title`, `boldform_template_lock_text`, `boldform_upgrade_modal_title`, `boldform_upgrade_modal_text` and `boldform_upgrade_label` (the existing `boldform_upgrade_url` now drives these CTAs too).
+
 = 1.1.6 =
 New features:
 * New: Form Migrator — Import your Contact Form 7 forms into BoldForm with a single click. Re-import anytime to sync changes without creating duplicates.

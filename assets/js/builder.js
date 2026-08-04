@@ -3289,6 +3289,20 @@ jQuery(
 		}
 
 		/**
+		 * Whether the template library should advertise its locked rows.
+		 *
+		 * Deliberately separate from showUpgradeCta(): an add-on can be installed —
+		 * which switches every shared CTA off — while still not entitled to the real
+		 * templates. Without its own switch those rows would simply disappear, taking
+		 * four whole categories with them and explaining nothing.
+		 *
+		 * @return {boolean}
+		 */
+		function showLockedTemplates() {
+			return !! boldformLiteBuilder.showLockedTemplates;
+		}
+
+		/**
 		 * A locked button that opens an upgrade dialog.
 		 *
 		 * aria-haspopup="dialog": it opens the dialog named by modalId, not a menu.
@@ -5235,7 +5249,7 @@ jQuery(
 		function groupedTemplateTeasers( realTemplates ) {
 			var grouped = {};
 
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return grouped;
 			}
 
@@ -5258,7 +5272,7 @@ jQuery(
 		 * @return {Object|null} The locked entry, or null.
 		 */
 		function lockedTemplate( key ) {
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return null;
 			}
 			var found = null;

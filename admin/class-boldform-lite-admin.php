@@ -939,9 +939,12 @@ class BoldForm_Lite_Admin {
 						/* translators: %s: comma-separated list of feature names that must be enabled. */
 						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
 						// Shown in the preview pane when a locked template row is selected.
-						'templateLockTitle' => __( 'Available with an upgrade', 'boldform-lite' ),
-						'templateLockText'  => __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ),
-						'upgradeNow'        => __( 'Upgrade Now', 'boldform-lite' ),
+						// Filterable so an add-on that is installed but not yet entitled can
+						// say "activate" rather than "upgrade" — the visitor already owns the
+						// product and buying it again is not the action they need.
+						'templateLockTitle' => apply_filters( 'boldform_template_lock_title', __( 'Available with an upgrade', 'boldform-lite' ) ),
+						'templateLockText'  => apply_filters( 'boldform_template_lock_text', __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ) ),
+						'upgradeNow'        => apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ) ),
 						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
@@ -1201,10 +1204,14 @@ class BoldForm_Lite_Admin {
 					// as the string '0', which is truthy, and the teaser would then show
 					// even with an add-on active.
 					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
+					// Same bool rule as showUpgradeCta above. Gates ONLY the template
+					// library's locked rows, so an add-on that suppresses the shared CTAs
+					// can still advertise templates it has not unlocked yet.
+					'showLockedTemplates' => $this->show_locked_templates_teaser(),
 					// Locked entries advertised in the "Choose a Template" library. Empty
-					// once an add-on turns the upgrade CTAs off, at which point that add-on
-					// supplies the real templates through proTemplates instead — the two
-					// never show together. See premium_template_teasers().
+					// once the teaser above is off, at which point an add-on supplies the
+					// real templates through proTemplates instead — the two never show
+					// together. See premium_template_teasers().
 					'premiumTemplates'   => $this->premium_template_teasers(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
@@ -1666,6 +1673,24 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Whether the locked rows in the template library should be advertised.
+	 *
+	 * Defaults to the shared `boldform_show_upgrade_cta` switch, so a site with no
+	 * add-on installed is unaffected. An add-on that suppresses the shared CTAs can
+	 * override this one filter to keep just this teaser visible — which is what an
+	 * installed-but-not-yet-entitled add-on wants, since otherwise four categories
+	 * vanish from the library with nothing to explain their absence.
+	 *
+	 * @return bool
+	 */
+	public function show_locked_templates_teaser() {
+		return (bool) apply_filters(
+			'boldform_show_locked_templates_teaser',
+			apply_filters( 'boldform_show_upgrade_cta', true )
+		);
+	}
+
+	/**
 	 * Ready-made forms advertised in the template library but not included here.
 	 *
 	 * Four of the library's eight categories — Health & Medical, Education & Nonprofit,
@@ -1674,17 +1699,23 @@ class BoldForm_Lite_Admin {
 	 * These entries fill the gap: they list as locked rows that preview their
 	 * description and offer an upgrade instead of an import.
 	 *
-	 * Nothing here detects an add-on. The list is emptied by the same
-	 * `boldform_show_upgrade_cta` filter every other teaser respects, and an add-on
-	 * that turns that filter off supplies the real, importable versions of these very
-	 * templates through `proTemplates` — so a locked row and its real counterpart can
-	 * never appear at the same time. Keep the keys identical to the add-on's template
-	 * slugs: that is what makes the swap exact rather than approximate.
+	 * Nothing here detects an add-on. The list is emptied by
+	 * `boldform_show_locked_templates_teaser`, which defaults to the same
+	 * `boldform_show_upgrade_cta` filter every other teaser respects — so a site with
+	 * no add-on behaves exactly as before. An add-on that turns the CTAs off supplies
+	 * the real, importable versions of these very templates through `proTemplates`, so
+	 * a locked row and its real counterpart can never appear at the same time. Keep the
+	 * keys identical to the add-on's template slugs: that is what makes the swap exact
+	 * rather than approximate.
 	 *
-	 * @return array<int, array<string, string>> Locked entries, or [] when the CTAs are off.
+	 * The dedicated filter exists because an add-on can be installed yet not entitled
+	 * to the real templates. It suppresses the shared CTAs but still wants this one
+	 * contextual teaser, so the category is not simply missing with no explanation.
+	 *
+	 * @return array<int, array<string, string>> Locked entries, or [] when the teaser is off.
 	 */
 	private function premium_template_teasers() {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+		if ( ! $this->show_locked_templates_teaser() ) {
 			return array();
 		}
 
@@ -1769,6 +1800,24 @@ class BoldForm_Lite_Admin {
 	public function render_own_notices() {
 		settings_errors( 'boldform_lite_settings' );
 		$this->maybe_render_pro_notice();
+
+		/**
+		 * Fires where an add-on can render an admin notice on BoldForm's screens.
+		 *
+		 * The purge above removes every third-party 'admin_notices' callback and
+		 * re-adds only this method, so an add-on registering on 'admin_notices'
+		 * directly is silently stripped on exactly the screens it wants to reach.
+		 * This action is the supported seam: it runs inside the one callback that
+		 * survives, and — because the Integrations page's separate purge re-adds
+		 * this same method — it covers both purges at once.
+		 *
+		 * Callbacks must echo their own fully escaped markup, and should guard
+		 * against rendering twice in one request (more than one BoldForm screen can
+		 * wire the purge in a single load).
+		 *
+		 * @since 1.1.7
+		 */
+		do_action( 'boldform_admin_notices' );
 	}
 
 	/**
