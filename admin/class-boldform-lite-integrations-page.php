@@ -256,6 +256,11 @@ class BoldForm_Lite_Integrations_Page {
 					}
 
 					$is_static = ! empty( $def['pro'] );
+					// Tied to $is_static: 'locked' only ever means anything on a static
+					// (Pro-only) entry. Without this, a filter setting 'locked' on a normal
+					// connectable entry would replace its toggle with a dead-end badge and
+					// leave no way to configure it.
+					$is_locked = $is_static && ! empty( $def['locked'] );
 					$conn      = null;
 
 					if ( ! $is_static ) {
@@ -269,7 +274,7 @@ class BoldForm_Lite_Integrations_Page {
 
 					$is_on = $conn && 'active' === ( $conn['status'] ?? 'inactive' );
 				?>
-					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?>"
+					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?><?php echo $is_locked ? ' is-locked' : ''; ?>"
 						 <?php if ( ! $is_static ) : ?>data-type="<?php echo esc_attr( $type ); ?>" data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"<?php endif; ?>
 						 style="--bf-svc-color:<?php echo esc_attr( $def['color'] ); ?>">
 
@@ -281,7 +286,19 @@ class BoldForm_Lite_Integrations_Page {
 						<span class="bf-int-card__desc"><?php echo esc_html( $def['desc'] ?? '' ); ?></span>
 
 						<div class="bf-int-card__actions">
-							<?php if ( $is_static ) : ?>
+							<?php if ( $is_locked ) : ?>
+								<?php if ( ! empty( $def['locked_url'] ) ) : ?>
+									<a class="bf-int-card__locked-badge" href="<?php echo esc_url( $def['locked_url'] ); ?>" title="<?php esc_attr_e( 'Requires an active BoldForm Pro license', 'boldform-lite' ); ?>">
+										<span class="dashicons dashicons-lock"></span>
+										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
+									</a>
+								<?php else : ?>
+									<span class="bf-int-card__locked-badge" title="<?php esc_attr_e( 'Requires an active BoldForm Pro license', 'boldform-lite' ); ?>">
+										<span class="dashicons dashicons-lock"></span>
+										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
+									</span>
+								<?php endif; ?>
+							<?php elseif ( $is_static ) : ?>
 								<span class="bf-int-card__pro-note"><?php esc_html_e( 'Available in BoldForm Pro', 'boldform-lite' ); ?></span>
 							<?php else : ?>
 								<label class="bf-int-toggle" title="<?php echo $is_on ? esc_attr__( 'Disable', 'boldform-lite' ) : esc_attr__( 'Enable', 'boldform-lite' ); ?>">

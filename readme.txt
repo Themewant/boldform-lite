@@ -328,13 +328,15 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 = 1.1.6 =
 New features:
 * New: Form Migrator — Import your Contact Form 7 forms into BoldForm with a single click. Re-import anytime to sync changes without creating duplicates.
-* New: The Page Break field now has settings of its own — a title per step, three progress-indicator styles with their colours, and the Next/Previous buttons' colour, size, corner radius and wording. 
+* New: The Page Break field now has settings of its own — a title per step, three progress-indicator styles with their colours, and the Next/Previous buttons' colour, size, corner radius and wording.
 * New: A checkbox can be shown as a Switch. Pick the style per field — the tick box stays the default, so nothing changes on forms you already built.
 
 Improvements:
 * Improve: The "Choose a Template" library now also lists the ready-made forms available with an upgrade, marked with a padlock below the ones you already have; selecting one shows what the form is for. Four categories — Health & Medical, Education & Nonprofit, Payment & Calculation and Multi-Step — were previously empty and never appeared at all.
 * Improve: The Forms list gains a search box, sortable columns and paging — search by title, sort by name, entry count or last-updated, and step through ten at a time, with your filter, search and sort kept as you move between pages. Long lists no longer load every form on a single screen.
 * Improve: The "Choose a Template" library is now organised into collapsible categories — General, Business, Events & Booking, HR & Surveys and more — and a template that relies on a premium module you have turned off says so before you import it, rather than loading half-configured.
+* Improve: On the Integrations page, a BoldForm Pro integration you haven't licensed yet now shows "Locked" with a link to activate, instead of "Available in BoldForm Pro" — so an existing Pro customer isn't shown a message that reads like an upsell.
+* Improve: The "BoldForm Pro is here" notice now only appears on BoldForm's own admin screens, instead of every page in wp-admin.
 
 Fixes:
 * Fix: A form exported from one site now imports with all its fields intact. A layout containing quoted markup or a typographic character — twelve of the ready-made templates did — came in with no fields at all and its settings reset, because the escaping was stripped while the file was read. A file that genuinely cannot be read is now skipped and counted in the notice rather than creating an empty form that looks imported.

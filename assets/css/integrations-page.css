@@ -176,6 +176,40 @@
 	font-style: italic;
 }
 
+/* Pro is installed but its license isn't active — same amber "Locked" treatment
+   as BoldForm Pro's own Features tab, so the two screens read as one product. */
+.bf-int-card.is-locked {
+	opacity: 0.75;
+}
+
+.bf-int-card__locked-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 3px 9px 3px 7px;
+	border-radius: 999px;
+	background: #fdf2d9;
+	border: 1px solid #f0c869;
+	color: #8a6510;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.6;
+	white-space: nowrap;
+	text-decoration: none;
+}
+
+a.bf-int-card__locked-badge:hover {
+	background: #fbe7bb;
+	color: #6b4d0c;
+}
+
+.bf-int-card__locked-badge .dashicons {
+	font-size: 12px;
+	width: 12px;
+	height: 12px;
+	line-height: 12px;
+}
+
 /* Settings button — hidden until enabled */
 .bf-int-card__settings {
 	display: none;

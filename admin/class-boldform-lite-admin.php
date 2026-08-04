@@ -380,13 +380,16 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Prints scoped CSS that renders the BoldForm menu icon as a colour-aware mask.
+	 * Registers scoped CSS that renders the BoldForm menu icon as a colour-aware mask.
 	 *
 	 * A plain SVG background image cannot be recoloured, so it would ignore the admin
 	 * colour scheme and the hover/current states. Painting the mask with currentColor
 	 * lets WordPress's own .wp-menu-image:before colour rules drive it, so the logo
 	 * dims, brightens on hover, and turns white when active in step with the native
 	 * icons. The data-URI passed to add_menu_page() remains the no-CSS fallback.
+	 *
+	 * Hooked to admin_enqueue_scripts (not admin_head — wp_print_styles() runs before
+	 * admin_head, so registering an inline-style carrier that late would never print).
 	 *
 	 * @return void
 	 */
@@ -434,9 +437,15 @@ class BoldForm_Lite_Admin {
 				. 'box-shadow:inset 3px 0 0 #ff6d6d;}';
 		}
 
-		// $css is fully static, developer-authored CSS; the only interpolated value is
-		// a base64 data-URI of our own SVG (base64 alphabet only — no markup-breaking chars).
-		echo '<style id="boldform-lite-menu-icon">' . $css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// No stylesheet file backs this handle (src=false) — it exists only to carry
+		// the inline CSS below via wp_add_inline_style(), instead of echoing a raw
+		// <style> tag. Must run on admin_enqueue_scripts (register+enqueue before
+		// admin_head, which is too late for wp_print_styles() to pick it up), and
+		// unconditionally on every admin screen, since the wp-admin menu sidebar this
+		// styles is itself present on every screen, not just BoldForm's own.
+		wp_register_style( 'boldform-lite-menu-icon', false, array(), BOLDFORM_LITE_VERSION );
+		wp_enqueue_style( 'boldform-lite-menu-icon' );
+		wp_add_inline_style( 'boldform-lite-menu-icon', $css );
 	}
 
 	/**
@@ -1744,14 +1753,16 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Renders only BoldForm admin notices.
+	 * Renders BoldForm's own admin notices — the only place they render at all.
 	 *
-	 * Also re-emits the Pro promo notice here: on BoldForm screens the global
-	 * admin_notices hook is purged (suppress_foreign_notices), so without this the
-	 * notice would show everywhere EXCEPT BoldForm's own pages. render_own_notices()
-	 * is the one callback re-added after the purge, so routing it through here keeps
-	 * the notice visible on BoldForm screens too. It is only ever printed once per
-	 * page load because the purged global callback never runs on these screens.
+	 * This is registered on the 'admin_notices' hook exclusively from within the
+	 * foreign-notice purge (suppress_foreign_notices(), and the Integrations page's
+	 * equivalent), which only runs on BoldForm's own screens. There is no global
+	 * 'admin_notices' registration for this class elsewhere — that is what keeps
+	 * the Pro promo notice confined to BoldForm's own screens instead of showing on
+	 * every wp-admin page. A render-once-per-request guard on maybe_render_pro_notice()
+	 * makes it safe even if more than one BoldForm screen ends up wiring this in the
+	 * same request.
 	 *
 	 * @return void
 	 */
@@ -1763,16 +1774,14 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Outputs the dismissible BoldForm Pro promo admin notice.
 	 *
-	 * Shown on every admin screen to administrators who have not dismissed it. A thin
-	 * consumer of the shared admin-notice layer: it outputs this notice's specific
-	 * markup with the generic `.boldform-admin-notice` chrome + a `data-notice-id`, and
-	 * relies on enqueue_admin_notice_assets() for styling and ajax_dismiss_notice() for
-	 * persistent, per-user dismissal (stored in user meta, so it stays closed).
-	 *
-	 * The notice is wired on two paths so it survives the foreign-notice purge on
-	 * BoldForm's own screens (global admin_notices hook for normal pages; re-added via
-	 * render_own_notices() after the purge). A render-once-per-request guard makes that
-	 * dual wiring safe regardless of how many paths invoke it — it can never print twice.
+	 * Shown only on BoldForm's own admin screens (List, Builder, Entries, Settings,
+	 * Reports, Preview, Docs, Upgrade, and Integrations), to administrators who have
+	 * not dismissed it — see render_own_notices() for how that scoping is enforced.
+	 * A thin consumer of the shared admin-notice layer: it outputs this notice's
+	 * specific markup with the generic `.boldform-admin-notice` chrome + a
+	 * `data-notice-id`, and relies on enqueue_admin_notice_assets() for styling and
+	 * ajax_dismiss_notice() for persistent, per-user dismissal (stored in user meta,
+	 * so it stays closed).
 	 *
 	 * @return void
 	 */
@@ -1957,16 +1966,25 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Enqueues the shared admin-notice assets on every admin screen.
+	 * Enqueues the shared admin-notice assets on BoldForm's own admin screens.
 	 *
-	 * BoldForm admin notices are global (not limited to BoldForm screens, where
-	 * settings.css loads), so the shared stylesheet + dismiss script are enqueued
-	 * here — only when a notice will actually appear, so nothing loads once every
-	 * notice has been dismissed.
+	 * BoldForm admin notices only ever render on BoldForm's own screens (see
+	 * render_own_notices()), so the assets are scoped the same way here — loaded
+	 * only on a BoldForm hook suffix, and only when a notice will actually appear,
+	 * so nothing loads once every notice has been dismissed.
 	 *
+	 * @param string $hook_suffix Current admin page hook.
 	 * @return void
 	 */
-	public function enqueue_admin_notice_assets() {
+	public function enqueue_admin_notice_assets( $hook_suffix ) {
+		// 'boldform', not the narrower 'boldform-lite': render_own_notices() also runs
+		// on BoldForm Pro's own screens (its settings page installs the same purge/
+		// restore pattern), so the asset gate has to match every screen the notice can
+		// actually render on, not just Lite's own menu slugs.
+		if ( false === strpos( (string) $hook_suffix, 'boldform' ) ) {
+			return;
+		}
+
 		// Load only when at least one BoldForm admin notice will render. Extend this
 		// condition (|| $this->should_show_notice( self::NOTICE_OTHER )) as more notices are added.
 		if ( ! $this->should_show_pro_notice() ) {
