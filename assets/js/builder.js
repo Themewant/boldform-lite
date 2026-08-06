@@ -3434,7 +3434,18 @@ jQuery(
 		 * @return {void}
 		 */
 		function openUpgradeModal( id ) {
-			$( document.getElementById( id ) ).removeAttr( 'hidden' );
+			// Bail if the dialog isn't on this page. Buttons and their dialogs are
+			// gated by the same switch today, but there are now three such switches
+			// rather than one, so a future teaser could ship its button without its
+			// dialog. Without this guard that locks page scrolling with nothing
+			// visible to close.
+			var el = document.getElementById( id );
+
+			if ( ! el ) {
+				return;
+			}
+
+			$( el ).removeAttr( 'hidden' );
 			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
 		}
 

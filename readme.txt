@@ -328,8 +328,9 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 = 1.1.7 =
 Improvements:
 * Improve: Add-ons can now render their own admin notices on BoldForm's screens through a new `boldform_admin_notices` action. Notices registered the usual way were cleared by the filtering that keeps these screens free of unrelated plugins' messages.
-* Improve: The template library's locked rows and the Field Library's premium teaser now have their own switches, so an add-on that is installed but not yet activated can keep showing them — and word them for activation — without turning every other upgrade prompt back on. New filters: `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_library_lock_title`, `boldform_library_lock_text`, `boldform_template_lock_title`, `boldform_template_lock_text`, `boldform_upgrade_modal_title`, `boldform_upgrade_modal_text`, `boldform_upgrade_label`, `boldform_integration_lock_title`, `boldform_show_locked_export_teaser` and `boldform_export_lock_hint` (the existing `boldform_upgrade_url` now drives these CTAs too).
-* Fix: The export controls could disappear entirely when an add-on that provides extra formats was installed but not yet entitled to run — the add-on suppressed this plugin's locked-format teasers without supplying its own, leaving the Tools -> Entries panel with no "Export format" control and the Entries screen with no export buttons at all. Both now share their own switch, so the controls are always present.
+* Improve: The template library's locked rows and the Field Library's premium teaser now have their own switches, so an add-on that is installed but not yet activated can keep showing them — and word them for activation — without turning every other upgrade prompt back on. New filters: `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_library_lock_group_title`, `boldform_library_lock_title`, `boldform_library_lock_text`, `boldform_template_lock_title`, `boldform_template_lock_text`, `boldform_upgrade_modal_title`, `boldform_upgrade_modal_text`, `boldform_integration_lock_title`, `boldform_show_locked_export_teaser` and `boldform_export_lock_hint` (the existing `boldform_upgrade_url` and `boldform_upgrade_label` now drive these CTAs too).
+* Improve: The locked Excel/PDF export prompts now have a switch of their own, `boldform_show_locked_export_teaser`, so an add-on that supplies real export formats can keep them on screen while it is idle rather than leaving the slot empty. Previously they were tied to the shared upgrade switch, which such an add-on turns off on install — so the Tools -> Entries "Export format" selector vanished before the add-on was able to replace it. (Entries' own "Export CSV" button was never affected.)
+* Improve: Every upgrade prompt in the admin now goes through the same two filters, `boldform_upgrade_url` and `boldform_upgrade_label`. Five dialogs in the builder still linked straight to the sales page, so an add-on that repointed them at its own activation screen ended up with some prompts saying "Activate License" and others still offering to sell what the user had already bought. A prompt pointing at a page inside the admin now also opens in the same tab instead of a new one. `boldform_upgrade_label` gains a second argument naming where the text appears, so a callback can reword a button without also rewriting a screen-reader label or a "— Upgrade" suffix.
 
 = 1.1.6 =
 New features:
@@ -465,6 +466,9 @@ Developer:
 Entries for 1.1.0 and earlier have been trimmed to keep this changelog within the length WordPress.org displays. See the release notes on the plugin page for the full history.
 
 == Upgrade Notice ==
+
+= 1.1.7 =
+Adds extension points so an add-on can show its own admin notices and word the locked field, template and export prompts for license activation rather than purchase. Fixes the Tools export format selector disappearing when an add-on was installed but not yet active. Recommended for all users.
 
 = 1.1.6 =
 Important fix: a form exported from one site imported with no fields on another. Also adds the Form Migrator (import your Contact Form 7 forms), Page Break step and progress settings, a Switch style for checkboxes, and search, sorting and paging on the Forms list. Recommended for all users.
