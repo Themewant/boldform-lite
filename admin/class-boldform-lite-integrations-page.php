@@ -263,6 +263,27 @@ class BoldForm_Lite_Integrations_Page {
 					$is_locked = $is_static && ! empty( $def['locked'] );
 					$conn      = null;
 
+					// Tooltip on a locked card. The generic default deliberately says
+					// nothing about why the card is locked: only the add-on that set
+					// 'locked' knows that, and it owns the wording through this filter
+					// (mirroring boldform_library_lock_title / boldform_template_lock_title).
+					$lock_title = '';
+					if ( $is_locked ) {
+						/**
+						 * Filters the tooltip shown on a locked integration card.
+						 *
+						 * @since 1.1.7
+						 *
+						 * @param string $title Tooltip text.
+						 * @param string $type  Integration type slug.
+						 */
+						$lock_title = (string) apply_filters(
+							'boldform_integration_lock_title',
+							__( 'Unlock this integration', 'boldform-lite' ),
+							$type
+						);
+					}
+
 					if ( ! $is_static ) {
 						foreach ( $connections as $c ) {
 							if ( ( $c['type'] ?? '' ) === $type ) {
@@ -288,12 +309,12 @@ class BoldForm_Lite_Integrations_Page {
 						<div class="bf-int-card__actions">
 							<?php if ( $is_locked ) : ?>
 								<?php if ( ! empty( $def['locked_url'] ) ) : ?>
-									<a class="bf-int-card__locked-badge" href="<?php echo esc_url( $def['locked_url'] ); ?>" title="<?php esc_attr_e( 'Requires an active BoldForm Pro license', 'boldform-lite' ); ?>">
+									<a class="bf-int-card__locked-badge" href="<?php echo esc_url( $def['locked_url'] ); ?>" title="<?php echo esc_attr( $lock_title ); ?>">
 										<span class="dashicons dashicons-lock"></span>
 										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
 									</a>
 								<?php else : ?>
-									<span class="bf-int-card__locked-badge" title="<?php esc_attr_e( 'Requires an active BoldForm Pro license', 'boldform-lite' ); ?>">
+									<span class="bf-int-card__locked-badge" title="<?php echo esc_attr( $lock_title ); ?>">
 										<span class="dashicons dashicons-lock"></span>
 										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
 									</span>

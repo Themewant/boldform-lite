@@ -1433,9 +1433,10 @@ class BoldForm_Lite_Admin {
 				);
 
 				// Export upgrade-modal wiring (shared with the Tools export teaser). Loads
-				// only when the upgrade CTAs are shown — the same guard the teaser uses —
-				// so it never loads once an add-on turns the filter off.
-				if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// only when that teaser is shown — the same guard the teaser uses — so it
+				// never loads once an add-on suppresses it, and always loads when the
+				// teaser is on (otherwise the locked options would open nothing).
+				if ( $this->show_locked_export_teaser() ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 
@@ -1588,8 +1589,8 @@ class BoldForm_Lite_Admin {
 			if ( $this->settings_page_hook === $hook_suffix ) {
 				$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				// Tools -> Entries export teaser: wire the shared upgrade modal, only when
-				// the upgrade CTAs are shown (same guard the teaser uses).
-				if ( 'tools' === $active_tab && apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+				// that teaser is shown (same guard the teaser uses).
+				if ( 'tools' === $active_tab && $this->show_locked_export_teaser() ) {
 					wp_add_inline_script( 'boldform-lite-admin', $this->upgrade_modal_inline_js() );
 				}
 				wp_add_inline_script(
@@ -1686,6 +1687,25 @@ class BoldForm_Lite_Admin {
 	public function show_locked_templates_teaser() {
 		return (bool) apply_filters(
 			'boldform_show_locked_templates_teaser',
+			apply_filters( 'boldform_show_upgrade_cta', true )
+		);
+	}
+
+	/**
+	 * Whether the Tools -> Entries locked export formats should be advertised.
+	 *
+	 * Same shape and rationale as show_locked_templates_teaser(): defaults to the
+	 * shared switch, but can be kept on by itself. Without it, an add-on that ships
+	 * real multi-format export but is not yet entitled removes this teaser (shared
+	 * switch off) while its own format field does not register either — leaving the
+	 * panel with no format control at all, which is strictly worse than the free
+	 * plugin's own behaviour.
+	 *
+	 * @return bool
+	 */
+	public function show_locked_export_teaser() {
+		return (bool) apply_filters(
+			'boldform_show_locked_export_teaser',
 			apply_filters( 'boldform_show_upgrade_cta', true )
 		);
 	}
@@ -2295,15 +2315,27 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-export-upgrade-modal-title">
 				<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 				<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock Excel &amp; PDF export', 'boldform-lite' ); ?></h2>
-				<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen.', 'boldform-lite' ); ?></p>
+				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php
+					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' ) );
+				?></h2>
+				<p class="boldform-upgrade-modal__text"><?php
+					echo esc_html( apply_filters( 'boldform_upgrade_modal_text', __( 'BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen.', 'boldform-lite' ), 'export' ) );
+				?></p>
 				<ul class="boldform-upgrade-modal__list">
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Formatted Excel (.xlsx) for reporting and analysis', 'boldform-lite' ); ?></li>
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Print-ready PDF records to share or archive', 'boldform-lite' ); ?></li>
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'One click from this screen, honouring your current filters', 'boldform-lite' ); ?></li>
 				</ul>
 				<div class="boldform-upgrade-modal__actions">
-					<a class="boldform-upgrade-modal__cta" href="https://wpboldform.com/" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Upgrade Now', 'boldform-lite' ); ?></a>
+					<?php
+					// Routed through the shared CTA filters so an installed-but-not-yet-
+					// entitled add-on can point this at its own activation screen instead
+					// of the sales page — the visitor has already bought the product.
+					$cta_url   = apply_filters( 'boldform_upgrade_url', 'https://wpboldform.com/' );
+					$cta_label = apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ) );
+					$is_local  = 0 === strpos( $cta_url, admin_url() );
+					?>
+					<a class="boldform-upgrade-modal__cta" href="<?php echo esc_url( $cta_url ); ?>"<?php echo $is_local ? '' : ' target="_blank" rel="noopener noreferrer"'; ?>><?php echo esc_html( $cta_label ); ?></a>
 					<button type="button" class="boldform-upgrade-modal__dismiss" data-boldform-upgrade-close><?php esc_html_e( 'Maybe later', 'boldform-lite' ); ?></button>
 				</div>
 			</div>
@@ -2322,19 +2354,42 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_tools_export_teaser() {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+		if ( ! $this->show_locked_export_teaser() ) {
 			return;
 		}
+
+		// Suffix on each locked option, and the hint beneath. Both route through the
+		// shared CTA label so an add-on that is installed but not yet entitled says
+		// "Activate License" here too, instead of selling what is already bought.
+		$lock_label = apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ) );
+
+		/**
+		 * Filters the hint under the locked export-format select.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @param string $hint Default hint text.
+		 */
+		$hint = apply_filters(
+			'boldform_export_lock_hint',
+			__( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' )
+		);
 		?>
 		<div class="boldform-field-row">
 			<div class="boldform-field-label"><label for="boldform-export-format"><?php esc_html_e( 'Export format', 'boldform-lite' ); ?></label></div>
 			<div class="boldform-field-control">
 				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
 					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
-					<option value="xlsx" data-locked="1"><?php esc_html_e( 'Excel (.xlsx) — Upgrade', 'boldform-lite' ); ?></option>
-					<option value="pdf" data-locked="1"><?php esc_html_e( 'PDF — Upgrade', 'boldform-lite' ); ?></option>
+					<option value="xlsx" data-locked="1"><?php
+						/* translators: %s: call-to-action label, e.g. "Upgrade". */
+						printf( esc_html__( 'Excel (.xlsx) — %s', 'boldform-lite' ), esc_html( $lock_label ) );
+					?></option>
+					<option value="pdf" data-locked="1"><?php
+						/* translators: %s: call-to-action label, e.g. "Upgrade". */
+						printf( esc_html__( 'PDF — %s', 'boldform-lite' ), esc_html( $lock_label ) );
+					?></option>
 				</select>
-				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php esc_html_e( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' ); ?></p>
+				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php echo esc_html( $hint ); ?></p>
 			</div>
 		</div>
 		<?php
