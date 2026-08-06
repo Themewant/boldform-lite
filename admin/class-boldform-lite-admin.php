@@ -1685,6 +1685,13 @@ class BoldForm_Lite_Admin {
 	 * @return bool
 	 */
 	public function show_locked_templates_teaser() {
+		/**
+		 * Filters whether the template library advertises its locked rows.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @param bool $show Whether to show the teaser. Defaults to boldform_show_upgrade_cta.
+		 */
 		return (bool) apply_filters(
 			'boldform_show_locked_templates_teaser',
 			apply_filters( 'boldform_show_upgrade_cta', true )
@@ -1692,18 +1699,29 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
-	 * Whether the Tools -> Entries locked export formats should be advertised.
+	 * Whether the locked Excel/PDF export controls should be advertised.
+	 *
+	 * Gates BOTH surfaces that offer them — the Entries screen buttons and the
+	 * Tools -> Entries format field — because they advertise one capability and must
+	 * never disagree about whether it is on offer.
 	 *
 	 * Same shape and rationale as show_locked_templates_teaser(): defaults to the
 	 * shared switch, but can be kept on by itself. Without it, an add-on that ships
-	 * real multi-format export but is not yet entitled removes this teaser (shared
-	 * switch off) while its own format field does not register either — leaving the
-	 * panel with no format control at all, which is strictly worse than the free
-	 * plugin's own behaviour.
+	 * real multi-format export but is not yet entitled removes these teasers (shared
+	 * switch off) while its own controls do not register either — leaving the Entries
+	 * header with no export buttons and the Tools panel with no format field at all,
+	 * which is strictly worse than the free plugin's own behaviour.
 	 *
 	 * @return bool
 	 */
 	public function show_locked_export_teaser() {
+		/**
+		 * Filters whether the locked Excel/PDF export controls are advertised.
+		 *
+		 * @since 1.1.7
+		 *
+		 * @param bool $show Whether to show the teasers. Defaults to boldform_show_upgrade_cta.
+		 */
 		return (bool) apply_filters(
 			'boldform_show_locked_export_teaser',
 			apply_filters( 'boldform_show_upgrade_cta', true )
@@ -2261,16 +2279,17 @@ class BoldForm_Lite_Admin {
 	 * learn what an upgrade unlocks at the exact moment they want it.
 	 *
 	 * This is an unconditional part of the free plugin: Lite does not know or check
-	 * whether any paid add-on exists. It is gated only by boldform_show_upgrade_cta
-	 * (default true) — an add-on that ships real export turns that filter off, so this
-	 * teaser bails on its own guard while the add-on's real controls (hooked to the
-	 * same action) render instead. That one filter is also the supported way for a
-	 * reseller to suppress every upgrade CTA at once.
+	 * whether any paid add-on exists. It shares show_locked_export_teaser() with the
+	 * Tools -> Entries format selector because both advertise the same capability —
+	 * an add-on that ships real export turns that switch off and renders its own
+	 * controls on this same action, but one that is installed without being entitled
+	 * to run keeps the teaser, so these buttons never disappear leaving the Entries
+	 * header with no export control at all.
 	 *
 	 * @return void
 	 */
 	public function render_entries_export_teaser() {
-		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+		if ( ! $this->show_locked_export_teaser() ) {
 			return;
 		}
 
@@ -2291,7 +2310,7 @@ class BoldForm_Lite_Admin {
 				<span class="dashicons dashicons-<?php echo esc_attr( $format['icon'] ); ?>"></span>
 				<?php echo esc_html( $format['label'] ); ?>
 				<span class="boldform-export-teaser__badge" aria-hidden="true"><span class="dashicons dashicons-lock"></span></span>
-				<span class="screen-reader-text"><?php esc_html_e( 'Upgrade required', 'boldform-lite' ); ?></span>
+				<span class="screen-reader-text"><?php echo esc_html( apply_filters( 'boldform_upgrade_label', __( 'Upgrade required', 'boldform-lite' ) ) ); ?></span>
 			</button>
 			<?php
 		}
