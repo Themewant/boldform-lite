@@ -527,6 +527,8 @@ the extra settings each field type exposes when selected on the canvas.</p>
     <tr><td>Progress indicator</td><td>Progress bar (default), dots, a counter such as &ldquo;2 of 7&rdquo;, a percentage, or none</td></tr>
     <tr><td>Transition</td><td>Slide (default), fade, or none</td></tr>
     <tr><td>Button wording</td><td>Custom text for the next and back buttons &mdash; leave either empty for &ldquo;Next&rdquo; and &ldquo;Back&rdquo;</td></tr>
+    <tr><td>Button alignment</td><td>Left with the question (default), centred, Back left and Next right, or both on the right</td></tr>
+    <tr><td>Indicator position</td><td>Left (default), centred or right &mdash; for dots, a counter or a percentage. A progress bar spans the full width, so it has no position to set</td></tr>
   </tbody>
 </table>
 
@@ -536,7 +538,15 @@ the extra settings each field type exposes when selected on the canvas.</p>
 
 <p>Colours work in two layers. The <strong>Style</strong> tab, under <strong>Default Screen Colours</strong>, sets what every screen starts from: background, question text, answer text, accent, button and button text. Leave a colour untouched there and it inherits your form&rsquo;s existing style.</p>
 
-<p>Any single screen can then override any of those six from its own settings &mdash; see <a href="#cv-screen-settings">Styling one screen</a> below. This is deliberate: set the palette once for the whole form, and change only the screens that need to be different.</p>
+<p><strong>Button</strong> dresses both buttons &mdash; Next is filled with it, Back is outlined in it, so the pair always matches. <strong>Button text</strong> is the label on Next. <strong>Accent</strong> colours whichever progress indicator you chose &mdash; the bar&rsquo;s fill, the dots already passed, the counter or the percentage &mdash; and rings a button when a visitor tabs to it. The panel tells you which of those applies to this form. <strong>Accent background</strong> is the part not reached yet &mdash; the bar&rsquo;s groove, or the dots still to come. <strong>Back button</strong> sets that button&rsquo;s text and its border together, and <strong>Back background</strong> fills it; leave them alone and the text and border follow your Button colour while the fill stays transparent.</p>
+
+<p><strong>Enter hint</strong> colours the small &ldquo;press&nbsp;Enter&rdquo; note beside the Next button, text and key cap together. Left alone it is a faded version of your answer text, so it stays readable whether your screens are light or dark; pick a colour and the hint is exactly that colour rather than a faded version of it. It appears only when <em>Show the &ldquo;press Enter&rdquo; hint</em> is on, on the Settings tab &mdash; with the hint hidden there would be nothing for it to paint.</p>
+
+<p>Accent background appears only when your progress indicator is a bar or dots &mdash; a counter and a percentage are text, and have no unfinished part to colour. It, the Enter hint, and the two Back button colours are the ones here a single screen cannot override, because the progress indicator, the hint and the buttons sit above every screen rather than inside one.</p>
+
+<p>Any single screen can then override its <strong>background, question text and answer text</strong> from its own settings &mdash; see <a href="#cv-screen-settings">Styling one screen</a> below. This is deliberate: set the palette once for the whole form, and change only the screens that need to be different.</p>
+
+<p>The rest &mdash; button, button text, accent, accent background, Enter hint, and both positions &mdash; are set once for the whole form. They dress the progress indicator, the Enter hint and the Back and Next buttons, which sit above the screens rather than inside any one of them, so there is nothing for a single screen to change.</p>
 
 <p>The live preview beside the Style tab shows <strong>the screen you have selected</strong> on the Builder tab, captioned so you always know which one you are looking at. Select a different question and the preview follows. With a welcome screen switched on it opens on the cover, which is what a visitor sees first &mdash; select any question to preview that instead.</p>
 
@@ -546,7 +556,7 @@ the extra settings each field type exposes when selected on the canvas.</p>
 
 <ul>
   <li><strong>Questions on screen N</strong> &mdash; put two or more questions side by side so they share one screen</li>
-  <li><strong>Screen N colours</strong> &mdash; the six colours, for this screen only</li>
+  <li><strong>Screen N colours</strong> &mdash; background, question text and answer text, for this screen only</li>
   <li><strong>Screen N image</strong> &mdash; an image for this screen only, and where it sits</li>
 </ul>
 

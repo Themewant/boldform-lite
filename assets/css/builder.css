@@ -602,6 +602,27 @@
 	max-width: 380px;
 }
 
+/*
+ * "Hide screen images on phones", previewed.
+ *
+ * The one setting the preview stage cannot answer on its own. Every other
+ * responsive rule in conversational.css is a @container query, so a 380px stage
+ * triggers it and the preview is honest for free. This one is deliberately a
+ * @media query — keyed to the form's width it also fired on a desktop sidebar
+ * embed, silently dropping an author's image on a desktop while the switch said
+ * "on phones" — and a @media query measures the WINDOW, which is still wide
+ * behind this stage. So the preview showed an image that a real phone hides.
+ *
+ * Answered here rather than by weakening the front-end rule: the page keeps the
+ * behaviour that is correct for it, and the fix is scoped to the one surface
+ * that cannot ask the question properly. .is-device-mobile is only present once
+ * the author has actually clicked the phone button.
+ */
+.boldform-style-preview-canvas.is-device-mobile
+	.boldform-cv--media-hide-mobile .boldform-lite-form__row-media {
+	display: none;
+}
+
 /* ── Advanced (full-parity) style controls ── */
 .boldform-adv-grid {
 	display: grid;
@@ -7921,6 +7942,68 @@
 
 .boldform-canvas.is-conversational .boldform-row.is-cv-multicol:not(.is-cv-screen) .boldform-column {
 	padding: 0 10px;
+}
+
+/* ── Empty columns in conversational mode ────────────────────────────────── */
+
+/* An empty column is LAYOUT, not a step, and this canvas is a list of steps.
+
+   Drawn as a full drop-zone card between two numbered questions it reads as a
+   screen the visitor will walk through — which is the one thing this canvas
+   must never say wrongly. Reported after a field was dragged out of a column
+   and the column it left behind kept its card.
+
+   Hidden, NOT removed, and nothing about the data changes: the column keeps its
+   place in `row.columns` and its width, so switching the mode off restores the
+   layout exactly. `is-cv-ghost` is added by the canvas renderer and only when
+   the row puts a numbered screen on the canvas — a row that numbers nothing has
+   no other visible presence in this mode, so hiding its columns would make
+   "Add Row" look inert.
+
+   Everything here hangs off `.is-conversational`. Ordinary Builder mode keeps
+   its empty columns exactly as they were. */
+.boldform-canvas.is-conversational .boldform-column.is-cv-ghost {
+	display: none;
+}
+
+/* ...until a drag is in flight, when it becomes a target again.
+
+   THE REVEAL IS LOAD-BEARING, not a nicety. sortable.js picks a drop target by
+   hit-testing each registered container's rect and skipping any that measures
+   0x0, so a display:none column is not a drop target at all — a field could
+   never be put back into it. `is-dragging` is put on the canvas by
+   bindCanvasDragState() for exactly the length of the drag.
+
+   Compact on purpose: it is a place to aim at, not a card. It appears only
+   while the author is already dragging, so it never sits in the reading order
+   of the screen list. */
+.boldform-canvas.is-conversational.is-dragging .boldform-column.is-cv-ghost {
+	display: block;
+}
+
+/* The height belongs to the FIELD CONTAINER, not to the text inside it:
+   `.boldform-column-fields` carries `min-height: 90px` and `.is-empty` adds
+   12px of padding and a border on top of that. Overriding the inner box alone
+   left a 116px target — compact in its own markup and a card on the page.
+
+   The dashed frame is deliberately left where it is. SortableJS drops an
+   incoming field's ghost INSIDE this element, so the frame has to be the thing
+   the field lands in; moving it to a child would put the ghost below the box
+   it appears to be aimed at. */
+.boldform-canvas.is-conversational.is-dragging .boldform-column.is-cv-ghost .boldform-column-fields {
+	min-height: 44px;
+	padding: 6px;
+}
+
+.boldform-canvas.is-conversational.is-dragging .boldform-column.is-cv-ghost .boldform-column__empty {
+	flex-direction: row;
+	gap: 8px;
+}
+
+/* The second line is "or click one in the Field Library", which is advice for
+   someone who is not currently dragging. */
+.boldform-canvas.is-conversational.is-dragging .boldform-column.is-cv-ghost .boldform-column__empty-hint {
+	display: none;
 }
 
 /* A field that renders nothing for the visitor is never a step. Said out loud

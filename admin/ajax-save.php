@@ -240,13 +240,13 @@ class BoldForm_Lite_Ajax_Save {
 	 * sanitize_cv_media() is.
 	 *
 	 * @param array<string, mixed>|mixed $source Raw row or field from the request.
-	 * @return array<string, mixed> The six sanitized cv_* colour keys.
+	 * @return array<string, mixed> The three sanitized cv_* colour keys.
 	 */
 	private static function sanitize_cv_colours( $source ) {
 		$source = is_array( $source ) ? $source : array();
 		$out    = array();
 
-		foreach ( array( 'cv_bg', 'cv_question_color', 'cv_answer_color', 'cv_btn_color', 'cv_btn_text_color', 'cv_accent' ) as $key ) {
+		foreach ( array( 'cv_bg', 'cv_question_color', 'cv_answer_color' ) as $key ) {
 			// sanitize_hex_color() returns null for anything that is not a
 			// literal hex colour, including ''. Both collapse to '' = inherit.
 			$out[ $key ] = isset( $source[ $key ] ) && sanitize_hex_color( (string) $source[ $key ] )
@@ -564,7 +564,6 @@ class BoldForm_Lite_Ajax_Save {
 			// Conversational mode. Off by default so an existing form renders
 			// byte-identically until the author opts in.
 			'cv_enabled'          => false,
-			'cv_flatten_columns'  => false,
 			'cv_progress'         => 'bar',
 			'cv_transition'       => 'slide',
 			'cv_key_hint'         => true,
@@ -576,12 +575,29 @@ class BoldForm_Lite_Ajax_Save {
 			'cv_btn_color'        => '',
 			'cv_btn_text_color'   => '',
 			'cv_accent'           => '',
+			// The progress bar's track and the dots not yet reached. Form-level
+			// only, unlike the six above: the progress row lives on the wrapper,
+			// outside every screen, so a per-screen value could never apply.
+			'cv_track_color'      => '',
+			// The Back button: one colour for its text AND its border, which are
+			// the same by design, plus its own background. Both fall back to the
+			// Button colour and to transparent, which is how it rendered before
+			// either existed.
+			'cv_prev_color'       => '',
+			'cv_prev_bg'          => '',
+			// The "press Enter" hint. Form-level for the same reason as the two
+			// above — it sits in the nav row, outside every screen. Unset, it is
+			// a dimmed version of the answer colour, which is what keeps it
+			// legible on a dark screen as well as a light one.
+			'cv_hint_color'       => '',
+			'cv_nav_align'        => 'left',
+			// Only the inline indicators can be aligned; a bar is full width.
+			'cv_progress_align'   => 'left',
 			'cv_welcome_enabled'  => false,
 			'cv_welcome_title'    => '',
 			'cv_welcome_text'     => '',
 			'cv_welcome_btn'      => '',
-			'cv_media_hide_mobile'      => true,
-			'cv_media_inline_fullbleed' => false,
+			'cv_media_hide_mobile' => true,
 		);
 
 		if ( ! is_array( $settings_payload ) ) {
@@ -673,7 +689,6 @@ class BoldForm_Lite_Ajax_Save {
 			'cv_enabled'          => ! empty( $settings_payload['cv_enabled'] ),
 			// sanitize_title() also lowercases and strips accents, so the stored
 			// slug always matches what the rewrite rule will receive.
-			'cv_flatten_columns'  => ! empty( $settings_payload['cv_flatten_columns'] ),
 			'cv_progress'         => isset( $settings_payload['cv_progress'] ) && in_array( $settings_payload['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $settings_payload['cv_progress'] : $defaults['cv_progress'],
 			'cv_transition'       => isset( $settings_payload['cv_transition'] ) && in_array( $settings_payload['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $settings_payload['cv_transition'] : $defaults['cv_transition'],
 			// Absent means "not sent by this payload" — default on. Present and
@@ -687,6 +702,12 @@ class BoldForm_Lite_Ajax_Save {
 			'cv_btn_color'        => isset( $settings_payload['cv_btn_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_color'] ) : '',
 			'cv_btn_text_color'   => isset( $settings_payload['cv_btn_text_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) : '',
 			'cv_accent'           => isset( $settings_payload['cv_accent'] ) && sanitize_hex_color( $settings_payload['cv_accent'] ) ? sanitize_hex_color( $settings_payload['cv_accent'] ) : '',
+			'cv_track_color'      => isset( $settings_payload['cv_track_color'] ) && sanitize_hex_color( $settings_payload['cv_track_color'] ) ? sanitize_hex_color( $settings_payload['cv_track_color'] ) : '',
+			'cv_prev_color'       => isset( $settings_payload['cv_prev_color'] ) && sanitize_hex_color( $settings_payload['cv_prev_color'] ) ? sanitize_hex_color( $settings_payload['cv_prev_color'] ) : '',
+			'cv_prev_bg'          => isset( $settings_payload['cv_prev_bg'] ) && sanitize_hex_color( $settings_payload['cv_prev_bg'] ) ? sanitize_hex_color( $settings_payload['cv_prev_bg'] ) : '',
+			'cv_hint_color'       => isset( $settings_payload['cv_hint_color'] ) && sanitize_hex_color( $settings_payload['cv_hint_color'] ) ? sanitize_hex_color( $settings_payload['cv_hint_color'] ) : '',
+			'cv_nav_align'        => isset( $settings_payload['cv_nav_align'] ) && in_array( $settings_payload['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $settings_payload['cv_nav_align'] : $defaults['cv_nav_align'],
+			'cv_progress_align'   => isset( $settings_payload['cv_progress_align'] ) && in_array( $settings_payload['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['cv_progress_align'] : $defaults['cv_progress_align'],
 			'cv_welcome_enabled'  => ! empty( $settings_payload['cv_welcome_enabled'] ),
 			'cv_welcome_title'    => isset( $settings_payload['cv_welcome_title'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_title'] ) : '',
 			// Authored as a short paragraph and rendered as markup, so it is
@@ -696,8 +717,7 @@ class BoldForm_Lite_Ajax_Save {
 			'cv_welcome_btn'      => isset( $settings_payload['cv_welcome_btn'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_btn'] ) : '',
 			// Default ON: a decorative image is the first thing worth dropping on
 			// a phone, both for layout and for bandwidth.
-			'cv_media_hide_mobile'      => isset( $settings_payload['cv_media_hide_mobile'] ) ? ! empty( $settings_payload['cv_media_hide_mobile'] ) : $defaults['cv_media_hide_mobile'],
-			'cv_media_inline_fullbleed' => ! empty( $settings_payload['cv_media_inline_fullbleed'] ),
+			'cv_media_hide_mobile' => isset( $settings_payload['cv_media_hide_mobile'] ) ? ! empty( $settings_payload['cv_media_hide_mobile'] ) : $defaults['cv_media_hide_mobile'],
 		);
 
 		/**

@@ -94,10 +94,9 @@
 	 * these exact nodes; a clone would leave it toggling a copy that is no longer
 	 * on the page, silently breaking every rule on the form.
 	 *
-	 * `flatten` is the author's opt-out from that protection — the "Put every
-	 * field on its own screen" switch. With it on, a multi-column row is split
-	 * too, one screen per field across every column, which is what the switch
-	 * promises and what every competitor does by default.
+	 * There is no opt-out. A "Put every field on its own screen" switch used to
+	 * override the paragraph above and split multi-column rows too; it was
+	 * removed, so a row the author built as a pair is always presented as one.
 	 *
 	 * Returns the rows that replaced the original, in document order.
 	 */
@@ -186,17 +185,16 @@
 		} );
 	}
 
-	function splitRow( row, flatten ) {
+	function splitRow( row ) {
 		var columns = childrenMatching( row, COLUMN );
 
-		if ( ! columns.length || ( 1 !== columns.length && ! flatten ) ) {
+		if ( ! columns.length || 1 !== columns.length ) {
 			// The ROW is the screen, so the row's own image describes it and any
 			// per-field images it holds are not this screen's to use.
 			return [ row ];
 		}
 
-		// Flattening reads across every column, in document order, so a
-		// First/Last pair becomes two screens in the order they were laid out.
+		// One column, read in document order.
 		var fields = [];
 		for ( var c = 0; c < columns.length; c++ ) {
 			fields = fields.concat( childrenMatching( columns[ c ], FIELD ) );
@@ -254,8 +252,8 @@
 			}
 
 			// One question owns the whole screen, so the authored column width is
-			// dropped. Keeping it would leave a flattened 50/50 pair rendering as
-			// two half-width screens with dead space beside each question.
+			// dropped. Keeping it would leave a narrow column rendering as a
+			// part-width screen with dead space beside the question.
 			column.style.width = '100%';
 
 			column.appendChild( fields[ i ] );
@@ -468,10 +466,9 @@
 		// walking this.fields.children live would revisit the rows it just made.
 		var sourceRows = childrenMatching( this.fields, ROW );
 		var rows       = [];
-		var flatten    = !! this.config.flatten;
 
 		sourceRows.forEach( function ( row ) {
-			rows = rows.concat( splitRow( row, flatten ) );
+			rows = rows.concat( splitRow( row ) );
 		} );
 
 		var tailTypes  = this.config.tailTypes || [];
@@ -504,10 +501,11 @@
 			var columns = row.querySelectorAll( '.boldform-lite-form__column' ).length;
 			row.classList.add( 'boldform-cv-screen--cols-' + ( columns > 3 ? 'many' : columns ) );
 
-			// A row stacks for one of two reasons only: the author asked for one
-			// field per screen, or the row carries a control that genuinely
-			// cannot share a line (a signature pad, an address block, a file
-			// drop). Column COUNT is deliberately not a reason any more.
+			// A row stacks for ONE reason only: it carries a control that
+			// genuinely cannot share a line (a signature pad, an address block,
+			// a file drop). Column COUNT is deliberately not a reason, and nor
+			// is author preference — the switch that used to ask for one field
+			// per screen has been removed.
 			//
 			// It used to be — three or more columns stacked at every width, on
 			// the argument that three questions side by side is a form row, not
@@ -516,10 +514,7 @@
 			// the column count, and narrow viewports stack everything. Silently
 			// re-laying-out a row the author built as three columns was the
 			// wrong tool — the builder shows three, so the form renders three.
-			if (
-				self.config.flatten
-				|| types.some( function ( t ) { return stackTypes.indexOf( t ) !== -1; } )
-			) {
+			if ( types.some( function ( t ) { return stackTypes.indexOf( t ) !== -1; } ) ) {
 				row.classList.add( 'boldform-cv-screen--stack' );
 			}
 
@@ -684,7 +679,65 @@
 			}
 		}, true );
 
+		// Enter on a closed custom select, in CAPTURE.
+		//
+		// The hint next to the button promises Enter advances, and on a dropdown
+		// screen it did nothing at all: onKeydown() below stands aside for
+		// anything inside .bf-select, and the widget's own trigger handler
+		// treats Enter-while-closed as "open the list". So an author picked an
+		// option, pressed Enter, and the list they had just finished with opened
+		// again — every time, with no way forward but the mouse.
+		//
+		// CAPTURE IS THE WHOLE POINT and is not interchangeable with the bubble
+		// listener below. The trigger's handler runs at the target and adds
+		// `is-open` before the event reaches the form, so a bubble-phase check
+		// of that class always reads "open" and would stand aside exactly when
+		// it should not.
+		//
+		// Kept as its own listener rather than folded into onKeydown(): moving
+		// that one to capture would reorder every key it handles against every
+		// control on the screen, which is a great deal of blast radius for one
+		// widget.
 		this.form.addEventListener( 'keydown', function ( e ) {
+			self.onSelectEnter( e );
+		}, true );
+
+		this.form.addEventListener( 'keydown', function ( e ) {
+			self.onKeydown( e );
+		} );
+
+		// The same keys, for when NOTHING on the page holds focus.
+		//
+		// Both listeners above are on the form, so they only ever see a key if
+		// focus is inside it — and focus leaves the form more easily than it
+		// looks. Clicking an option in the custom select re-renders the list,
+		// detaching the very element that was clicked, and focus falls back to
+		// <body>; clicking the page background does the same. The screen then
+		// sits there with "press Enter" beside the button and no listener
+		// anywhere to hear it.
+		//
+		// Guarded to the one state where acting cannot take a key from anything
+		// else: nothing is focused at all. With focus on a real control, the
+		// form-level listeners run exactly as before and this stands down — so
+		// this adds a case rather than changing one.
+		document.addEventListener( 'keydown', function ( e ) {
+			var active = document.activeElement;
+
+			if ( active && active !== document.body && active !== document.documentElement ) {
+				return;
+			}
+
+			// More than one conversational form on the page and no focus to say
+			// which one is being answered: there is no right answer, so do
+			// nothing rather than advance the wrong form.
+			if ( document.querySelectorAll( '.boldform-cv.is-ready' ).length > 1 ) {
+				return;
+			}
+
+			if ( ! document.body.contains( self.form ) ) {
+				return;
+			}
+
 			self.onKeydown( e );
 		} );
 
@@ -695,6 +748,54 @@
 		this.form.addEventListener( 'change', function () {
 			self.refresh();
 		} );
+	};
+
+	/**
+	 * Enter on Lite's custom select, decided by what the visitor is actually
+	 * looking at.
+	 *
+	 *   panel open      -> the widget keeps it. Enter picks the highlighted
+	 *                      option, which is the only thing it can sensibly mean.
+	 *   closed, no answer yet -> the widget keeps it. Enter opens the list,
+	 *                      which is help rather than an obstacle: there is
+	 *                      nothing to advance past yet, and on a required screen
+	 *                      advancing would only raise an error.
+	 *   closed, answered -> the ENGINE takes it. The question is done, and Enter
+	 *                      means what the hint says it means.
+	 *
+	 * The answered test reads the trigger's own content rather than the <select>
+	 * behind it: that element is a SIBLING of .bf-select, not a child, so there
+	 * is no reliable way down to it from here — and the trigger is what the
+	 * visitor is reading anyway.
+	 */
+	Engine.prototype.onSelectEnter = function ( e ) {
+		if ( 'Enter' !== e.key || ! e.target || ! e.target.closest || ! this.config.keyHint ) {
+			return;
+		}
+
+		var wrap = e.target.closest( '.bf-select' );
+
+		if ( ! wrap || wrap.classList.contains( 'is-open' ) ) {
+			return;
+		}
+
+		// A single select shows .bf-select__value once chosen and a
+		// .bf-select__placeholder until then; a multiple shows one tag per
+		// choice. Either counts as answered.
+		if ( ! wrap.querySelector( '.bf-select__value, .bf-select__tag' ) ) {
+			return;
+		}
+
+		e.preventDefault();
+		// Without this the trigger's own handler still runs and opens the list
+		// behind the screen that just advanced.
+		e.stopPropagation();
+
+		if ( this.isLast() ) {
+			this.submit();
+		} else {
+			this.next();
+		}
 	};
 
 	Engine.prototype.onKeydown = function ( e ) {
@@ -710,6 +811,32 @@
 
 			// Let buttons and the custom select do their own thing.
 			if ( 'button' === tag || target.closest( '.bf-select' ) ) {
+				return;
+			}
+
+			// The switch decides whether Enter moves between screens at all.
+			//
+			// It used to only draw the hint beside the button, which made it a
+			// label for a behaviour it did not control: an author who turned it
+			// off to stop visitors skipping ahead by accident got a form that
+			// still skipped ahead, silently. Now the two agree — the hint is
+			// shown exactly when the key does something.
+			//
+			// SWALLOWED, not merely ignored. A bare Enter in a text input asks
+			// the browser to submit the form, and the capture-phase submit
+			// listener above turns a submit on a non-final screen into "advance"
+			// — so returning without preventDefault would leave the switch doing
+			// nothing at all, which is the fault this is fixing.
+			//
+			// The LAST screen is left alone. There is no next screen to refuse,
+			// and Enter submitting a completed form is ordinary HTML behaviour
+			// that every other BoldForm form has; withdrawing it here would be
+			// conversational mode taking something away rather than declining to
+			// add something.
+			if ( ! this.config.keyHint ) {
+				if ( ! this.isLast() ) {
+					e.preventDefault();
+				}
 				return;
 			}
 

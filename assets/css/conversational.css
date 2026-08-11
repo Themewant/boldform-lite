@@ -53,10 +53,7 @@
 	background: var( --bfc-bg, transparent );
 	color: var( --bfc-answer, inherit );
 	border-radius: var( --bfc-radius );
-	/* Tokenised so a full-bleed background image can cancel exactly this
-	   padding and reach the wrapper's edges. */
-	--bfc-pad-x: 24px;
-	padding: 32px var( --bfc-pad-x );
+	padding: 32px 24px;
 	min-height: 60vh;
 	display: flex;
 	flex-direction: column;
@@ -255,11 +252,7 @@
  */
 @media ( max-width: 767px ) {
 	.boldform-cv.is-ready {
-		/* Through the token, not around it: a full-bleed background cancels
-		   --bfc-pad-x, so hardcoding the padding here would over-bleed it by
-		   the 8px difference. */
-		--bfc-pad-x: 16px;
-		padding: 24px var( --bfc-pad-x );
+		padding: 24px 16px;
 	}
 }
 
@@ -303,6 +296,30 @@
 	margin-bottom: 24px;
 }
 
+/*
+ * Where the indicator sits.
+ *
+ * Two properties, because the three indicators are three different kinds of
+ * box: the counter and the percentage are inline text, which `text-align`
+ * moves, while the dots are a flex row, which it does not. The bar is full
+ * width and cannot move at all — the builder does not offer the control for it.
+ */
+.boldform-cv--progress-align-center .boldform-cv__progress {
+	text-align: center;
+}
+
+.boldform-cv--progress-align-center .boldform-cv__dots {
+	justify-content: center;
+}
+
+.boldform-cv--progress-align-right .boldform-cv__progress {
+	text-align: right;
+}
+
+.boldform-cv--progress-align-right .boldform-cv__dots {
+	justify-content: flex-end;
+}
+
 .boldform-cv__bar {
 	height: 6px;
 	border-radius: 999px;
@@ -319,8 +336,19 @@
 	transition: width 280ms cubic-bezier( 0.16, 1, 0.3, 1 );
 }
 
+/*
+ * The counter and the percentage are the progress indicator too, so they take
+ * the same accent as the bar's fill and the passed dots. Without this, choosing
+ * a counter left the Accent control with nothing to paint but a focus ring —
+ * an author changed the colour, watched nothing happen, and had no way to tell
+ * a wrong control from a bug.
+ *
+ * `inherit` as the fallback, not a colour: a form that has never set an accent
+ * renders exactly as it did before.
+ */
 .boldform-cv__count {
 	font-size: 0.875rem;
+	color: var( --bfc-accent, inherit );
 	opacity: 0.7;
 }
 
@@ -351,6 +379,32 @@
 	flex-wrap: wrap;
 }
 
+/*
+ * Where the pair sits. Left is the default and lines the buttons up with the
+ * question and the answer above them; the others are author choices.
+ *
+ * Split names the NEXT button rather than using `justify-content: space-between`
+ * or a `:last-child` hook, because the row can hold three things — Back, Next
+ * and the "press Enter" hint. space-between would strand the hint in the middle
+ * of the row, and :last-child would push the hint to the edge and leave Next
+ * beside Back. Naming Next puts the one gap in the one place it belongs, and
+ * the hint stays with the button it describes.
+ *
+ * On screen one, where Back is hidden, Next is right-aligned on its own. That
+ * is deliberate: Next holds the same position on every screen.
+ */
+.boldform-cv--nav-center .boldform-cv__nav {
+	justify-content: center;
+}
+
+.boldform-cv--nav-right .boldform-cv__nav {
+	justify-content: flex-end;
+}
+
+.boldform-cv--nav-split .boldform-cv__btn--next {
+	margin-left: auto;
+}
+
 .boldform-cv__btn {
 	font: inherit;
 	font-size: 1rem;
@@ -364,25 +418,83 @@
 	color: var( --bfc-btn-text, #fff );
 }
 
+/*
+ * The ring reads the BUTTON colour, not the accent.
+ *
+ * It used to read --bfc-accent, and that one rule was the entire reason the
+ * Accent control could not be withdrawn when the indicator is "none": the other
+ * three rules that read the token paint the bar's fill, the passed dots and the
+ * counter, none of which exist then. So a form with no progress indicator
+ * offered a control called "Accent" whose only remaining job was a focus ring —
+ * which reads as broken, because nothing an author can see changes.
+ *
+ * Reading --bfc-btn is also just the better rule on its own terms: the ring goes
+ * around the button, so matching the button is what it should have done. It
+ * cannot be currentColor — on the filled Next button that is the button TEXT,
+ * usually white, and a white ring on a white page is no ring at all.
+ */
 .boldform-cv__btn:focus-visible {
-	outline: 2px solid var( --bfc-accent, #2f80ed );
+	outline: 2px solid var( --bfc-btn, #2f80ed );
 	outline-offset: 2px;
 }
 
+/*
+ * Back is the same button as Next, outlined instead of filled — so one Button
+ * colour dresses both and the two read as a pair.
+ *
+ * It used to be a transparent label with `padding-left: 0` and no border, which
+ * left its text hard against the wrapper's content edge while a 22px hole sat on
+ * its right, then the row's 12px gap, then Next. Measured on a real render:
+ * Back's text ended at x=109 and Next began at x=143, so a nominal 12px gap read
+ * as 34. Even padding is what makes the pair look like a pair.
+ *
+ * currentColor for the border, not --bfc-btn directly: the colour is already set
+ * on this element, so a fallback to the answer colour is inherited once rather
+ * than restated, and an author who sets no button colour still gets a visible
+ * outline instead of a hairline of whatever the browser picks.
+ */
 .boldform-cv__btn--prev {
-	background: transparent;
-	color: inherit;
-	opacity: 0.7;
-	padding-left: 0;
+	/* Transparent by default: an outlined button sitting on whatever the screen
+	   background happens to be. */
+	background: var( --bfc-prev-bg, transparent );
+	/* One colour for the text and the border, which are the same by design —
+	   the border is currentColor, so the two cannot drift apart. Falls back to
+	   the Button colour, which is how it rendered before it had its own. */
+	color: var( --bfc-prev, var( --bfc-btn, inherit ) );
+	border: 1px solid currentColor;
+	/* The border is inside the 44px floor, so the text keeps the same optical
+	   height as the solid button beside it. */
+	padding: 9px 21px;
+}
+
+.boldform-cv__btn--prev:hover {
+	opacity: 0.85;
 }
 
 .boldform-cv__btn[ hidden ] {
 	display: none;
 }
 
+/*
+ * The "press Enter" hint, and the key cap inside it.
+ *
+ * THE OPACITY IS TOKENISED, AND THAT IS THE WHOLE TRICK. Unset, the hint is a
+ * dimmed version of whatever the answer text is — which is what keeps it
+ * legible on a dark background as well as a light one, and is why it cannot
+ * simply be a hardcoded grey. But dimming an author's chosen colour makes the
+ * control dishonest: pick #FF0000 and get a washed pink.
+ *
+ * So --bfc-hint-opacity is emitted as 1 alongside --bfc-hint, and only then.
+ * The two fallbacks below are the values this rendered at before the colour
+ * existed, so a form that sets no hint colour is byte-identical.
+ *
+ * currentColor for the cap's border means one control dresses the text and the
+ * cap outline together, the same way Back's colour dresses its text and border.
+ */
 .boldform-cv__hint {
 	font-size: 0.8125rem;
-	opacity: 0.6;
+	color: var( --bfc-hint, inherit );
+	opacity: var( --bfc-hint-opacity, 0.6 );
 }
 
 .boldform-cv__hint kbd {
@@ -391,7 +503,7 @@
 	padding: 2px 6px;
 	border: 1px solid currentColor;
 	border-radius: 4px;
-	opacity: 0.8;
+	opacity: var( --bfc-hint-opacity, 0.8 );
 }
 
 /* The form's own submit button sits on the final screen, styled to match. */
@@ -575,25 +687,16 @@
 }
 
 /*
- * Behind means behind — inline, on the dedicated page, and on a phone. There
- * is no rule here that turns it into anything else.
+ * Behind means behind — inline, on the dedicated page, and on a phone. There is
+ * no rule here that turns it into anything else, and none that resizes it: the
+ * image covers the screen's own box exactly, on all four sides.
  *
- * There used to be: embedded forms without cv_media_inline_fullbleed had
- * `background` silently rewritten into the same two-column grid as `left`, on
- * the theory that a full-bleed image inside a theme container usually looks
- * wrong. That theory was fine and the behaviour was not — an author picked one
- * of three placements, got a different one, and nothing anywhere said why. A
- * setting on another tab must not overrule an explicit per-screen choice.
- *
- * The switch that used to do the overruling now does what its label says: it
- * lets the image reach the wrapper's edges instead of stopping at its padding.
- * That is a question about bleed, which is the author's to answer; whether the
- * image is a background at all is not.
+ * Two settings used to interfere and both are gone. The first silently rewrote
+ * `background` into the same two-column grid as `left` when the form was
+ * embedded; the second let the image cancel the wrapper's horizontal padding.
+ * Left, right and behind are the choice an author makes, and modifiers on
+ * another tab must not overrule or half-redefine it.
  */
-.boldform-cv--media-fullbleed.is-ready .boldform-cv-screen.boldform-lite-form__row--media-background .boldform-lite-form__row-media {
-	left: calc( -1 * var( --bfc-pad-x ) );
-	right: calc( -1 * var( --bfc-pad-x ) );
-}
 
 /*
  * Below 768px media stacks above the question and is capped, and the author can
@@ -640,11 +743,37 @@
 	}
 }
 
-@container boldform-cv ( max-width: 767px ) {
-	/* A side layout has no sides in a single column, so left and right stack.
-	   Behind is NOT in this list: it still means behind, and cv_media_hide_mobile
-	   below is how an author drops an image on a phone — not a rule that quietly
-	   turns it into a banner. */
+/*
+ * 500, not 768 — and the difference is the whole feature.
+ *
+ * REPORTED: an author picked Left on an ordinary desktop page and the image
+ * rendered ABOVE the question. Not a lost setting; the class was right, the
+ * stylesheet was doing this. Measured on the reported page, the form wrapper is
+ * 645px — a WordPress content column, not a phone — so the old 767px stack rule
+ * fired on a full-size desktop embed.
+ *
+ * That made Left and Right unreachable in practice. A theme's content column is
+ * typically 600-700px, so the side layout only ever appeared in a full-width
+ * template, and everywhere else three placement buttons produced two outcomes
+ * with nothing anywhere saying why.
+ *
+ * WHAT THE NUMBER IS MEASURED AGAINST, because it is not the obvious thing:
+ * `container-type: inline-size` queries the wrapper's CONTENT box, and the
+ * wrapper pads itself 24px each side. So this fires at a 548px COLUMN, not a
+ * 500px one — a 560px column is a 512px container and keeps its side layout.
+ * Getting that backwards is how a "560px" breakpoint quietly excludes 560px.
+ *
+ * The side layout reserves 50% + 32px, so the question keeps `50% - 32px`:
+ * 218px where this fires, 290px on the reported form. That is a column a label
+ * can wrap in and an input can fill. Below it, it stops being one — which is
+ * what this query is now for.
+ *
+ * Behind is NOT in this list: it still means behind, and cv_media_hide_mobile
+ * below is how an author drops an image on a phone — not a rule that quietly
+ * turns it into a banner.
+ */
+@container boldform-cv ( max-width: 499px ) {
+	/* A side layout has no sides in a single column, so left and right stack. */
 	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left,
 	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right {
 		flex-direction: column;

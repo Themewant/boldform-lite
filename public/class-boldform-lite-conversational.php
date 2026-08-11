@@ -303,7 +303,6 @@ class BoldForm_Lite_Conversational {
 		$config = array(
 			'progress'  => isset( $settings['cv_progress'] ) ? (string) $settings['cv_progress'] : 'bar',
 			'transition' => isset( $settings['cv_transition'] ) ? (string) $settings['cv_transition'] : 'slide',
-			'flatten'   => ! empty( $settings['cv_flatten_columns'] ),
 			'keyHint'   => ! empty( $settings['cv_key_hint'] ),
 			'tailTypes'  => $this->get_tail_types(),
 			'stackTypes' => $this->get_stacking_types(),
@@ -329,22 +328,32 @@ class BoldForm_Lite_Conversational {
 
 		$style = $this->build_custom_properties( $settings );
 
-		$classes = 'boldform-cv';
-		if ( ! empty( $settings['cv_flatten_columns'] ) ) {
-			$classes .= ' boldform-cv--flatten';
-		}
+		$classes  = 'boldform-cv';
 		$classes .= ' boldform-cv--progress-' . sanitize_html_class( $config['progress'] );
 		$classes .= ' boldform-cv--motion-' . sanitize_html_class( $config['transition'] );
 
+		// Where the Back/Next pair sits. Left is the default because it lines the
+		// buttons up with the question and the answer above them; split pushes
+		// them to opposite edges, which is the familiar multi-step look.
+		$nav_align = isset( $settings['cv_nav_align'] ) && in_array( $settings['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true )
+			? (string) $settings['cv_nav_align']
+			: 'left';
+		$classes  .= ' boldform-cv--nav-' . sanitize_html_class( $nav_align );
+
+		// Where the indicator sits. Emitted for every indicator so the class is
+		// one less thing that depends on another setting, but only the inline
+		// ones — dots, counter, percentage — can actually move: a bar is full
+		// width, and the builder offers the control accordingly.
+		$progress_align = isset( $settings['cv_progress_align'] ) && in_array( $settings['cv_progress_align'], array( 'left', 'center', 'right' ), true )
+			? (string) $settings['cv_progress_align']
+			: 'left';
+		$classes       .= ' boldform-cv--progress-align-' . sanitize_html_class( $progress_align );
+
 		// Per-screen media behaviour. Hiding media on small screens is the
-		// default; full-bleed inside a theme container is opt-in because it
-		// usually fights the surrounding layout.
+		// default: a decorative image is the first thing worth dropping on a
+		// phone, both for layout and for bandwidth.
 		if ( ! isset( $settings['cv_media_hide_mobile'] ) || ! empty( $settings['cv_media_hide_mobile'] ) ) {
 			$classes .= ' boldform-cv--media-hide-mobile';
-		}
-
-		if ( ! empty( $settings['cv_media_inline_fullbleed'] ) ) {
-			$classes .= ' boldform-cv--media-fullbleed';
 		}
 
 		ob_start();
@@ -547,9 +556,19 @@ class BoldForm_Lite_Conversational {
 			'cv_btn_color'      => '--bfc-btn',
 			'cv_btn_text_color' => '--bfc-btn-text',
 			'cv_accent'         => '--bfc-accent',
+			// Only cv_bg, cv_question_color and cv_answer_color are ALSO
+			// screen-level overrides (see build_cv_colour_style()). Everything
+			// else in this map belongs to the wrapper's own chrome — the
+			// progress row, the nav, the hint — which sits outside every screen,
+			// so a per-screen value could never reach it.
+			'cv_track_color'    => '--bfc-track',
+			'cv_prev_color'     => '--bfc-prev',
+			'cv_prev_bg'        => '--bfc-prev-bg',
+			'cv_hint_color'     => '--bfc-hint',
 		);
 
-		$parts = array();
+		$parts     = array();
+		$hint_set  = false;
 
 		foreach ( $map as $key => $property ) {
 			if ( empty( $settings[ $key ] ) ) {
@@ -562,7 +581,25 @@ class BoldForm_Lite_Conversational {
 
 			if ( $colour ) {
 				$parts[] = $property . ':' . $colour;
+
+				if ( 'cv_hint_color' === $key ) {
+					$hint_set = true;
+				}
 			}
+		}
+
+		// The hint renders dimmed so it does not compete with the button beside
+		// it, and that dimming is what makes an author's chosen colour come out
+		// wrong — pick red, get pink. Cancelling it here, and only when a colour
+		// actually survived sanitising above, is what makes the control honest:
+		// the hint is exactly the colour picked, while a form that sets none is
+		// byte-identical to before this setting existed.
+		//
+		// Set from the loop rather than re-tested, so there is one rule for
+		// "this colour is in effect" and the two cannot drift. Not a colour, so
+		// it cannot be a map entry; the literal is this file's, never an author's.
+		if ( $hint_set ) {
+			$parts[] = '--bfc-hint-opacity:1';
 		}
 
 		return implode( ';', $parts );

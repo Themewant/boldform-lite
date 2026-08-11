@@ -58,6 +58,80 @@ jQuery(
 	}
 
 	/**
+	 * Whether anything on this form can show the progress track colour.
+	 *
+	 * --bfc-track paints the bar's groove and the dots not yet reached. A
+	 * counter and a percentage are text, and "none" renders no progress row at
+	 * all, so under those three the control would offer a colour that cannot
+	 * appear anywhere — worse than no control, because it looks like it works.
+	 */
+	function cvHasTrack() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		return 'bar' === progress || 'dots' === progress;
+	}
+
+	/**
+	 * Whether the progress indicator is something that can be moved.
+	 *
+	 * A bar spans the full width, so aligning it does nothing, and "none"
+	 * renders no indicator at all. Only the counter, the percentage and the row
+	 * of dots are inline boxes with space around them.
+	 */
+	function cvProgressMoves() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		return 'dots' === progress || 'counter' === progress || 'percent' === progress;
+	}
+
+	/**
+	 * Whether this form renders the "press Enter" hint at all.
+	 *
+	 * --bfc-hint has exactly one consumer, and build_chrome() omits it entirely
+	 * when the switch is off. Offering its colour then would be the Accent
+	 * background mistake again: a control that stores a value nothing can ever
+	 * show, which reads as broken rather than as inapplicable.
+	 *
+	 * The switch lives on the Settings tab and this control on the Style tab, so
+	 * whatever reads this has to re-render when the switch moves.
+	 */
+	function cvHasHint() {
+		return !! state.formSettings.cv_key_hint;
+	}
+
+	/**
+	 * Whether this form renders a progress indicator at all.
+	 *
+	 * --bfc-accent paints the bar's fill, the dots already passed, the counter
+	 * and the percentage — and nothing else. Under "none" there is no indicator,
+	 * so every rule reading it is on an element that was never rendered.
+	 *
+	 * The focus ring used to be the exception, and the reason this control was
+	 * kept under "none". It now reads --bfc-btn, which is what a ring around a
+	 * button should have read all along, so the exception is gone.
+	 */
+	function cvHasIndicator() {
+		return 'none' !== ( state.formSettings.cv_progress || 'bar' );
+	}
+
+	/**
+	 * What the accent colour paints on THIS form, in words.
+	 *
+	 * Only ever called where cvHasIndicator() is true, so there is no "and
+	 * nothing else" branch to write — a form with no indicator is not shown the
+	 * control at all.
+	 */
+	function cvAccentDoes() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		var paints   = {
+			bar:     'fills the progress bar',
+			dots:    'fills the dots already passed',
+			counter: 'colours the question counter',
+			percent: 'colours the percentage'
+		}[ progress ];
+
+		return 'Accent ' + ( paints || 'colours the progress indicator' ) + '.';
+	}
+
+	/**
 	 * The heading the welcome cover will actually carry.
 	 *
 	 * build_welcome() falls back to a default heading when the author has left
@@ -113,7 +187,7 @@ jQuery(
 	 * what the rest still inherit, which is why removing it was never an
 	 * option — it would mean styling a twenty-screen form twenty times.
 	 *
-	 * These six settings are stored as cv_* hex strings, not as --bf-* custom
+	 * These settings are stored as cv_* hex strings, not as --bf-* custom
 	 * properties like the rest of the Style tab, so the section is hand-built
 	 * rather than declared in bfStyleSchema(). Changing their storage to match
 	 * would be a migration, and the render layer already reads them as they are.
@@ -137,18 +211,65 @@ jQuery(
 				'<div class="boldform-style-section__head-actions"><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
 			'</div>' +
 			'<div class="boldform-style-section__body">' +
+				// Grouped by what they colour, and in the order a visitor meets
+				// them: the screen, then the buttons, then the progress row.
+				// Background sits alone because it is the canvas the rest are
+				// read against, not half of a pair.
 				'<div class="boldform-setting-row">' +
 					cvColourField( 'boldform-cv-bg', 'Background', state.formSettings.cv_bg, '#ffffff' ) +
-					cvColourField( 'boldform-cv-question-color', 'Question text', state.formSettings.cv_question_color, '#111827' ) +
 				'</div>' +
 				'<div class="boldform-setting-row">' +
+					cvColourField( 'boldform-cv-question-color', 'Question text', state.formSettings.cv_question_color, '#111827' ) +
 					cvColourField( 'boldform-cv-answer-color', 'Answer text', state.formSettings.cv_answer_color, '#111827' ) +
-					cvColourField( 'boldform-cv-accent', 'Accent', state.formSettings.cv_accent, '#2f80ed' ) +
 				'</div>' +
 				'<div class="boldform-setting-row">' +
 					cvColourField( 'boldform-cv-btn-color', 'Button', state.formSettings.cv_btn_color, '#2f80ed' ) +
 					cvColourField( 'boldform-cv-btn-text-color', 'Button text', state.formSettings.cv_btn_text_color, '#ffffff' ) +
 				'</div>' +
+				'<div class="boldform-setting-row">' +
+					// Back is the outlined half of the pair. One control for its
+					// text AND its border, because the border is currentColor and
+					// the two are the same by design; a second for its fill, which
+					// is transparent until an author says otherwise.
+					cvColourField( 'boldform-cv-prev-color', 'Back button', state.formSettings.cv_prev_color, state.formSettings.cv_btn_color || '#2f80ed' ) +
+					cvColourField( 'boldform-cv-prev-bg', 'Back background', state.formSettings.cv_prev_bg, '#ffffff' ) +
+				'</div>' +
+				'<p class="boldform-setting-desc">Back button sets its text and its border together. Left alone, both follow your Button colour and the fill stays transparent.</p>' +
+				// The hint sits in the nav row beside Next, so it belongs with the
+				// buttons rather than with the progress colours below. Withdrawn
+				// when the switch that renders it is off — see cvHasHint().
+				( cvHasHint()
+					? '<div class="boldform-setting-row">' +
+						cvColourField( 'boldform-cv-hint-color', 'Enter hint', state.formSettings.cv_hint_color, '#6b7280' ) +
+					'</div>' +
+					'<p class="boldform-setting-desc">Colours the "press Enter" text and its key cap together. Left alone it is a faded version of your Answer text, so it stays readable on a dark background; pick a colour and the hint is exactly that colour.</p>'
+					: '' ) +
+				// Accent and the track are the two halves of the progress row and
+				// belong side by side — and the whole row goes when there is no
+				// progress row to colour. Accent paints the finished part, the
+				// track the part not reached yet, and under "none" neither of
+				// those elements is rendered at all.
+				( cvHasIndicator()
+					? '<div class="boldform-setting-row">' +
+						cvColourField( 'boldform-cv-accent', 'Accent', state.formSettings.cv_accent, '#2f80ed' ) +
+						// The track is the groove behind the bar and the dots not
+						// yet reached, so it has nothing to colour under a counter
+						// or a percentage either. It is also a value a single
+						// screen cannot override: the progress row sits on the
+						// wrapper, outside every screen.
+						( cvHasTrack()
+							? cvColourField( 'boldform-cv-track-color', 'Accent background', state.formSettings.cv_track_color, '#e5e7eb' )
+							: '' ) +
+					'</div>' +
+					'<p class="boldform-setting-desc">' +
+						// Named for the indicator actually chosen. A fixed sentence
+						// about "the progress bar" is wrong three times out of four,
+						// and being told a colour does something it does not is how
+						// an author concludes the control is broken.
+						escapeHtml( cvAccentDoes() ) +
+						( cvHasTrack() ? ' Accent background is the part not reached yet.' : '' ) +
+					'</p>'
+					: '' ) +
 				'<p class="boldform-setting-desc">' + escapeHtml( labels.cvStyleHelp || 'The starting point for every screen. Any screen can override these from its own settings.' ) + '</p>' +
 			'</div>' +
 		'</div>';
@@ -166,14 +287,12 @@ jQuery(
 	 *   - consent and captcha are pinned to the LAST screen
 	 *   - a row with more than one column is ONE screen (the author's layout)
 	 *   - a single-column row is one screen PER FIELD
-	 *   - "Put every field on its own screen" splits multi-column rows too
 	 *
 	 * Returns [ { rowIndex, fieldIds[], isTail } ] in visitor order.
 	 */
 	function cvScreens() {
 		var tailTypes   = boldformLiteBuilder.cvTailTypes || [];
 		var silentTypes = boldformLiteBuilder.cvSilentTypes || [];
-		var flatten     = !! state.formSettings.cv_flatten_columns;
 		var screens     = [];
 		var tailFields  = [];
 		var tailRow     = -1;
@@ -205,7 +324,7 @@ jQuery(
 			// row holding a single field is still one row-screen, and counting
 			// fields would call it a field-screen, drawing the card around that
 			// one field and leaving the row's other columns outside it.
-			if ( columns.length > 1 && ! flatten ) {
+			if ( columns.length > 1 ) {
 				screens.push( { rowIndex: rowIndex, fieldIds: visible, isTail: false, isRow: true } );
 				return;
 			}
@@ -335,7 +454,6 @@ jQuery(
 				// Conversational mode. Presentation only — never alters the stored
 				// form structure, so these survive switching the mode off and back on.
 				cv_enabled:         settings && settings.cv_enabled ? true : false,
-				cv_flatten_columns: settings && settings.cv_flatten_columns ? true : false,
 				cv_progress:        settings && settings.cv_progress   ? settings.cv_progress   : 'bar',
 				cv_transition:      settings && settings.cv_transition ? settings.cv_transition : 'slide',
 				cv_key_hint:        ! settings || typeof settings.cv_key_hint === 'undefined' ? true : !! settings.cv_key_hint,
@@ -347,12 +465,17 @@ jQuery(
 				cv_btn_color:       settings && settings.cv_btn_color       ? settings.cv_btn_color       : '',
 				cv_btn_text_color:  settings && settings.cv_btn_text_color  ? settings.cv_btn_text_color  : '',
 				cv_accent:          settings && settings.cv_accent          ? settings.cv_accent          : '',
+				cv_track_color:     settings && settings.cv_track_color     ? settings.cv_track_color     : '',
+				cv_prev_color:      settings && settings.cv_prev_color      ? settings.cv_prev_color      : '',
+				cv_prev_bg:         settings && settings.cv_prev_bg         ? settings.cv_prev_bg         : '',
+				cv_hint_color:      settings && settings.cv_hint_color      ? settings.cv_hint_color      : '',
+				cv_nav_align:       settings && settings.cv_nav_align       ? settings.cv_nav_align       : 'left',
+				cv_progress_align:  settings && settings.cv_progress_align  ? settings.cv_progress_align  : 'left',
 				cv_welcome_enabled: settings && settings.cv_welcome_enabled ? true : false,
 				cv_welcome_title:   settings && settings.cv_welcome_title ? settings.cv_welcome_title : '',
 				cv_welcome_text:    settings && settings.cv_welcome_text  ? settings.cv_welcome_text  : '',
 				cv_welcome_btn:     settings && settings.cv_welcome_btn   ? settings.cv_welcome_btn   : '',
-				cv_media_hide_mobile:      ! settings || typeof settings.cv_media_hide_mobile === 'undefined' ? true : !! settings.cv_media_hide_mobile,
-				cv_media_inline_fullbleed: settings && settings.cv_media_inline_fullbleed ? true : false,
+				cv_media_hide_mobile: ! settings || typeof settings.cv_media_hide_mobile === 'undefined' ? true : !! settings.cv_media_hide_mobile,
 				style: normalizeStyleSettings( settings && settings.style ),
 			};
 
@@ -2521,6 +2644,13 @@ jQuery(
 					// on. Two drop zones then shared an edge.
 					cvRowClass += row.columns.length > 1 ? ' is-cv-multicol' : '';
 
+					// There used to be a third class here, is-cv-split, for a
+					// multi-column row whose columns were SEPARATE screens — the
+					// state "Put every field on its own screen" produced. With
+					// that switch removed the state cannot occur: a multi-column
+					// row with visible fields is always the screen, so it always
+					// has a row number, and the class could never be added.
+
 					// ONE toolbar per screen.
 					//
 					// A row that produces field-screens is not a screen itself — its
@@ -2565,9 +2695,51 @@ jQuery(
 					// and data attribute.
 					markup += cvRowNumber ? cvBadge( cvRowNumber, cvMap.total, false ) : '';
 
+					// Does this row put a NUMBERED SCREEN on the canvas? Either the
+					// row is one itself, or one of its fields is.
+					//
+					// This is the line between an empty column that is clutter and
+					// one that is the only thing there is to see, and it is drawn
+					// at screens rather than at fields on purpose. The complaint
+					// was an empty card sitting BETWEEN two numbered questions, so
+					// a row that numbers nothing has no such position to be in:
+					//
+					//   - a row still being built has no other visible presence in
+					//     this mode — its head text is clipped and its toolbar only
+					//     appears on hover — so hiding its columns would make
+					//     "Add Row" look like it did nothing at all;
+					//   - a row holding only fields that render nothing to the
+					//     visitor is the same case, and hiding one of its two
+					//     columns would leave the other stranded at half width
+					//     against a gutter that is there to separate them.
+					//
+					// Measured, not argued: keying this on "the row has fields"
+					// instead took the gutter off that second row, and the canvas
+					// suite said so.
+					var rowHasScreens = !! cvRowNumber || row.columns.some( function ( column ) {
+						return ( column.fields || [] ).some( function ( f ) {
+							return !! cvMap.byField[ f.id ];
+						} );
+					} );
+
 					row.columns.forEach(
 						function ( column, columnIndex ) {
 							var columnClasses = 'boldform-column';
+
+							// PRESENTATION ONLY. The column stays in row.columns
+							// exactly as it is, keeps its width, and comes back the
+							// instant conversational mode goes off. Nothing here
+							// touches the data.
+							//
+							// An empty column drawn as a full drop-zone card reads
+							// as a step the visitor will walk through, which is the
+							// one thing this canvas must never say wrongly. Hidden
+							// while idle, revealed while a drag is in flight — see
+							// the is-dragging rules in builder.css and the listeners
+							// in bindCanvasDragState().
+							if ( cvOn && rowHasScreens && ! ( column.fields || [] ).length ) {
+								columnClasses += ' is-cv-ghost';
+							}
 							// PICKED, not merely current. The builder defaults
 							// activeColumn to a column on load and after adding a
 							// row, and painting that read as a selection the author
@@ -2834,16 +3006,13 @@ jQuery(
 					html += '</button>';
 				} );
 
-				// What the chosen tile actually did, said in the same breath as the
-				// choice. The flatten branch matters: with "Put every field on its
-				// own screen" on, columns cannot make questions share one, and a
-				// help line promising they do is the same lie in a second place.
+				// What the chosen tile actually did, said in the same breath as
+				// the choice. Two cases now, not three: the branch describing
+				// "Put every field on its own screen" went with that switch.
 				var help;
 
 				if ( row.columns.length < 2 ) {
 					help = 'One question per screen. Add a column to put questions side by side on the same screen.';
-				} else if ( state.formSettings.cv_flatten_columns ) {
-					help = 'These columns only change the layout. Form Settings is set to put every field on its own screen, so each question still gets one.';
 				} else {
 					help = 'Side-by-side questions share one screen. The other screens are not affected.';
 				}
@@ -2876,10 +3045,23 @@ jQuery(
 							: 'Each one follows the form until you change it here.' ) +
 					'</p>';
 
+				/*
+				 * Three, not six.
+				 *
+				 * Accent, Button and Button text used to be offered here too, and
+				 * every one of them was inert: the only rules that read those
+				 * three tokens are the nav buttons, the progress bar, the dots and
+				 * the counter — all of which live on the WRAPPER, outside every
+				 * screen. A value set on a screen could never reach any of them,
+				 * so the controls stored a colour and changed nothing. They belong
+				 * to the form, and are on the Style tab.
+				 *
+				 * What is left is what a screen genuinely owns: what it is painted
+				 * on, and the two kinds of text inside it.
+				 */
 				[
 					[ [ 'cv_bg', 'Background', '#ffffff' ], [ 'cv_question_color', 'Question text', '#111827' ] ],
-					[ [ 'cv_answer_color', 'Answer text', '#111827' ], [ 'cv_accent', 'Accent', '#2f80ed' ] ],
-					[ [ 'cv_btn_color', 'Button', '#2f80ed' ], [ 'cv_btn_text_color', 'Button text', '#ffffff' ] ]
+					[ [ 'cv_answer_color', 'Answer text', '#111827' ] ]
 				].forEach( function ( pair ) {
 					html += '<div class="boldform-setting-row">';
 					pair.forEach( function ( spec ) {
@@ -2895,7 +3077,7 @@ jQuery(
 			 * One colour, in one of two states.
 			 *
 			 * The SAME control the Style tab uses for every other colour in this
-			 * plugin, minus the opacity row these six do not have: swatch, hex
+			 * plugin, minus the opacity row these do not have: swatch, hex
 			 * box, reset. Two panels styling the same kind of thing with two
 			 * different-looking controls is a worse cost than the small amount of
 			 * markup shared here.
@@ -4764,6 +4946,8 @@ jQuery(
 			// the toggle is reversible at any time and the design survives being
 			// switched off (see cv_* in normalize_form_settings()).
 			var cvEnabled   = !! state.formSettings.cv_enabled;
+			var cvNavAlign  = state.formSettings.cv_nav_align || 'left';
+			var cvProgAlign = state.formSettings.cv_progress_align || 'left';
 			var cvProgress  = state.formSettings.cv_progress  || 'bar';
 			var cvTransition= state.formSettings.cv_transition || 'slide';
 
@@ -4819,7 +5003,19 @@ jQuery(
 									'</select>' +
 								'</div>' +
 							'</div>' +
-							'<p class="boldform-setting-desc">Visitors who prefer reduced motion never see animation, whichever option you choose.</p>' +
+						'<p class="boldform-setting-desc">Visitors who prefer reduced motion never see animation, whichever option you choose.</p>' +
+							// A bar is full width and cannot move, and "none" renders
+							// no indicator at all — so this appears only for the three
+							// that are inline boxes with room around them.
+							( cvProgressMoves() ?
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-progress-align">Indicator position</label>' +
+									'<select id="boldform-cv-progress-align">' +
+										'<option value="left"' +   ( 'left' === cvProgAlign ? ' selected' : '' ) +   '>Left</option>' +
+										'<option value="center"' + ( 'center' === cvProgAlign ? ' selected' : '' ) + '>Centred</option>' +
+										'<option value="right"' +  ( 'right' === cvProgAlign ? ' selected' : '' ) +  '>Right</option>' +
+									'</select>' +
+								'</div>' : '' ) +
 							'<div class="boldform-setting-row">' +
 								'<div class="boldform-setting-group">' +
 									'<label for="boldform-cv-next-text">Next button text</label>' +
@@ -4829,6 +5025,15 @@ jQuery(
 									'<label for="boldform-cv-prev-text">Back button text</label>' +
 									'<input type="text" id="boldform-cv-prev-text" value="' + escapeHtml( state.formSettings.cv_prev_text || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'prev' ) ) + '">' +
 								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-cv-nav-align">Button alignment</label>' +
+								'<select id="boldform-cv-nav-align">' +
+									'<option value="left"' +   ( 'left' === cvNavAlign ? ' selected' : '' ) +   '>Left, with the question</option>' +
+									'<option value="center"' + ( 'center' === cvNavAlign ? ' selected' : '' ) + '>Centred</option>' +
+									'<option value="split"' +  ( 'split' === cvNavAlign ? ' selected' : '' ) +  '>Back left, Next right</option>' +
+									'<option value="right"' +  ( 'right' === cvNavAlign ? ' selected' : '' ) +  '>Both on the right</option>' +
+								'</select>' +
 							'</div>' +
 							cvSwitch( 'boldform-cv-welcome-enabled', 'Open with a welcome screen', state.formSettings.cv_welcome_enabled ) +
 							( state.formSettings.cv_welcome_enabled ?
@@ -4848,11 +5053,14 @@ jQuery(
 									'<input type="text" id="boldform-cv-welcome-btn" value="' + escapeHtml( state.formSettings.cv_welcome_btn || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'start' ) ) + '">' +
 								'</div>' : ''
 							) +
-							cvSwitch( 'boldform-cv-key-hint', 'Show the "press Enter" hint', state.formSettings.cv_key_hint ) +
-							cvSwitch( 'boldform-cv-flatten', 'Put every field on its own screen', state.formSettings.cv_flatten_columns ) +
-							'<p class="boldform-setting-desc">By default a row of side-by-side fields (like First and Last name) stays together on one screen. Turn this on to split them apart.</p>' +
+							// Named for what it DOES, now that it does it. It used
+							// to read "Show the 'press Enter' hint" and only draw
+							// the label — Enter advanced either way — so an author
+							// who turned it off to stop visitors skipping ahead
+							// got a form that still skipped ahead.
+							cvSwitch( 'boldform-cv-key-hint', 'Let Enter move to the next screen', state.formSettings.cv_key_hint ) +
+							'<p class="boldform-setting-desc">Visitors can press Enter instead of clicking, and a small "press Enter" note appears beside the button so they know. Turn this off and Enter does nothing — useful when a stray keypress should not skip a question.</p>' +
 							cvSwitch( 'boldform-cv-media-hide-mobile', 'Hide screen images on phones', state.formSettings.cv_media_hide_mobile ) +
-							cvSwitch( 'boldform-cv-media-fullbleed', 'Let a Behind image reach the edges when embedded', state.formSettings.cv_media_inline_fullbleed ) +
 							// Stale since the background became a SCREEN setting: it
 							// used to say "select its row", which is the navigation
 							// step that whole change existed to remove.
@@ -6138,8 +6346,24 @@ jQuery(
 				[ 'cv_answer_color', '--bfc-answer' ],
 				[ 'cv_btn_color', '--bfc-btn' ],
 				[ 'cv_btn_text_color', '--bfc-btn-text' ],
-				[ 'cv_accent', '--bfc-accent' ]
+				[ 'cv_accent', '--bfc-accent' ],
+				// Wrapper only. The screen map below deliberately does not carry
+				// these — the progress row and the nav are not inside a screen, so
+				// a screen-level value could never apply.
+				[ 'cv_track_color', '--bfc-track' ],
+				[ 'cv_prev_color', '--bfc-prev' ],
+				[ 'cv_prev_bg', '--bfc-prev-bg' ],
+				[ 'cv_hint_color', '--bfc-hint' ]
 			] );
+
+			// The hint's dimming is cancelled by a second property, emitted only
+			// when a colour is set — mirroring build_custom_properties(). Without
+			// this the preview shows the author a faded version of the colour
+			// they picked while the page shows the colour itself, and the pane
+			// that exists to answer "what will this look like" answers wrongly.
+			if ( state.formSettings.cv_hint_color ) {
+				vars += ( vars ? ';' : '' ) + '--bfc-hint-opacity:1';
+			}
 
 			// The screen's own overrides, on the screen element — the same names
 			// on the same element as the front end, so an override previews
@@ -6149,15 +6373,79 @@ jQuery(
 			var screenVars = cvVars( owner, [
 				[ 'cv_bg', '--bfc-screen-bg' ],
 				[ 'cv_question_color', '--bfc-question' ],
-				[ 'cv_answer_color', '--bfc-answer' ],
-				[ 'cv_btn_color', '--bfc-btn' ],
-				[ 'cv_btn_text_color', '--bfc-btn-text' ],
-				[ 'cv_accent', '--bfc-accent' ]
+				[ 'cv_answer_color', '--bfc-answer' ]
 			] );
+
+			/**
+			 * The screen's image, as the page will build it.
+			 *
+			 * A DELIBERATE MIRROR of build_row_media_attrs() in the shortcode and
+			 * of attachMedia() in the engine, which between them decide three
+			 * things on the front end: the placement classes go on the SCREEN,
+			 * the --bfc-media-* properties go on the SCREEN, and the <figure> is
+			 * the screen's FIRST child. Any of the three in the wrong place and
+			 * the stylesheet — which is the same stylesheet — lays it out
+			 * differently here than it does on the page.
+			 *
+			 * Reads cv_media_preview, the one media key the server resolves into
+			 * the builder's structure and never persists. The front end resolves
+			 * the attachment ID instead, so the preview shows a medium file where
+			 * the page shows a large one; that is a difference in bytes, not in
+			 * layout, and nothing here depends on the size.
+			 */
+			function cvMediaPreview( source ) {
+				var none   = { cls: '', vars: '', figure: '' };
+				var layout = source.cv_media_layout || 'none';
+
+				if ( [ 'left', 'right', 'background' ].indexOf( layout ) === -1 ) {
+					return none;
+				}
+
+				// Same two-part test the renderer applies: an ID with no
+				// resolvable file degrades to no media, never a broken image.
+				if ( ! source.cv_media_id || ! source.cv_media_preview ) {
+					return none;
+				}
+
+				var clamp = function ( value, lo, hi, fallback ) {
+					var n = parseInt( value, 10 );
+					return isNaN( n ) ? fallback : Math.max( lo, Math.min( hi, n ) );
+				};
+
+				var x    = clamp( source.cv_media_x, 0, 100, 50 );
+				var y    = clamp( source.cv_media_y, 0, 100, 50 );
+				var dim  = clamp( source.cv_media_brightness, 0, 100, 100 );
+				// 0 means "use the stylesheet's default", so the property is
+				// omitted entirely rather than set to a number — the same
+				// contract the empty string carries for the colours above.
+				var high = source.cv_media_height > 0 ? clamp( source.cv_media_height, 80, 2000, 0 ) : 0;
+				var alt  = source.cv_media_alt || '';
+
+				var vars = '--bfc-media-x:' + x + '%;--bfc-media-y:' + y + '%' +
+					';--bfc-media-dim:' + ( dim / 100 ).toFixed( 2 ) +
+					( high ? ';--bfc-media-h:' + high + 'px' : '' );
+
+				return {
+					cls:  ' boldform-lite-form__row--media boldform-lite-form__row--media-' + layout,
+					vars: vars,
+					// Decorative when the author supplied no alt text, exactly as
+					// the renderer decides it.
+					figure: '<figure class="boldform-lite-form__row-media" aria-hidden="' + ( alt ? 'false' : 'true' ) + '">' +
+						'<img src="' + escapeHtml( source.cv_media_preview ) + '" alt="' + escapeHtml( alt ) + '" loading="lazy" decoding="async">' +
+					'</figure>'
+				};
+			}
+
+			var media = cvMediaPreview( owner );
+
+			if ( media.vars ) {
+				screenVars += ( screenVars ? ';' : '' ) + media.vars;
+			}
 
 			var progress   = state.formSettings.cv_progress || 'bar';
 			var transition = state.formSettings.cv_transition || 'slide';
 			var nextText   = state.formSettings.cv_next_text || cvDefaultLabel( 'next' );
+			var prevText   = state.formSettings.cv_prev_text || cvDefaultLabel( 'prev' );
 			var ratio      = Math.round( ( shown / total ) * 100 );
 
 			var progressMarkup = '';
@@ -6215,12 +6503,23 @@ jQuery(
 
 				body = '<div class="boldform-cv__viewport">' +
 					'<div class="boldform-lite-form__row boldform-cv-screen boldform-cv-screen--cols-' +
-						escapeHtml( columns > 3 ? 'many' : String( columns ) ) + ' is-active"' +
+						escapeHtml( columns > 3 ? 'many' : String( columns ) ) + ' is-active' + media.cls + '"' +
 						( screenVars ? ' style="' + escapeHtml( screenVars ) + '"' : '' ) + '>' +
+						// FIRST, like the engine's insertBefore(): `left` and
+						// `right` place it with padding on the screen and an
+						// absolute figure, so source order is what decides which
+						// of two absolutely-positioned children paints on top.
+						media.figure +
 						fieldsMarkup +
 					'</div>' +
 				'</div>' +
 				'<div class="boldform-cv__nav">' +
+					// Back appears on exactly the screens it appears on for a
+					// visitor — never on the first — so the alignment an author
+					// picks previews as it will render rather than as a mock-up.
+					( shown > 1
+						? '<button type="button" class="boldform-cv__btn boldform-cv__btn--prev">' + escapeHtml( prevText ) + '</button>'
+						: '' ) +
 					'<button type="button" class="boldform-cv__btn boldform-cv__btn--next">' + escapeHtml( nextText ) + '</button>' +
 					( state.formSettings.cv_key_hint
 						? '<span class="boldform-cv__hint">press <kbd>Enter</kbd></span>'
@@ -6252,6 +6551,17 @@ jQuery(
 			// is the one state they are not styling.
 			return caption +
 				'<div class="boldform-cv boldform-cv--preview is-ready boldform-cv--progress-' + escapeHtml( progress ) +
+					' boldform-cv--nav-' + escapeHtml( state.formSettings.cv_nav_align || 'left' ) +
+					' boldform-cv--progress-align-' + escapeHtml( state.formSettings.cv_progress_align || 'left' ) +
+					// "Hide screen images on phones" is a @media rule on the front
+					// end and the preview stage is a NARROWED DIV, not a narrow
+					// window, so that rule can never fire in here. builder.css
+					// answers this class under .is-device-mobile instead. Emitted
+					// unconditionally-shaped like the front end's own gate: absent
+					// key means on.
+					( ( typeof state.formSettings.cv_media_hide_mobile === 'undefined' || state.formSettings.cv_media_hide_mobile )
+						? ' boldform-cv--media-hide-mobile'
+						: '' ) +
 					' boldform-cv--motion-' + escapeHtml( transition ) + '"' +
 					( vars ? ' style="' + escapeHtml( vars ) + '"' : '' ) + '>' +
 				progressMarkup +
@@ -6865,7 +7175,47 @@ jQuery(
 				);
 		}
 
+		/**
+		 * Marks the canvas while a drag is in flight, so hidden empty columns
+		 * can reappear as drop targets for exactly as long as they are useful.
+		 *
+		 * THIS IS NOT DECORATION. sortable.js finds a drop target by hit-testing
+		 * every registered container's bounding rect and skipping any that
+		 * measures 0x0 (`if ( ! rect.width && ! rect.height ) continue`). A
+		 * display:none column is therefore not merely invisible — it is not a
+		 * drop target at all, and a field could never be put back into it. The
+		 * reveal is what makes hiding them safe.
+		 *
+		 * Bound ONCE on the document, not per render: setupSortables() runs on
+		 * every canvas render, and listeners added there would multiply. The
+		 * document is also the only place that catches a drag starting in the
+		 * field library and ending on the canvas.
+		 *
+		 * Both `dragend` and `drop` clear it. `dragend` alone is the documented
+		 * pair for `dragstart`, but a drag that ends over a container which
+		 * re-renders the canvas can lose its source element first; `drop` is the
+		 * belt to that braces, and clearing twice costs nothing.
+		 */
+		function bindCanvasDragState() {
+			var canvas = document.getElementById( 'boldform-canvas' );
+
+			if ( ! canvas || canvas.__bfDragStateBound ) {
+				return;
+			}
+
+			canvas.__bfDragStateBound = true;
+
+			var on  = function () { canvas.classList.add( 'is-dragging' ); };
+			var off = function () { canvas.classList.remove( 'is-dragging' ); };
+
+			document.addEventListener( 'dragstart', on );
+			document.addEventListener( 'dragend', off );
+			document.addEventListener( 'drop', off );
+		}
+
 		function setupSortables() {
+			bindCanvasDragState();
+
 			if ( document.getElementById( 'boldform-canvas-rows' ) ) {
 				Sortable.create(
 					document.getElementById( 'boldform-canvas-rows' ),
@@ -8649,9 +8999,6 @@ jQuery(
 				if ( $( '#boldform-cv-key-hint' ).length ) {
 					state.formSettings.cv_key_hint = $( '#boldform-cv-key-hint' ).is( ':checked' );
 				}
-				if ( $( '#boldform-cv-flatten' ).length ) {
-					state.formSettings.cv_flatten_columns = $( '#boldform-cv-flatten' ).is( ':checked' );
-				}
 				if ( $( '#boldform-cv-welcome-enabled' ).length ) {
 					state.formSettings.cv_welcome_enabled = $( '#boldform-cv-welcome-enabled' ).is( ':checked' );
 				}
@@ -8667,14 +9014,17 @@ jQuery(
 				if ( $( '#boldform-cv-media-hide-mobile' ).length ) {
 					state.formSettings.cv_media_hide_mobile = $( '#boldform-cv-media-hide-mobile' ).is( ':checked' );
 				}
-				if ( $( '#boldform-cv-media-fullbleed' ).length ) {
-					state.formSettings.cv_media_inline_fullbleed = $( '#boldform-cv-media-fullbleed' ).is( ':checked' );
-				}
 				if ( $( '#boldform-cv-next-text' ).length ) {
 					state.formSettings.cv_next_text = $( '#boldform-cv-next-text' ).val() || '';
 				}
 				if ( $( '#boldform-cv-prev-text' ).length ) {
 					state.formSettings.cv_prev_text = $( '#boldform-cv-prev-text' ).val() || '';
+				}
+				if ( $( '#boldform-cv-nav-align' ).length ) {
+					state.formSettings.cv_nav_align = $( '#boldform-cv-nav-align' ).val() || 'left';
+				}
+				if ( $( '#boldform-cv-progress-align' ).length ) {
+					state.formSettings.cv_progress_align = $( '#boldform-cv-progress-align' ).val() || 'left';
 				}
 				// A colour keeps the data-cv-unset marker until the author actually
 				// picks one, so an untouched swatch stores '' ("inherit the form's
@@ -8684,6 +9034,10 @@ jQuery(
 					[ '#boldform-cv-question-color', 'cv_question_color' ],
 					[ '#boldform-cv-answer-color',   'cv_answer_color' ],
 					[ '#boldform-cv-accent',         'cv_accent' ],
+					[ '#boldform-cv-track-color',    'cv_track_color' ],
+					[ '#boldform-cv-prev-color',     'cv_prev_color' ],
+					[ '#boldform-cv-prev-bg',        'cv_prev_bg' ],
+					[ '#boldform-cv-hint-color',     'cv_hint_color' ],
 					[ '#boldform-cv-btn-color',      'cv_btn_color' ],
 					[ '#boldform-cv-btn-text-color', 'cv_btn_text_color' ]
 				].forEach( function ( pair ) {
@@ -8700,6 +9054,7 @@ jQuery(
 					$( event.target ).is( '#boldform-dup-enabled' ) ||
 					$( event.target ).is( 'input[name="boldform-dup-method"]' ) ||
 					$( event.target ).is( '#boldform-cv-enabled' ) ||
+					$( event.target ).is( '#boldform-cv-progress' ) ||
 					$( event.target ).is( '#boldform-cv-welcome-enabled' )
 				) {
 					needsRerender = true;
@@ -8709,9 +9064,15 @@ jQuery(
 				renderStylePreview();
 
 				// The Style tab gains and loses its Default Screen Colours section
-				// with the master toggle, so it has to be rebuilt too — otherwise
-				// the section only appears after a page reload.
-				if ( $( event.target ).is( '#boldform-cv-enabled' ) ) {
+				// with the master toggle, the Accent background control inside it
+				// with the indicator, and the Enter hint control with the hint
+				// switch — all three live on the OTHER tab, so without this they
+				// change only after a page reload.
+				if (
+					$( event.target ).is( '#boldform-cv-enabled' ) ||
+					$( event.target ).is( '#boldform-cv-progress' ) ||
+					$( event.target ).is( '#boldform-cv-key-hint' )
+				) {
 					renderStylingSettings();
 				}
 

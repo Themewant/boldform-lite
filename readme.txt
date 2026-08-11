@@ -337,6 +337,7 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 New features:
 * New: Conversational Forms — show any form one question at a time, like a conversation. Turn it on per form. Your fields, layout and conditional logic stay exactly as they are, and you can switch back at any time.
 * New: Conversational forms can open with a welcome screen, and show a progress bar, dots, a counter or a percentage.
+* New: Conversational forms can position the Back and Next buttons and the progress indicator, and colour the unfinished part of the progress bar or dots. The Back button has its own colour and fill, and follows your Button colour until you set them.
 * New: Every conversational screen has its own settings — an image placed left, right or behind the question with an optional height, and all six colours, set on the screen you are looking at. Anything you do not change follows the form's defaults.
 
 Improvements:
