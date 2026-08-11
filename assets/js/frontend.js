@@ -133,6 +133,16 @@ jQuery(
 					var $required = $wrapper.find( 'input[required], textarea[required], select[required]' ).first();
 					var $email = $wrapper.find( 'input[type="email"]' ).first();
 
+					// A required dropdown is invisible to the selector above. The
+					// native <select> is rendered display:none behind a custom
+					// widget and carries no `required` attribute — the requirement
+					// lives on the widget as aria-required. Without this fallback a
+					// required dropdown left empty passes client-side validation
+					// and is only caught by the server.
+					if ( ! $required.length && $wrapper.find( '[aria-required="true"]' ).length ) {
+						$required = $wrapper.find( 'select[data-boldform-select]' ).first();
+					}
+
 					// Required check.
 					if ( $required.length && $wrapper.data( 'error' ) ) {
 						var val = $required.val();

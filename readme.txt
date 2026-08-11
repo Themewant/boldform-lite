@@ -181,6 +181,14 @@ Plus **priority support and automatic updates**.
 
 You have three options: paste `[boldform id="123"]` into any page or post, insert the **BoldForm** Gutenberg block, or drag the **BoldForm** widget into any Elementor layout.
 
+= Can I use conversational mode with a form I already built? =
+
+Yes. Open the form, go to **Form Settings → Conversational** and switch it on. Nothing about your form is rewritten — the same fields, layout, conditional logic and notifications keep working exactly as before; only the way the form is presented changes. Switch it off and the form goes straight back to normal, with your conversational settings kept in case you want them again.
+
+= Does conversational mode work without JavaScript? =
+
+The form still works. Visitors with JavaScript disabled see the ordinary single-page form, complete and fully submittable — they simply do not see it one question at a time.
+
 = Where do I see form submissions? =
 
 Go to **BoldForm → Entries** in the WordPress admin. Click any row to open the full submission detail. You can mark entries as read, unread, starred, or spam, run bulk actions, and export to CSV.
@@ -326,7 +334,13 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 
 == Changelog ==
 = 1.1.7 =
+New features:
+* New: Conversational Forms — show any form one question at a time, like a conversation. Turn it on per form. Your fields, layout and conditional logic stay exactly as they are, and you can switch back at any time.
+* New: Conversational forms can open with a welcome screen, and show a progress bar, dots, a counter or a percentage.
+* New: Every conversational screen has its own settings — an image placed left, right or behind the question with an optional height, and all six colours, set on the screen you are looking at. Anything you do not change follows the form's defaults.
+
 Improvements:
+* Improve: A required dropdown left empty is now caught before the form is sent. It was only reported by the server, because the requirement lives on the dropdown's custom control rather than the hidden field the check looked at.
 * Improve: Add-ons can now render their own admin notices on BoldForm's screens through a new `boldform_admin_notices` action. Notices registered the usual way were cleared by the filtering that keeps these screens free of unrelated plugins' messages.
 * Improve: The template library's locked rows and the Field Library's premium teaser now have their own switches, so an add-on that is installed but not yet activated can keep showing them — and word them for activation — without turning every other upgrade prompt back on. New filters: `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_library_lock_group_title`, `boldform_library_lock_title`, `boldform_library_lock_text`, `boldform_template_lock_title`, `boldform_template_lock_text`, `boldform_upgrade_modal_title`, `boldform_upgrade_modal_text`, `boldform_integration_lock_title`, `boldform_show_locked_export_teaser` and `boldform_export_lock_hint` (the existing `boldform_upgrade_url` and `boldform_upgrade_label` now drive these CTAs too).
 * Improve: The locked Excel/PDF export prompts now have a switch of their own, `boldform_show_locked_export_teaser`, so an add-on that supplies real export formats can keep them on screen while it is idle rather than leaving the slot empty. Previously they were tied to the shared upgrade switch, which such an add-on turns off on install — so the Tools -> Entries "Export format" selector vanished before the add-on was able to replace it. (Entries' own "Export CSV" button was never affected.)

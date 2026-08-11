@@ -339,8 +339,8 @@ class BoldForm_Lite_Shortcode {
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
 					<?php if ( ! is_array( $row ) || empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) { continue; } ?>
-					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; ?>
-					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css ); ?>">
+					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; $row_media = $this->build_row_media_attrs( $row ); $row_colours = $this->build_cv_colour_style( $row ); if ( '' !== $row_colours ) { $row_media['attrs'] = '' === $row_media['attrs'] ? ' style="' . esc_attr( $row_colours ) . '"' : rtrim( $row_media['attrs'], '"' ) . ';' . esc_attr( $row_colours ) . '"'; } // A multi-column row IS the screen, so its overrides go straight on it. // Assigned on this line, and the figure emitted inline below, so a row with no media produces byte-identical output to before this feature existed. ?>
+					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css . $row_media['class'] ); ?>"<?php echo $row_media['attrs']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr/esc_url in build_row_media_attrs(). ?>><?php echo $row_media['figure'] . $this->build_field_media_figures( $row ) . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr/esc_url in build_row_media_attrs(). The explicit newline replaces the one PHP strips after a closing tag, keeping a media-less row byte-identical to the pre-feature output. ?>
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
 							<?php if ( ! is_array( $column ) ) { continue; } ?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
@@ -503,6 +503,197 @@ class BoldForm_Lite_Shortcode {
 	 * @param object|null $form_record Form database record.
 	 * @return array<string, mixed>
 	 */
+	/**
+	 * Builds the background-media markup for one row (conversational screens).
+	 *
+	 * Emitted unconditionally, not only in conversational mode: the markup is a
+	 * plain <figure> that ordinary form CSS leaves hidden, and gating it on the
+	 * mode would mean the renderer had to know about the mode. Conversational
+	 * CSS is what makes it visible.
+	 *
+	 * Stored as an attachment ID, so the URL is resolved fresh on every render —
+	 * a moved site keeps working, and the image can carry responsive sources. A
+	 * missing attachment degrades to no media rather than a broken image.
+	 *
+	 * @param array<string, mixed> $row Row definition from the stored structure.
+	 * @return array{class:string, attrs:string, figure:string}
+	 */
+	private function build_row_media_attrs( $row ) {
+		$empty = array( 'class' => '', 'attrs' => '', 'figure' => '' );
+
+		$id     = isset( $row['cv_media_id'] ) ? absint( $row['cv_media_id'] ) : 0;
+		$layout = isset( $row['cv_media_layout'] ) && in_array( $row['cv_media_layout'], array( 'none', 'left', 'right', 'background' ), true )
+			? $row['cv_media_layout']
+			: 'none';
+
+		if ( ! $id || 'none' === $layout ) {
+			return $empty;
+		}
+
+		$src = wp_get_attachment_image_url( $id, 'large' );
+
+		// The attachment was deleted since the form was saved.
+		if ( ! $src ) {
+			return $empty;
+		}
+
+		$x          = isset( $row['cv_media_x'] ) ? max( 0, min( 100, absint( $row['cv_media_x'] ) ) ) : 50;
+		$y          = isset( $row['cv_media_y'] ) ? max( 0, min( 100, absint( $row['cv_media_y'] ) ) ) : 50;
+		$brightness = isset( $row['cv_media_brightness'] ) ? max( 0, min( 100, absint( $row['cv_media_brightness'] ) ) ) : 100;
+		// 0 = use the stylesheet's default, so the property is omitted entirely
+		// and the CSS fallback applies — the same "'' means inherit" contract the
+		// per-screen colours use, in the shape a length takes.
+		$height     = isset( $row['cv_media_height'] ) && (int) $row['cv_media_height'] > 0
+			? max( 80, min( 2000, (int) $row['cv_media_height'] ) )
+			: 0;
+		$alt        = isset( $row['cv_media_alt'] ) ? sanitize_text_field( (string) $row['cv_media_alt'] ) : '';
+
+		$srcset = wp_get_attachment_image_srcset( $id, 'large' );
+		$sizes  = wp_get_attachment_image_sizes( $id, 'large' );
+
+		$declarations = sprintf( '--bfc-media-x:%d%%;--bfc-media-y:%d%%;--bfc-media-dim:%s', $x, $y, number_format( $brightness / 100, 2, '.', '' ) );
+
+		if ( $height ) {
+			$declarations .= sprintf( ';--bfc-media-h:%dpx', $height );
+		}
+
+		$attrs = ' style="' . esc_attr( $declarations ) . '"';
+
+		$figure = '<figure class="boldform-lite-form__row-media" aria-hidden="' . ( '' === $alt ? 'true' : 'false' ) . '">'
+			. '<img src="' . esc_url( $src ) . '"'
+			. ( $srcset ? ' srcset="' . esc_attr( $srcset ) . '"' : '' )
+			. ( $sizes ? ' sizes="' . esc_attr( $sizes ) . '"' : '' )
+			// Decorative when the author supplied no alt text: a filename read
+			// aloud is worse than silence.
+			. ' alt="' . esc_attr( $alt ) . '"'
+			. ' loading="lazy" decoding="async">'
+			. '</figure>';
+
+		return array(
+			'class'  => ' boldform-lite-form__row--media boldform-lite-form__row--media-' . sanitize_html_class( $layout ),
+			'attrs'  => $attrs,
+			'figure' => $figure,
+		);
+	}
+
+	/**
+	 * Builds the per-screen colour custom properties for one row or field.
+	 *
+	 * The conversational CSS reads these at the point of use — `color: var(
+	 * --bfc-question, inherit )` — and they are set once on the `.boldform-cv`
+	 * wrapper for the form. Setting the same names on a screen therefore
+	 * overrides them for that screen and nothing else: the cascade does the
+	 * whole job, with no extra selectors and no JS re-theming.
+	 *
+	 * `cv_bg` maps to a DIFFERENT property than the form's, deliberately. The
+	 * form paints `--bfc-bg` on the wrapper; a screen sits inside that wrapper,
+	 * so reusing the name would make a screen override repaint the wrapper's own
+	 * padding too.
+	 *
+	 * An empty value is omitted rather than set to nothing, which is what makes
+	 * `''` mean INHERIT all the way to the browser.
+	 *
+	 * @param array<string, mixed> $source Stored row or field.
+	 * @return string Declarations, or '' when the screen overrides nothing.
+	 */
+	private function build_cv_colour_style( $source ) {
+		$map = array(
+			'cv_bg'             => '--bfc-screen-bg',
+			'cv_question_color' => '--bfc-question',
+			'cv_answer_color'   => '--bfc-answer',
+			'cv_btn_color'      => '--bfc-btn',
+			'cv_btn_text_color' => '--bfc-btn-text',
+			'cv_accent'         => '--bfc-accent',
+		);
+
+		$parts = array();
+
+		foreach ( $map as $key => $property ) {
+			if ( empty( $source[ $key ] ) ) {
+				continue;
+			}
+
+			// Re-validated on output: only a literal hex colour can ever reach a
+			// style attribute, whatever route the value took into the row.
+			$colour = sanitize_hex_color( (string) $source[ $key ] );
+
+			if ( $colour ) {
+				$parts[] = $property . ':' . $colour;
+			}
+		}
+
+		return implode( ';', $parts );
+	}
+
+	/**
+	 * Builds the per-FIELD background figures for one row.
+	 *
+	 * A single-column row produces one conversational screen per field, so the
+	 * row's own image cannot describe them all — each field may carry its own.
+	 * Those images are emitted here, as siblings of the row's figure, because
+	 * the layout CSS positions the figure against the row and the engine moves
+	 * whole fields between rows when it splits them. A figure nested inside a
+	 * field would be positioned against the wrong box.
+	 *
+	 * Each one is hidden and carries the class and style its screen needs, so
+	 * the engine can hand it to the screen that owns it without re-deriving
+	 * anything. On a multi-column row — where the ROW is the screen — the
+	 * engine never looks for them and they stay hidden.
+	 *
+	 * A row whose fields carry no media returns '', keeping the output
+	 * byte-identical to a form that never used this feature.
+	 *
+	 * @param array<string, mixed> $row Row definition from the stored structure.
+	 * @return string Concatenated <figure> markup, or ''.
+	 */
+	private function build_field_media_figures( $row ) {
+		$out = '';
+
+		if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+			return $out;
+		}
+
+		foreach ( $row['columns'] as $column ) {
+			if ( ! is_array( $column ) || empty( $column['fields'] ) || ! is_array( $column['fields'] ) ) {
+				continue;
+			}
+
+			foreach ( $column['fields'] as $index => $field ) {
+				if ( ! is_array( $field ) ) {
+					continue;
+				}
+
+				$media = $this->build_row_media_attrs( $field );
+
+				if ( '' === $media['figure'] ) {
+					continue;
+				}
+
+				// The same string the field wrapper puts in data-bf-field-id,
+				// derived the same way, so the engine can pair them.
+				$field_id = ! empty( $field['id'] ) ? sanitize_html_class( (string) $field['id'] ) : 'field_' . (int) $index;
+
+				// The style attribute comes back as ' style="…"'; the engine
+				// wants the declarations alone to copy onto the screen.
+				$style = '';
+				if ( preg_match( '/ style="([^"]*)"/', $media['attrs'], $m ) ) {
+					$style = $m[1];
+				}
+
+				$out .= str_replace(
+					'<figure class="boldform-lite-form__row-media"',
+					'<figure hidden class="boldform-lite-form__row-media boldform-lite-form__row-media--field"'
+						. ' data-bf-media-for="' . esc_attr( 'boldform_' . $field_id ) . '"'
+						. ' data-bf-media-class="' . esc_attr( trim( $media['class'] ) ) . '"'
+						. ' data-bf-media-style="' . esc_attr( $style ) . '"',
+					$media['figure']
+				);
+			}
+		}
+
+		return $out;
+	}
+
 	private function extract_settings_from_record( $form_record ) {
 		$defaults = array(
 			'submission_type'   => 'ajax',
@@ -536,6 +727,9 @@ class BoldForm_Lite_Shortcode {
 			'enable_admin_email'=> true,
 			'enable_user_email' => true,
 			'admin_email'       => '',
+			// Conversational mode is off unless a stored setting says otherwise,
+			// so a form with no settings row renders exactly as it always has.
+			'cv_enabled'        => false,
 		);
 
 		if ( ! $form_record || empty( $form_record->settings_json ) ) {
@@ -615,6 +809,29 @@ class BoldForm_Lite_Shortcode {
 			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )            : '',
 			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )            : '',
 			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
+			// ── Conversational mode ──────────────────────────────────────────────
+			// Re-validated on read rather than trusted from the row: this method is
+			// the only settings source the renderer sees, so a value that reached
+			// the row another way is still constrained here.
+			'cv_enabled'          => ! empty( $decoded['cv_enabled'] ),
+			'cv_flatten_columns'  => ! empty( $decoded['cv_flatten_columns'] ),
+			'cv_progress'         => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
+			'cv_transition'       => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
+			'cv_key_hint'         => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
+			'cv_next_text'        => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
+			'cv_prev_text'        => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
+			'cv_bg'               => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
+			'cv_question_color'   => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
+			'cv_answer_color'     => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
+			'cv_btn_color'        => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
+			'cv_btn_text_color'   => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
+			'cv_accent'           => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
+			'cv_welcome_enabled'  => ! empty( $decoded['cv_welcome_enabled'] ),
+			'cv_welcome_title'    => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
+			'cv_welcome_text'     => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'      => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
+			'cv_media_hide_mobile'      => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
+			'cv_media_inline_fullbleed' => ! empty( $decoded['cv_media_inline_fullbleed'] ),
 			// ── Advanced (responsive) per-control style overrides → --bf-* CSS vars ──
 			'style'                   => isset( $decoded['style'] ) ? $this->sanitize_render_style_settings( $decoded['style'] ) : array(),
 		);
@@ -1071,7 +1288,7 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>

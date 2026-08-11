@@ -81,9 +81,9 @@
 
 .boldform-setup-choices {
 	display: grid;
-	grid-template-columns: 1fr 1fr;
+	grid-template-columns: repeat(3, 1fr);
 	gap: 20px;
-	max-width: 640px;
+	max-width: 960px;
 	margin: 0 auto;
 }
 
@@ -126,6 +126,11 @@
 	color: #0f766e;
 }
 
+.boldform-setup-card__icon--conversational {
+	background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+	color: #6d28d9;
+}
+
 .boldform-setup-card__icon .dashicons {
 	width: 28px;
 	height: 28px;
@@ -143,6 +148,13 @@
 	font-size: 13px;
 	line-height: 1.6;
 	color: #64748b;
+}
+
+@media screen and (max-width: 900px) {
+	.boldform-setup-choices {
+		grid-template-columns: 1fr 1fr;
+		max-width: 640px;
+	}
 }
 
 @media screen and (max-width: 480px) {
@@ -1855,9 +1867,71 @@
 	background: rgba(255, 255, 255, 0.7);
 }
 
+/* The empty drop zone is the whole canvas on a new form, so it is the first
+   thing an author reads. Centred as a small stack — a target, what it takes,
+   and the other way in — rather than one grey line adrift in a large box. */
 .boldform-column__empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
 	color: #94a3b8;
 	text-align: center;
+	pointer-events: none;
+}
+
+.boldform-column__empty-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	margin-bottom: 3px;
+	border-radius: 50%;
+	background: #eef2f7;
+	color: #94a3b8;
+	font-size: 15px;
+	line-height: 1;
+}
+
+.boldform-column__empty-icon::before {
+	/* Dashicons sets its own 20px box; the circle sizes the glyph instead. */
+	font-size: 15px;
+	width: auto;
+	height: auto;
+}
+
+.boldform-column__empty-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: #64748b;
+}
+
+.boldform-column__empty-hint {
+	font-size: 11.5px;
+	color: #a0aec0;
+}
+
+/* The picked column — where a field clicked in the library will land.
+   The .is-active class has always been rendered but was never styled, so the
+   field library's promise ("click to insert into the selected column") pointed
+   at something invisible.
+
+   Only the EMPTY state is marked. A ring around a filled column was tried and
+   pulled: in conversational mode a one-column row's field container holds every
+   card in that row, so the ring read as a border around a whole group of
+   screens — a frame around something that is not a thing. An empty column is
+   already drawn as a drop zone, so colouring it in says "this one" without
+   introducing a new box. */
+.boldform-column.is-active > .boldform-column-fields.is-empty {
+	border-style: solid;
+	border-color: #2271b1;
+	background: rgba(34, 113, 177, 0.06);
+}
+
+.boldform-column.is-active > .boldform-column-fields.is-empty .boldform-column__empty {
+	color: #2271b1;
 }
 
 /* While a field is dragged into the empty column, hide the prompt so only the
@@ -1965,10 +2039,32 @@
 	font-size: var(--bf-label-font-size, 17px);
 }
 
+/* The text-box look for a settings control.
+ *
+ * It once claimed EVERY input in a setting group, including checkboxes and
+ * radios — which are not text boxes and cannot be made into one: a checkbox
+ * given width:100% and a 10px radius becomes a stretched rounded bar. That went
+ * unnoticed for a long time because wp-admin used to draw a checked box as a
+ * white square with a coloured tick, so the leftover radius read as a rounding
+ * quirk; WordPress 7.0 fills a checked box with the admin theme colour, and the
+ * same rule suddenly rendered a solid blue pill.
+ *
+ * The evidence it was always wrong is downstream: the :not() chain on the
+ * refinement rule below, and three separate places that had to claw a control
+ * back out of this one — the quicktags buttons, the upgrade buttons, and the
+ * paid add-on's own hide-empty checkbox, whose CSS names this rule by name.
+ *
+ * :not(:where(...)) rather than a plain :not() chain: :where() costs no
+ * specificity, so this stays at (0,1,1) and every one of those overrides keeps
+ * winning exactly as it did before.
+ *
+ * Scoped to the settings group on purpose. The canvas draws real form fields,
+ * where a checkbox is a preview of a front-end control and has its own custom
+ * shell (.boldform-canvas-field-choices, .boldform-canvas-terms). */
 .boldform-canvas-field-body input,
 .boldform-canvas-field-body textarea,
 .boldform-canvas-field-body select,
-.boldform-setting-group input,
+.boldform-setting-group input:not(:where([type="checkbox"], [type="radio"])),
 .boldform-setting-group textarea,
 .boldform-setting-group select {
 	width: 100%;
@@ -2832,6 +2928,31 @@
 	font-weight: 600;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
+}
+
+/* Explanatory text under a control. Both class names were already in use by
+   the settings panes but had never been styled, so they rendered as ordinary
+   body paragraphs at full contrast. */
+.boldform-setting-desc,
+.boldform-setting-help {
+	margin: 6px 0 0;
+	font-size: 12px;
+	line-height: 1.6;
+	color: #64748b;
+}
+
+.boldform-setting-desc code,
+.boldform-setting-help code {
+	font-size: 11px;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: #f1f5f9;
+	color: #334155;
+}
+
+.boldform-setting-sublabel {
+	font-weight: 400;
+	color: #94a3b8;
 }
 
 .boldform-setting-row {
@@ -5228,8 +5349,19 @@
 /* Re-assert field styling at viewport specificity so it beats wp-admin core
    forms.css (which leaks onto this admin page). Mirror frontend.css exactly —
    same advanced --bf-* vars — so the preview matches the real form, and keep
-   min-height so wp-admin's default field height can't floor it. */
-.boldform-preview-viewport .boldform-lite-form input:not([type="range"]):not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+   min-height so wp-admin's default field height can't floor it.
+
+   The :not() chain is wrapped in :where() so it adds NO specificity. That is
+   deliberate and load-bearing. This block only has to out-rank wp-admin's
+   `input[type="text"]` (0,1,1); written bare, the four :not([type=…]) tests
+   pushed it to (0,6,1), which also out-ranked the plugin's OWN later layers.
+   Conversational mode was the casualty: its screens set a 44px min-height and
+   1.125rem type, both at (0,4,1), so the preview quietly rendered a 43px
+   control at 14px while the real site rendered 49px at 18px — the preview
+   disagreeing with the front end is the one thing this block exists to
+   prevent. At (0,2,1) it still beats wp-admin and now loses to conversational,
+   which is the correct order. */
+.boldform-preview-viewport .boldform-lite-form input:not(:where([type="range"], [type="hidden"], [type="checkbox"], [type="radio"])),
 .boldform-preview-viewport .boldform-lite-form select,
 .boldform-preview-viewport .boldform-lite-form textarea {
 	width: 100%;
@@ -7217,4 +7349,686 @@
 
 #boldform-form-settings-panel .boldform-routing-teaser .boldform-upgrade-hint {
 	margin: 8px 0 0;
+}
+
+/* ── Row background media (conversational screens) ───────────────────────── */
+
+/* Empty state: a target you can see, rather than a lone grey button that
+   gives no clue what belongs here or how big it should be. */
+.boldform-row-media__drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	width: 100%;
+	min-height: 112px;
+	margin-bottom: 12px;
+	padding: 18px 16px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 10px;
+	background: #f8fafc;
+	color: #475569;
+	cursor: pointer;
+	text-align: center;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.boldform-row-media__drop:hover,
+.boldform-row-media__drop:focus-visible {
+	border-color: #2271b1;
+	background: #eff6ff;
+	color: #1d4ed8;
+	outline: none;
+}
+
+.boldform-row-media__drop .dashicons {
+	width: 26px;
+	height: 26px;
+	font-size: 26px;
+	color: #94a3b8;
+}
+
+.boldform-row-media__drop:hover .dashicons,
+.boldform-row-media__drop:focus-visible .dashicons {
+	color: #2271b1;
+}
+
+.boldform-row-media__drop-title {
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.boldform-row-media__drop-hint {
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+/* Filled state: the image IS the control, with its actions sitting on it so
+   the panel does not grow a second row of buttons. */
+.boldform-row-media__thumb {
+	position: relative;
+	margin-bottom: 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	overflow: hidden;
+	background: #f1f5f9;
+}
+
+.boldform-row-media__thumb img {
+	display: block;
+	width: 100%;
+	height: 132px;
+	object-fit: cover;
+}
+
+/* An empty src (a deleted attachment) collapses to nothing and would leave the
+   actions floating over blank space — hold the box open instead. */
+.boldform-row-media__thumb img[src=""] {
+	min-height: 132px;
+	background: repeating-linear-gradient( 45deg, #e2e8f0 0 8px, #f1f5f9 8px 16px );
+}
+
+.boldform-row-media__thumb-actions {
+	position: absolute;
+	inset: auto 0 0 0;
+	display: flex;
+	justify-content: flex-end;
+	gap: 6px;
+	padding: 8px;
+	background: linear-gradient( to top, rgba(15, 23, 42, 0.66), rgba(15, 23, 42, 0) );
+}
+
+.boldform-row-media__thumb-actions .button {
+	border-color: rgba(255, 255, 255, 0.5);
+	background: rgba(255, 255, 255, 0.94);
+	color: #1e293b;
+}
+
+.boldform-row-media__thumb-actions .button:hover {
+	background: #fff;
+	border-color: #fff;
+}
+
+.boldform-row-media__remove:hover {
+	color: #b32d2e;
+}
+
+/* Horizontal and vertical are one idea, so they sit side by side. */
+.boldform-row-media__grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.boldform-row-media__range label {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.boldform-row-media__range output {
+	font-size: 11px;
+	font-weight: 600;
+	color: #64748b;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── Framing sliders ────────────────────────────────────────────────────
+   Left as native ranges, these relied on the browser's accent-color fill,
+   which paints only as far as the THUMB'S CENTRE — so at 100% a sliver of
+   unfilled track was still showing to the right of the thumb, directly under
+   a readout saying 100%.
+
+   The fill is drawn here instead, from the value, so "full" looks full. The
+   thumb still cannot leave the track (it is inset by half its width at each
+   end, in every browser), so the fill compensates for exactly that inset:
+
+     fill = p% + (0.5 - p/100) x thumb
+
+   At p=0 that is half a thumb in; at p=100 it is half a thumb short of the
+   end — the thumb's centre in both cases, and its outer edge flush with the
+   track end. --bf-range-p is a plain 0-100 number set by the builder. */
+.boldform-row-media__range input[type="range"] {
+	--bf-range-thumb: 16px;
+	--bf-range-p: 50;
+	--bf-range-fill: calc( var( --bf-range-p ) * 1% + ( 0.5 - var( --bf-range-p ) / 100 ) * var( --bf-range-thumb ) );
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 8px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: linear-gradient( to right, #2f80ed 0 var( --bf-range-fill ), #e2e8f0 var( --bf-range-fill ) 100% );
+	box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1);
+	cursor: pointer;
+	outline: none;
+}
+
+.boldform-row-media__range input[type="range"]::-webkit-slider-runnable-track {
+	-webkit-appearance: none;
+	height: 8px;
+	border-radius: 6px;
+	background: transparent;
+}
+
+.boldform-row-media__range input[type="range"]::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	margin-top: -4px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid rgba(15, 23, 42, 0.22);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.32);
+	cursor: pointer;
+	transition: box-shadow 0.1s ease;
+}
+
+.boldform-row-media__range input[type="range"]:hover::-webkit-slider-thumb {
+	box-shadow: 0 1px 4px rgba(15, 23, 42, 0.4);
+}
+
+.boldform-row-media__range input[type="range"]:focus-visible::-webkit-slider-thumb {
+	box-shadow: 0 0 0 3px rgba(47, 128, 237, 0.35);
+}
+
+.boldform-row-media__range input[type="range"]::-moz-range-track {
+	height: 8px;
+	border-radius: 6px;
+	background: transparent;
+}
+
+.boldform-row-media__range input[type="range"]::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid rgba(15, 23, 42, 0.22);
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.32);
+	cursor: pointer;
+}
+
+/* A number with its unit inside the field, so "460" cannot be read as anything
+   but pixels and the placeholder still has room to say "Default". */
+.boldform-input-suffix {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.boldform-input-suffix > input {
+	width: 100%;
+	padding-right: 34px;
+}
+
+.boldform-input-suffix__unit {
+	position: absolute;
+	right: 12px;
+	font-size: 11.5px;
+	color: #94a3b8;
+	pointer-events: none;
+}
+
+/* ── Screen image placement ─────────────────────────────────────────────
+   Three tiles, ALWAYS visible — including before an image is chosen, where
+   clicking one records the placement and opens the media library. They used
+   to be a <select> that appeared only after an image existed, so the empty
+   state gave no hint that left, right and behind were possible at all.
+
+   Deliberately the same visual language as "Questions on screen N" directly
+   above: both answer "where does this go", so they should not look like two
+   unrelated kinds of control in one panel. */
+.boldform-media-place__row {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+
+.boldform-media-place__btn {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 5px;
+	padding: 7px 4px;
+	border: 2px solid #e5e7eb;
+	border-radius: 4px;
+	background: #f9fafb;
+	cursor: pointer;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.boldform-media-place__btn:hover {
+	border-color: #2f80ed;
+}
+
+.boldform-media-place__btn.is-active {
+	border-color: #2f80ed;
+	background: #eff6ff;
+}
+
+/* A diagram, not an icon: the shaded part is where the image sits and the
+   pale part is the question, so the tile answers "where" without reading. */
+.boldform-media-place__fig {
+	display: block;
+	width: 34px;
+	height: 22px;
+	border-radius: 3px;
+	background: #e5e7eb;
+}
+
+.boldform-media-place__fig--left {
+	background: linear-gradient(to right, #d1d5db 0 45%, #f3f4f6 45% 100%);
+}
+
+.boldform-media-place__fig--right {
+	background: linear-gradient(to right, #f3f4f6 0 55%, #d1d5db 55% 100%);
+}
+
+.boldform-media-place__fig--background {
+	background: #d1d5db;
+}
+
+.boldform-media-place__btn:hover .boldform-media-place__fig--left {
+	background: linear-gradient(to right, #93c5fd 0 45%, #eff6ff 45% 100%);
+}
+
+.boldform-media-place__btn:hover .boldform-media-place__fig--right {
+	background: linear-gradient(to right, #eff6ff 0 55%, #93c5fd 55% 100%);
+}
+
+.boldform-media-place__btn:hover .boldform-media-place__fig--background {
+	background: #93c5fd;
+}
+
+.boldform-media-place__btn.is-active .boldform-media-place__fig--left {
+	background: linear-gradient(to right, #2f80ed 0 45%, #dbeafe 45% 100%);
+}
+
+.boldform-media-place__btn.is-active .boldform-media-place__fig--right {
+	background: linear-gradient(to right, #dbeafe 0 55%, #2f80ed 55% 100%);
+}
+
+.boldform-media-place__btn.is-active .boldform-media-place__fig--background {
+	background: #2f80ed;
+}
+
+.boldform-media-place__label {
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1;
+	color: #64748b;
+}
+
+.boldform-media-place__btn.is-active .boldform-media-place__label {
+	color: #1d4ed8;
+}
+
+/* ── Per-screen colours ─────────────────────────────────────────────────
+   The Style tab's colour control, minus the opacity row these six do not have.
+   Two panels styling the same kind of thing should not offer two different
+   looking controls, so the swatch / hex / reset shape and its classes are
+   shared; only the reset button needs rules of its own, because the Style tab
+   styles its copy under the .boldform-color-field--alpha variant.
+
+   The state is carried the same way it is there: an inheriting colour leaves
+   the hex box EMPTY so its "Default" placeholder shows and disables reset,
+   while the swatch still previews the colour the screen will actually take. */
+.boldform-screen-colours > .boldform-setting-help {
+	margin: 0 0 10px;
+}
+
+.boldform-screen-colours .boldform-setting-row {
+	gap: 10px;
+}
+
+/* Overrides the panel's standard 12px between stacked rows: these three are
+   one control, not three, so they sit tighter than unrelated pairs do. */
+.boldform-screen-colours .boldform-setting-row + .boldform-setting-row {
+	margin-top: 10px;
+}
+
+/* Never wrap. A wrapped label pushes its own colour field a line lower than
+   the one beside it, and the two stop reading as a pair. */
+.boldform-screen-colour > label {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.boldform-screen-colour__field {
+	gap: 6px;
+	padding-right: 6px;
+}
+
+.boldform-screen-colour__field .bf-adv-color-reset {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: background 0.12s ease, color 0.12s ease;
+}
+
+.boldform-screen-colour__field .bf-adv-color-reset:hover {
+	background: #f1f5f9;
+	color: #ef4444;
+}
+
+.boldform-screen-colour__field .bf-adv-color-reset:active {
+	transform: scale(0.92);
+}
+
+/* Nothing to undo while the screen is following the form. */
+.boldform-screen-colour__field .bf-adv-color-reset:disabled {
+	opacity: 0.35;
+	cursor: default;
+	pointer-events: none;
+}
+
+/* ============================================================
+   Conversational canvas — one numbered card per question
+   ============================================================
+
+   The canvas markup is IDENTICAL in both modes: drag-and-drop, sorting and
+   selection are all bound to the row / column / field structure, so the
+   conversational view is a restyle of that same DOM rather than a re-nesting
+   of it. Everything below hangs off .boldform-canvas.is-conversational. */
+
+/* One gap for the whole canvas — between two cards in the same column and
+   between two cards in different rows alike. They are the same thing to the
+   author (one step, then the next), so they are the same distance. */
+.boldform-canvas.is-conversational {
+	--boldform-cv-gap: 18px;
+}
+
+.boldform-canvas.is-conversational .boldform-row {
+	position: relative;
+	border-color: transparent;
+	background: transparent;
+	box-shadow: none;
+}
+
+.boldform-canvas.is-conversational .boldform-canvas-rows {
+	gap: var(--boldform-cv-gap);
+}
+
+/* The header strip becomes an overlay rather than a band.
+   Once the row/column meta is hidden the strip is ~40px of nothing between
+   every pair of cards, and the only thing left in it — the row's action
+   buttons — reads better on the card it acts on. Anchored to straddle the top
+   edge: the buttons are 30px, so 10px sits in the gap above and 20px over the
+   card's own 22px of padding. It cannot reach any content. */
+.boldform-canvas.is-conversational .boldform-row__head {
+	position: absolute;
+	top: -10px;
+	right: 10px;
+	z-index: 3;
+	padding: 0;
+	border-bottom: 0;
+	justify-content: flex-start;
+	gap: 10px;
+	font-size: 11px;
+	color: #94a3b8;
+}
+
+.boldform-canvas.is-conversational .boldform-row__actions {
+	margin-left: auto;
+}
+
+/* "ROW 3 — 2 columns" is structural bookkeeping, and in this mode it competes
+   with the thing the author actually needs to read: SCREEN 3 OF 9. Two numbering
+   systems stacked on top of each other, and the wrong one is the louder. So the
+   meta comes off the canvas here.
+
+   Clipped rather than `display: none` — the row's action buttons are labelled
+   "Row settings" / "Delete row" with no row identity of their own, so removing
+   this from the accessibility tree would leave a screen-reader user with four
+   identical unlabelled rows. Visually gone, still announced. */
+.boldform-canvas.is-conversational .boldform-row__head > strong,
+.boldform-canvas.is-conversational .boldform-row__head > span {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+.boldform-canvas.is-conversational .boldform-row__actions {
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.boldform-canvas.is-conversational .boldform-row:hover .boldform-row__actions,
+.boldform-canvas.is-conversational .boldform-row:focus-within .boldform-row__actions,
+.boldform-canvas.is-conversational .boldform-row.is-row-selected .boldform-row__actions {
+	opacity: 1;
+}
+
+.boldform-canvas.is-conversational .boldform-column__head {
+	display: none;
+}
+
+/* In this mode the ROW CONTRIBUTES NO GEOMETRY. The card is the only box with
+   an edge, so the two kinds of card — a single question, and a whole
+   multi-column row — start at the same x because there is nothing between them
+   and the row, not because two sums happen to agree.
+
+   That is the point. The old model had the row carrying a negative-margin
+   gutter (margin: 0 -10px) plus 14px of padding, and the card carrying its
+   own, so keeping the two card types aligned meant deriving -10 + 14 + 10 = 14
+   and 14 + 14 + 10 = 38 and holding both true. They drifted apart three times.
+   Now there is nothing to derive.
+
+   NO gap here, ever — widths sum to exactly 100% and a flex gap is added on
+   top of them, so 50% + 50% + gap overflows and flex-wrap drops a column onto
+   its own line. Gutters are done with padding, below. */
+.boldform-canvas.is-conversational .boldform-row__columns {
+	margin: 0;
+	padding: 0;
+}
+
+.boldform-canvas.is-conversational .boldform-column {
+	padding: 0;
+}
+
+/* Each question becomes a card. The ::before overlay already draws the
+   hover/selected outline, so the card itself is a real border here and the
+   overlay keeps doing the highlight on top of it. */
+.boldform-canvas.is-conversational .boldform-canvas-field {
+	padding: 22px 24px;
+	border: 1px solid rgba(226, 232, 240, 0.95);
+	border-radius: 14px;
+	background: #fff;
+	box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+.boldform-canvas.is-conversational .boldform-column-fields {
+	display: flex;
+	flex-direction: column;
+	gap: var(--boldform-cv-gap);
+}
+
+/* A multi-column row is ONE screen, so the ROW is the card and the fields
+   inside it are not — otherwise a First/Last pair reads as two steps. */
+.boldform-canvas.is-conversational .boldform-row.is-cv-screen .boldform-canvas-field {
+	border: 0;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+
+/* This element becomes the visible card. With the row contributing nothing, it
+   sits at the row's own edge — the same edge a single-question card sits at —
+   so the two line up without either side knowing about the other.
+
+   Its padding is 14 rather than 24 for one reason, stated here so it is never
+   "tidied" to match: the columns inside it still carry the 10px gutter they
+   need, and 14 + 10 = 24, which is exactly a single-question card's padding.
+   The two card types therefore agree on the text inset as well as the edge. */
+.boldform-canvas.is-conversational .boldform-row.is-cv-screen .boldform-row__columns {
+	margin: 0;
+	padding: 22px 14px;
+	border: 1px solid rgba(226, 232, 240, 0.95);
+	border-radius: 14px;
+	background: #fff;
+	box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* The gutter comes back, but only INSIDE the card, where columns actually need
+   separating. Padding and not gap: the widths already sum to 100%. */
+.boldform-canvas.is-conversational .boldform-row.is-cv-screen .boldform-column {
+	padding: 0 10px;
+}
+
+/* A multi-column row that is NOT a screen still puts things side by side, so it
+   still needs a gutter.
+
+   Keying the gutter on is-cv-screen conflated two questions. A row is a screen
+   only when it has visible fields AND "Put every field on its own screen" is
+   off — so a row you have just added, a row holding only fields that render
+   nothing, and EVERY multi-column row once that switch is on all fell through
+   to `padding: 0` above and drew their columns flush against each other.
+   Reported as "when create new row, then column gap removed".
+
+   The negative margin is not decoration: the columns' widths already sum to
+   100%, so their padding has to be cancelled at the container's edges or the
+   row would inset by 10px and stop lining up with the card above it. Same
+   arithmetic the ordinary canvas has always used, which is why the gap here
+   matches it exactly. Still padding rather than gap, for the reason given
+   further up: a flex gap adds to 100% and wraps a column onto its own line. */
+.boldform-canvas.is-conversational .boldform-row.is-cv-multicol:not(.is-cv-screen) .boldform-row__columns {
+	margin: 0 -10px;
+}
+
+.boldform-canvas.is-conversational .boldform-row.is-cv-multicol:not(.is-cv-screen) .boldform-column {
+	padding: 0 10px;
+}
+
+/* A field that renders nothing for the visitor is never a step. Said out loud
+   rather than left looking like a question that lost its number. */
+.boldform-canvas.is-conversational .boldform-canvas-field.is-cv-silent {
+	border-style: dashed;
+	background: rgba(248, 250, 252, 0.9);
+	box-shadow: none;
+	opacity: 0.75;
+}
+
+.boldform-cv-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 14px;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+/* The badge for a multi-column screen sits inside its card, on a line of its
+   own. flex-basis 100% claims that line from the wrapping flex row; the 10px
+   matches the column padding, so the badge starts exactly where the field
+   labels beneath it do — and at the same 38px from the row edge as the badge on
+   a single-question card. */
+.boldform-row__columns > .boldform-cv-badge {
+	flex: 0 0 100%;
+	margin-bottom: 16px;
+	padding: 0 10px;
+}
+
+.boldform-cv-badge__num {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 22px;
+	height: 22px;
+	padding: 0 6px;
+	border-radius: 999px;
+	background: #2271b1;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0;
+}
+
+.boldform-cv-badge.is-tail .boldform-cv-badge__num {
+	background: #64748b;
+}
+
+.boldform-cv-badge__text {
+	white-space: nowrap;
+}
+
+/* On a narrow canvas the number carries the meaning on its own, and the
+   "of N" wording is the first thing that can go. */
+@media ( max-width: 782px ) {
+	.boldform-cv-badge__text {
+		display: none;
+	}
+}
+
+/* ── Style tab: the conversational preview ────────────────────────────────── */
+
+/* The preview is a still of the first screen, so it opts out of the entry
+   animation the real engine plays. */
+.boldform-cv--preview .boldform-cv-screen {
+	animation: none;
+}
+
+.boldform-cv--preview {
+	border-radius: 14px;
+}
+
+/* The preview's field markup is the BUILDER's, not the front end's:
+   `renderInputPreview()` emits its control inside `.boldform-canvas-field-control`,
+   where conversational.css looks for `.boldform-lite-form__control`.
+
+   The QUESTION type scale is not handled here on purpose. It is six rules over
+   there — a base size plus a step-down for 2, 3 and many columns, a narrow
+   block and an invalid state — so it is matched by naming the label with the
+   front end's own class in renderInputPreview(), one line, and every variant
+   comes with it. Copying values instead was tried and immediately previewed a
+   two-column screen a third too large.
+
+   The control is the opposite shape: exactly ONE rule, two properties, no
+   variants. Re-targeting it here is cheaper than threading a class through the
+   ~10 return paths that build a control, and run-stylepreview.js measures both
+   against the real front-end render, so a change on one side cannot ship
+   alone. If this ever grows variants, move it to the naming approach too. */
+.boldform-cv--preview.is-ready .boldform-cv-screen .boldform-canvas-field-body input,
+.boldform-cv--preview.is-ready .boldform-cv-screen .boldform-canvas-field-body textarea,
+.boldform-cv--preview.is-ready .boldform-cv-screen .boldform-canvas-field-body .bf-select__trigger {
+	font-size: 1.125rem;
+	min-height: 44px;
+}
+
+/* Which screen the preview is showing. The selection is made on the Builder
+   tab and read on the Style tab, so without a caption the author has no way
+   to tell which screen they are judging a colour against. */
+.boldform-cv-preview-cap {
+	margin: 0 0 8px;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: .02em;
+	text-transform: uppercase;
+	color: #64748b;
 }

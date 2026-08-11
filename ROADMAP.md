@@ -292,7 +292,8 @@ Achievable and backward-safe, but each has one specific thing to get right first
 ### Wave 3 — High risk to critical paths (build last, test hard) · risk: HIGH
 These touch the two most fragile paths — form rendering and the payment flow. Do them only once Waves 1–2 are stable.
 
-- **Conversational Mode** — the frontend assumes all fields are in the DOM; one-at-a-time rendering can break conditional logic. Requires reworking the conditional-logic evaluator per-page (or disabling it in this mode). Touches the most-used code path.
+- ~~**Conversational Mode** — the frontend assumes all fields are in the DOM; one-at-a-time rendering can break conditional logic. Requires reworking the conditional-logic evaluator per-page (or disabling it in this mode). Touches the most-used code path.~~
+  **RETIRED 2026-08-09 — this risk does not exist.** It assumed the mode would re-render the form. It does not: it post-processes the already-rendered HTML and reveals one row at a time by toggling classes, so **every field stays in the DOM** and the conditional-logic evaluator is untouched. Verified at runtime — a branching form skips its hidden screens in both directions, hidden required fields never block, and every field still posts. The feature also shipped in **Lite, free** rather than as a paid item; see `CONVERSATIONAL-PLAN.md`.
 - **Subscriptions & Recurring Payments** — a billing state machine (renewals, cancellations, webhook idempotency) on top of the already-deferred payment flow. Existing one-time payment forms must keep working untouched. Get it wrong → double-charge or orphaned entries.
 
 ### The flagship sits across waves

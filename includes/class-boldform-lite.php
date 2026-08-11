@@ -43,6 +43,13 @@ final class BoldForm_Lite {
 	private $shortcode;
 
 	/**
+	 * Conversational mode instance.
+	 *
+	 * @var BoldForm_Lite_Conversational
+	 */
+	private $conversational;
+
+	/**
 	 * Frontend submission handler.
 	 *
 	 * @var BoldForm_Lite_Form_Handler
@@ -157,6 +164,7 @@ final class BoldForm_Lite {
 	private function load_dependencies() {
 		require_once BOLDFORM_LITE_PATH . 'admin/class-boldform-lite-admin.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-shortcode.php';
+		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-conversational.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-form-handler.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-block.php';
 		require_once BOLDFORM_LITE_PATH . 'public/class-boldform-lite-elementor.php';
@@ -175,6 +183,7 @@ final class BoldForm_Lite {
 		$this->email_handler     = new BoldForm_Lite_Email_Handler( $this );
 		$this->form_handler      = new BoldForm_Lite_Form_Handler( $this, $this->email_handler );
 		$this->shortcode         = new BoldForm_Lite_Shortcode( $this, $this->form_handler );
+		$this->conversational    = new BoldForm_Lite_Conversational( $this );
 		$this->block             = new BoldForm_Lite_Block( $this );
 		$this->elementor         = new BoldForm_Lite_Elementor( $this );
 		$this->export_import     = new BoldForm_Lite_Export_Import( $this );
@@ -246,6 +255,16 @@ final class BoldForm_Lite {
 		$this->loader->add_filter( 'wp_mail_from_name', $this->admin, 'filter_mail_from_name' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $this->shortcode, 'register_assets' );
 		$this->loader->add_action( 'init', $this->shortcode, 'register_shortcode' );
+		// Conversational mode. Priority 6 disengages the multi-step renderer
+		// (which wraps at 10) before it runs; priority 30 injects the chrome
+		// after every consumer at 20, so anything they add to the form is
+		// already present and lands on the correct screen.
+		$this->loader->add_action( 'wp_enqueue_scripts', $this->conversational, 'register_assets' );
+		// The admin form-preview screen is wp-admin, where wp_enqueue_scripts
+		// never fires — without this the engine silently does not load there.
+		$this->loader->add_action( 'boldform_preview_enqueue_assets', $this->conversational, 'enqueue_preview_assets' );
+		$this->loader->add_filter( 'boldform_form_output', $this->conversational, 'stand_down_multi_page', 6, 4 );
+		$this->loader->add_filter( 'boldform_form_output', $this->conversational, 'wrap_form_output', 30, 4 );
 		$this->loader->add_action( 'init', $this->form_handler, 'handle_submission' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_submit_form', $this->form_handler, 'ajax_submit_form' );
 		$this->loader->add_action( 'wp_ajax_nopriv_boldform_lite_submit_form', $this->form_handler, 'ajax_submit_form' );

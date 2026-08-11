@@ -1,0 +1,780 @@
+/**
+ * BoldForm Lite — conversational mode.
+ *
+ * NO-JS CONTRACT (load-bearing): nothing here hides a screen. The engine hides
+ * inactive screens with an inline style once it is running, and the chrome is
+ * revealed only by the .is-ready class it adds. So without JavaScript the form
+ * renders as an ordinary, complete, fully submittable single-page form — the
+ * visitor simply never sees conversational furniture.
+ *
+ * Author colours arrive as inline --bfc-* custom properties on .boldform-cv.
+ * Every rule below falls back to the form's existing style when one is unset,
+ * so a form with no colours configured inherits its normal appearance.
+ */
+
+/*
+ * RESPONSIVE TO THE FORM'S WIDTH, NOT THE WINDOW'S.
+ *
+ * Every breakpoint below is a `@container` query against this element, because
+ * a form does not care how wide the window is — it cares how wide IT is. The
+ * two are the same thing only when the form fills the page, and it very often
+ * does not: a form in a sidebar, in a one-third page-builder column, or in the
+ * builder's own device preview (which narrows a container to 420px and leaves
+ * the viewport alone) is narrow inside a wide window. Asked with @media, every
+ * one of those renders the desktop layout in a fraction of the space — three
+ * questions side by side in 420px, which is what the phone preview showed.
+ *
+ * A `@media ( max-width: 767px )` fallback is kept further down for browsers
+ * without container queries. It is deliberately a SUBSET, not a mirror: a
+ * narrow window always implies a narrow form, so the fallback only has to catch
+ * the phone case, and there is nothing to keep in sync beyond that.
+ */
+.boldform-cv {
+	--bfc-gap: 20px;
+	--bfc-radius: 10px;
+	position: relative;
+	container-type: inline-size;
+	container-name: boldform-cv;
+}
+
+/* Chrome stays out of sight until the engine is running (see NO-JS CONTRACT). */
+.boldform-cv:not( .is-ready ) .boldform-cv__progress,
+.boldform-cv:not( .is-ready ) .boldform-cv__nav {
+	display: none;
+}
+
+/* A form with only one screen keeps its chrome hidden permanently. */
+.boldform-cv--inert .boldform-cv__progress,
+.boldform-cv--inert .boldform-cv__nav {
+	display: none;
+}
+
+.boldform-cv.is-ready {
+	background: var( --bfc-bg, transparent );
+	color: var( --bfc-answer, inherit );
+	border-radius: var( --bfc-radius );
+	/* Tokenised so a full-bleed background image can cancel exactly this
+	   padding and reach the wrapper's edges. */
+	--bfc-pad-x: 24px;
+	padding: 32px var( --bfc-pad-x );
+	min-height: 60vh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+}
+
+/* ── Screens ─────────────────────────────────────────────────────────────── */
+
+.boldform-cv__viewport {
+	position: relative;
+	width: 100%;
+}
+
+/*
+ * A screen is exactly as wide as the space it is given — INCLUDING its padding.
+ *
+ * `width: 100%` on a content-box element means "100% and then whatever padding
+ * I have on top", so every screen that pads itself grows past its container and
+ * pushes its own contents off the right-hand edge. Two rules do pad a screen: a
+ * background image pads by 32px each side, and a side image reserves half the
+ * width for itself. The side one is dramatic — the questions ended up half a
+ * screen off the page — and the background one has been quietly overflowing by
+ * 64px the whole time.
+ *
+ * Declared here, on the screen itself, rather than on either of those rules: it
+ * is a property of what "100% wide" is supposed to mean, and the next rule that
+ * pads a screen should not have to rediscover this.
+ */
+.boldform-cv.is-ready .boldform-cv-screen {
+	width: 100%;
+	box-sizing: border-box;
+	/*
+	 * ROW gap only, and the distinction is load-bearing.
+	 *
+	 * A column-gap here would be added on top of widths that already sum to
+	 * exactly 100%, overflowing the line and making flex-wrap drop a column
+	 * onto its own row — the failure the builder canvas carries a warning about.
+	 * A row-gap cannot do that: it applies BETWEEN flex lines, so it is inert
+	 * while the columns sit side by side and only appears once they wrap or
+	 * stack, which is exactly when they need separating. Without it a stacked
+	 * pair rendered with its first input touching the next question's label.
+	 */
+	row-gap: var( --bfc-gap );
+}
+
+/*
+ * Question scale. Applies only once the engine is running, so an author who
+ * turns conversational mode off — or a visitor without JS — sees the ordinary
+ * label sizing.
+ */
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__label {
+	/* vw first, cqi second: a browser without container queries drops the
+	   second declaration as invalid and keeps a working size. */
+	font-size: clamp( 1.25rem, 2.4vw, 2rem );
+	font-size: clamp( 1.25rem, 4.5cqi, 2rem );
+	font-weight: 600;
+	line-height: 1.3;
+	margin-bottom: var( --bfc-gap );
+	color: var( --bfc-question, inherit );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__control input,
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__control textarea,
+.boldform-cv.is-ready .boldform-cv-screen .bf-select__trigger {
+	font-size: 1.125rem;
+	min-height: 44px;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__section-title {
+	font-size: clamp( 1.25rem, 2.4vw, 2rem );
+	font-size: clamp( 1.25rem, 4.5cqi, 2rem );
+	color: var( --bfc-question, inherit );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__section-description {
+	font-size: 1rem;
+	opacity: 0.75;
+	margin-top: 6px;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__field-error {
+	font-size: 0.9rem;
+	margin-top: 8px;
+}
+
+/*
+ * ── Columns: the differentiator, and its risk ────────────────────────────
+ *
+ * Every competing implementation flattens multi-column rows. Keeping them is
+ * the point of this feature, but a paired row at question scale is cramped, so
+ * the mitigations below are not optional.
+ */
+
+/*
+ * 1. A paired row uses the SMALL end of the scale so both labels stay readable
+ *    side by side. The engine states the column count as a class.
+ */
+.boldform-cv.is-ready .boldform-cv-screen--cols-2 .boldform-lite-form__label {
+	font-size: clamp( 1.05rem, 1.5vw, 1.35rem );
+	font-size: clamp( 1.05rem, 2.8cqi, 1.35rem );
+}
+
+/*
+ * 1b. The same idea carried further. A row the author built with three or four
+ *     columns RENDERS with three or four columns — what the builder shows is
+ *     what the visitor gets — but the question scale keeps stepping down so the
+ *     labels still fit. Narrower viewports stack them (rule 3 and 3b below),
+ *     which is where a genuinely cramped layout is resolved.
+ */
+.boldform-cv.is-ready .boldform-cv-screen--cols-3 .boldform-lite-form__label {
+	font-size: clamp( 1rem, 1.2vw, 1.2rem );
+	font-size: clamp( 1rem, 2.2cqi, 1.2rem );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen--cols-many .boldform-lite-form__label {
+	font-size: clamp( 0.95rem, 1vw, 1.1rem );
+	font-size: clamp( 0.95rem, 1.8cqi, 1.1rem );
+}
+
+/*
+ * 2. Rows carrying a large control stack regardless of column count, and every
+ *    row when the author opts into "one field per screen". The engine resolves
+ *    both cases into this class. Column count alone is NOT one of them.
+ */
+.boldform-cv.is-ready .boldform-cv-screen--stack .boldform-lite-form__column {
+	width: 100% !important;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen--stack {
+	/* flex-direction, not `display: block`: every stacking rule in this file
+	   stacks the same way so the screen's row-gap separates them all. Block
+	   containers ignore `gap`, and each rule that used one had to be found
+	   separately when the questions turned out to be touching. */
+	flex-direction: column;
+}
+
+/*
+ * 3a. Three or four columns survive at full width, but a third of a 900px form
+ *     is not a question — it is a slot. They stack below 1024px OF FORM, one
+ *     step earlier than everything else.
+ *
+ *     Measured on the form, so a three-column screen in a narrow embed stacks
+ *     even though the window it sits in is enormous. That is the readability
+ *     guard finally being applied to the width that decides readability.
+ */
+@container boldform-cv ( max-width: 1023px ) {
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many {
+		flex-direction: column;
+	}
+
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3 .boldform-lite-form__column,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many .boldform-lite-form__column {
+		width: 100% !important;
+	}
+
+	/*
+	 * 3b. …and if such a screen also carries a side image, the image stacks above
+	 *     rather than keeping half the width. That rule lives with the other
+	 *     media rules further down, NOT here — it has to come after the side
+	 *     layout it overrides. Both carry four classes, so the cascade is decided
+	 *     on order alone, and written here it lost: the questions stacked while
+	 *     the image kept its half, crushing three of them into 394px.
+	 */
+}
+
+/* 3. Below 768px of form, every row stacks, unconditionally. */
+@container boldform-cv ( max-width: 767px ) {
+	/* Stacked as a flex COLUMN rather than with `display: block`, for one
+	   reason: `gap` is inert on a block container, so the block version left
+	   the stacked questions touching. Keeping it flex means the row-gap set on
+	   the screen above does the separating here too, instead of a second
+	   spacing rule that could drift from it. */
+	.boldform-cv.is-ready .boldform-cv-screen {
+		flex-direction: column;
+	}
+
+	.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__column {
+		width: 100% !important;
+	}
+
+	.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__label {
+		font-size: clamp( 1.125rem, 5cqi, 1.5rem );
+	}
+}
+
+/*
+ * The wrapper's OWN padding stays on @media, and cannot move.
+ *
+ * An element is never matched by a container query against itself — .boldform-cv
+ * is the container, so no `@container boldform-cv` rule can style it. That is a
+ * rule of the feature, not an oversight. The cost is small and bounded: on a
+ * narrow embed inside a wide window the wrapper keeps its 32px padding instead
+ * of dropping to 24px, which is a slightly roomier frame around a layout that
+ * is otherwise correct.
+ */
+@media ( max-width: 767px ) {
+	.boldform-cv.is-ready {
+		/* Through the token, not around it: a full-bleed background cancels
+		   --bfc-pad-x, so hardcoding the padding here would over-bleed it by
+		   the 8px difference. */
+		--bfc-pad-x: 16px;
+		padding: 24px var( --bfc-pad-x );
+	}
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────── */
+
+.boldform-cv--motion-slide.is-ready .boldform-cv-screen.is-active {
+	animation: boldform-cv-slide 280ms cubic-bezier( 0.16, 1, 0.3, 1 );
+}
+
+.boldform-cv--motion-fade.is-ready .boldform-cv-screen.is-active {
+	animation: boldform-cv-fade 280ms cubic-bezier( 0.16, 1, 0.3, 1 );
+}
+
+@keyframes boldform-cv-slide {
+	from { opacity: 0; transform: translateY( 14px ); }
+	to   { opacity: 1; transform: none; }
+}
+
+@keyframes boldform-cv-fade {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+/*
+ * A stated preference for reduced motion wins over the author's choice —
+ * including the progress bar's width transition, which is easy to forget.
+ */
+@media ( prefers-reduced-motion: reduce ) {
+	.boldform-cv.is-ready .boldform-cv-screen.is-active {
+		animation: none;
+	}
+
+	.boldform-cv__bar-fill {
+		transition: none;
+	}
+}
+
+/* ── Progress ────────────────────────────────────────────────────────────── */
+
+.boldform-cv__progress {
+	margin-bottom: 24px;
+}
+
+.boldform-cv__bar {
+	height: 6px;
+	border-radius: 999px;
+	background: var( --bfc-track, rgba( 0, 0, 0, 0.1 ) );
+	overflow: hidden;
+}
+
+.boldform-cv__bar-fill {
+	display: block;
+	height: 100%;
+	width: 0;
+	border-radius: inherit;
+	background: var( --bfc-accent, currentColor );
+	transition: width 280ms cubic-bezier( 0.16, 1, 0.3, 1 );
+}
+
+.boldform-cv__count {
+	font-size: 0.875rem;
+	opacity: 0.7;
+}
+
+.boldform-cv__dots {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.boldform-cv__dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var( --bfc-track, rgba( 0, 0, 0, 0.15 ) );
+}
+
+.boldform-cv__dot.is-done {
+	background: var( --bfc-accent, currentColor );
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+
+.boldform-cv__nav {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-top: 28px;
+	flex-wrap: wrap;
+}
+
+.boldform-cv__btn {
+	font: inherit;
+	font-size: 1rem;
+	font-weight: 600;
+	min-height: 44px;
+	padding: 10px 22px;
+	border: 0;
+	border-radius: var( --bfc-radius );
+	cursor: pointer;
+	background: var( --bfc-btn, #2f80ed );
+	color: var( --bfc-btn-text, #fff );
+}
+
+.boldform-cv__btn:focus-visible {
+	outline: 2px solid var( --bfc-accent, #2f80ed );
+	outline-offset: 2px;
+}
+
+.boldform-cv__btn--prev {
+	background: transparent;
+	color: inherit;
+	opacity: 0.7;
+	padding-left: 0;
+}
+
+.boldform-cv__btn[ hidden ] {
+	display: none;
+}
+
+.boldform-cv__hint {
+	font-size: 0.8125rem;
+	opacity: 0.6;
+}
+
+.boldform-cv__hint kbd {
+	font: inherit;
+	font-size: 0.75rem;
+	padding: 2px 6px;
+	border: 1px solid currentColor;
+	border-radius: 4px;
+	opacity: 0.8;
+}
+
+/* The form's own submit button sits on the final screen, styled to match. */
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__actions {
+	margin-top: 24px;
+}
+
+/* ── Per-screen background media ─────────────────────────────────────────── */
+
+/*
+ * The <figure> is rendered by the form renderer for every row that has media,
+ * whether or not conversational mode is on — so an ordinary form must never
+ * show it. Only the rules below, all scoped to .is-ready, reveal it.
+ *
+ * THE HIDE ITSELF LIVES IN frontend.css, not here. It was here, and this file is
+ * enqueued only when the mode is actually converting the form — so an author who
+ * set a screen image and then turned the mode off, or set it to "Own page" and
+ * embedded the form as well, got the picture painted across their ordinary form
+ * with no stylesheet loaded to hide it. A rule that hides something must ship
+ * wherever the something ships.
+ */
+.boldform-lite-form__row-media {
+	margin: 0;
+}
+
+/*
+ * Per-screen background colour — the ONLY new rule per-screen colours need.
+ *
+ * The other five properties are already read at the point of use
+ * (`color: var( --bfc-question, inherit )` and so on), so setting them on a
+ * screen overrides them for that screen with no CSS at all. `--bfc-bg` is the
+ * exception: it is consumed on `.boldform-cv.is-ready`, the wrapper. A screen
+ * sits INSIDE that wrapper, so a screen override needs its own property and its
+ * own rule — reusing `--bfc-bg` would have a screen repaint the wrapper's
+ * padding as well as itself.
+ */
+.boldform-cv.is-ready .boldform-cv-screen {
+	background: var( --bfc-screen-bg, transparent );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__row-media {
+	display: block;
+	overflow: hidden;
+	border-radius: var( --bfc-radius );
+}
+
+/*
+ * A per-field figure is inert until the engine hands it to the screen that
+ * owns it, and on a multi-column row — where the ROW is the screen — it is
+ * never handed out at all. The [hidden] attribute alone will not hold it: the
+ * reveal rule above sets display:block and out-specifies the UA stylesheet, so
+ * every unclaimed image would paint on top of the one that belongs there.
+ */
+.boldform-lite-form__row-media[hidden],
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__row-media[hidden] {
+	display: none;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__row-media img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: var( --bfc-media-x, 50% ) var( --bfc-media-y, 50% );
+	filter: brightness( var( --bfc-media-dim, 1 ) );
+}
+
+/*
+ * Side layouts: image and questions share the screen.
+ *
+ * THE IMAGE IS TAKEN OUT OF FLOW AND THE SCREEN IS PADDED AWAY FROM IT. That
+ * looks indirect next to "make the row a two-column grid", which is what this
+ * used to be, so the reason matters:
+ *
+ * a screen is not "an image and a question". It is an image and *whatever the
+ * author built* — one column, or three, plus the submit block on the final
+ * screen. A two-cell grid has no idea which of its items are questions, so a
+ * screen holding a three-column row flowed image | Text on the first grid line
+ * and Email | URL onto a second underneath it, with Submit alone on a third.
+ * The author's row was silently re-cut into a 2×3 block.
+ *
+ * Out of flow, the figure claims its half without being a flex item at all, and
+ * the row goes on laying its columns out exactly as it does on every other
+ * screen — inside a narrower content box. Percentages do the rest: a column's
+ * authored `width: 33.33%` resolves against that box, so three columns still
+ * share one line and a 25/75 pair keeps its proportion. The submit block wraps
+ * below them for the same reason it does without an image.
+ *
+ * The alternative was wrapping the columns in a container element from the
+ * engine. That works too, and it means the engine restructuring a row for a
+ * purely visual reason — one more thing to undo when the mode is switched off,
+ * and one more shape for conditional logic to be tested against. This costs no
+ * DOM change at all.
+ */
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left,
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right {
+	position: relative;
+	align-items: center;
+	/* The figure stretches to the screen's full height, so the SCREEN is what
+	   carries it — the same arrangement --media-background already uses. min-,
+	   not height: three stacked questions must be able to grow past it. */
+	min-height: var( --bfc-media-h, min( 60vh, 460px ) );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left {
+	padding-left: calc( 50% + 32px );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right {
+	padding-right: calc( 50% + 32px );
+}
+
+/*
+ * WHICH SIDE. Declared explicitly in both directions rather than leaning on the
+ * figure being the first child: it is today — the renderer echoes it before the
+ * columns and the engine re-inserts it at firstChild — but a layout that only
+ * works while that stays true is a trap for whoever changes it next.
+ */
+/*
+ * Inset by the column gutter, not pinned to 0.
+ *
+ * A row carries `margin: 0 -{gutter}` so that its columns' own padding lines
+ * their CONTENT up with everything around them. The figure has no such padding,
+ * so pinning it to the row's edge hangs it a gutter's width further left than
+ * the questions, the progress bar and the nav — small, but visible, and only on
+ * the image, which makes it read as a mistake rather than a margin.
+ *
+ * Expressed with the same custom property the row's margin uses, so a site that
+ * changes its column gap keeps the two in step.
+ */
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left > .boldform-lite-form__row-media,
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right > .boldform-lite-form__row-media {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: calc( 50% - var( --bf-col-gap, 10px ) );
+	height: auto;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left > .boldform-lite-form__row-media {
+	left: var( --bf-col-gap, 10px );
+}
+
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right > .boldform-lite-form__row-media {
+	right: var( --bf-col-gap, 10px );
+}
+
+/* Full-bleed: the image sits behind the question. */
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-background {
+	position: relative;
+	padding: 40px 32px;
+	isolation: isolate;
+	/* A background fills its screen, so the SCREEN is what needs the height —
+	   without one it collapses to the question's own height and crops the image
+	   into a band. min-, not height: a long question must still be able to grow
+	   past it rather than overflow its own background. */
+	min-height: var( --bfc-media-h, min( 60vh, 460px ) );
+	display: flex;
+	/*
+	 * Centred vertically WITHOUT turning the axis.
+	 *
+	 * This used to say `flex-direction: column; justify-content: center`, which
+	 * centred the question over the image correctly and destroyed the layout
+	 * doing it: the screen's flex children are the row's COLUMNS, so turning the
+	 * main axis stacked a First/Last pair into one column at every width — the
+	 * side-by-side layout that D2 exists to preserve, silently gone on any
+	 * screen that happened to have a Behind image.
+	 *
+	 * align-content centres the flex LINES on the cross axis instead, which is
+	 * the same visual result for the one-line case that motivated it, and leaves
+	 * the columns where the author put them. Reported 2026-08-10.
+	 */
+	align-content: center;
+}
+
+.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-background .boldform-lite-form__row-media {
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: var( --bfc-radius );
+}
+
+/*
+ * Behind means behind — inline, on the dedicated page, and on a phone. There
+ * is no rule here that turns it into anything else.
+ *
+ * There used to be: embedded forms without cv_media_inline_fullbleed had
+ * `background` silently rewritten into the same two-column grid as `left`, on
+ * the theory that a full-bleed image inside a theme container usually looks
+ * wrong. That theory was fine and the behaviour was not — an author picked one
+ * of three placements, got a different one, and nothing anywhere said why. A
+ * setting on another tab must not overrule an explicit per-screen choice.
+ *
+ * The switch that used to do the overruling now does what its label says: it
+ * lets the image reach the wrapper's edges instead of stopping at its padding.
+ * That is a question about bleed, which is the author's to answer; whether the
+ * image is a background at all is not.
+ */
+.boldform-cv--media-fullbleed.is-ready .boldform-cv-screen.boldform-lite-form__row--media-background .boldform-lite-form__row-media {
+	left: calc( -1 * var( --bfc-pad-x ) );
+	right: calc( -1 * var( --bfc-pad-x ) );
+}
+
+/*
+ * Below 768px media stacks above the question and is capped, and the author can
+ * suppress it entirely — which is the default, because a decorative image is
+ * the first thing worth dropping on a phone.
+ */
+/*
+ * 3b (continued from the column rules above). A screen with three or four
+ * questions AND a side image: below 1024px of form the questions stack, so the
+ * image stacks too. Leaving it beside them gives three stacked questions a
+ * quarter of the width — the same cramping in a different shape.
+ *
+ * PLACED HERE, AFTER THE SIDE LAYOUT, ON PURPOSE. This selector and the one it
+ * overrides both carry four classes, so nothing but source order separates
+ * them. Written up with the other column rules it lost silently, and the only
+ * symptom was a layout that looked deliberate.
+ */
+@container boldform-cv ( max-width: 1023px ) {
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3.boldform-lite-form__row--media-left,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3.boldform-lite-form__row--media-right,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many.boldform-lite-form__row--media-left,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many.boldform-lite-form__row--media-right {
+		padding-left: 0;
+		padding-right: 0;
+		min-height: 0;
+		/* Same reason as the 767px block below: these screens stack (the
+		   cols-3/cols-many rule above turns the axis), and the side layout's
+		   `align-items: center` then centres the stacked image horizontally
+		   instead of letting it span the screen. */
+		align-items: stretch;
+	}
+
+	/* Scoped to the two SIDE placements. "Behind" is not a side, and a rule that
+	   caught it here would turn a background image into a banner — the exact
+	   silent re-placement this file rejects elsewhere. */
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3.boldform-lite-form__row--media-left > .boldform-lite-form__row-media,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-3.boldform-lite-form__row--media-right > .boldform-lite-form__row-media,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many.boldform-lite-form__row--media-left > .boldform-lite-form__row-media,
+	.boldform-cv.is-ready .boldform-cv-screen--cols-many.boldform-lite-form__row--media-right > .boldform-lite-form__row-media {
+		position: static;
+		inset: auto;
+		width: auto;
+		height: var( --bfc-media-h, min( 40vh, 320px ) );
+	}
+}
+
+@container boldform-cv ( max-width: 767px ) {
+	/* A side layout has no sides in a single column, so left and right stack.
+	   Behind is NOT in this list: it still means behind, and cv_media_hide_mobile
+	   below is how an author drops an image on a phone — not a rule that quietly
+	   turns it into a banner. */
+	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left,
+	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right {
+		flex-direction: column;
+		/* Undoes the side layout's `align-items: center`, which means something
+		   different once the axis turns: on a row it centred the image and the
+		   question against each other vertically; on a column it centres them
+		   HORIZONTALLY, shrinking the stacked image to its content width. The
+		   image is meant to span the screen here. */
+		align-items: stretch;
+		/* Both are reset, not just the one this screen uses: a rule that only
+		   undoes `left` leaves `right` padded against an image that is no longer
+		   there, and the bug hides until someone picks the other placement. */
+		padding-left: 0;
+		padding-right: 0;
+		min-height: 0;
+	}
+
+	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-left .boldform-lite-form__row-media,
+	.boldform-cv.is-ready .boldform-cv-screen.boldform-lite-form__row--media-right .boldform-lite-form__row-media {
+		width: auto;
+		height: 40vh;
+		position: static;
+		inset: auto;
+		z-index: auto;
+	}
+
+}
+
+/*
+ * "Hide screen images on phones" — and PHONES is what it has to mean.
+ *
+ * This is the one responsive rule in the file that stays on @media, and the
+ * exception is the point. Everything above is about layout, and layout is
+ * decided by how wide the FORM is. This is not about layout: the layout problem
+ * is already solved two rules up, where a side image stacks above the question
+ * and is capped. What is left is the author saying "do not send this picture to
+ * someone on a phone" — a statement about the device and its data plan.
+ *
+ * Moved back here after the container-query conversion swept it up with the
+ * rest. Keyed to the form's width it also fired on a DESKTOP sidebar embed, so
+ * a 400px column silently dropped every screen image while the switch that did
+ * it said "on phones". An author's explicit image disappearing on a desktop is
+ * exactly the kind of quiet override this file rejects everywhere else.
+ *
+ * Known cost, stated: the builder's phone preview narrows a container, not the
+ * window, so it will SHOW an image that a real phone hides. The preview is
+ * wrong about this one element rather than the live site being wrong about all
+ * of them, which is the right way round.
+ */
+@media ( max-width: 767px ) {
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen .boldform-lite-form__row-media {
+		display: none;
+	}
+}
+
+/* ── Welcome cover ───────────────────────────────────────────────────────── */
+
+/*
+ * Without JS this renders as an ordinary heading above the form, and the Start
+ * button is hidden — a button that cannot do anything is worse than no button.
+ */
+.boldform-cv:not( .is-ready ) .boldform-cv__welcome-btn {
+	display: none;
+}
+
+.boldform-cv__welcome-title {
+	font-size: clamp( 1.5rem, 3.2vw, 2.5rem );
+	font-size: clamp( 1.5rem, 6cqi, 2.5rem );
+	font-weight: 700;
+	line-height: 1.2;
+	margin: 0 0 12px;
+	color: var( --bfc-question, inherit );
+}
+
+.boldform-cv__welcome-text {
+	font-size: 1.0625rem;
+	opacity: 0.8;
+	margin-bottom: 28px;
+}
+
+.boldform-cv__welcome-title:focus {
+	outline: none;
+}
+
+/* The cover owns the screen: no progress, no nav row. */
+.boldform-cv.is-welcome .boldform-cv__progress,
+.boldform-cv.is-welcome .boldform-cv__nav {
+	display: none;
+}
+
+/* ── Accessibility ───────────────────────────────────────────────────────── */
+
+/* Visually hidden, still announced. */
+.boldform-cv__sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect( 0, 0, 0, 0 );
+	white-space: nowrap;
+	border: 0;
+}
+
+.boldform-cv .boldform-cv-field--invalid .boldform-lite-form__label {
+	color: inherit;
+}
+
+/* A statement screen's heading receives focus, but should not look focused. */
+.boldform-cv.is-ready .boldform-cv-screen [ tabindex="-1" ]:focus {
+	outline: none;
+}
+
+/* ── Dedicated page ──────────────────────────────────────────────────────── */
+
+.boldform-cv-page {
+	margin: 0;
+	min-height: 100dvh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	box-sizing: border-box;
+}
+
+.boldform-cv-page .boldform-wrap {
+	width: min( 680px, 92vw );
+}
+
+.boldform-cv-page .boldform-cv.is-ready {
+	min-height: auto;
+}

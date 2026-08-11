@@ -182,6 +182,82 @@ class BoldForm_Lite_Ajax_Save {
 	}
 
 	/**
+	 * Sanitizes the conversational per-screen background media keys.
+	 *
+	 * Identical on a row and on a field, because a conversational screen is
+	 * sometimes one and sometimes the other: a multi-column row is one screen,
+	 * so the ROW owns the image; a single-column row produces one screen per
+	 * field, so each FIELD owns its own. Whichever is the screen is the one
+	 * that gets read at render time — the other is simply ignored.
+	 *
+	 * Always returns all six keys, so a stored row or field has a complete,
+	 * predictable shape and a re-save is byte-stable.
+	 *
+	 * An attachment ID is stored, never a URL: a URL breaks when the site moves
+	 * and cannot produce responsive sources.
+	 *
+	 * @param array<string, mixed>|mixed $source Raw row or field from the request.
+	 * @return array<string, mixed> The seven sanitized cv_media_* keys.
+	 */
+	private static function sanitize_cv_media( $source ) {
+		$source = is_array( $source ) ? $source : array();
+
+		// (int) and not absint() on the percentages: absint() takes the ABSOLUTE
+		// value, so -5 came back as 5 — a sign flip wearing a clamp's clothes.
+		// The id keeps absint(), which is the WordPress convention for one.
+		return array(
+			'cv_media_id'         => isset( $source['cv_media_id'] ) ? absint( $source['cv_media_id'] ) : 0,
+			'cv_media_layout'     => isset( $source['cv_media_layout'] ) && in_array( $source['cv_media_layout'], array( 'none', 'left', 'right', 'background' ), true ) ? $source['cv_media_layout'] : 'none',
+			'cv_media_x'          => isset( $source['cv_media_x'] ) ? max( 0, min( 100, (int) $source['cv_media_x'] ) ) : 50,
+			'cv_media_y'          => isset( $source['cv_media_y'] ) ? max( 0, min( 100, (int) $source['cv_media_y'] ) ) : 50,
+			'cv_media_brightness' => isset( $source['cv_media_brightness'] ) ? max( 0, min( 100, (int) $source['cv_media_brightness'] ) ) : 100,
+			// 0 means USE THE DEFAULT, and is the only value below the minimum
+			// that survives: anything else out of range clamps into it. Storing a
+			// resolved default instead would pin today's number into every screen
+			// and stop them following the stylesheet if it ever changes.
+			'cv_media_height'     => isset( $source['cv_media_height'] ) && (int) $source['cv_media_height'] > 0
+				? max( 80, min( 2000, (int) $source['cv_media_height'] ) )
+				: 0,
+			'cv_media_alt'        => isset( $source['cv_media_alt'] ) ? sanitize_text_field( (string) $source['cv_media_alt'] ) : '',
+		);
+	}
+
+	/**
+	 * Sanitizes the conversational per-screen colour overrides.
+	 *
+	 * Same six names the FORM settings use, deliberately. They live in different
+	 * places — `fields_json` rows/fields versus `settings_json` — and never in
+	 * the same array, and the identical names make the inheritance obvious at
+	 * every layer: the form value is the default, a screen value overrides it.
+	 *
+	 * `''` means INHERIT, never "no colour". The render layer omits the custom
+	 * property entirely for an empty value, so the form's own value cascades in
+	 * untouched. Storing a resolved copy of the form colour instead would pin it
+	 * — twenty screens would silently keep the old value the day the form
+	 * default changed, which is the whole failure this design avoids.
+	 *
+	 * Placed on whichever of row or field IS the screen, exactly as
+	 * sanitize_cv_media() is.
+	 *
+	 * @param array<string, mixed>|mixed $source Raw row or field from the request.
+	 * @return array<string, mixed> The six sanitized cv_* colour keys.
+	 */
+	private static function sanitize_cv_colours( $source ) {
+		$source = is_array( $source ) ? $source : array();
+		$out    = array();
+
+		foreach ( array( 'cv_bg', 'cv_question_color', 'cv_answer_color', 'cv_btn_color', 'cv_btn_text_color', 'cv_accent' ) as $key ) {
+			// sanitize_hex_color() returns null for anything that is not a
+			// literal hex colour, including ''. Both collapse to '' = inherit.
+			$out[ $key ] = isset( $source[ $key ] ) && sanitize_hex_color( (string) $source[ $key ] )
+				? sanitize_hex_color( (string) $source[ $key ] )
+				: '';
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Sanitizes a decoded builder structure (rows -> columns -> fields) into the
 	 * trusted, allowlisted shape that gets stored in `fields_json`.
 	 *
@@ -374,7 +450,24 @@ class BoldForm_Lite_Ajax_Save {
 						 */
 						$extra_keys = apply_filters( 'boldform_field_extra_keys', array(), $field, $field_type );
 
-						$fields[] = array_merge( $core_field, $extra_keys );
+						// ── Conversational: per-screen background media ────────
+						// A FIELD carries the image when the field is the screen,
+						// which is every field in a single-column row.
+						//
+						// The keys live on both the row and the field because a
+						// screen is sometimes one and sometimes the other, and
+						// the image belongs to whichever it is. The plan
+						// originally put them on the row alone, reasoning that
+						// "a screen IS a row" — true when it was written, and
+						// no longer true once single-column rows started
+						// producing one screen per field. One image was then
+						// stretched across several steps with no way to vary it.
+						//
+						// There is no ambiguity to resolve: cvScreens() decides
+						// which of the two is the screen, and only that one's
+						// image is read. A field's image is ignored on a
+						// multi-column row, where the row is the screen.
+						$fields[] = array_merge( $core_field, $extra_keys, self::sanitize_cv_media( $field ), self::sanitize_cv_colours( $field ) );
 					}
 				}
 
@@ -388,9 +481,17 @@ class BoldForm_Lite_Ajax_Save {
 				continue;
 			}
 
-			$prepared_rows[] = array(
-				'css_class' => isset( $row['css_class'] ) ? sanitize_html_class( (string) $row['css_class'] ) : '',
-				'columns'   => $prepared_columns,
+			$prepared_rows[] = array_merge(
+				array(
+					'css_class' => isset( $row['css_class'] ) ? sanitize_html_class( (string) $row['css_class'] ) : '',
+					'columns'   => $prepared_columns,
+				),
+				// ── Conversational: per-screen background media ────────────────
+				// A ROW carries the image when the row is the screen — that is,
+				// when it has more than one column. See the note on the field
+				// copy of these keys for why both exist.
+				self::sanitize_cv_media( $row ),
+				self::sanitize_cv_colours( $row )
 			);
 		}
 
@@ -460,6 +561,27 @@ class BoldForm_Lite_Ajax_Save {
 			'enable_admin_email'=> true,
 			'enable_user_email' => true,
 			'admin_email'       => '',
+			// Conversational mode. Off by default so an existing form renders
+			// byte-identically until the author opts in.
+			'cv_enabled'          => false,
+			'cv_flatten_columns'  => false,
+			'cv_progress'         => 'bar',
+			'cv_transition'       => 'slide',
+			'cv_key_hint'         => true,
+			'cv_next_text'        => '',
+			'cv_prev_text'        => '',
+			'cv_bg'               => '',
+			'cv_question_color'   => '',
+			'cv_answer_color'     => '',
+			'cv_btn_color'        => '',
+			'cv_btn_text_color'   => '',
+			'cv_accent'           => '',
+			'cv_welcome_enabled'  => false,
+			'cv_welcome_title'    => '',
+			'cv_welcome_text'     => '',
+			'cv_welcome_btn'      => '',
+			'cv_media_hide_mobile'      => true,
+			'cv_media_inline_fullbleed' => false,
 		);
 
 		if ( ! is_array( $settings_payload ) ) {
@@ -543,6 +665,39 @@ class BoldForm_Lite_Ajax_Save {
 			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
 			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
 			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
+			// ── Conversational mode ────────────────────────────────────────────
+			// Presentation only: these never alter the stored form structure, so
+			// toggling cv_enabled off restores the ordinary render exactly. Keys
+			// persist while inactive so a form can be switched back and forth
+			// without losing its conversational design.
+			'cv_enabled'          => ! empty( $settings_payload['cv_enabled'] ),
+			// sanitize_title() also lowercases and strips accents, so the stored
+			// slug always matches what the rewrite rule will receive.
+			'cv_flatten_columns'  => ! empty( $settings_payload['cv_flatten_columns'] ),
+			'cv_progress'         => isset( $settings_payload['cv_progress'] ) && in_array( $settings_payload['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $settings_payload['cv_progress'] : $defaults['cv_progress'],
+			'cv_transition'       => isset( $settings_payload['cv_transition'] ) && in_array( $settings_payload['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $settings_payload['cv_transition'] : $defaults['cv_transition'],
+			// Absent means "not sent by this payload" — default on. Present and
+			// falsy means the author unchecked it.
+			'cv_key_hint'         => isset( $settings_payload['cv_key_hint'] ) ? ! empty( $settings_payload['cv_key_hint'] ) : $defaults['cv_key_hint'],
+			'cv_next_text'        => isset( $settings_payload['cv_next_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_next_text'] ) : '',
+			'cv_prev_text'        => isset( $settings_payload['cv_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_prev_text'] ) : '',
+			'cv_bg'               => isset( $settings_payload['cv_bg'] ) && sanitize_hex_color( $settings_payload['cv_bg'] ) ? sanitize_hex_color( $settings_payload['cv_bg'] ) : '',
+			'cv_question_color'   => isset( $settings_payload['cv_question_color'] ) && sanitize_hex_color( $settings_payload['cv_question_color'] ) ? sanitize_hex_color( $settings_payload['cv_question_color'] ) : '',
+			'cv_answer_color'     => isset( $settings_payload['cv_answer_color'] ) && sanitize_hex_color( $settings_payload['cv_answer_color'] ) ? sanitize_hex_color( $settings_payload['cv_answer_color'] ) : '',
+			'cv_btn_color'        => isset( $settings_payload['cv_btn_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_color'] ) : '',
+			'cv_btn_text_color'   => isset( $settings_payload['cv_btn_text_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) : '',
+			'cv_accent'           => isset( $settings_payload['cv_accent'] ) && sanitize_hex_color( $settings_payload['cv_accent'] ) ? sanitize_hex_color( $settings_payload['cv_accent'] ) : '',
+			'cv_welcome_enabled'  => ! empty( $settings_payload['cv_welcome_enabled'] ),
+			'cv_welcome_title'    => isset( $settings_payload['cv_welcome_title'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_title'] ) : '',
+			// Authored as a short paragraph and rendered as markup, so it is
+			// filtered with the post allowlist rather than flattened — matching
+			// how thank_you_message is handled.
+			'cv_welcome_text'     => isset( $settings_payload['cv_welcome_text'] ) ? wp_kses_post( (string) $settings_payload['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'      => isset( $settings_payload['cv_welcome_btn'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_btn'] ) : '',
+			// Default ON: a decorative image is the first thing worth dropping on
+			// a phone, both for layout and for bandwidth.
+			'cv_media_hide_mobile'      => isset( $settings_payload['cv_media_hide_mobile'] ) ? ! empty( $settings_payload['cv_media_hide_mobile'] ) : $defaults['cv_media_hide_mobile'],
+			'cv_media_inline_fullbleed' => ! empty( $settings_payload['cv_media_inline_fullbleed'] ),
 		);
 
 		/**

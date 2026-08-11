@@ -73,6 +73,19 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 					<strong><?php esc_html_e( 'Use a Template', 'boldform-lite' ); ?></strong>
 					<span><?php esc_html_e( 'Browse ready-made templates, preview them, and import in one click.', 'boldform-lite' ); ?></span>
 				</button>
+				<?php
+				// A shortcut, not a separate kind of form: this creates an ordinary
+				// blank form with conversational mode already switched on. There is
+				// one builder and one storage model, so the author can turn the mode
+				// off again — or on for any existing form — at any time.
+				?>
+				<button type="button" class="boldform-setup-card" id="boldform-setup-conversational">
+					<span class="boldform-setup-card__icon boldform-setup-card__icon--conversational">
+						<span class="dashicons dashicons-format-chat"></span>
+					</span>
+					<strong><?php esc_html_e( 'Conversational Form', 'boldform-lite' ); ?></strong>
+					<span><?php esc_html_e( 'Ask one question at a time. You can switch any form to this later.', 'boldform-lite' ); ?></span>
+				</button>
 			</div>
 		</div>
 	</div>
