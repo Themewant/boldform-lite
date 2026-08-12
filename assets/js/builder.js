@@ -3289,6 +3289,20 @@ jQuery(
 		}
 
 		/**
+		 * Whether the template library should advertise its locked rows.
+		 *
+		 * Deliberately separate from showUpgradeCta(): an add-on can be installed —
+		 * which switches every shared CTA off — while still not entitled to the real
+		 * templates. Without its own switch those rows would simply disappear, taking
+		 * four whole categories with them and explaining nothing.
+		 *
+		 * @return {boolean}
+		 */
+		function showLockedTemplates() {
+			return !! boldformLiteBuilder.showLockedTemplates;
+		}
+
+		/**
 		 * A locked button that opens an upgrade dialog.
 		 *
 		 * aria-haspopup="dialog": it opens the dialog named by modalId, not a menu.
@@ -3420,7 +3434,18 @@ jQuery(
 		 * @return {void}
 		 */
 		function openUpgradeModal( id ) {
-			$( document.getElementById( id ) ).removeAttr( 'hidden' );
+			// Bail if the dialog isn't on this page. Buttons and their dialogs are
+			// gated by the same switch today, but there are now three such switches
+			// rather than one, so a future teaser could ship its button without its
+			// dialog. Without this guard that locks page scrolling with nothing
+			// visible to close.
+			var el = document.getElementById( id );
+
+			if ( ! el ) {
+				return;
+			}
+
+			$( el ).removeAttr( 'hidden' );
 			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
 		}
 
@@ -5235,7 +5260,7 @@ jQuery(
 		function groupedTemplateTeasers( realTemplates ) {
 			var grouped = {};
 
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return grouped;
 			}
 
@@ -5258,7 +5283,7 @@ jQuery(
 		 * @return {Object|null} The locked entry, or null.
 		 */
 		function lockedTemplate( key ) {
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return null;
 			}
 			var found = null;

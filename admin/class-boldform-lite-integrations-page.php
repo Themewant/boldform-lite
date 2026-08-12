@@ -256,7 +256,33 @@ class BoldForm_Lite_Integrations_Page {
 					}
 
 					$is_static = ! empty( $def['pro'] );
+					// Tied to $is_static: 'locked' only ever means anything on a static
+					// (Pro-only) entry. Without this, a filter setting 'locked' on a normal
+					// connectable entry would replace its toggle with a dead-end badge and
+					// leave no way to configure it.
+					$is_locked = $is_static && ! empty( $def['locked'] );
 					$conn      = null;
+
+					// Tooltip on a locked card. The generic default deliberately says
+					// nothing about why the card is locked: only the add-on that set
+					// 'locked' knows that, and it owns the wording through this filter
+					// (mirroring boldform_library_lock_title / boldform_template_lock_title).
+					$lock_title = '';
+					if ( $is_locked ) {
+						/**
+						 * Filters the tooltip shown on a locked integration card.
+						 *
+						 * @since 1.1.7
+						 *
+						 * @param string $title Tooltip text.
+						 * @param string $type  Integration type slug.
+						 */
+						$lock_title = (string) apply_filters(
+							'boldform_integration_lock_title',
+							__( 'Unlock this integration', 'boldform-lite' ),
+							$type
+						);
+					}
 
 					if ( ! $is_static ) {
 						foreach ( $connections as $c ) {
@@ -269,7 +295,7 @@ class BoldForm_Lite_Integrations_Page {
 
 					$is_on = $conn && 'active' === ( $conn['status'] ?? 'inactive' );
 				?>
-					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?>"
+					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?><?php echo $is_locked ? ' is-locked' : ''; ?>"
 						 <?php if ( ! $is_static ) : ?>data-type="<?php echo esc_attr( $type ); ?>" data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"<?php endif; ?>
 						 style="--bf-svc-color:<?php echo esc_attr( $def['color'] ); ?>">
 
@@ -281,7 +307,19 @@ class BoldForm_Lite_Integrations_Page {
 						<span class="bf-int-card__desc"><?php echo esc_html( $def['desc'] ?? '' ); ?></span>
 
 						<div class="bf-int-card__actions">
-							<?php if ( $is_static ) : ?>
+							<?php if ( $is_locked ) : ?>
+								<?php if ( ! empty( $def['locked_url'] ) ) : ?>
+									<a class="bf-int-card__locked-badge" href="<?php echo esc_url( $def['locked_url'] ); ?>" title="<?php echo esc_attr( $lock_title ); ?>">
+										<span class="dashicons dashicons-lock"></span>
+										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
+									</a>
+								<?php else : ?>
+									<span class="bf-int-card__locked-badge" title="<?php echo esc_attr( $lock_title ); ?>">
+										<span class="dashicons dashicons-lock"></span>
+										<?php esc_html_e( 'Locked', 'boldform-lite' ); ?>
+									</span>
+								<?php endif; ?>
+							<?php elseif ( $is_static ) : ?>
 								<span class="bf-int-card__pro-note"><?php esc_html_e( 'Available in BoldForm Pro', 'boldform-lite' ); ?></span>
 							<?php else : ?>
 								<label class="bf-int-toggle" title="<?php echo $is_on ? esc_attr__( 'Disable', 'boldform-lite' ) : esc_attr__( 'Enable', 'boldform-lite' ); ?>">
