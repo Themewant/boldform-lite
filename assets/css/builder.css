@@ -1923,6 +1923,7 @@
    below it (which read as "dropping outside the box"). */
 .boldform-column-fields.is-empty {
 	align-content: center;
+	justify-content: center;
 	padding: 12px;
 	border: 1px dashed #dbe4ee;
 	border-radius: 14px;
@@ -8002,24 +8003,58 @@
    "Add Row" look inert.
 
    Everything here hangs off `.is-conversational`. Ordinary Builder mode keeps
-   its empty columns exactly as they were. */
+   its empty columns exactly as they were.
+
+   HIDDEN, BUT STILL IN FLOW — `visibility`, never `display: none`. The column
+   has to keep its width and its place in the row so the FILLED columns beside
+   it stay where they actually are. `display: none` pulled it out of flow, and
+   the remaining fields slid left: a field authored into the middle third of a
+   three-column row was drawn at the far left of the canvas. The front end
+   renders every column unconditionally — see the `boldform-lite-form__column`
+   loop in class-boldform-lite-shortcode.php, which has no empty-column skip —
+   so the canvas was showing a position the visitor never sees, and an author
+   correcting it would have broken a layout that was right. */
 .boldform-canvas.is-conversational .boldform-column.is-cv-ghost {
-	display: none;
+	visibility: hidden;
+}
+
+/* Reserve the width, not the height. `.boldform-column-fields` carries a 90px
+   min-height because it is a drop target, and an idle ghost is not one; left
+   in, an invisible empty column would set the height of every short row it
+   sits in. The `.is-dragging` rule further down restores a 44px target and
+   outranks this one on class count, so it still wins during a drag. */
+.boldform-canvas.is-conversational .boldform-column.is-cv-ghost .boldform-column-fields {
+	min-height: 0;
 }
 
 /* ...until a drag is in flight, when it becomes a target again.
 
    THE REVEAL IS LOAD-BEARING, not a nicety. sortable.js picks a drop target by
-   hit-testing each registered container's rect and skipping any that measures
-   0x0, so a display:none column is not a drop target at all — a field could
-   never be put back into it. `is-dragging` is put on the canvas by
-   bindCanvasDragState() for exactly the length of the drag.
+   hit-testing each registered container's rect, and an idle ghost fails that
+   twice over: a `visibility: hidden` box is skipped by hit-testing, and the
+   collapsed field container has no area left to hit. Without the reveal a
+   field could never be put back into an empty column. `is-dragging` is put on
+   the canvas by bindCanvasDragState() for exactly the length of the drag.
 
    Compact on purpose: it is a place to aim at, not a card. It appears only
    while the author is already dragging, so it never sits in the reading order
-   of the screen list. */
+   of the screen list.
+
+   CENTRED, because it is short and its neighbours are not. `.boldform-row__columns`
+   is a flex row that stretches every column to the height of the tallest, so a
+   44px target left at the top of a full-height column sits level with the FIRST
+   LINE of the question beside it — reading as a label for that question rather
+   than as a slot of its own. Centring lines it up with the middle of the row,
+   which is where the eye goes when aiming.
+
+   Safe to make the column a flex parent here: `.boldform-column__head` is
+   `display: none` throughout this mode, so the field container is the only
+   child there is to centre. */
 .boldform-canvas.is-conversational.is-dragging .boldform-column.is-cv-ghost {
-	display: block;
+	visibility: visible;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 /* The height belongs to the FIELD CONTAINER, not to the text inside it:

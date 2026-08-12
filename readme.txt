@@ -23,6 +23,7 @@ https://www.youtube.com/watch?v=EWum_aGDAMc
 = Why BoldForm? =
 
 * **Drag & drop** — build and reorder fields visually, configure each one instantly, and watch your styling update live as you work.
+* **Conversational forms, free** — turn any form into a one-question-at-a-time experience with a single switch. No rebuild, no separate form type, no add-on.
 * **Lightweight by design** — assets load only where a form appears, the analytics chart uses the browser's native canvas (no charting library), and each form is queried once per request.
 * **No lock-in** — export and import your forms, entries, and settings as JSON at any time.
 * **Yours to control** — submissions live in your own database, with built-in tools to export or erase personal data on request.
@@ -76,6 +77,17 @@ https://www.youtube.com/watch?v=Iv9QXaEa2i0
 
 **Layout & content**
 * Section Break (heading + description divider), Paragraph / Static Text, HTML Editor, Terms & Conditions
+
+= Conversational Forms =
+
+Show any form one question at a time, like a conversation. Flip one switch in Form Settings and the form you already built is presented as a guided sequence of screens — the same fields, the same layout, the same conditional logic, the same notifications. Switch it off and the form goes straight back to normal.
+
+* **Works on forms you already have** — nothing is rewritten and nothing is duplicated. Your conditional logic keeps working, and a question whose field is currently hidden is skipped rather than shown as an empty screen.
+* **Welcome screen** — open with a title, a short intro and a Start button instead of dropping the visitor straight into question one.
+* **Progress your way** — a bar, dots, a counter or a percentage, or none at all. Position it left, centre or right, and colour the unfinished part.
+* **Keyboard first** — Enter moves to the next question, Shift+Enter starts a new line in a paragraph field, and an optional on-screen hint tells visitors so.
+* **Design per screen** — give any screen its own image, placed left, right or behind the question, and its own background, question and answer colours. Anything you don't set follows the form's defaults.
+* **Degrades safely** — with JavaScript unavailable the form renders as an ordinary single-page form and still submits.
 
 = Smart Form Features =
 
