@@ -517,7 +517,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:889
 #: admin/class-boldform-lite-admin.php:5777
 #: public/class-boldform-lite-form-handler.php:736
-#: public/class-boldform-lite-shortcode.php:710
+#: public/class-boldform-lite-shortcode.php:730
 msgid "Thanks! Your form was submitted successfully."
 msgstr ""
 
@@ -525,10 +525,10 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:890
 #: admin/class-boldform-lite-admin.php:5778
 #: public/class-boldform-lite-form-handler.php:737
-#: public/class-boldform-lite-shortcode.php:711
-#: public/class-boldform-lite-shortcode.php:1371
-#: public/class-boldform-lite-shortcode.php:1387
-#: public/class-boldform-lite-shortcode.php:1434
+#: public/class-boldform-lite-shortcode.php:731
+#: public/class-boldform-lite-shortcode.php:1391
+#: public/class-boldform-lite-shortcode.php:1407
+#: public/class-boldform-lite-shortcode.php:1454
 msgid "Submit"
 msgstr ""
 
@@ -1116,7 +1116,7 @@ msgid "Active Color"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1049
-#: public/class-boldform-lite-shortcode.php:2108
+#: public/class-boldform-lite-shortcode.php:2128
 msgid "Choose file or drag & drop"
 msgstr ""
 
@@ -1986,21 +1986,21 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:1358
 #: public/class-boldform-lite-block.php:163
 #: public/class-boldform-lite-elementor-widget.php:2335
-#: public/class-boldform-lite-shortcode.php:2539
+#: public/class-boldform-lite-shortcode.php:2559
 msgid "Submitting..."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1359
 #: public/class-boldform-lite-block.php:164
 #: public/class-boldform-lite-elementor-widget.php:2336
-#: public/class-boldform-lite-shortcode.php:2540
+#: public/class-boldform-lite-shortcode.php:2560
 msgid "Form submitted successfully."
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:1360
 #: public/class-boldform-lite-block.php:165
 #: public/class-boldform-lite-elementor-widget.php:2337
-#: public/class-boldform-lite-shortcode.php:2541
+#: public/class-boldform-lite-shortcode.php:2561
 msgid "Unable to submit the form."
 msgstr ""
 
@@ -2984,7 +2984,7 @@ msgstr ""
 #: admin/class-boldform-lite-admin.php:3836
 #: public/class-boldform-lite-form-handler.php:1132
 #: public/class-boldform-lite-form-handler.php:1420
-#: public/class-boldform-lite-shortcode.php:1242
+#: public/class-boldform-lite-shortcode.php:1262
 #, php-format
 msgid "%s is required."
 msgstr ""
@@ -3240,7 +3240,7 @@ msgstr ""
 
 #: admin/class-boldform-lite-admin.php:4393
 #: public/class-boldform-lite-block.php:166
-#: public/class-boldform-lite-shortcode.php:2542
+#: public/class-boldform-lite-shortcode.php:2562
 msgid "Please enter a valid email address."
 msgstr ""
 
@@ -3399,7 +3399,7 @@ msgid "Time Picker"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:6252
-#: public/class-boldform-lite-shortcode.php:1743
+#: public/class-boldform-lite-shortcode.php:1763
 msgid "Select"
 msgstr ""
 
@@ -3441,7 +3441,7 @@ msgid "Address"
 msgstr ""
 
 #: admin/class-boldform-lite-admin.php:6307
-#: public/class-boldform-lite-shortcode.php:2191
+#: public/class-boldform-lite-shortcode.php:2211
 msgid "Country"
 msgstr ""
 
@@ -4580,7 +4580,7 @@ msgstr ""
 #: public/class-boldform-lite-form-handler.php:1133
 #: public/class-boldform-lite-form-handler.php:1143
 #: public/class-boldform-lite-form-handler.php:1421
-#: public/class-boldform-lite-shortcode.php:1242
+#: public/class-boldform-lite-shortcode.php:1262
 msgid "This field"
 msgstr ""
 
@@ -4621,884 +4621,884 @@ msgid "%s: this file type is not allowed."
 msgstr ""
 
 #. translators: %s: simple math question
-#: public/class-boldform-lite-shortcode.php:1058
+#: public/class-boldform-lite-shortcode.php:1078
 #, php-format
 msgid "Solve this math question: %s"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1738
+#: public/class-boldform-lite-shortcode.php:1758
 msgid "Select options&hellip;"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1738
+#: public/class-boldform-lite-shortcode.php:1758
 msgid "Select&hellip;"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1743
+#: public/class-boldform-lite-shortcode.php:1763
 msgid "Select options"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1764
+#: public/class-boldform-lite-shortcode.php:1784
 msgid "Remove"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1782
-#: public/class-boldform-lite-shortcode.php:2299
+#: public/class-boldform-lite-shortcode.php:1802
+#: public/class-boldform-lite-shortcode.php:2319
 msgid "Search&hellip;"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:1782
+#: public/class-boldform-lite-shortcode.php:1802
 msgid "Search"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2011
-#: public/class-boldform-lite-shortcode.php:2013
-#: public/class-boldform-lite-shortcode.php:2015
+#: public/class-boldform-lite-shortcode.php:2031
+#: public/class-boldform-lite-shortcode.php:2033
+#: public/class-boldform-lite-shortcode.php:2035
 msgid "First Name"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2023
-#: public/class-boldform-lite-shortcode.php:2024
-#: public/class-boldform-lite-shortcode.php:2026
+#: public/class-boldform-lite-shortcode.php:2043
+#: public/class-boldform-lite-shortcode.php:2044
+#: public/class-boldform-lite-shortcode.php:2046
 msgid "Middle Name"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2035
-#: public/class-boldform-lite-shortcode.php:2037
-#: public/class-boldform-lite-shortcode.php:2039
+#: public/class-boldform-lite-shortcode.php:2055
+#: public/class-boldform-lite-shortcode.php:2057
+#: public/class-boldform-lite-shortcode.php:2059
 msgid "Last Name"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2125
+#: public/class-boldform-lite-shortcode.php:2145
 msgid "Select date"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2125
+#: public/class-boldform-lite-shortcode.php:2145
 msgid "Select time"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2187
+#: public/class-boldform-lite-shortcode.php:2207
 msgid "Street Address"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2188
+#: public/class-boldform-lite-shortcode.php:2208
 msgid "City"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2189
+#: public/class-boldform-lite-shortcode.php:2209
 msgid "State / Province"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2190
+#: public/class-boldform-lite-shortcode.php:2210
 msgid "ZIP / Postal Code"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2253
-#: public/class-boldform-lite-shortcode.php:2289
+#: public/class-boldform-lite-shortcode.php:2273
+#: public/class-boldform-lite-shortcode.php:2309
 msgid "Select a country"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2343
+#: public/class-boldform-lite-shortcode.php:2363
 msgid "Rating"
 msgstr ""
 
 #. translators: %d: star rating value
-#: public/class-boldform-lite-shortcode.php:2352
+#: public/class-boldform-lite-shortcode.php:2372
 #, php-format
 msgid "%d star"
 msgid_plural "%d stars"
 msgstr[0] ""
 msgstr[1] ""
 
-#: public/class-boldform-lite-shortcode.php:2400
+#: public/class-boldform-lite-shortcode.php:2420
 msgid "Minimum"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2404
+#: public/class-boldform-lite-shortcode.php:2424
 msgid "Maximum"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2796
+#: public/class-boldform-lite-shortcode.php:2816
 msgid "Afghanistan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2797
+#: public/class-boldform-lite-shortcode.php:2817
 msgid "Albania"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2798
+#: public/class-boldform-lite-shortcode.php:2818
 msgid "Algeria"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2799
+#: public/class-boldform-lite-shortcode.php:2819
 msgid "Andorra"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2800
+#: public/class-boldform-lite-shortcode.php:2820
 msgid "Angola"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2801
+#: public/class-boldform-lite-shortcode.php:2821
 msgid "Antigua and Barbuda"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2802
+#: public/class-boldform-lite-shortcode.php:2822
 msgid "Argentina"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2803
+#: public/class-boldform-lite-shortcode.php:2823
 msgid "Armenia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2804
+#: public/class-boldform-lite-shortcode.php:2824
 msgid "Australia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2805
+#: public/class-boldform-lite-shortcode.php:2825
 msgid "Austria"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2806
+#: public/class-boldform-lite-shortcode.php:2826
 msgid "Azerbaijan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2807
+#: public/class-boldform-lite-shortcode.php:2827
 msgid "Bahamas"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2808
+#: public/class-boldform-lite-shortcode.php:2828
 msgid "Bahrain"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2809
+#: public/class-boldform-lite-shortcode.php:2829
 msgid "Bangladesh"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2810
+#: public/class-boldform-lite-shortcode.php:2830
 msgid "Barbados"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2811
+#: public/class-boldform-lite-shortcode.php:2831
 msgid "Belarus"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2812
+#: public/class-boldform-lite-shortcode.php:2832
 msgid "Belgium"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2813
+#: public/class-boldform-lite-shortcode.php:2833
 msgid "Belize"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2814
+#: public/class-boldform-lite-shortcode.php:2834
 msgid "Benin"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2815
+#: public/class-boldform-lite-shortcode.php:2835
 msgid "Bhutan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2816
+#: public/class-boldform-lite-shortcode.php:2836
 msgid "Bolivia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2817
+#: public/class-boldform-lite-shortcode.php:2837
 msgid "Bosnia and Herzegovina"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2818
+#: public/class-boldform-lite-shortcode.php:2838
 msgid "Botswana"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2819
+#: public/class-boldform-lite-shortcode.php:2839
 msgid "Brazil"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2820
+#: public/class-boldform-lite-shortcode.php:2840
 msgid "Brunei"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2821
+#: public/class-boldform-lite-shortcode.php:2841
 msgid "Bulgaria"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2822
+#: public/class-boldform-lite-shortcode.php:2842
 msgid "Burkina Faso"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2823
+#: public/class-boldform-lite-shortcode.php:2843
 msgid "Burundi"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2824
+#: public/class-boldform-lite-shortcode.php:2844
 msgid "Cabo Verde"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2825
+#: public/class-boldform-lite-shortcode.php:2845
 msgid "Cambodia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2826
+#: public/class-boldform-lite-shortcode.php:2846
 msgid "Cameroon"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2827
+#: public/class-boldform-lite-shortcode.php:2847
 msgid "Canada"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2828
+#: public/class-boldform-lite-shortcode.php:2848
 msgid "Central African Republic"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2829
+#: public/class-boldform-lite-shortcode.php:2849
 msgid "Chad"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2830
+#: public/class-boldform-lite-shortcode.php:2850
 msgid "Chile"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2831
+#: public/class-boldform-lite-shortcode.php:2851
 msgid "China"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2832
+#: public/class-boldform-lite-shortcode.php:2852
 msgid "Colombia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2833
+#: public/class-boldform-lite-shortcode.php:2853
 msgid "Comoros"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2834
+#: public/class-boldform-lite-shortcode.php:2854
 msgid "Congo"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2835
+#: public/class-boldform-lite-shortcode.php:2855
 msgid "Congo (Democratic Republic)"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2836
+#: public/class-boldform-lite-shortcode.php:2856
 msgid "Costa Rica"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2837
+#: public/class-boldform-lite-shortcode.php:2857
 msgid "Cote d'Ivoire"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2838
+#: public/class-boldform-lite-shortcode.php:2858
 msgid "Croatia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2839
+#: public/class-boldform-lite-shortcode.php:2859
 msgid "Cuba"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2840
+#: public/class-boldform-lite-shortcode.php:2860
 msgid "Cyprus"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2841
+#: public/class-boldform-lite-shortcode.php:2861
 msgid "Czech Republic"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2842
+#: public/class-boldform-lite-shortcode.php:2862
 msgid "Denmark"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2843
+#: public/class-boldform-lite-shortcode.php:2863
 msgid "Djibouti"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2844
+#: public/class-boldform-lite-shortcode.php:2864
 msgid "Dominica"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2845
+#: public/class-boldform-lite-shortcode.php:2865
 msgid "Dominican Republic"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2846
+#: public/class-boldform-lite-shortcode.php:2866
 msgid "Ecuador"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2847
+#: public/class-boldform-lite-shortcode.php:2867
 msgid "Egypt"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2848
+#: public/class-boldform-lite-shortcode.php:2868
 msgid "El Salvador"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2849
+#: public/class-boldform-lite-shortcode.php:2869
 msgid "Equatorial Guinea"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2850
+#: public/class-boldform-lite-shortcode.php:2870
 msgid "Eritrea"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2851
+#: public/class-boldform-lite-shortcode.php:2871
 msgid "Estonia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2852
+#: public/class-boldform-lite-shortcode.php:2872
 msgid "Eswatini"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2853
+#: public/class-boldform-lite-shortcode.php:2873
 msgid "Ethiopia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2854
+#: public/class-boldform-lite-shortcode.php:2874
 msgid "Fiji"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2855
+#: public/class-boldform-lite-shortcode.php:2875
 msgid "Finland"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2856
+#: public/class-boldform-lite-shortcode.php:2876
 msgid "France"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2857
+#: public/class-boldform-lite-shortcode.php:2877
 msgid "Gabon"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2858
+#: public/class-boldform-lite-shortcode.php:2878
 msgid "Gambia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2859
+#: public/class-boldform-lite-shortcode.php:2879
 msgid "Georgia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2860
+#: public/class-boldform-lite-shortcode.php:2880
 msgid "Germany"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2861
+#: public/class-boldform-lite-shortcode.php:2881
 msgid "Ghana"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2862
+#: public/class-boldform-lite-shortcode.php:2882
 msgid "Greece"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2863
+#: public/class-boldform-lite-shortcode.php:2883
 msgid "Grenada"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2864
+#: public/class-boldform-lite-shortcode.php:2884
 msgid "Guatemala"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2865
+#: public/class-boldform-lite-shortcode.php:2885
 msgid "Guinea"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2866
+#: public/class-boldform-lite-shortcode.php:2886
 msgid "Guinea-Bissau"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2867
+#: public/class-boldform-lite-shortcode.php:2887
 msgid "Guyana"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2868
+#: public/class-boldform-lite-shortcode.php:2888
 msgid "Haiti"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2869
+#: public/class-boldform-lite-shortcode.php:2889
 msgid "Honduras"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2870
+#: public/class-boldform-lite-shortcode.php:2890
 msgid "Hungary"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2871
+#: public/class-boldform-lite-shortcode.php:2891
 msgid "Iceland"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2872
+#: public/class-boldform-lite-shortcode.php:2892
 msgid "India"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2873
+#: public/class-boldform-lite-shortcode.php:2893
 msgid "Indonesia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2874
+#: public/class-boldform-lite-shortcode.php:2894
 msgid "Iran"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2875
+#: public/class-boldform-lite-shortcode.php:2895
 msgid "Iraq"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2876
+#: public/class-boldform-lite-shortcode.php:2896
 msgid "Ireland"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2877
+#: public/class-boldform-lite-shortcode.php:2897
 msgid "Israel"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2878
+#: public/class-boldform-lite-shortcode.php:2898
 msgid "Italy"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2879
+#: public/class-boldform-lite-shortcode.php:2899
 msgid "Jamaica"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2880
+#: public/class-boldform-lite-shortcode.php:2900
 msgid "Japan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2881
+#: public/class-boldform-lite-shortcode.php:2901
 msgid "Jordan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2882
+#: public/class-boldform-lite-shortcode.php:2902
 msgid "Kazakhstan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2883
+#: public/class-boldform-lite-shortcode.php:2903
 msgid "Kenya"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2884
+#: public/class-boldform-lite-shortcode.php:2904
 msgid "Kiribati"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2885
+#: public/class-boldform-lite-shortcode.php:2905
 msgid "Korea (North)"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2886
+#: public/class-boldform-lite-shortcode.php:2906
 msgid "Korea (South)"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2887
+#: public/class-boldform-lite-shortcode.php:2907
 msgid "Kuwait"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2888
+#: public/class-boldform-lite-shortcode.php:2908
 msgid "Kyrgyzstan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2889
+#: public/class-boldform-lite-shortcode.php:2909
 msgid "Laos"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2890
+#: public/class-boldform-lite-shortcode.php:2910
 msgid "Latvia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2891
+#: public/class-boldform-lite-shortcode.php:2911
 msgid "Lebanon"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2892
+#: public/class-boldform-lite-shortcode.php:2912
 msgid "Lesotho"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2893
+#: public/class-boldform-lite-shortcode.php:2913
 msgid "Liberia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2894
+#: public/class-boldform-lite-shortcode.php:2914
 msgid "Libya"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2895
+#: public/class-boldform-lite-shortcode.php:2915
 msgid "Liechtenstein"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2896
+#: public/class-boldform-lite-shortcode.php:2916
 msgid "Lithuania"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2897
+#: public/class-boldform-lite-shortcode.php:2917
 msgid "Luxembourg"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2898
+#: public/class-boldform-lite-shortcode.php:2918
 msgid "Madagascar"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2899
+#: public/class-boldform-lite-shortcode.php:2919
 msgid "Malawi"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2900
+#: public/class-boldform-lite-shortcode.php:2920
 msgid "Malaysia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2901
+#: public/class-boldform-lite-shortcode.php:2921
 msgid "Maldives"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2902
+#: public/class-boldform-lite-shortcode.php:2922
 msgid "Mali"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2903
+#: public/class-boldform-lite-shortcode.php:2923
 msgid "Malta"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2904
+#: public/class-boldform-lite-shortcode.php:2924
 msgid "Marshall Islands"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2905
+#: public/class-boldform-lite-shortcode.php:2925
 msgid "Mauritania"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2906
+#: public/class-boldform-lite-shortcode.php:2926
 msgid "Mauritius"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2907
+#: public/class-boldform-lite-shortcode.php:2927
 msgid "Mexico"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2908
+#: public/class-boldform-lite-shortcode.php:2928
 msgid "Micronesia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2909
+#: public/class-boldform-lite-shortcode.php:2929
 msgid "Moldova"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2910
+#: public/class-boldform-lite-shortcode.php:2930
 msgid "Monaco"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2911
+#: public/class-boldform-lite-shortcode.php:2931
 msgid "Mongolia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2912
+#: public/class-boldform-lite-shortcode.php:2932
 msgid "Montenegro"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2913
+#: public/class-boldform-lite-shortcode.php:2933
 msgid "Morocco"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2914
+#: public/class-boldform-lite-shortcode.php:2934
 msgid "Mozambique"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2915
+#: public/class-boldform-lite-shortcode.php:2935
 msgid "Myanmar"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2916
+#: public/class-boldform-lite-shortcode.php:2936
 msgid "Namibia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2917
+#: public/class-boldform-lite-shortcode.php:2937
 msgid "Nauru"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2918
+#: public/class-boldform-lite-shortcode.php:2938
 msgid "Nepal"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2919
+#: public/class-boldform-lite-shortcode.php:2939
 msgid "Netherlands"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2920
+#: public/class-boldform-lite-shortcode.php:2940
 msgid "New Zealand"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2921
+#: public/class-boldform-lite-shortcode.php:2941
 msgid "Nicaragua"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2922
+#: public/class-boldform-lite-shortcode.php:2942
 msgid "Niger"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2923
+#: public/class-boldform-lite-shortcode.php:2943
 msgid "Nigeria"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2924
+#: public/class-boldform-lite-shortcode.php:2944
 msgid "North Macedonia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2925
+#: public/class-boldform-lite-shortcode.php:2945
 msgid "Norway"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2926
+#: public/class-boldform-lite-shortcode.php:2946
 msgid "Oman"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2927
+#: public/class-boldform-lite-shortcode.php:2947
 msgid "Pakistan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2928
+#: public/class-boldform-lite-shortcode.php:2948
 msgid "Palau"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2929
+#: public/class-boldform-lite-shortcode.php:2949
 msgid "Palestine"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2930
+#: public/class-boldform-lite-shortcode.php:2950
 msgid "Panama"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2931
+#: public/class-boldform-lite-shortcode.php:2951
 msgid "Papua New Guinea"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2932
+#: public/class-boldform-lite-shortcode.php:2952
 msgid "Paraguay"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2933
+#: public/class-boldform-lite-shortcode.php:2953
 msgid "Peru"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2934
+#: public/class-boldform-lite-shortcode.php:2954
 msgid "Philippines"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2935
+#: public/class-boldform-lite-shortcode.php:2955
 msgid "Poland"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2936
+#: public/class-boldform-lite-shortcode.php:2956
 msgid "Portugal"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2937
+#: public/class-boldform-lite-shortcode.php:2957
 msgid "Qatar"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2938
+#: public/class-boldform-lite-shortcode.php:2958
 msgid "Romania"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2939
+#: public/class-boldform-lite-shortcode.php:2959
 msgid "Russia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2940
+#: public/class-boldform-lite-shortcode.php:2960
 msgid "Rwanda"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2941
+#: public/class-boldform-lite-shortcode.php:2961
 msgid "Saint Kitts and Nevis"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2942
+#: public/class-boldform-lite-shortcode.php:2962
 msgid "Saint Lucia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2943
+#: public/class-boldform-lite-shortcode.php:2963
 msgid "Saint Vincent and the Grenadines"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2944
+#: public/class-boldform-lite-shortcode.php:2964
 msgid "Samoa"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2945
+#: public/class-boldform-lite-shortcode.php:2965
 msgid "San Marino"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2946
+#: public/class-boldform-lite-shortcode.php:2966
 msgid "Sao Tome and Principe"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2947
+#: public/class-boldform-lite-shortcode.php:2967
 msgid "Saudi Arabia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2948
+#: public/class-boldform-lite-shortcode.php:2968
 msgid "Senegal"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2949
+#: public/class-boldform-lite-shortcode.php:2969
 msgid "Serbia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2950
+#: public/class-boldform-lite-shortcode.php:2970
 msgid "Seychelles"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2951
+#: public/class-boldform-lite-shortcode.php:2971
 msgid "Sierra Leone"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2952
+#: public/class-boldform-lite-shortcode.php:2972
 msgid "Singapore"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2953
+#: public/class-boldform-lite-shortcode.php:2973
 msgid "Slovakia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2954
+#: public/class-boldform-lite-shortcode.php:2974
 msgid "Slovenia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2955
+#: public/class-boldform-lite-shortcode.php:2975
 msgid "Solomon Islands"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2956
+#: public/class-boldform-lite-shortcode.php:2976
 msgid "Somalia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2957
+#: public/class-boldform-lite-shortcode.php:2977
 msgid "South Africa"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2958
+#: public/class-boldform-lite-shortcode.php:2978
 msgid "South Sudan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2959
+#: public/class-boldform-lite-shortcode.php:2979
 msgid "Spain"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2960
+#: public/class-boldform-lite-shortcode.php:2980
 msgid "Sri Lanka"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2961
+#: public/class-boldform-lite-shortcode.php:2981
 msgid "Sudan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2962
+#: public/class-boldform-lite-shortcode.php:2982
 msgid "Suriname"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2963
+#: public/class-boldform-lite-shortcode.php:2983
 msgid "Sweden"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2964
+#: public/class-boldform-lite-shortcode.php:2984
 msgid "Switzerland"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2965
+#: public/class-boldform-lite-shortcode.php:2985
 msgid "Syria"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2966
+#: public/class-boldform-lite-shortcode.php:2986
 msgid "Taiwan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2967
+#: public/class-boldform-lite-shortcode.php:2987
 msgid "Tajikistan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2968
+#: public/class-boldform-lite-shortcode.php:2988
 msgid "Tanzania"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2969
+#: public/class-boldform-lite-shortcode.php:2989
 msgid "Thailand"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2970
+#: public/class-boldform-lite-shortcode.php:2990
 msgid "Timor-Leste"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2971
+#: public/class-boldform-lite-shortcode.php:2991
 msgid "Togo"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2972
+#: public/class-boldform-lite-shortcode.php:2992
 msgid "Tonga"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2973
+#: public/class-boldform-lite-shortcode.php:2993
 msgid "Trinidad and Tobago"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2974
+#: public/class-boldform-lite-shortcode.php:2994
 msgid "Tunisia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2975
+#: public/class-boldform-lite-shortcode.php:2995
 msgid "Turkey"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2976
+#: public/class-boldform-lite-shortcode.php:2996
 msgid "Turkmenistan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2977
+#: public/class-boldform-lite-shortcode.php:2997
 msgid "Tuvalu"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2978
+#: public/class-boldform-lite-shortcode.php:2998
 msgid "Uganda"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2979
+#: public/class-boldform-lite-shortcode.php:2999
 msgid "Ukraine"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2980
+#: public/class-boldform-lite-shortcode.php:3000
 msgid "United Arab Emirates"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2981
+#: public/class-boldform-lite-shortcode.php:3001
 msgid "United Kingdom"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2982
+#: public/class-boldform-lite-shortcode.php:3002
 msgid "United States"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2983
+#: public/class-boldform-lite-shortcode.php:3003
 msgid "Uruguay"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2984
+#: public/class-boldform-lite-shortcode.php:3004
 msgid "Uzbekistan"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2985
+#: public/class-boldform-lite-shortcode.php:3005
 msgid "Vanuatu"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2986
+#: public/class-boldform-lite-shortcode.php:3006
 msgid "Vatican City"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2987
+#: public/class-boldform-lite-shortcode.php:3007
 msgid "Venezuela"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2988
+#: public/class-boldform-lite-shortcode.php:3008
 msgid "Vietnam"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2989
+#: public/class-boldform-lite-shortcode.php:3009
 msgid "Yemen"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2990
+#: public/class-boldform-lite-shortcode.php:3010
 msgid "Zambia"
 msgstr ""
 
-#: public/class-boldform-lite-shortcode.php:2991
+#: public/class-boldform-lite-shortcode.php:3011
 msgid "Zimbabwe"
 msgstr ""
 
