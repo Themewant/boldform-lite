@@ -23,6 +23,9 @@
 	var FIELD  = '.boldform-lite-form__field';
 	var MEDIA  = '.boldform-lite-form__row-media';
 
+	/** Ids for inline error messages, so each can be referenced by aria-describedby. */
+	var errorSeq = 0;
+
 	/**
 	 * Controls that own the arrow keys for their own value. Binding screen
 	 * navigation to arrows while focus is inside one of these would steal the
@@ -978,9 +981,35 @@
 				continue;
 			}
 
+			var type = ( control.type || '' ).toLowerCase();
+
 			// A hidden input backs widgets like star ratings and sliders, so it
 			// is only skipped when it carries no requirement of its own.
-			if ( 'hidden' === ( control.type || '' ).toLowerCase() && ! control.hasAttribute( 'required' ) ) {
+			if ( 'hidden' === type && ! control.hasAttribute( 'required' ) ) {
+				continue;
+			}
+
+			// BARRED FROM CONSTRAINT VALIDATION, but still required. The spec
+			// bars two kinds of control from validation entirely — a hidden
+			// input and a readonly one — and `checkValidity()` answers true for
+			// both however empty they are.
+			//
+			// A required date or time field produces BOTH at once. flatpickr
+			// runs in altInput mode, which retypes the original input to hidden
+			// (keeping its `required` attribute) and inserts a readonly text
+			// input beside it with `required` copied across. Neither could ever
+			// report invalid, so an empty required Date Picker was walked
+			// straight past. A required star rating or slider, which is also
+			// backed by a hidden input, had the same hole.
+			//
+			// Lite's own validator reads the VALUE rather than the constraint,
+			// which is why an ordinary form already catches this and only the
+			// conversational screens did not. Same test here.
+			if ( control.hasAttribute( 'required' ) && ( 'hidden' === type || control.readOnly ) ) {
+				if ( '' === String( null === control.value || undefined === control.value ? '' : control.value ).trim() ) {
+					return this.focusableFor( control, field );
+				}
+
 				continue;
 			}
 
@@ -992,6 +1021,21 @@
 		return null;
 	};
 
+	/**
+	 * The control to report an error against when the failing one cannot take
+	 * focus. showError() focuses whatever it is handed, and a hidden input
+	 * silently swallows that — leaving the message on screen with the cursor
+	 * nowhere. flatpickr's visible partner lives in the same field wrapper, as
+	 * does the control of any other widget backed by a hidden input.
+	 */
+	Engine.prototype.focusableFor = function ( control, field ) {
+		if ( 'hidden' !== ( control.type || '' ).toLowerCase() ) {
+			return control;
+		}
+
+		return field.querySelector( 'input:not([type="hidden"]), select:not([data-boldform-select]), textarea, button:not([type="submit"])' ) || control;
+	};
+
 	Engine.prototype.showError = function ( control ) {
 		var field = control.closest( FIELD );
 		var text  = ( field && field.getAttribute( 'data-error' ) )
@@ -999,15 +1043,47 @@
 			|| this.i18n.required
 			|| 'Please answer this question before continuing.';
 
-		if ( this.message ) {
-			this.message.textContent = text;
-			this.message.classList.add( 'is-visible', 'is-error' );
-		}
-
+		// UNDER THE FIELD, not in the form's message bar at the top of the screen.
+		// A screen shows one question, so a banner above it names a field the
+		// visitor can already see and puts the complaint furthest from the control
+		// that has to change — on a tall screen it can sit off-frame entirely.
+		//
+		// Same element, same class and same ARIA wiring an ordinary Lite form
+		// uses, so the message inherits whatever the theme already styles for a
+		// field error, and Lite's own "clear it the moment the visitor edits the
+		// field" listener — delegated on document for
+		// `.boldform-lite-form__field.is-invalid :input` — picks this up too. That
+		// covers a date arriving from the flatpickr calendar, which fires `change`
+		// on the original input rather than any typing.
 		this.chrome.classList.add( 'has-error' );
 
 		if ( field ) {
-			field.classList.add( 'boldform-cv-field--invalid' );
+			field.classList.add( 'boldform-cv-field--invalid', 'is-invalid' );
+
+			if ( ! field.querySelector( '.boldform-lite-form__field-error' ) ) {
+				var id  = 'boldform-cv-error-' + ( ++errorSeq );
+				var box = document.createElement( 'div' );
+
+				box.className = 'boldform-lite-form__field-error';
+				box.id        = id;
+				box.setAttribute( 'role', 'alert' );
+				box.textContent = text;
+				field.appendChild( box );
+
+				// Mirrors Lite's markup so its clear-on-edit handler, which reads
+				// the id back off the wrapper, can undo this exactly.
+				field.setAttribute( 'data-bf-error-id', id );
+				control.setAttribute( 'aria-invalid', 'true' );
+
+				var described = control.getAttribute( 'aria-describedby' );
+				control.setAttribute( 'aria-describedby', described ? described + ' ' + id : id );
+			}
+		}
+
+		// role="alert" announces the message itself; the live region carries the
+		// same words for the case where the field never received one.
+		if ( this.live && ! field ) {
+			this.live.textContent = text;
 		}
 
 		try {
@@ -1018,6 +1094,8 @@
 	};
 
 	Engine.prototype.clearError = function () {
+		// Kept: an earlier build wrote field errors here, and a form that scrolled
+		// away mid-error could otherwise leave a stale banner behind.
 		if ( this.message ) {
 			this.message.textContent = '';
 			this.message.classList.remove( 'is-visible', 'is-error' );
@@ -1025,9 +1103,26 @@
 
 		this.chrome.classList.remove( 'has-error' );
 
-		var flagged = this.chrome.querySelectorAll( '.boldform-cv-field--invalid' );
-		for ( var i = 0; i < flagged.length; i++ ) {
-			flagged[ i ].classList.remove( 'boldform-cv-field--invalid' );
+		var boxes = this.chrome.querySelectorAll( '.boldform-lite-form__field-error' );
+		for ( var i = 0; i < boxes.length; i++ ) {
+			if ( boxes[ i ].parentNode ) {
+				boxes[ i ].parentNode.removeChild( boxes[ i ] );
+			}
+		}
+
+		var flagged = this.chrome.querySelectorAll( '.boldform-cv-field--invalid, ' + FIELD + '.is-invalid' );
+		for ( var j = 0; j < flagged.length; j++ ) {
+			flagged[ j ].classList.remove( 'boldform-cv-field--invalid', 'is-invalid' );
+			flagged[ j ].removeAttribute( 'data-bf-error-id' );
+		}
+
+		// Swept separately: Lite's clear-on-edit handler picks the control it
+		// considers the field's own, which for a widget is not always the one
+		// showError() flagged, so an aria-invalid could otherwise outlive its
+		// message.
+		var marked = this.chrome.querySelectorAll( '[aria-invalid="true"]' );
+		for ( var k = 0; k < marked.length; k++ ) {
+			marked[ k ].removeAttribute( 'aria-invalid' );
 		}
 	};
 
