@@ -364,6 +364,26 @@ class BoldForm_Lite_Shortcode {
 					</div>
 				<?php endforeach; ?>
 			</div>
+			<?php
+			/*
+			 * Validation summary, and ONLY that. The element above the fields keeps
+			 * carrying the confirmation, the "Submitting…" state and the server's
+			 * status message — someone who has just submitted is looking at the top
+			 * of the form, so that is where those belong.
+			 *
+			 * A validation failure is different: it answers a button the visitor
+			 * just pressed at the BOTTOM of the form, and on a long form the top of
+			 * the page is nowhere near it. Announcing it up there meant the reply to
+			 * "why did nothing happen" was off-screen.
+			 *
+			 * Sits after the fields wrapper so it lands above the actions row in the
+			 * ordinary layout. A form whose author dropped a `submit` FIELD inside a
+			 * row instead has no actions row at all, and the summary follows the last
+			 * field — still the foot of the form, which is what it is for.
+			 */
+			?>
+			<div class="boldform-lite-form__message boldform-lite-form__message--foot" data-boldform-message-foot aria-live="polite"></div>
+
 			<div style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
 				<label aria-hidden="true">Leave this field empty<input type="text" name="boldform_hp_<?php echo esc_attr( $form_id ); ?>" value="" tabindex="-1" autocomplete="off" readonly aria-hidden="true" data-lpignore="true" data-1p-ignore data-bwignore data-form-type="other"></label>
 			</div>

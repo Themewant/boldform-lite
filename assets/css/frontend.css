@@ -211,6 +211,25 @@
 	border-radius: var(--bf-msg-error-radius, 12px);
 }
 
+/* The foot copy has neighbours on BOTH sides, unlike the message at the top of
+   the form, so it needs a gap above and below and nothing else supplies either:
+   `--bf-row-gap` only spaces rows INSIDE the fields wrapper and this element
+   sits outside it, and `.boldform-lite-form__actions` carries `margin: 0`. A
+   one-sided margin welds the message either to the last field or to the button.
+
+   Margin only — colour, padding, radius and type stay shared, so a theme that
+   restyles the message restyles both.
+
+   MUST STAY BELOW `.is-error` AND `.is-success`. Those selectors carry the same
+   two-class weight as `--foot.is-error`, so the cascade is decided by source
+   order alone. Written above them this was silently overridden and the message
+   rendered flush against the field it followed, with its whole gap underneath. */
+.boldform-lite-form__message--foot,
+.boldform-lite-form__message--foot.is-error,
+.boldform-lite-form__message--foot.is-success {
+	margin: var(--bf-msg-foot-margin, 18px 0);
+}
+
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .boldform-lite-form select,
 .boldform-lite-form textarea {

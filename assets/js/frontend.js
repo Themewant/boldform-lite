@@ -57,6 +57,22 @@ jQuery(
 			$form.find( '.is-invalid' ).removeClass( 'is-invalid' );
 		}
 
+		/**
+		 * Empties the validation summary that sits beside the submit button.
+		 *
+		 * Separate from clearFieldErrors() because the two are cleared at
+		 * different moments: the field messages also go on every edit, while the
+		 * summary only makes sense to clear when the form is submitted again.
+		 *
+		 * @param {jQuery} $form The form element.
+		 * @return {void}
+		 */
+		function clearFootMessage( $form ) {
+			$form.find( '[data-boldform-message-foot]' )
+				.removeClass( 'is-visible is-error is-success' )
+				.text( '' );
+		}
+
 		function showFieldError( $wrapper, message ) {
 			$wrapper.addClass( 'is-invalid' );
 
@@ -97,21 +113,26 @@ jQuery(
 		}
 
 		/**
-		 * Moves keyboard focus to the first invalid control in the form so keyboard
-		 * and screen-reader users land on the field they need to fix.
+		 * Marks where the first problem is WITHOUT moving the page.
+		 *
+		 * This used to focus the first invalid control, which pulled the viewport
+		 * up to it — press Submit at the foot of a long form and the page jumped
+		 * to the top, which reads as the form having reloaded and losing the
+		 * answers rather than as an answer to the button.
+		 *
+		 * Nothing is lost by staying put. Each field's message is inserted with
+		 * role="alert", an assertive live region, so a screen reader announces the
+		 * failures as they appear whether or not anything is focused, and the
+		 * summary beside the button says how many there are.
 		 *
 		 * @param {jQuery} $form The form element.
 		 * @return {void}
 		 */
 		function focusFirstInvalid( $form ) {
-			var $firstInvalid = $form.find( '.boldform-lite-form__field.is-invalid' ).first();
-			if ( ! $firstInvalid.length ) {
-				return;
-			}
-			var $target = getInvalidControls( $firstInvalid ).first();
-			if ( $target.length && typeof $target[ 0 ].focus === 'function' ) {
-				$target[ 0 ].focus();
-			}
+			// Intentionally does not call focus(). Kept as a named seam so the
+			// decision has one place to live and can be reversed in one line —
+			// `$target[0].focus( { preventScroll: true } )` restores focus for
+			// keyboard users without bringing the jump back with it.
 		}
 
 		/**
@@ -288,17 +309,27 @@ jQuery(
 				}
 
 				var $message = $form.find( '[data-boldform-message]' );
+
+				// The validation summary lives beside the button, not above the
+				// form. Falls back to the top element so a form rendered by an
+				// older cached template still reports the failure somewhere.
+				var $messageFoot = $form.find( '[data-boldform-message-foot]' );
+				if ( ! $messageFoot.length ) {
+					$messageFoot = $message;
+				}
+
 				var $submit = $form.find( '.boldform-lite-form__submit' );
 				var submitText = $submit.text();
 				var enableAjax = '1' === String( $form.data( 'enable-ajax' ) || '0' );
 
 				clearFieldErrors( $form );
+				clearFootMessage( $form );
 
 				if ( ! enableAjax ) {
 					// Non-AJAX: validate client-side, allow native submit if valid.
 					if ( ! validateClientSide( $form ) ) {
 						event.preventDefault();
-						$message.addClass( 'is-visible is-error' ).text( boldformLiteFrontend.errorText );
+						$messageFoot.addClass( 'is-visible is-error' ).text( boldformLiteFrontend.errorText );
 						focusFirstInvalid( $form );
 					}
 					return;
@@ -307,7 +338,7 @@ jQuery(
 				event.preventDefault();
 
 				if ( ! validateClientSide( $form ) ) {
-					$message
+					$messageFoot
 						.addClass( 'is-visible is-error' )
 						.text( boldformLiteFrontend.errorText );
 					focusFirstInvalid( $form );
@@ -369,7 +400,11 @@ jQuery(
 							var message = response && response.data && response.data.message ? response.data.message : boldformLiteFrontend.errorText;
 							var errors = response && response.data && response.data.errors ? response.data.errors : null;
 
-							$message
+							// Foot, for the same reason the client-side summary goes
+							// there: it answers the button just pressed, and it
+							// arrives alongside the per-field messages this rejection
+							// puts on the fields themselves. Success keeps the top.
+							$messageFoot
 								.addClass( 'is-visible is-error' )
 								.text( message );
 

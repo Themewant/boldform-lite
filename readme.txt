@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.6
+Stable tag: 1.1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,6 +23,7 @@ https://www.youtube.com/watch?v=EWum_aGDAMc
 = Why BoldForm? =
 
 * **Drag & drop** — build and reorder fields visually, configure each one instantly, and watch your styling update live as you work.
+* **Conversational forms, free** — turn any form into a one-question-at-a-time experience with a single switch. No rebuild, no separate form type, no add-on.
 * **Lightweight by design** — assets load only where a form appears, the analytics chart uses the browser's native canvas (no charting library), and each form is queried once per request.
 * **No lock-in** — export and import your forms, entries, and settings as JSON at any time.
 * **Yours to control** — submissions live in your own database, with built-in tools to export or erase personal data on request.
@@ -76,6 +77,17 @@ https://www.youtube.com/watch?v=Iv9QXaEa2i0
 
 **Layout & content**
 * Section Break (heading + description divider), Paragraph / Static Text, HTML Editor, Terms & Conditions
+
+= Conversational Forms =
+
+Show any form one question at a time, like a conversation. Flip one switch in Form Settings and the form you already built is presented as a guided sequence of screens — the same fields, the same layout, the same conditional logic, the same notifications. Switch it off and the form goes straight back to normal.
+
+* **Works on forms you already have** — nothing is rewritten and nothing is duplicated. Your conditional logic keeps working, and a question whose field is currently hidden is skipped rather than shown as an empty screen.
+* **Welcome screen** — open with a title, a short intro and a Start button instead of dropping the visitor straight into question one.
+* **Progress your way** — a bar, dots, a counter or a percentage, or none at all. Position it left, centre or right, and colour the unfinished part.
+* **Keyboard first** — Enter moves to the next question, Shift+Enter starts a new line in a paragraph field, and an optional on-screen hint tells visitors so.
+* **Design per screen** — give any screen its own image, placed left, right or behind the question, and its own background, question and answer colours. Anything you don't set follows the form's defaults.
+* **Degrades safely** — with JavaScript unavailable the form renders as an ordinary single-page form and still submits.
 
 = Smart Form Features =
 
@@ -335,147 +347,144 @@ Learn more about how [Appsero collects and uses this data](https://appsero.com/p
 == Changelog ==
 = 1.1.7 =
 New features:
-* New: Conversational Forms — show any form one question at a time, like a conversation. Turn it on per form. Your fields, layout and conditional logic stay exactly as they are, and you can switch back at any time.
+* New: Conversational Forms — show any form one question at a time. Turn it on per form; your fields, layout and conditional logic stay as they are.
 * New: Conversational forms can open with a welcome screen, and show a progress bar, dots, a counter or a percentage.
-* New: Conversational forms can position the Back and Next buttons and the progress indicator, and colour the unfinished part of the progress bar or dots. The Back button has its own colour and fill, and follows your Button colour until you set them.
-* New: Every conversational screen has its own settings — an image placed left, right or behind the question with an optional height, and all six colours, set on the screen you are looking at. Anything you do not change follows the form's defaults.
+* New: Position the Back and Next buttons and the progress indicator, and colour them.
+* New: Every screen can have its own image — left, right or behind the question — and its own colours.
 
 Improvements:
-* Improve: A required dropdown left empty is now caught before the form is sent. It was only reported by the server, because the requirement lives on the dropdown's custom control rather than the hidden field the check looked at.
-* Improve: Add-ons can now render their own admin notices on BoldForm's screens through a new `boldform_admin_notices` action. Notices registered the usual way were cleared by the filtering that keeps these screens free of unrelated plugins' messages.
-* Improve: The template library's locked rows and the Field Library's premium teaser now have their own switches, so an add-on that is installed but not yet activated can keep showing them — and word them for activation — without turning every other upgrade prompt back on. New filters: `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_library_lock_group_title`, `boldform_library_lock_title`, `boldform_library_lock_text`, `boldform_template_lock_title`, `boldform_template_lock_text`, `boldform_upgrade_modal_title`, `boldform_upgrade_modal_text`, `boldform_integration_lock_title`, `boldform_show_locked_export_teaser` and `boldform_export_lock_hint` (the existing `boldform_upgrade_url` and `boldform_upgrade_label` now drive these CTAs too).
-* Improve: The locked Excel/PDF export prompts now have a switch of their own, `boldform_show_locked_export_teaser`, so an add-on that supplies real export formats can keep them on screen while it is idle rather than leaving the slot empty. Previously they were tied to the shared upgrade switch, which such an add-on turns off on install — so the Tools -> Entries "Export format" selector vanished before the add-on was able to replace it. (Entries' own "Export CSV" button was never affected.)
-* Improve: Every upgrade prompt in the admin now goes through the same two filters, `boldform_upgrade_url` and `boldform_upgrade_label`. Five dialogs in the builder still linked straight to the sales page, so an add-on that repointed them at its own activation screen ended up with some prompts saying "Activate License" and others still offering to sell what the user had already bought. A prompt pointing at a page inside the admin now also opens in the same tab instead of a new one. `boldform_upgrade_label` gains a second argument naming where the text appears, so a callback can reword a button without also rewriting a screen-reader label or a "— Upgrade" suffix.
+* Improve: A required dropdown left empty is now caught before the form is sent.
+* Improve: Add-ons can show their own admin notices on BoldForm's screens.
+* Improve: Locked field, template and export prompts have their own switches, so an add-on that is installed but not yet active can word them for activation.
+* Improve: The Tools → Entries export format selector no longer disappears when such an add-on is installed.
+* Improve: Every upgrade prompt now goes through the same filters, so an add-on can repoint them all at once.
+
+Developer:
+* Developer: New filters — `boldform_admin_notices`, `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_show_locked_export_teaser`, `boldform_export_lock_hint`, plus lock title/text filters for the field library, templates, integrations and upgrade modal. `boldform_upgrade_label` gains a context argument.
 
 = 1.1.6 =
 New features:
-* New: Form Migrator — Import your Contact Form 7 forms into BoldForm with a single click. Re-import anytime to sync changes without creating duplicates.
-* New: The Page Break field now has settings of its own — a title per step, three progress-indicator styles with their colours, and the Next/Previous buttons' colour, size, corner radius and wording.
-* New: A checkbox can be shown as a Switch. Pick the style per field — the tick box stays the default, so nothing changes on forms you already built.
+* New: Form Migrator — import your Contact Form 7 forms in one click. Re-import anytime without creating duplicates.
+* New: Page Break settings — a title per step, three progress-indicator styles with colours, and Next/Previous button styling.
+* New: A checkbox can be shown as a Switch, per field. The tick box stays the default.
 
 Improvements:
-* Improve: The "Choose a Template" library now also lists the ready-made forms available with an upgrade, marked with a padlock below the ones you already have; selecting one shows what the form is for. Four categories — Health & Medical, Education & Nonprofit, Payment & Calculation and Multi-Step — were previously empty and never appeared at all.
-* Improve: The Forms list gains a search box, sortable columns and paging — search by title, sort by name, entry count or last-updated, and step through ten at a time, with your filter, search and sort kept as you move between pages. Long lists no longer load every form on a single screen.
-* Improve: The "Choose a Template" library is now organised into collapsible categories — General, Business, Events & Booking, HR & Surveys and more — and a template that relies on a premium module you have turned off says so before you import it, rather than loading half-configured.
-* Improve: On the Integrations page, a BoldForm Pro integration you haven't licensed yet now shows "Locked" with a link to activate, instead of "Available in BoldForm Pro" — so an existing Pro customer isn't shown a message that reads like an upsell.
-* Improve: The "BoldForm Pro is here" notice now only appears on BoldForm's own admin screens, instead of every page in wp-admin.
+* Improve: The template library now lists premium templates with a padlock, and four previously empty categories appear.
+* Improve: The Forms list gains search, sortable columns and paging.
+* Improve: Templates are grouped into collapsible categories, and one that needs a disabled module says so before you import it.
+* Improve: Locked integrations show "Locked" with a link to activate, instead of an upsell.
+* Improve: The "BoldForm Pro is here" notice appears only on BoldForm's own screens.
 
 Fixes:
-* Fix: A form exported from one site now imports with all its fields intact. A layout containing quoted markup or a typographic character — twelve of the ready-made templates did — came in with no fields at all and its settings reset, because the escaping was stripped while the file was read. A file that genuinely cannot be read is now skipped and counted in the notice rather than creating an empty form that looks imported.
-* Fix: A required Terms & Conditions checkbox now shows the red asterisk that marks every other required field. It was already required and an unticked box was refused on submit, but with nothing on screen to say so it read as optional. Applies to any consent field, not only imported ones.
-* Fix: Clearing the Slider Height, Star Size or Maximum File Size box now restores that setting's default instead of jamming it to the lowest allowed value — left untouched, a slider drew a 2px track rather than its intended 8px and a star rating rendered at 16px rather than 20px. Values you set yourself are untouched.
-* Fix: On the Entries screen, choosing a bulk action and clicking Apply with no entries ticked did nothing at all and said nothing. Apply now stays greyed out until both a row and an action are chosen, and explains why when you hover it.
-* Fix: A file dragged onto a File Upload field is no longer silently ignored — dropped files are accepted exactly like ones chosen through the file browser.
-* Fix: Applying a Design Theme now really recolours the form. Colours set on individual controls quietly outranked it, so parts of the form kept their old look; applying a theme now asks first, then replaces only the colours. Several accents also stayed teal under five of the eight themes.
-* Fix: The submit button's alignment is now honoured when the button sits as a field inside the form layout, not only as the fixed button at the bottom. The Elementor widget gains a matching alignment control.
-* Fix: The Email Notification tab's User Confirmation section now reveals its options reliably, and "Customize this email" together with the add-on slots sit inside the toggle, appearing only when the email is enabled. Empty sections no longer leave a stray divider.
-* Fix: A checkbox or radio option shown in the template preview no longer displays a doubled tick, and its label sits a proper distance from the box.
-* Fix: The BoldForm item in the WordPress sidebar now highlights the page you are actually on, instead of leaving every sub-item unmarked on some hosts.
+* Fix: A form exported with quoted markup or special characters no longer imports with empty fields.
+* Fix: A required Terms & Conditions checkbox now shows the red required asterisk.
+* Fix: Clearing Slider Height, Star Size or Maximum File Size restores that setting's default instead of its minimum.
+* Fix: On Entries, Apply now stays disabled until both a row and an action are chosen.
+* Fix: A file dragged onto a File Upload field is no longer ignored.
+* Fix: Applying a Design Theme now recolours the whole form.
+* Fix: The submit button's alignment is honoured when the button sits as a field in the layout.
+* Fix: The User Confirmation email section reveals its options reliably.
+* Fix: A checkbox or radio option in the template preview no longer shows a doubled tick.
+* Fix: The BoldForm sidebar item highlights the page you are actually on.
 
 Developer:
-* Developer: New `boldform_migration_sources` filter — register an importer for another form plugin by appending an object that implements the `BoldForm_Lite_Migration_Source` interface (get_slug / get_label / is_available / get_forms / import_form). Every available source is listed as a tab, and each imported form runs through the builder's own save path, so a new source only has to describe how to read its forms.
+* Developer: New `boldform_migration_sources` filter — register an importer for another form plugin through the `BoldForm_Lite_Migration_Source` interface.
 
 = 1.1.5 =
 Security:
-* Fix: An email field now rejects an address that is not one, instead of quietly correcting it. Typing something like "you@example.com" followed by a line break and more text used to be accepted and saved as a different address than was typed — WordPress's email sanitizer strips the offending characters and hands back an address that still looks valid. The form now reports "must be a valid email address" and saves nothing. Every genuine address is unaffected, including plus-tags, subdomains, mixed case, stray spaces, and addresses pasted out of Word, Outlook or a web page (which often carry an invisible character along with them).
-* Fix: Cc and Bcc headers on the confirmation email sent to the visitor are now re-validated the same way the admin notification's already were, so the two are no longer protected differently.
+* Fix: An email field now rejects an invalid address instead of quietly saving a different one. Genuine addresses are unaffected.
+* Fix: Cc and Bcc on the confirmation email are re-validated the same way the admin notification's already were.
 
 Developer:
-* Developer: New `BoldForm_Lite::supports( $capability )` — asks whether this build provides a named extension point, so an add-on can check for a hook instead of comparing version numbers. Guard the call with `method_exists( 'BoldForm_Lite', 'supports' )`, which correctly reads as "no capabilities" on an older BoldForm. Capability names are permanent once published. This release declares `admin_email_attachments` and `user_email_attachments`.
-* Developer: New `boldform_lite_admin_email_attachments` filter — lets an add-on add files to the admin notification, such as a generated PDF of the submission. Receives the visitor's uploaded files and passes `$form_record`, `$entry_data` and `$entry_id`. Return absolute paths to files that already exist on disk. Whatever a filter returns is re-validated before it is used: each path must resolve (via `realpath()`, so symlinks and `../` are followed) to a readable file inside the uploads directory, and anything else is dropped without stopping the email. That boundary is deliberate — the return value becomes an outbound attachment, so an add-on that builds a path from submitted data could otherwise mail out `wp-config.php`. Used by BoldForm Pro's PDF Attachment.
-* Developer: New `boldform_lite_user_email_attachments` filter — the counterpart for the user confirmation, so an add-on can send the submitter their own copy of what they filed. Passes `$user_email` before `$entry_id`. `send_user_email()` now takes an `$attachments` argument and passes it to `wp_mail()`; before this the confirmation could not carry a file at all, not even the visitor's own upload. The list starts empty rather than inheriting those uploads — mailing someone their own file back is rarely wanted — so an add-on has to ask for anything explicitly. Same validation as the admin side. The builder renders a matching `.boldform-email-attachment-slot` with data-email-slot="user". Capability: `user_email_attachments`.
-* Developer: The form builder's Email Notification tab now renders a `.boldform-email-attachment-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure what rides along with the email. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
-* Developer: New `boldform_lite_admin_email_to` filter — lets an add-on choose the admin notification's recipient after the form's own settings have been applied, so a submission can be routed to different people based on what was answered. Return one address, several separated by commas, or an array of addresses. Whatever a filter returns is re-validated before it is used: each address must survive `sanitize_email()` unchanged and pass `is_email()`, and a value carrying CR/LF is discarded outright rather than cleaned up — otherwise a header-injection attempt could be silently "repaired" into a different, valid-looking address. If nothing usable comes back, the recipient the form already resolved is kept, so a notification is never lost. Used by BoldForm Pro's Conditional Email Routing.
-* Developer: The form builder's Email Notification tab now renders a second, separate `.boldform-email-routing-slot` container (data-email-slot="admin") inside the admin notification block, for add-ons that configure who an email goes to. It is kept distinct from the existing `.boldform-email-pro-slot` so two add-ons can extend the same email block without one overwriting the other, and it renders empty — an add-on that is absent leaves no gap.
+* Developer: New `BoldForm_Lite::supports( $capability )` — check for a hook instead of comparing version numbers. Declares `admin_email_attachments` and `user_email_attachments`.
+* Developer: New `boldform_lite_admin_email_attachments` and `boldform_lite_user_email_attachments` filters — attach files to either notification. Returned paths are re-validated against the uploads directory.
+* Developer: New `boldform_lite_admin_email_to` filter — route the admin notification by what was answered. Addresses are re-validated and anything carrying CR/LF is discarded.
+* Developer: The Email Notification tab renders `.boldform-email-attachment-slot` and `.boldform-email-routing-slot` containers for add-ons.
 
 = 1.1.4 =
 New features:
-* New: Rich thank-you message — the message shown after a submission is now written in a full visual editor under Form Settings → Confirmation, with headings, bold, lists, links, alignment and colour, plus a Code view for hand-written HTML. Existing plain-text messages keep working exactly as before; nothing needs changing.
+* New: Rich thank-you message — write the confirmation in a full visual editor, with a Code view for hand-written HTML. Existing messages keep working.
 
 Security:
-* Fix: The confirmation message shown after a submission made without JavaScript is no longer passed through the page URL. Anyone could previously put arbitrary wording on the page with a crafted link (for example, a fake "your payment failed, call this number" notice under your own form). The message is now held server-side and fetched with a single-use token, so only a real submission can produce one.
+* Fix: The confirmation message shown without JavaScript is no longer passed through the page URL, so a crafted link can no longer put fake wording under your form.
 
 Improvements:
-* Improve: BoldForm has a new logo — the BoldForm "B" monogram replaces the previous form-and-pencil mark. It updates everywhere at once: the admin menu icon, every screen's toolbar, the builder, the dashboard stat cards and the empty states.
-* Improve: The plugin's name now spells out what it does — "BoldForm - Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms". Nothing about the plugin itself changes; it is only easier to find.
-* Improve: BoldForm now has a home of its own at wpboldform.com, and the upgrade and roadmap links point there.
-* Improve: Padding, margin, radius and border-width controls now start with their four sides linked, everywhere in the Style tab — form container, input fields, labels, placeholders and every other group. Type one value and all four sides follow, instead of having to click the link icon first. A control that already has different values per side still opens unlinked.
-* Improve: A Reply-To already set on a notification (for example, per form by BoldForm Pro) now takes precedence over the site-wide SMTP Reply-To in Settings > SMTP.
-* Improve: The Form Settings tabs now keep a consistent order and use standard WordPress icons, so every tab — including any added by an add-on — matches the rest of the admin and highlights correctly when selected.
-* Improve: The Add New form screen now uses the same BoldForm toolbar as every other screen, so the admin navigation no longer disappears when creating a form.
-* Improve: The Entries screen and the Tools → Entries export panel now preview Excel and PDF export — locked "Export Excel" / "Export PDF" options that open a quick upgrade dialog when clicked. Shown only in the free version.
-* Improve: The thank-you message editor now previews shortcodes — a locked "Add Shortcodes" button that opens a quick upgrade dialog explaining how submitted data can be written into the message. Shown only in the free version.
-* Improve: The Email Notification panel now previews the custom email editor — a locked "Customize this email" button under each notification that opens a quick upgrade dialog. Shown only in the free version.
-* Improve: In a form's Integrations tab, connections whose service the free plugin cannot send to (anything other than Mailchimp or Brevo) now appear as a locked row that opens a quick upgrade dialog, instead of a toggle that would never fire. Existing assignments are preserved. Shown only in the free version.
-* Improve: The builder's Field Library now previews premium fields — a "Pro Fields" section lists the paid field types (Payment Item, Page Break, Repeater, Signature and more) as locked chips behind an overlay that opens a quick upgrade dialog. Shown only in the free version.
+* Improve: A new BoldForm logo, updated everywhere in the admin at once.
+* Improve: The plugin's name now spells out what it does, so it is easier to find.
+* Improve: BoldForm has a home of its own at wpboldform.com.
+* Improve: Padding, margin, radius and border-width controls start with their four sides linked.
+* Improve: A Reply-To set on a notification now takes precedence over the site-wide SMTP Reply-To.
+* Improve: Form Settings tabs keep a consistent order and use standard WordPress icons.
+* Improve: The Add New form screen uses the same toolbar as every other screen.
+* Improve: Locked previews for Excel/PDF export, thank-you shortcodes, the custom email editor, premium integrations and premium fields. Free version only.
 
 Fixes:
-* Fix: The count badge on a form's Integrations tab now shows the number of connections actually assigned to that form.
+* Fix: The Integrations tab count badge now shows the connections actually assigned to that form.
 
 Developer:
-* Developer: The form builder's Email Notification tab now renders a `.boldform-email-pro-slot` container inside each email block (data-email-slot="admin" / "user") so an add-on can inject per-email controls on the `boldform:form_settings_rendered` event. Used by BoldForm Pro's Custom Email Editor.
-* Developer: The notification email filters now pass the saved entry ID (`boldform_lite_admin_email_subject`/`_content` gain a 4th `$entry_id` arg; `boldform_lite_user_email_subject`/`_content` a 5th), and two new filters — `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` — let an add-on adjust the `wp_mail` headers (e.g. add a Reply-To). Backward-compatible (extra args are ignored by existing callbacks).
-* Developer: New entries-list extension points so add-ons can extend the Entries screen — `boldform_entries_list_columns` (add columns to each row's query), `boldform_entries_where_clauses` (scope the list and its counts by an add-on column), `boldform_entries_filter_controls` (add a filter control to the toolbar alongside the Form and Date filters), and `boldform_entry_status_badge_after` (append markup after a row's status badge).
-* Developer: New bulk-action extension points for the Entries list — `boldform_entries_bulk_actions` (add options to the bulk-actions dropdown) and `boldform_bulk_entry_action` (handle a custom bulk action, with the request nonce and capability already verified). Used by BoldForm Pro's Entry Approval workflow to add per-row approval badges, an Approval filter, and bulk approve/reject.
-* Developer: Form Settings tabs added on `boldform:form_settings_rendered` can declare their position with a numeric `data-stab-order` attribute on the nav item. Tabs are sorted by it after every listener has run; a tab without one defaults to 50 and ties keep insertion order.
-* Developer: New `boldform_show_upgrade_cta` filter — return false to suppress every upgrade prompt (promo notice, menu item, toolbar button, page-header link). Lets an add-on hide the free version's upgrade CTAs without Lite knowing which add-on is present.
+* Developer: The Email Notification tab renders a `.boldform-email-pro-slot` container in each email block for per-email add-on controls.
+* Developer: The notification email filters now pass the saved entry ID, plus new `boldform_lite_admin_email_headers` and `boldform_lite_user_email_headers` filters.
+* Developer: New entries-list hooks — `boldform_entries_list_columns`, `boldform_entries_where_clauses`, `boldform_entries_filter_controls` and `boldform_entry_status_badge_after`.
+* Developer: New bulk-action hooks — `boldform_entries_bulk_actions` and `boldform_bulk_entry_action`.
+* Developer: Form Settings tabs can declare their position with `data-stab-order`.
+* Developer: New `boldform_show_upgrade_cta` filter — return false to suppress every upgrade prompt.
 
 = 1.1.3 =
 New features:
-* New: Cloudflare Turnstile captcha — a modern, privacy-friendly, no-puzzle alternative to reCAPTCHA and hCaptcha. Choose it under Settings > Captcha, add your Turnstile keys, and the widget is verified server-side on every submission.
+* New: Cloudflare Turnstile captcha — a no-puzzle alternative to reCAPTCHA and hCaptcha, verified server-side on every submission.
 
 Improvements:
-* Improve: The BoldForm Pro promotion notice now announces that Pro has launched, with a shorter, cleaner layout and a single clear call to action. It no longer appears on the Upgrade to Pro page, where it would be redundant.
-* Improve: Refreshed the Upgrade to Pro page header — it now leads with the current offer, clearer benefit copy, a stronger call to action, and at-a-glance reassurances (instant access, automatic updates, priority support).
-* Improve: When BoldForm Pro is active, every "Upgrade to Pro" prompt is now hidden — the promo notice, the menu item, the toolbar button, and the page-header link — and the Upgrade page shows a short "You're on Pro" confirmation instead of the comparison, so paying users are never shown upgrade nags.
-* Improve: The Entries "Export Selected" actions are now a single dropdown (CSV, and Excel/PDF with Pro) instead of a row of separate buttons, for a cleaner bulk-action bar.
-* Improve: Tidied the SMTP settings screen — the "Send Test Mail" result message now aligns neatly beside the button, and the Save Changes button has clearer spacing.
-* Improve: Entries now use a Trash instead of deleting immediately — the "Delete permanently" bulk action is replaced by "Move to Trash", trashed entries collect under a new Trash tab (excluded from the other views and from exports), and from there they can be Restored or Deleted Permanently. This matches how WordPress and other form plugins handle deletion, so an accidental bulk delete is recoverable.
+* Improve: A shorter, clearer BoldForm Pro notice that no longer appears on the Upgrade page.
+* Improve: Refreshed the Upgrade to Pro page header.
+* Improve: With Pro active, every upgrade prompt is hidden.
+* Improve: The Entries "Export Selected" actions are now a single dropdown.
+* Improve: Tidied the SMTP settings screen.
+* Improve: Entries now go to a Trash and can be restored, instead of deleting immediately.
 
 Fixes:
-* Fix: The Forms list row-actions ("...") menu is no longer clipped by the table card — it now opens fully and stays visible.
+* Fix: The Forms list row-actions menu is no longer clipped by the table card.
 
 Developer:
-* Developer: New entry-detail extension points — the `boldform_entry_detail_sidebar` action and `boldform_entry_detail_enqueue_assets` action let add-ons render cards (and load their assets) on the single-entry screen.
+* Developer: New `boldform_entry_detail_sidebar` and `boldform_entry_detail_enqueue_assets` actions for the single-entry screen.
 
 = 1.1.2 =
 Improvements:
-* Improve: Added an "Upgrade to Pro" page and CTAs comparing Free vs Pro features, so it's easy to see what BoldForm Pro adds.
-* Improve: The Entries list now supports bulk actions — select multiple submissions and mark them Read, Unread, Starred, or Spam, or delete them in one step.
-* Improve: Added an "Export Selected" button on the Entries list to export just the checked submissions to CSV.
-* Improve: Reorganised the Tools screen into separate Forms and Entries tabs, and added a standalone Entries export so you can download submissions on their own.
-* Improve: Added a Documentation menu to the admin toolbar with quick links to the User and Developer guides.
-* Improve: Expanded the Elementor widget with a Range Slider styling section and typography controls for input text.
-* Improve: Exporting a form now bundles the submit button's custom SVG icon inside the export file, so the icon is recreated on the destination site and keeps working after the form is imported on another website.
-* Improve: Importing an export that includes entries now reports how many entries were imported (not just forms), and the Tools export/import descriptions make clear that entries can travel with a full export.
+* Improve: Added an Upgrade to Pro page comparing Free and Pro features.
+* Improve: The Entries list supports bulk actions — Read, Unread, Starred, Spam or delete.
+* Improve: Export just the checked entries to CSV.
+* Improve: Tools is split into Forms and Entries tabs, with a standalone entries export.
+* Improve: A Documentation menu in the toolbar links to the User and Developer guides.
+* Improve: The Elementor widget gains Range Slider styling and input typography controls.
+* Improve: Exporting a form bundles the submit button's custom SVG icon, so it survives the move.
+* Improve: Importing an export with entries now reports how many entries were imported.
 
 Fixes:
-* Fix: Several form and settings values no longer reset to their defaults after saving and reopening — page-redirect type, duplicate-submission prevention, and field style are all preserved.
-* Fix: Saving one Settings tab (General, Captcha, or SMTP) no longer clears the settings on the other tabs.
-* Fix: Custom column widths in the form builder are now kept when a form is saved.
-* Fix: Resolved a form scheduling issue so scheduled open/close windows behave correctly.
-* Fix: The submit button's Icon Color now applies reliably to both Dashicon and custom SVG icons — in the builder preview and on the front end — and the colour swatch updates live as you pick.
-* Fix: An icon-only submit button (an icon with no button text) is no longer reset to "Submit" after saving and reopening the form.
-* Fix: Tidied spacing and sizing across the form builder's field settings panel, so controls align consistently — the Quantity field's Min/Max/Default inputs, the "Enable search" toggle, the option and repeater "Add" buttons, and the payment product option rows.
-* Fix: The Documentation menu now also appears in the toolbar on the Integrations page, so the admin navigation is consistent across every screen.
-* Fix: Importing an export that includes entries no longer loses or alters submission data — values with structured or nested content are preserved intact and numbers keep their full precision.
+* Fix: Page-redirect type, duplicate prevention and field style no longer reset after saving.
+* Fix: Saving one Settings tab no longer clears the others.
+* Fix: Custom column widths are kept when a form is saved.
+* Fix: Scheduled open and close windows behave correctly.
+* Fix: The submit button's Icon Color applies to both Dashicon and custom SVG icons.
+* Fix: An icon-only submit button is no longer reset to "Submit" after saving.
+* Fix: Tidied spacing and alignment across the field settings panel.
+* Fix: The Documentation menu also appears on the Integrations page.
+* Fix: Importing entries no longer loses or alters submission data.
 
 Maintenance:
-* Update: Removed unused files and empty folders from the plugin package for a cleaner, lighter install.
+* Update: Removed unused files and empty folders from the plugin package.
 
 = 1.1.1 =
 Improvements:
-* Improve: Redesigned the Integrations settings dialog, and a connection now switches on immediately after you save it — no second click needed.
-* Improve: The Forms and Entries list tables stay usable on small screens — wide tables scroll within their card instead of stretching or breaking the page layout.
-* Improve: The Entries admin menu now shows an unread-submissions count badge (like the Comments menu) so new entries are visible at a glance.
-* Improve: Expanded the User Guide and Developer Guide with step-by-step setup instructions and screenshots for every integration, plus smooth in-page navigation.
+* Improve: Redesigned the Integrations dialog, and a connection now switches on as soon as you save it.
+* Improve: The Forms and Entries tables scroll within their card on small screens.
+* Improve: The Entries menu shows an unread-submissions count badge.
+* Improve: Expanded the User and Developer guides with setup steps and screenshots.
 
 Fixes:
-* Fix: Conditional Logic rules now save reliably — multi-condition rules and the ALL/ANY match mode are preserved when a form is reopened in the builder.
+* Fix: Conditional Logic rules now save reliably, including multi-condition rules and the ALL/ANY mode.
 
 Developer:
-* Developer: New extension hooks for add-ons — boldform_defer_post_save_actions (hold the entry-created action and notification emails until an entry is finalised), boldform_auto_populate_value (resolve any auto-populate key through a single filter), and boldform_entry_value_admin_html (return rich HTML for an entry value on the admin detail screen only). A boldform_form_reset event now fires on the document after a successful AJAX submit so custom field widgets can re-sync.
-* Developer: The bundled Appsero SDK now lives under includes/appsero/, and tag source archives strip development-only files via .gitattributes.
+* Developer: New hooks — `boldform_defer_post_save_actions`, `boldform_auto_populate_value` and `boldform_entry_value_admin_html`, plus a `boldform_form_reset` event after a successful AJAX submit.
+* Developer: The bundled Appsero SDK moved to `includes/appsero/`.
 
 = 1.1.0 and earlier =
 Entries for 1.1.0 and earlier have been trimmed to keep this changelog within the length WordPress.org displays. See the release notes on the plugin page for the full history.
