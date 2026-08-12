@@ -106,6 +106,7 @@ pre code{background:none;padding:0;color:inherit}
     <a href="#rows-columns" class="bf-sidebar__link">Rows &amp; Columns</a>
     <a href="#field-settings" class="bf-sidebar__link">Field Settings</a>
     <a href="#conditional-logic" class="bf-sidebar__link">Conditional Logic</a>
+    <a href="#conversational" class="bf-sidebar__link">Conversational Forms</a>
     <a href="#templates" class="bf-sidebar__link">Templates</a>
 
     <div class="bf-sidebar__group">Form Settings</div>
@@ -242,6 +243,7 @@ pre code{background:none;padding:0;color:inherit}
 <p>The center area is the form canvas. Each form is built from <strong>rows</strong>, each row has one or more <strong>columns</strong>, and each column holds <strong>fields</strong>.</p>
 <ul>
   <li>Click a field to select and edit it</li>
+  <li>Click an empty area of a column to <strong>select</strong> it &mdash; the selected column is outlined, and fields you click in the Field Library are inserted there. With no column selected, clicked fields are added to the bottom of the form.</li>
   <li>Use the <strong>move handle</strong> to drag fields between columns</li>
   <li>Use the <strong>duplicate</strong> and <strong>delete</strong> buttons on each field</li>
   <li>Use the row action bar to <strong>move</strong>, <strong>duplicate</strong>, or <strong>delete</strong> entire rows</li>
@@ -479,6 +481,144 @@ the extra settings each field type exposes when selected on the canvas.</p>
     <tr><td>less than</td><td>Numeric comparison</td></tr>
   </tbody>
 </table>
+
+<!-- Conversational Forms -->
+<h2 id="conversational">Conversational Forms</h2>
+
+<p>Conversational mode shows your form <strong>one question at a time</strong>, like a conversation, instead of as a single page of fields. It is a presentation setting: your fields, layout, conditional logic, notifications and entries all stay exactly as they are.</p>
+
+<div class="bf-callout bf-callout--info">
+  <strong>You can change your mind at any time.</strong> Turning conversational mode on never rewrites your form, and turning it off puts it straight back to normal. Your conversational settings are kept, so switching back on restores the design you had.
+</div>
+
+<h4>Turning it on</h4>
+<ol>
+  <li>Open the form and select the <strong>Settings</strong> tab</li>
+  <li>Choose <strong>Conversational</strong> in the list on the left</li>
+  <li>Switch <strong>Enable Conversational Mode</strong> on</li>
+</ol>
+
+<p>You can also start a new form this way: <strong>BoldForm &rarr; Add New</strong> has a <strong>Conversational Form</strong> card that creates an ordinary blank form with the setting already switched on.</p>
+
+<p>The form is conversational wherever you placed it &mdash; shortcode, block or Elementor widget. It stays on your own page, inside your own theme, so the surrounding design is untouched.</p>
+
+<h4>Screens and columns</h4>
+
+<p>Each field gets a screen of its own &mdash; one question at a time is the whole point. The one exception is fields you deliberately placed <strong>side by side in the same row</strong>: a First and Last name pair stays together, because splitting them would throw away a layout you chose. If you would rather even those had a screen each, switch on <strong>Put every field on its own screen</strong>.</p>
+
+<p>Some things are handled for you:</p>
+<ul>
+  <li>Your columns are kept: a row you built with two, three or four columns renders that way, with the question text sized down as the columns get narrower. Rows with three or more columns stack below 1024px, and every row stacks on a phone.</li>
+  <li>A consent checkbox or a captcha is moved to the <strong>last</strong> screen, next to the submit button, so nobody is asked to agree to something halfway through.</li>
+  <li>Hidden fields never become a screen, but their values are still submitted.</li>
+  <li>A screen whose fields are hidden by conditional logic is skipped entirely, in both directions.</li>
+</ul>
+
+<h4>Welcome screen</h4>
+
+<p>Switch on <strong>Open with a welcome screen</strong> to show a heading, a short paragraph and a start button before the first question. This is what makes a shared link feel finished rather than dropping visitors straight into question one.</p>
+
+<p>Leave the heading and the text empty and the cover still appears, using the heading shown as the field&rsquo;s placeholder &mdash; so switching it on always changes something you can see. Fill either one in to replace it.</p>
+
+<h4>Progress, motion and wording</h4>
+<table>
+  <thead><tr><th>Setting</th><th>Options</th></tr></thead>
+  <tbody>
+    <tr><td>Progress indicator</td><td>Progress bar (default), dots, a counter such as &ldquo;2 of 7&rdquo;, a percentage, or none</td></tr>
+    <tr><td>Transition</td><td>Slide (default), fade, or none</td></tr>
+    <tr><td>Button wording</td><td>Custom text for the next and back buttons &mdash; leave either empty for &ldquo;Next&rdquo; and &ldquo;Back&rdquo;</td></tr>
+    <tr><td>Button alignment</td><td>Left with the question (default), centred, Back left and Next right, or both on the right</td></tr>
+    <tr><td>Indicator position</td><td>Left (default), centred or right &mdash; for dots, a counter or a percentage. A progress bar spans the full width, so it has no position to set</td></tr>
+  </tbody>
+</table>
+
+<p>The progress count only ever includes screens the visitor can actually reach, so it stays accurate when conditional logic hides part of the form. Visitors who have asked their system for reduced motion never see animation, whichever transition you pick.</p>
+
+<h4>Colours</h4>
+
+<p>Colours work in two layers. The <strong>Style</strong> tab, under <strong>Default Screen Colours</strong>, sets what every screen starts from: background, question text, answer text, accent, button and button text. Leave a colour untouched there and it inherits your form&rsquo;s existing style.</p>
+
+<p><strong>Button</strong> dresses both buttons &mdash; Next is filled with it, Back is outlined in it, so the pair always matches. <strong>Button text</strong> is the label on Next. <strong>Accent</strong> colours whichever progress indicator you chose &mdash; the bar&rsquo;s fill, the dots already passed, the counter or the percentage &mdash; and rings a button when a visitor tabs to it. The panel tells you which of those applies to this form. <strong>Accent background</strong> is the part not reached yet &mdash; the bar&rsquo;s groove, or the dots still to come. <strong>Back button</strong> sets that button&rsquo;s text and its border together, and <strong>Back background</strong> fills it; leave them alone and the text and border follow your Button colour while the fill stays transparent.</p>
+
+<p><strong>Enter hint</strong> colours the small &ldquo;press&nbsp;Enter&rdquo; note beside the Next button, text and key cap together. Left alone it is a faded version of your answer text, so it stays readable whether your screens are light or dark; pick a colour and the hint is exactly that colour rather than a faded version of it. It appears only when <em>Show the &ldquo;press Enter&rdquo; hint</em> is on, on the Settings tab &mdash; with the hint hidden there would be nothing for it to paint.</p>
+
+<p>Accent background appears only when your progress indicator is a bar or dots &mdash; a counter and a percentage are text, and have no unfinished part to colour. It, the Enter hint, and the two Back button colours are the ones here a single screen cannot override, because the progress indicator, the hint and the buttons sit above every screen rather than inside one.</p>
+
+<p>Any single screen can then override its <strong>background, question text and answer text</strong> from its own settings &mdash; see <a href="#cv-screen-settings">Styling one screen</a> below. This is deliberate: set the palette once for the whole form, and change only the screens that need to be different.</p>
+
+<p>The rest &mdash; button, button text, accent, accent background, Enter hint, and both positions &mdash; are set once for the whole form. They dress the progress indicator, the Enter hint and the Back and Next buttons, which sit above the screens rather than inside any one of them, so there is nothing for a single screen to change.</p>
+
+<p>The live preview beside the Style tab shows <strong>the screen you have selected</strong> on the Builder tab, captioned so you always know which one you are looking at. Select a different question and the preview follows. With a welcome screen switched on it opens on the cover, which is what a visitor sees first &mdash; select any question to preview that instead.</p>
+
+<h4 id="cv-screen-settings">Styling one screen</h4>
+
+<p>Select a question on the Builder tab &mdash; or click the gear on its card, which opens this section directly &mdash; and Field Settings shows a <strong>Screen N</strong> panel at the top. It holds everything about the screen itself:</p>
+
+<ul>
+  <li><strong>Questions on screen N</strong> &mdash; put two or more questions side by side so they share one screen</li>
+  <li><strong>Screen N colours</strong> &mdash; background, question text and answer text, for this screen only</li>
+  <li><strong>Screen N image</strong> &mdash; an image for this screen only, and where it sits</li>
+</ul>
+
+<p>These are the same colour controls the Style tab uses, so they work the way you already expect. Each one starts empty and reads <strong>Default</strong> &mdash; the swatch still shows the colour the screen will take, but the screen has no colour of its own yet. That is what keeps the two layers connected: change a colour on the Style tab later and every screen still on <em>Default</em> moves with it. Only the screens you deliberately changed stay put.</p>
+
+<p>To go back, press the <strong>reset</strong> arrow in the colour field, or simply clear the box. Either way that screen follows the form again.</p>
+
+<p>The background and question colours sit next to each other on purpose &mdash; they are the pair that decides whether a screen is readable, so it is worth glancing at them together before you move on.</p>
+
+<h4>Seeing the steps while you build</h4>
+
+<p>With conversational mode on, the Builder tab shows each question as its own numbered card &mdash; <em>Screen 1 of 6</em>, <em>Screen 2 of 6</em>, and so on &mdash; so the order a visitor will walk through is visible without leaving the editor. Fields you placed side by side share one card, because they share one screen. A field that shows the visitor nothing, such as a hidden field, is drawn faintly and carries no number: it never becomes a step. Row and column labels are hidden in this view so the screen numbers are the only numbering on the canvas.</p>
+
+<p>Each screen card carries one action bar, and the gear on it opens that screen&rsquo;s settings. Where several questions share a screen the bar is on the card around them, because that whole card is the screen.</p>
+
+<h4>Images per screen</h4>
+
+<p>Every screen can have its own image, in the same <strong>Screen N</strong> panel. <strong>Placement</strong> offers three choices, and they are shown whether or not you have picked an image yet:</p>
+
+<table>
+  <thead><tr><th>Placement</th><th>What the visitor sees</th></tr></thead>
+  <tbody>
+    <tr><td>Left</td><td>The image fills the left half of the screen, the question sits on the right</td></tr>
+    <tr><td>Right</td><td>The other way round</td></tr>
+    <tr><td>Behind</td><td>The image fills the whole screen with the question on top of it</td></tr>
+  </tbody>
+</table>
+
+<p>If you have not chosen an image yet, clicking a placement opens the media library and keeps that placement &mdash; so you answer <em>where</em> and <em>which</em> in one go. Once an image is there you can move it between the three at any time, set its position, dim it so the text stays readable, give it alt text, and set how tall it is.</p>
+
+<p><strong>Height</strong> is optional. Leave it empty and the screen follows the default; type a number of pixels to override it for that screen alone. For <em>Left</em> and <em>Right</em> it is the height of the image panel; for <em>Behind</em> it is the height of the screen, which is what the image fills.</p>
+
+<p>You always set it from the question you are looking at &mdash; there is no separate place to go. When several questions sit side by side they share one screen, so they share one image; the panel says so, and changing it from any of them changes it for that screen.</p>
+
+<div class="bf-callout bf-callout--tip">
+  <strong>Image, not background.</strong> Only <em>Behind</em> puts the image behind the question. The <strong>Background</strong> in the colours above it is a different setting &mdash; the screen&rsquo;s background <em>colour</em>.
+</div>
+
+<p>The placement you choose is the placement you get, at every screen size. On a phone <em>Left</em> and <em>Right</em> stack the image above the question, because there are no sides in a single column; <em>Behind</em> stays behind.</p>
+
+<p>Images are hidden on phones by default &mdash; a decorative image is usually the first thing worth dropping on a small screen. Two switches in the Conversational tab control that, and whether a <em>Behind</em> image reaches the edges of an embedded form or stops at its padding.</p>
+
+<h4>Keyboard</h4>
+<table>
+  <thead><tr><th>Key</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td>Enter</td><td>Go to the next question; submit on the last one</td></tr>
+    <tr><td>Shift + Enter</td><td>Move on from a paragraph field (Enter starts a new line there)</td></tr>
+    <tr><td>Up / Down arrow</td><td>Previous / next question</td></tr>
+    <tr><td>Tab</td><td>Moves between controls on the current screen, as usual</td></tr>
+  </tbody>
+</table>
+
+<p>Arrow keys are left alone whenever you are in a control that uses them itself, such as a dropdown, a number field or a set of radio buttons.</p>
+
+<div class="bf-callout bf-callout--info">
+  <strong>Multi-step and conversational are mutually exclusive.</strong> If your form uses Page Break fields, conversational mode takes over and each page break simply becomes another screen boundary.
+</div>
+
+<div class="bf-callout bf-callout--info">
+  <strong>Visitors without JavaScript</strong> see the ordinary single-page form &mdash; complete, and fully submittable. They just do not see it one question at a time.
+</div>
 
 <!-- Templates -->
 <h2 id="templates">Templates</h2>

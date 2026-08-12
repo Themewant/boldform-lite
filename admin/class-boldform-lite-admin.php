@@ -821,6 +821,37 @@ class BoldForm_Lite_Admin {
 					'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
 					'nonce'              => wp_create_nonce( 'boldform_lite_save_form' ),
 					'formId'             => $form_data['id'],
+					// The labels an empty Next / Back / Start field falls back to,
+					// taken from the renderer itself. The panel shows them as
+					// placeholders, so a second copy here would let the builder
+					// promise one word while the page renders another — which is
+					// exactly what happened when the placeholder said "Next" and
+					// every renderer produced "OK". Localised rather than written
+					// in JS so a translated site agrees with itself too.
+					'cvDefaults'         => BoldForm_Lite_Conversational::default_labels(),
+					/**
+					 * Field types the conversational engine pins to the final
+					 * screen. The builder numbers its screen badges with the same
+					 * list so the canvas order matches what the visitor walks
+					 * through — a badge that disagrees with the form is worse
+					 * than no badge.
+					 *
+					 * @param string[] $types Field type slugs.
+					 */
+					'cvTailTypes'        => array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
+						'boldform_conversational_tail_types',
+						array( 'captcha', 'terms_conditions' )
+					) ) ) ),
+					/**
+					 * Field types that render no control and no text, so they never
+					 * earn a screen of their own.
+					 *
+					 * @param string[] $types Field type slugs.
+					 */
+					'cvSilentTypes'      => array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
+						'boldform_conversational_silent_types',
+						array( 'hidden_field', 'page_break' )
+					) ) ) ),
 					'formTitle'          => $form_data['title'],
 					'formStructure'      => $form_data['structure'],
 					'formSettings'       => $form_data['settings'],
@@ -922,8 +953,15 @@ class BoldForm_Lite_Admin {
 						'advancedFields' => __( 'Advanced Fields', 'boldform-lite' ),
 						'row'          => __( 'Row', 'boldform-lite' ),
 						'columns'      => __( 'columns', 'boldform-lite' ),
+						/* translators: 1: this screen's number, 2: total number of screens. Shown on each question card in the builder when conversational mode is on. */
+						'cvScreenOf'   => __( 'Screen %1$s of %2$s', 'boldform-lite' ),
+						'cvSilent'     => __( 'Not a screen — this field renders nothing for the visitor.', 'boldform-lite' ),
+						'cvStyleTitle' => __( 'Default Screen Colours', 'boldform-lite' ),
+						'cvStyleHelp'  => __( 'The starting point for every screen. Any screen can override these from its own settings, and a colour you leave untouched here inherits your form\'s existing style.', 'boldform-lite' ),
+						'cvStyleOff'   => __( 'Conversational mode is off for this form. Turn it on under Settings → Conversational to style it.', 'boldform-lite' ),
 						'fields'       => __( 'fields', 'boldform-lite' ),
-						'dropHere'     => __( 'Drop fields here', 'boldform-lite' ),
+						'dropHere'     => __( 'Drop a field here', 'boldform-lite' ),
+						'dropHereHint' => __( 'or click one in the Field Library', 'boldform-lite' ),
 						'blankTemplateTitle' => __( 'Blank Form', 'boldform-lite' ),
 						'contactTemplateTitle' => __( 'Contact Form', 'boldform-lite' ),
 						'leadTemplateTitle' => __( 'Lead Capture Form', 'boldform-lite' ),
@@ -1248,6 +1286,18 @@ class BoldForm_Lite_Admin {
 				$builder_data
 			);
 
+			// The Style tab previews a real conversational screen, so it needs the
+			// real stylesheet rather than a builder-only copy that would drift
+			// from the front end. Safe to load unconditionally: every rule is
+			// scoped under .boldform-cv, which only exists once the preview
+			// renders it.
+			wp_enqueue_style(
+				'boldform-lite-conversational',
+				BOLDFORM_LITE_URL . 'assets/css/conversational.css',
+				array( 'boldform-lite-builder' ),
+				BOLDFORM_LITE_VERSION
+			);
+
 			// Integrations assign panel (builder tab).
 			wp_enqueue_style(
 				'boldform-lite-integrations',
@@ -1374,6 +1424,17 @@ class BoldForm_Lite_Admin {
 				true
 			);
 			wp_enqueue_script( 'boldform-lite-admin' );
+
+			// Replaces the bulk-bar <select> option lists, which browsers draw as
+			// operating-system menus that no stylesheet can reach. Standalone and
+			// dependency-free: with it blocked the native selects still work.
+			wp_enqueue_script(
+				'boldform-lite-admin-select',
+				BOLDFORM_LITE_URL . 'assets/js/admin-select.js',
+				array(),
+				$this->asset_version( 'assets/js/admin-select.js' ),
+				true
+			);
 
 			// ── Forms list page ──────────────────────────────────────────────────
 			if ( $this->list_page_hook === $hook_suffix ) {
@@ -5822,6 +5883,34 @@ class BoldForm_Lite_Admin {
 			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
 			'dup_message'         => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
 			'style'               => $this->extract_style_from_record_settings( $decoded ),
+			// Conversational mode. This list is a hard gate, not a convenience: a
+			// key absent here never reaches the builder, so the pane would reopen
+			// showing its defaults and the next save would write those defaults
+			// back over the author's choices. Re-validated on read because a
+			// hand-edited settings_json is untrusted input.
+			'cv_enabled'          => ! empty( $decoded['cv_enabled'] ),
+			'cv_progress'         => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
+			'cv_transition'       => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
+			'cv_key_hint'         => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
+			'cv_next_text'        => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
+			'cv_prev_text'        => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
+			'cv_bg'               => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
+			'cv_question_color'   => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
+			'cv_answer_color'     => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
+			'cv_btn_color'        => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
+			'cv_btn_text_color'   => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
+			'cv_accent'           => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
+			'cv_track_color'      => isset( $decoded['cv_track_color'] ) && sanitize_hex_color( $decoded['cv_track_color'] ) ? sanitize_hex_color( $decoded['cv_track_color'] ) : '',
+			'cv_prev_color'       => isset( $decoded['cv_prev_color'] ) && sanitize_hex_color( $decoded['cv_prev_color'] ) ? sanitize_hex_color( $decoded['cv_prev_color'] ) : '',
+			'cv_prev_bg'          => isset( $decoded['cv_prev_bg'] ) && sanitize_hex_color( $decoded['cv_prev_bg'] ) ? sanitize_hex_color( $decoded['cv_prev_bg'] ) : '',
+			'cv_hint_color'       => isset( $decoded['cv_hint_color'] ) && sanitize_hex_color( $decoded['cv_hint_color'] ) ? sanitize_hex_color( $decoded['cv_hint_color'] ) : '',
+			'cv_nav_align'        => isset( $decoded['cv_nav_align'] ) && in_array( $decoded['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $decoded['cv_nav_align'] : 'left',
+			'cv_progress_align'   => isset( $decoded['cv_progress_align'] ) && in_array( $decoded['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $decoded['cv_progress_align'] : 'left',
+			'cv_welcome_enabled'  => ! empty( $decoded['cv_welcome_enabled'] ),
+			'cv_welcome_title'    => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
+			'cv_welcome_text'     => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'      => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
+			'cv_media_hide_mobile' => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
 		);
 
 		/**
@@ -5901,6 +5990,75 @@ class BoldForm_Lite_Admin {
 	}
 
 	/**
+	 * Resolves conversational media into a thumbnail URL, on rows AND fields.
+	 *
+	 * Only an attachment ID is stored, which is right — a URL breaks when the
+	 * site moves and cannot produce responsive sources. But the builder's
+	 * settings panels render a real <img>, so without this the author reopens
+	 * the form to an empty box and cannot tell an image is set at all.
+	 *
+	 * Both are walked because either can own a screen: a multi-column row is
+	 * one screen, and a single-column row is one screen per field.
+	 *
+	 * The URL is derived, never persisted: it is added on the way out and
+	 * dropped again by prepare_rows() on the way back in.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Stored rows.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function attach_row_media_previews( $rows ) {
+		foreach ( $rows as $index => $row ) {
+			$src = $this->resolve_cv_media_preview( $row );
+
+			if ( '' !== $src ) {
+				$rows[ $index ]['cv_media_preview'] = $src;
+			}
+
+			if ( empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+				continue;
+			}
+
+			foreach ( $row['columns'] as $col_index => $column ) {
+				if ( ! is_array( $column ) || empty( $column['fields'] ) || ! is_array( $column['fields'] ) ) {
+					continue;
+				}
+
+				foreach ( $column['fields'] as $field_index => $field ) {
+					$field_src = is_array( $field ) ? $this->resolve_cv_media_preview( $field ) : '';
+
+					if ( '' !== $field_src ) {
+						$rows[ $index ]['columns'][ $col_index ]['fields'][ $field_index ]['cv_media_preview'] = $field_src;
+					}
+				}
+			}
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * Thumbnail URL for one row or field's stored attachment.
+	 *
+	 * A deleted attachment resolves to '' and the caller leaves the id alone,
+	 * so the author can see something is wrong and re-pick rather than having
+	 * the setting silently cleared underneath them.
+	 *
+	 * @param array<string, mixed> $source Stored row or field.
+	 * @return string Image URL, or '' when there is nothing to show.
+	 */
+	private function resolve_cv_media_preview( $source ) {
+		$attachment_id = isset( $source['cv_media_id'] ) ? absint( $source['cv_media_id'] ) : 0;
+
+		if ( ! $attachment_id ) {
+			return '';
+		}
+
+		$src = wp_get_attachment_image_url( $attachment_id, 'medium' );
+
+		return $src ? $src : '';
+	}
+
+	/**
 	 * Extracts builder structure from a database record.
 	 *
 	 * @param object|null $form_record Form database record.
@@ -5917,7 +6075,7 @@ class BoldForm_Lite_Admin {
 
 		if ( isset( $decoded['rows'] ) && is_array( $decoded['rows'] ) ) {
 			return array(
-				'rows' => $decoded['rows'],
+				'rows' => $this->attach_row_media_previews( $decoded['rows'] ),
 			);
 		}
 

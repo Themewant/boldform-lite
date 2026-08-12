@@ -133,6 +133,16 @@ jQuery(
 					var $required = $wrapper.find( 'input[required], textarea[required], select[required]' ).first();
 					var $email = $wrapper.find( 'input[type="email"]' ).first();
 
+					// A required dropdown is invisible to the selector above. The
+					// native <select> is rendered display:none behind a custom
+					// widget and carries no `required` attribute — the requirement
+					// lives on the widget as aria-required. Without this fallback a
+					// required dropdown left empty passes client-side validation
+					// and is only caught by the server.
+					if ( ! $required.length && $wrapper.find( '[aria-required="true"]' ).length ) {
+						$required = $wrapper.find( 'select[data-boldform-select]' ).first();
+					}
+
 					// Required check.
 					if ( $required.length && $wrapper.data( 'error' ) ) {
 						var val = $required.val();
@@ -964,6 +974,22 @@ jQuery(
 					selected = [ val ];
 					close();
 					renderTrigger();
+					// Focus goes back to the combobox, which is what ARIA's
+					// listbox pattern asks for and what every native <select>
+					// does. Without it a mouse pick leaves focus on <body>: the
+					// option element the click landed on is re-rendered away, so
+					// there is nothing left to hold it.
+					//
+					// That is not only a keyboard-navigation nicety. Anything
+					// listening for keys on the FORM — conversational mode's
+					// "press Enter to continue" among them — stops receiving them
+					// entirely once focus has left the form, so the next key the
+					// visitor presses goes nowhere at all.
+					//
+					// Single select only: a multiple keeps its panel open so more
+					// can be chosen, and pulling focus out of the list mid-way
+					// would undo the choice the visitor is still making.
+					$trigger.trigger( 'focus' );
 				}
 				syncToSelect();
 				renderList( isSearchable ? $search.val() : '' );

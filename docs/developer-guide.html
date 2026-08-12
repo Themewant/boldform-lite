@@ -71,6 +71,7 @@ pre code{background:none;padding:0;color:inherit}
     <div class="bf-sidebar__group">Hooks &amp; Filters</div>
     <a href="#hook-reference" class="bf-sidebar__link">Complete Hook Reference</a>
     <a href="#form-rendering" class="bf-sidebar__link">Form Rendering (Detailed)</a>
+    <a href="#conversational-hooks" class="bf-sidebar__link">Conversational Forms</a>
     <a href="#field-types" class="bf-sidebar__link">Custom Field Types</a>
     <a href="#submission-flow" class="bf-sidebar__link">Submission Flow</a>
     <a href="#email-hooks" class="bf-sidebar__link">Email Notifications</a>
@@ -522,6 +523,74 @@ instead of duplicating it. A source only needs to describe how to read its own f
 }, 10, 2 );</code></pre>
 
 <!-- Custom Field Types -->
+<h2 id="conversational-hooks">Conversational Forms</h2>
+
+<p>Conversational mode post-processes the <em>already rendered</em> form. It never re-renders, re-orders away or removes anything, so every field stays in the DOM &mdash; which is why conditional logic, validation and the submit path are untouched, and why field types added by an add-on work inside it with no changes on their side.</p>
+
+<p>Screens are classified by <strong>what a row renders</strong>, not by field-type name:</p>
+
+<table>
+  <thead><tr><th>Row renders</th><th>Treated as</th></tr></thead>
+  <tbody>
+    <tr><td>No focusable control and no text</td><td><strong>Static</strong> &mdash; never a screen; stays in the DOM and still posts (hidden fields, stripped page breaks)</td></tr>
+    <tr><td>No focusable control but has text</td><td><strong>Statement</strong> &mdash; a screen with nothing to answer</td></tr>
+    <tr><td>A focusable control</td><td><strong>Question</strong> &mdash; an ordinary screen</td></tr>
+  </tbody>
+</table>
+
+<p>This means a field type BoldForm has never heard of behaves correctly with no registration at all. The filters below only refine the two cases structure cannot infer.</p>
+
+<h3>boldform_conversational_tail_types</h3>
+<p>Field types pinned to the final screen instead of getting one of their own. A consent box or captcha stranded mid-form leaves the visitor on a screen they cannot complete.</p>
+<pre><code>add_filter( 'boldform_conversational_tail_types', function ( $types ) {
+    $types[] = 'order_summary';
+    return $types;
+} );</code></pre>
+<p>Default: <code>captcha</code>, <code>terms_conditions</code>.</p>
+
+<h3>boldform_conversational_stacking_types</h3>
+<p>Field types large enough that their row must never share a screen side by side.</p>
+<pre><code>add_filter( 'boldform_conversational_stacking_types', function ( $types ) {
+    return array_merge( $types, array( 'signature', 'repeater', 'matrix' ) );
+} );</code></pre>
+<p>Default: <code>name</code>, <code>address</code>, <code>file</code>.</p>
+
+<h3>boldform_conversational_enabled</h3>
+<p>Override whether conversational mode runs for a form, without changing the stored setting. Useful for disabling it site-wide or on specific templates.</p>
+<pre><code>add_filter( 'boldform_conversational_enabled', function ( $enabled, $settings, $form_id ) {
+    return is_front_page() ? false : $enabled;
+}, 10, 3 );</code></pre>
+
+<div class="bf-callout bf-callout--info">
+  <strong>Conversational mode is embedded-only.</strong> BoldForm registers no rewrite rules and no front-end URLs of its own &mdash; a conversational form renders in place, wherever the shortcode, block or widget sits. Nothing is added to your permalink structure and no path is claimed at your site root.
+</div>
+
+<h3>Render-layer priorities</h3>
+<table>
+  <thead><tr><th>Priority on <code>boldform_form_output</code></th><th>What runs</th></tr></thead>
+  <tbody>
+    <tr><td>6</td><td>Conversational strips the page-break marker, standing the multi-step renderer down</td></tr>
+    <tr><td>10</td><td>Multi-step wrapper (add-on)</td></tr>
+    <tr><td>20</td><td>Payment card element, save-and-resume, draft autosave (add-on)</td></tr>
+    <tr><td>30</td><td>Conversational injects its chrome &mdash; after everything above, so all of it lands on the right screen</td></tr>
+  </tbody>
+</table>
+
+<h3>Notes for add-on authors</h3>
+<ul>
+  <li><strong>Per-form config travels in a <code>data-</code> attribute</strong>, not <code>wp_localize_script()</code>. A render-time localize is silently dropped under block (FSE) themes.</li>
+  <li><strong><code>novalidate</code> is applied from JavaScript only.</strong> The browser validates the whole form on submit, and an invalid required control inside a hidden screen cannot be focused &mdash; so the browser refuses to submit and reports nothing. Setting it from PHP would take native validation away from visitors without JavaScript.</li>
+  <li><strong>Detect conditional hiding with <code>element.style.display</code></strong>, never a visibility test: everything inside a hidden screen measures zero.</li>
+  <li><strong>Per-screen styling is stored on whichever object IS the screen</strong> &mdash; the row when several questions share it, the field otherwise. Eleven keys in <code>fields_json</code>: eight <code>cv_media_*</code> (an <strong>attachment ID</strong>, never a URL, resolved at render time) and three colours (<code>cv_bg</code>, <code>cv_question_color</code>, <code>cv_answer_color</code>). The chrome colours are form-level only: every rule reading <code>--bfc-btn</code>, <code>--bfc-btn-text</code>, <code>--bfc-accent</code>, <code>--bfc-track</code>, <code>--bfc-prev</code>, <code>--bfc-prev-bg</code> and <code>--bfc-hint</code> is scoped to the wrapper, which is a screen&rsquo;s ancestor, so a screen-level value could never reach one. A field-screen with no image of its own falls back to its row's.</li>
+  <li><strong><code>cv_media_height</code> uses <code>0</code> for the same purpose</strong> &mdash; the renderer omits <code>--bfc-media-h</code> entirely and the stylesheet's <code>var( --bfc-media-h, min( 60vh, 460px ) )</code> fallback applies. Note it is deliberately NOT <code>absint()</code>: that returns the absolute value, so <code>-400</code> would arrive as a deliberate-looking <code>400</code> instead of falling back to the default.</li>
+  <li><strong><code>''</code> means INHERIT, and must be stored as <code>''</code>.</strong> The renderer omits the custom property entirely for an empty value, so the form-level colour cascades in untouched. Storing a resolved copy of the form's colour instead would <em>pin</em> it &mdash; every screen would silently keep the old value the day the form default changed. The same rule governs the builder's controls: an untouched colour reads <em>Form default</em> and writes nothing.</li>
+  <li><strong>The three screen colours are read at the point of use, so a screen overrides by cascade alone.</strong> Setting <code>--bfc-question</code> on a <code>.boldform-cv-screen</code> overrides it for that screen and nothing else &mdash; no extra selectors, no JS re-theming. The one exception is the background: <code>--bfc-bg</code> is consumed on the <code>.boldform-cv</code> wrapper, so a screen uses <strong><code>--bfc-screen-bg</code></strong>. Reusing the wrapper's name would make a screen repaint the wrapper's padding along with itself.</li>
+  <li><strong>A colour control that renders over a fixed <code>opacity</code> is a control that lies.</strong> The &ldquo;press Enter&rdquo; hint is deliberately dimmed &mdash; <code>0.6</code> on the text, <code>0.8</code> on the key cap &mdash; so it does not compete with the button beside it, and that default has to be a <em>faded inherit</em> rather than a fixed grey, or it stops being legible the moment a form goes dark. Adding <code>--bfc-hint</code> on top of a literal <code>opacity</code> would give an author a washed version of the colour they picked. The fix is to tokenise the opacity: <code>opacity: var( --bfc-hint-opacity, 0.6 )</code>, with <code>build_custom_properties()</code> emitting <code>--bfc-hint-opacity:1</code> <em>only</em> alongside a <code>--bfc-hint</code> that survived <code>sanitize_hex_color()</code>. Two fallbacks on one token cover both elements, and a form that sets no colour renders byte-identically.</li>
+  <li><strong>A screen is a question, not a row.</strong> A row with more than one column becomes one screen, preserving the author's side-by-side layout. A single-column row holding several fields is split at runtime into one row per field. The split <strong>moves</strong> field nodes and <strong>clones only the row wrapper</strong> (and its media figure) &mdash; cloning a field would leave the conditional-logic evaluator driving a copy that is no longer on the page.</li>
+  <li><strong>Register on <code>boldform_preview_enqueue_assets</code> as well as <code>wp_enqueue_scripts</code>.</strong> The admin form-preview screen is wp-admin, so <code>wp_enqueue_scripts</code> never fires there. Enqueueing a handle that was never registered still puts it in the queue &mdash; <code>wp_script_is( $handle, 'enqueued' )</code> returns <strong>true</strong> and nothing is printed. Check <code>'registered'</code> and a non-empty <code>src</code>, or assert on real printed output.</li>
+  <li><strong>PHP's screen count is an upper bound on purpose.</strong> <code>wrap_form_output()</code> suppresses the chrome only when a form can never have more than one screen; the engine measures the live DOM and adds <code>boldform-cv--inert</code> (restoring the form to where it was rendered) when just one screen survives. Do not re-implement the split in PHP.</li>
+</ul>
+
 <h2 id="field-types">Custom Field Types</h2>
 
 <h3>boldform_field_library</h3>
