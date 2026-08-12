@@ -603,24 +603,65 @@
 }
 
 /*
- * "Hide screen images on phones", previewed.
+ * ── "Hide screen images on phones", previewed ────────────────────────────
  *
- * The one setting the preview stage cannot answer on its own. Every other
- * responsive rule in conversational.css is a @container query, so a 380px stage
- * triggers it and the preview is honest for free. This one is deliberately a
- * @media query — keyed to the form's width it also fired on a desktop sidebar
- * embed, silently dropping an author's image on a desktop while the switch said
- * "on phones" — and a @media query measures the WINDOW, which is still wide
- * behind this stage. So the preview showed an image that a real phone hides.
+ * The one setting no preview can answer on its own. Every other responsive rule
+ * in conversational.css is a @container query, so a narrowed stage triggers it
+ * and the preview is honest for free. This one is deliberately a @media query —
+ * keyed to the form's width it also fired on a desktop sidebar embed, silently
+ * dropping an author's image on a desktop while the switch said "on phones" —
+ * and a @media query measures the WINDOW, which stays wide behind every stage
+ * below. So each of them showed an image that a real phone hides.
  *
  * Answered here rather than by weakening the front-end rule: the page keeps the
- * behaviour that is correct for it, and the fix is scoped to the one surface
- * that cannot ask the question properly. .is-device-mobile is only present once
- * the author has actually clicked the phone button.
+ * behaviour that is correct for it, and the fix is scoped to the surfaces that
+ * cannot ask the question properly.
+ *
+ * BOTH PHONE STAGES, in one place. There are two, they are unrelated in the
+ * markup, and the first fix reached only one of them — the Style tab's preview
+ * pane and the full-screen Form Preview page (admin.php?page=boldform-lite-
+ * preview), which frames the real rendered form at 420px. A third would want
+ * adding to this list rather than a third copy of the rule somewhere else.
+ *
+ * Only the phone stage. The tablet stage is 820px and the desktop stage is full
+ * width — a real browser at either width does not hide the image, so neither
+ * does the preview.
+ *
+ * WHY THE SELECTORS RESTATE `.is-ready .boldform-cv-screen`, which the stage
+ * class already implies: SPECIFICITY, not descent.
+ *
+ * conversational.css reveals the figure with
+ * `.boldform-cv.is-ready .boldform-cv-screen .boldform-lite-form__row-media`,
+ * four classes. Its own hide rule matches that at four and wins on source order
+ * because it comes later IN THE SAME FILE. A rule in this file has no such
+ * guarantee — it wins or loses on which stylesheet the page happens to print
+ * last, and on the Form Preview page conversational.css prints after this one,
+ * so a four-class rule here tied and lost, and the image stayed on screen.
+ *
+ * Six classes cannot tie. Written out rather than reached for with !important:
+ * the cascade is being answered on its own terms, and the next rule that needs
+ * to beat the reveal can read why from here.
  */
 .boldform-style-preview-canvas.is-device-mobile
-	.boldform-cv--media-hide-mobile .boldform-lite-form__row-media {
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen .boldform-lite-form__row-media,
+.boldform-preview-stage.is-mobile
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen .boldform-lite-form__row-media {
 	display: none;
+}
+
+/*
+ * And the room it was holding goes with it — see the matching block in
+ * conversational.css for why `display: none` alone is not enough: a side layout
+ * keeps the half-width it reserved, and Behind keeps a min-height meant to give
+ * an image somewhere to paint.
+ */
+.boldform-style-preview-canvas.is-device-mobile
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen.boldform-lite-form__row--media,
+.boldform-preview-stage.is-mobile
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen.boldform-lite-form__row--media {
+	padding-left: 0;
+	padding-right: 0;
+	min-height: 0;
 }
 
 /* ── Advanced (full-parity) style controls ── */

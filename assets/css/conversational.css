@@ -827,6 +827,28 @@
 	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen .boldform-lite-form__row-media {
 		display: none;
 	}
+
+	/*
+	 * AND THE ROOM IT WAS HOLDING GOES WITH IT.
+	 *
+	 * `display: none` takes the figure out, but every placement also shapes the
+	 * SCREEN around it, and those declarations survive their own image: a side
+	 * layout keeps `padding-left: calc( 50% + 32px )`, so the question stayed
+	 * squeezed into the right-hand half against a blank left-hand half — the
+	 * reported bug, at exactly 767px, where the hide fires but the container is
+	 * still wide enough for the side layout. Behind keeps a min-height meant to
+	 * give an image somewhere to paint, which without one is empty space.
+	 *
+	 * Both are reset for all three placements rather than for the one each
+	 * screen uses. A rule that only undoes `left` leaves `right` padded against
+	 * an image that is no longer there, and that bug hides until someone picks
+	 * the other placement.
+	 */
+	.boldform-cv--media-hide-mobile.is-ready .boldform-cv-screen.boldform-lite-form__row--media {
+		padding-left: 0;
+		padding-right: 0;
+		min-height: 0;
+	}
 }
 
 /* ── Welcome cover ───────────────────────────────────────────────────────── */
