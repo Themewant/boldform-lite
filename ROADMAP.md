@@ -1,6 +1,6 @@
 # BoldForm — Product Roadmap (Lite + Pro)
 
-_Last updated: 2026-07-16 · Lite (free): 1.1.4 · Pro (paid): 1.1.1_
+_Last updated: 2026-07-22 (rev 2 — Form Migrator added as next Lite build) · Lite (free): 1.1.5 · Pro (paid): 1.1.2_
 
 > **In one line:** BoldForm Lite is our free WordPress form builder; BoldForm Pro is the paid add-on. This roadmap says **what we build next, in what order, and why** — for both.
 
@@ -26,13 +26,18 @@ _Last updated: 2026-07-16 · Lite (free): 1.1.4 · Pro (paid): 1.1.1_
 _At-a-glance board view (matches our public roadmap columns). Numbering is per-column. Details for each live in §5 below._
 
 ### 🟢 Progress — building now
-_Nothing in flight._ Custom Email Editor, Entry Approval and Custom Thank-You are all **merged and versioned** (Lite 1.1.4 / Pro 1.1.1) and releasing now. The next cycle starts at the head of the queue below.
+**▶ Next up: Form Migrator (Import from Contact Form 7) — 🆓 Lite (free).** This is the immediate next build (planned; not yet coded). A free, Lite-side importer that brings a site's existing forms in from other form plugins — **Phase 1 ships Contact Form 7 only**, with a pluggable architecture so WPForms/Gravity/etc. are each just one more source class later. Lives as a third **Settings → Tools → "Migrator"** sub-tab (beside Forms/Entries). It's an **acquisition feature** (mirrors Fluent Forms / WPForms / Forminator, all of which ship it free) — the reason it jumps ahead of the Pro queue. Full plan-of-record: `MIGRATOR-PLAN.md`. Because it's admin-side PHP on the Tools screen (not the React builder), it ships on the **Lite 1.1.x** point line, independent of the 1.2.0 React rewrite.
 
-**▶ Next to develop (updated 2026-07-16):** Conditional Email Routing → PDF Attachment → Marketing Tracking → Scheduled Export → Conditional Logic on Pages → Abandonment Tracking → _(Wave-2, migration first)_ Email Confirmation → Custom Entry Statuses → Coupons/Tax/Multi-Currency. Full rationale in `ROADMAP-PROGRESS.md` → **NEXT-BUILD QUEUE**, and §7 below.
+Everything else from the last wave — Conditional Email Routing and PDF Attachment — is **merged and versioned** (Lite 1.1.5 / Pro 1.1.2) alongside the earlier Custom Email Editor / Entry Approval / Custom Thank-You wave (Pro 1.1.1). The "finish the notifications story" mini-release is complete.
 
-**Recommended first mini-release:** Conditional Email Routing + PDF Attachment — "finish the notifications story". Custom Thank-You, the third item, **shipped early** in Pro 1.1.1; it left behind a shared merge-tag engine both of the others should build on rather than re-implement.
+**▶ Pro queue (resumes after the Migrator):** Marketing Tracking → Scheduled Export → Conditional Logic on Pages → Abandonment Tracking → _(Wave-2, migration first)_ Email Confirmation → Custom Entry Statuses → Coupons/Tax/Multi-Currency. Full rationale in `ROADMAP-PROGRESS.md` → **NEXT-BUILD QUEUE**, and §7 below.
+
+**Recommended next mini-releases:** (1) **Form Migrator (CF7)** → next **Lite** free release; (2) then Marketing Tracking + Scheduled Export — both Wave-1, no DB migration, no Lite seam needed; ships as **Pro 1.2.0**.
 
 ### 🔵 UpComing — planned next (in release order)
+
+**Next Lite (free) release — building now**
+0. **Form Migrator (Import from Contact Form 7)** — 🆓 Free — Move your existing forms into BoldForm in a few clicks. Phase 1 imports Contact Form 7 forms — fields, labels, required rules, options, and basic notification/confirmation settings — mapped automatically, with a clear report of anything that couldn't be carried over. Lives under Settings → Tools → Migrator; more source plugins (WPForms, Gravity, Ninja, Forminator…) follow, each as a drop-in later.
 
 **Flagship (planning)**
 1. **AI Form Builder** — Create complete forms from a plain-language description. Simply describe the form you need, and AI instantly generates the fields, layout, and settings — ready to refine in the drag-and-drop builder.
@@ -40,15 +45,13 @@ _Nothing in flight._ Custom Email Editor, Entry Approval and Custom Thank-You ar
 **Pro 1.1 — managing submissions** _(everything else in 1.1 has shipped — see Done below)_
 2. **Custom Entry Statuses** — Define your own submission statuses to match your team's workflow, beyond the built-in read, starred, and spam labels.
 
-**Pro 1.2 — smarter notifications & payments** _(Custom Email Editor + Custom Thank-You shipped — see Done below)_
-3. **Conditional Email Routing** — Automatically send notifications to different recipients based on the answers a visitor provides.
-4. **PDF Attachment** — Generate a PDF of each submission and attach it automatically to notification emails.
-5. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission.
-6. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
-7. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
-8. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
-9. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
-10. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
+**Pro 1.2 — smarter notifications & payments** _(Custom Email Editor, Custom Thank-You, Conditional Email Routing + PDF Attachment shipped — see Done below)_
+3. **Marketing Tracking** — Capture UTM parameters and trigger Google Analytics and Meta Pixel events on submission. _(next up)_
+4. **Scheduled Export** — Automatically generate and email entry exports on a recurring schedule.
+5. **Conditional Logic on Pages** — Show or hide entire pages within multi-step forms based on a user's responses.
+6. **Abandonment Tracking** — Record forms that were started but not submitted to reveal where users drop off.
+7. **Email Confirmation** — Verify a submitter's email address through a confirmation link before the entry is finalized.
+8. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
 
 **Pro 2.0 — marquee features**
 11. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
@@ -70,7 +73,7 @@ _Nothing in flight._ Custom Email Editor, Entry Approval and Custom Thank-You ar
 
 _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐ Pro** requires the paid add-on._
 
-> **Not all of this is public yet.** The last released tags are **Pro v1.1.0** and **Lite v1.1.3**. Items marked _(Pro 1.1.1)_ or _(Lite 1.1.4)_ are built and versioned on `development` but **await release** — don't announce them as live.
+> **Not all of this is public yet.** The last released tags are **Pro v1.1.0** and **Lite v1.1.3**. Items marked _(Pro 1.1.1 / 1.1.2)_ or _(Lite 1.1.4 / 1.1.5)_ are built and versioned on `development` but **await release** — don't announce them as live.
 
 **Free (Lite) — shipped**
 1. **Drag & Drop Builder** — 🆓 Free — Build forms visually with an intuitive drag-and-drop interface.
@@ -119,6 +122,8 @@ _Tier is marked on each item: **🆓 Free** ships in Lite (WordPress.org); **⭐
 42. **Import Entries** — ⭐ Pro — Import entries from a BoldForm export onto a chosen form, with duplicates skipped. _(Pro 1.0.0)_
 43. **Custom Email Editor** — ⭐ Pro — Write a custom subject and body for the admin notification and user confirmation emails per form, with a visual/HTML editor, merge tags for any field and entry attribute, and a per-email Reply-To. _(Pro 1.1.1)_
 44. **Custom Thank-You** — ⭐ Pro — Personalise the on-screen confirmation with the visitor's own answers using the same merge tags ("Thanks, {field:first_name}!"), inserted from a picker beside the message editor. _(Pro 1.1.1)_
+45. **Conditional Email Routing** — ⭐ Pro — Send the admin notification to different people based on the answers, with multi-condition rules (all/any), first-match ordering, per-rule Cc/Bcc, merge-tag recipients, and checkbox-aware matching. _(Pro 1.1.2)_
+46. **PDF Attachment** — ⭐ Pro — Attach a per-submission PDF (field label + value) to the admin and/or visitor email, with merge-tag filenames and optional password; a Download PDF button on every entry builds it on demand. Needs Lite 1.1.5. _(Pro 1.1.2)_
 
 ---
 
@@ -155,13 +160,16 @@ Newer rivals — especially **FormGent** — give away a lot for free (multi-ste
 
 ## 4. Free version (Lite) plan — small and deliberate
 
-We are **not** adding paid features to free. Lite's one planned new extra — which takes nothing from Pro — has now **shipped**.
+We are **not** adding paid features to free. Lite's additions are deliberate and take nothing from Pro: an extra spam option (shipped) and now a **Form Migrator** — an acquisition tool, not a Pro capability given away.
 
 | Item | What it is | Why | Priority | Effort | Status |
 |---|---|---|---|---|---|
+| **Form Migrator (CF7 first)** | Import existing forms from other form plugins into BoldForm; Phase 1 = Contact Form 7, pluggable for more sources later. Lives under Settings → Tools → Migrator. | **Acquisition** — the switching cost for a site with existing forms is the #1 reason not to try BoldForm; rivals (Fluent Forms, WPForms, Forminator) all ship this free. Belongs in Lite, not Pro. | High | M | 🔵 Next up (planned) |
 | **Cloudflare Turnstile** | One more free spam-protection option (we already offer reCAPTCHA + hCaptcha free) | Modern, no-puzzle captcha users increasingly expect | High | S | ✅ Shipped (Lite) |
 
-> **Note:** CSV export stays free. **Excel and PDF export are Pro** (see below). No other free-tier features are planned right now.
+> **Note:** CSV export stays free. **Excel and PDF export are Pro** (see below). The Migrator only imports **form structure + basic settings** — entries-migration is a later pass (CF7 stores none by default). No other free-tier features are planned right now.
+>
+> **Why the Migrator is free, not Pro:** it doesn't compete with any Pro capability — it removes the barrier to _starting_ with BoldForm at all. Every install it wins is a candidate to upgrade later. Keeping it free is the whole point.
 
 ---
 
@@ -200,15 +208,15 @@ _Shipped in Pro 1.0.0: entry limit + cooldown, Akismet, colour picker, import en
 
 ---
 
-### 🧩 Pro 1.2 — "Smarter notifications & payments" — 🟡 **in progress** (Custom Email Editor + Custom Thank-You shipped; the rest queued)
+### 🧩 Pro 1.2 — "Smarter notifications & payments" — 🟡 **in progress** (email half shipped — Custom Email Editor, Custom Thank-You, Conditional Email Routing, PDF Attachment; payments/tracking half queued)
 **Goal:** make emails flexible and payments commerce-grade. One groundwork item unlocks the rest.
 
-> **Groundwork — ✅ done (Pro 1.1.1):** the **Custom Email Editor** shipped (per-form custom subject/body, merge-tag engine, per-email Reply-To). It unblocks conditional email routing + PDF attachment, which are now the head of the queue.
+> **Groundwork — ✅ done (Pro 1.1.1):** the **Custom Email Editor** shipped (per-form custom subject/body, merge-tag engine, per-email Reply-To). It unblocked conditional email routing + PDF attachment, both now **built and versioned (Pro 1.1.2 / Lite 1.1.5)** — see Done. The queue now advances to marketing/export/logic tracking.
 
 | Feature | What it does | Why it matters | ⭐ | Priority | Effort |
 |---|---|---|---|---|---|
-| **Conditional email routing** | Send to different people based on answers (e.g. "Sales" vs "Support") | Core business-form need; competitors all have it | ⭐ | High | M |
-| **PDF of the submission** | Auto-generate a PDF of each entry and attach it to the email | High perceived value; common paid feature | ⭐ | High | M |
+| **Conditional email routing** _(✅ built, Pro 1.1.2)_ | Send to different people based on answers (e.g. "Sales" vs "Support") | Core business-form need; competitors all have it | ⭐ | High | M |
+| **PDF of the submission** _(✅ built, Pro 1.1.2)_ | Auto-generate a PDF of each entry and attach it to the email | High perceived value; common paid feature | ⭐ | High | M |
 | **Email confirmation (double opt-in)** | Verify the submitter's email via a token link before the entry counts | Cleaner lists; blocks fake emails | | Med | M |
 | **Conditional logic on pages** | Show/hide whole pages in a multi-step form based on answers | Extends multi-step (per-field logic already exists) — smarter long forms | | Med | M |
 | **Custom thank-you page** _(✅ shipped in Pro 1.1.1)_ | Personalized confirmation using answers ("Thanks, {first name}") — Lite already does basic redirect + custom success message; this adds merge-tag personalization | Better post-submit experience | | Med | M |
@@ -266,7 +274,9 @@ Reuse hooks/systems that already exist; live entirely in Pro or use proven patte
 - **From Pro 1.1:** Entry Editing · Import Entries · Entry Notes · Entry Limit & Cooldown · Form Locking · Akismet · Color Picker Field · Excel & PDF Export
 - **From Pro 1.2:** Custom Email Editor ✅ _(shipped 1.1.1)_ · Custom Thank-You ✅ _(shipped 1.1.1)_ · Draft Auto-Save ✅ _(shipped early, 1.1.0)_ · Conditional Email Routing · PDF Attachment · Conditional Logic on Pages · Abandonment Tracking · Marketing Tracking · Scheduled Export
 - **From Pro 2.0:** User Submission Portal · Embed Modes · Country & IP Blocking · REST API & WP-CLI · Advanced Actions · WooCommerce · AI Response Tools · Google Places · Mailchimp Tags & Groups · ActiveCampaign Deals · Premium Template Packs
-- **Free (Lite):** Cloudflare Turnstile ✅ _shipped_
+- **Free (Lite):** **Form Migrator (CF7)** 🔵 _next up_ · Cloudflare Turnstile ✅ _shipped_
+
+> **Migrator risk = LOW.** It only ever _creates new_ BoldForm forms (never mutates existing ones), and it does so through Lite's own proven save path — `BoldForm_Lite_Ajax_Save::prepare_rows()` + `::normalize_form_settings()` + `$wpdb->insert`, exactly what the JSON importer already uses. No schema change, no new DB column. The one thing to get right: re-import must **update** the previously-migrated form (idempotency marker) instead of duplicating — see `MIGRATOR-PLAN.md` §9.
 
 ### Wave 2 — Needs a deliberate migration or careful design (plan before coding) · risk: MEDIUM
 Achievable and backward-safe, but each has one specific thing to get right first.
@@ -351,6 +361,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | Conversational mode | 📅 | Pro 2.0 |
 | Inline embed (popup/slide-in/float) | 📅 | Pro 2.0 |
 | Form templates library | ✅ shipped (Free/Lite) | Full categorized library + one-click import already in Lite; only **premium packs** remain 📅 Pro 2.0 |
+| Form migrator / import from other plugins | 🆕 → 🔵 next up (Free/Lite) | **Lite** — Settings → Tools → Migrator; Phase 1 = Contact Form 7, pluggable for WPForms/Gravity/etc. later. Structure + basic settings only; entries later. Plan: `MIGRATOR-PLAN.md` |
 | RTL support | ⏸ Parked | polish only |
 | Custom thank-you page | 🚢 Awaiting release | Pro 1.1.1 (unreleased) — merge tags in the confirmation; basic redirect + custom message ✅ already free in Lite |
 | Heatmap / drop-off | ⏸ (heatmap parked) | drop-off = abandonment 📅 Pro 1.2 |
@@ -364,7 +375,7 @@ Every item from the original brainstorm, mapped to reality. **Key takeaway: most
 | REST API endpoints | 📅 | Pro 2.0 (developer tools) |
 | CLI commands | 📅 | Pro 2.0 (developer tools) |
 
-**Score (re-counted 2026-07-16):** of ~59 items, **~19 are released** (was ~9 when this table was written — Pro 1.0.0 and 1.1.0 landed in between), **3 more are built and awaiting release** (the Pro 1.1.1 trio: custom email editor, entry approval, custom thank-you), **~5 are parked/deferred**, and the rest remain planned. The 📅 rows left are genuinely not built: conditional email routing, PDF attachment, email confirmation, abandonment tracking, marketing/UTM tracking, scheduled export, conditional logic on pages, custom entry statuses, coupons/tax/multi-currency, and the Pro 2.0 + flagship set.
+**Score (re-counted 2026-07-22):** of ~59 items, **~19 are released** (was ~9 when this table was written — Pro 1.0.0 and 1.1.0 landed in between), **5 more are built and awaiting release** (the Pro 1.1.1 trio — custom email editor, entry approval, custom thank-you — plus the Pro 1.1.2 pair: conditional email routing + PDF attachment), **~5 are parked/deferred**, and the rest remain planned. The 📅 rows left are genuinely not built: email confirmation, abandonment tracking, marketing/UTM tracking, scheduled export, conditional logic on pages, custom entry statuses, coupons/tax/multi-currency, and the Pro 2.0 + flagship set.
 
 ---
 
@@ -374,6 +385,7 @@ _Architecture rule:_ every Pro feature ships as a **Pro module that hooks Lite's
 
 | Feature | Key hooks / modules |
 |---|---|
+| Form Migrator (Lite, free) | Pluggable source interface + controller on the existing `render_tools_tab()` router (add `'migrator'` to the sub-tab allowlist + nav + dispatch); each source reads its native structure and returns plain `rows`/`settings` → `BoldForm_Lite_Ajax_Save::prepare_rows()` + `::normalize_form_settings()` → `$wpdb->insert`/`update`. Extensible via a `boldform_migration_sources` filter; `admin_init` form-POST (house style, not AJAX). Never hand-write `fields_json`. |
 | AI Form Builder (flagship) | AI provider API (e.g. OpenAI) → map response to BoldForm form JSON; API-key setting + output guardrails/validation |
 | Save & Resume | entries store + `boldform_gate_submission`, `boldform_form_output` |
 | Entry approval | extends the entry status system; gate side-effects on `boldform_entry_created` |

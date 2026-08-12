@@ -130,6 +130,8 @@ class BoldForm_Lite_Admin {
 			56
 		);
 
+		$this->force_submenu_highlight( $this->list_page_hook, 'boldform-lite' );
+
 		add_submenu_page(
 			'boldform-lite',
 			__( 'All Forms', 'boldform-lite' ),
@@ -147,6 +149,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-builder',
 			array( $this, 'render_builder_page' )
 		);
+		$this->force_submenu_highlight( $this->builder_page_hook, 'boldform-lite-builder' );
 
 		$this->entries_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -156,6 +159,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-entries',
 			array( $this, 'render_entries_page' )
 		);
+		$this->force_submenu_highlight( $this->entries_page_hook, 'boldform-lite-entries' );
 
 		$this->settings_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -165,6 +169,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-settings',
 			array( $this, 'render_settings_page' )
 		);
+		$this->force_submenu_highlight( $this->settings_page_hook, 'boldform-lite-settings' );
 
 		$this->reports_page_hook = add_submenu_page(
 			'boldform-lite',
@@ -174,6 +179,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-reports',
 			array( $this, 'render_reports_page' )
 		);
+		$this->force_submenu_highlight( $this->reports_page_hook, 'boldform-lite-reports' );
 
 		$this->preview_page_hook = add_submenu_page(
 			'',
@@ -195,6 +201,7 @@ class BoldForm_Lite_Admin {
 			'boldform-lite-docs',
 			array( $this, 'render_docs_page' )
 		);
+		$this->force_submenu_highlight( $this->docs_page_hook, 'boldform-lite-docs' );
 
 		/**
 		 * Fires after BoldForm Lite registers all its admin submenu pages.
@@ -223,6 +230,37 @@ class BoldForm_Lite_Admin {
 			'manage_options',
 			'boldform-lite-upgrade',
 			array( $this, 'render_upgrade_page' )
+		);
+		if ( $show_upgrade_cta ) {
+			$this->force_submenu_highlight( $this->upgrade_page_hook, 'boldform-lite-upgrade' );
+		}
+	}
+
+	/**
+	 * Forces a submenu item to be marked "current" in the sidebar, on load-{$hook}
+	 * (which fires before wp-admin/admin-header.php renders the menu).
+	 *
+	 * WordPress normally resolves this itself via a file_exists() fallback in
+	 * wp-admin/menu-header.php when $submenu_file is never set — that fallback is
+	 * relative to the PHP process's current working directory, which some server
+	 * setups (php-fpm pools that don't chdir to the script's own directory) leave
+	 * pointed somewhere the check can't reliably resolve, so the active submenu
+	 * item silently loses its highlight even on the right page. Setting
+	 * $submenu_file explicitly makes the highlight deterministic on every server.
+	 *
+	 * @param string $hook Hook suffix returned by add_menu_page()/add_submenu_page().
+	 * @param string $slug Menu slug that should be marked current.
+	 * @return void
+	 */
+	private function force_submenu_highlight( $hook, $slug ) {
+		if ( ! $hook ) {
+			return;
+		}
+		add_action(
+			'load-' . $hook,
+			function () use ( $slug ) {
+				$GLOBALS['submenu_file'] = $slug;
+			}
 		);
 	}
 
@@ -861,6 +899,14 @@ class BoldForm_Lite_Admin {
 						'optionsLayout'      => __( 'Options Layout', 'boldform-lite' ),
 						'optionsLayoutBlock'  => __( 'Stacked (default)', 'boldform-lite' ),
 						'optionsLayoutInline' => __( 'Inline', 'boldform-lite' ),
+						'cancel'               => __( 'Cancel', 'boldform-lite' ),
+						/* translators: %s: design theme name, e.g. "Royal Purple". */
+						'themeConflictTitle'   => __( 'Apply %s?', 'boldform-lite' ),
+						'themeConflictBody'    => __( 'These custom colors are overriding the theme. Applying it will replace them:', 'boldform-lite' ),
+						'themeConflictApply'   => __( 'Apply theme', 'boldform-lite' ),
+						'checkboxStyle'        => __( 'Style', 'boldform-lite' ),
+						'checkboxStyleDefault' => __( 'Checkbox', 'boldform-lite' ),
+						'checkboxStyleSwitch'  => __( 'Switch', 'boldform-lite' ),
 						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
 						'layout'       => __( 'Layout', 'boldform-lite' ),
 						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),
@@ -881,6 +927,12 @@ class BoldForm_Lite_Admin {
 						'registrationTemplateTitle' => __( 'Registration Form', 'boldform-lite' ),
 						'registrationTemplateDescription' => __( 'Event or account registration with full details.', 'boldform-lite' ),
 						'importTemplate' => __( 'Import Template', 'boldform-lite' ),
+						/* translators: %s: comma-separated list of feature names that must be enabled. */
+						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
+						// Shown in the preview pane when a locked template row is selected.
+						'templateLockTitle' => __( 'Available with an upgrade', 'boldform-lite' ),
+						'templateLockText'  => __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ),
+						'upgradeNow'        => __( 'Upgrade Now', 'boldform-lite' ),
 						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
 						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
 						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
@@ -1140,6 +1192,11 @@ class BoldForm_Lite_Admin {
 					// as the string '0', which is truthy, and the teaser would then show
 					// even with an add-on active.
 					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
+					// Locked entries advertised in the "Choose a Template" library. Empty
+					// once an add-on turns the upgrade CTAs off, at which point that add-on
+					// supplies the real templates through proTemplates instead — the two
+					// never show together. See premium_template_teasers().
+					'premiumTemplates'   => $this->premium_template_teasers(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 				);
 
@@ -1352,6 +1409,7 @@ class BoldForm_Lite_Admin {
 						'exportUrl'        => admin_url( 'admin.php?page=boldform-lite-entries' ),
 						'exportNonce'      => wp_create_nonce( 'boldform_lite_csv_export' ),
 						'selectedText'     => __( 'selected', 'boldform-lite' ),
+					'applyHintText'    => __( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ),
 						/* translators: %d: number of selected entries to delete. */
 						'confirmDelete'    => __( 'Permanently delete %d selected entries? This cannot be undone.', 'boldform-lite' ),
 						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
@@ -1402,6 +1460,13 @@ class BoldForm_Lite_Admin {
 						function selectedIds(){
 							return $(".boldform-entry-checkbox:checked").map(function(){return $(this).val();}).get();
 						}
+						// Apply is only actionable with BOTH a selection and an action, which is
+						// exactly the pair the click handler used to bail on silently.
+						function refreshApplyState(){
+							var ready=selectedIds().length>0&&!!$("#boldform-bulk-action").val();
+							$("#boldform-bulk-apply").prop("disabled",!ready)
+								.attr("title",ready?"":boldformAdminEntries.applyHintText);
+						}
 						function refreshBulkBar(){
 							var ids=selectedIds(),n=ids.length;
 							var $count=$("#boldform-bulk-count");
@@ -1410,7 +1475,9 @@ class BoldForm_Lite_Admin {
 							else{$count.attr("hidden",true);$("#boldform-bulk-export-dd").attr("hidden",true).removeClass("is-open");}
 							var total=$(".boldform-entry-checkbox").length;
 							$("#boldform-cb-all").prop("checked",total>0&&n===total).prop("indeterminate",n>0&&n<total);
+							refreshApplyState();
 						}
+						$("#boldform-bulk-action").on("change",refreshApplyState);
 						// Export CSV (dropdown item) — POST the chosen ids to the CSV endpoint (a POST
 						// form, not a GET URL, so any number of selected ids works without URL limits).
 						$("#boldform-bulk-export-csv").on("click",function(){
@@ -1436,9 +1503,13 @@ class BoldForm_Lite_Admin {
 							var $btn=$(this).prop("disabled",true);
 							$.post(ajaxurl,{action:"boldform_lite_bulk_entry_action",_ajax_nonce:nonce,bulk_action:action,entry_ids:ids},function(r){
 								if(r&&r.success){location.reload();}
-								else{$btn.prop("disabled",false);window.alert((r&&r.data&&r.data.message)||boldformAdminEntries.errorText);}
-							}).fail(function(){$btn.prop("disabled",false);window.alert(boldformAdminEntries.errorText);});
+								else{refreshApplyState();window.alert((r&&r.data&&r.data.message)||boldformAdminEntries.errorText);}
+							}).fail(function(){refreshApplyState();window.alert(boldformAdminEntries.errorText);});
 						});
+						// Sync on load: browsers restore ticked checkboxes across the reload this
+						// handler triggers (and on back/refresh), so the bar and the Apply state
+						// must reflect that restored selection rather than assuming none.
+						refreshBulkBar();
 					});'
 				);
 			}
@@ -1583,6 +1654,76 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
+	}
+
+	/**
+	 * Ready-made forms advertised in the template library but not included here.
+	 *
+	 * Four of the library's eight categories — Health & Medical, Education & Nonprofit,
+	 * Payment & Calculation and Multi-Step — have no template in this plugin, so the
+	 * category never rendered and there was nothing to tell anyone those forms exist.
+	 * These entries fill the gap: they list as locked rows that preview their
+	 * description and offer an upgrade instead of an import.
+	 *
+	 * Nothing here detects an add-on. The list is emptied by the same
+	 * `boldform_show_upgrade_cta` filter every other teaser respects, and an add-on
+	 * that turns that filter off supplies the real, importable versions of these very
+	 * templates through `proTemplates` — so a locked row and its real counterpart can
+	 * never appear at the same time. Keep the keys identical to the add-on's template
+	 * slugs: that is what makes the swap exact rather than approximate.
+	 *
+	 * @return array<int, array<string, string>> Locked entries, or [] when the CTAs are off.
+	 */
+	private function premium_template_teasers() {
+		if ( ! apply_filters( 'boldform_show_upgrade_cta', true ) ) {
+			return array();
+		}
+
+		return array(
+			// --- General ---------------------------------------------------------
+			array( 'key' => 'contest_entry', 'category' => 'general', 'title' => __( 'Contest / Giveaway Entry', 'boldform-lite' ), 'description' => __( 'Run a contest or giveaway with entrant details and a skill-testing question.', 'boldform-lite' ) ),
+
+			// --- Business --------------------------------------------------------
+			array( 'key' => 'quote_request', 'category' => 'business', 'title' => __( 'Project Quote Request', 'boldform-lite' ), 'description' => __( 'Let prospects describe a project and request a price quote with budget and timeline.', 'boldform-lite' ) ),
+			array( 'key' => 'file_upload', 'category' => 'business', 'title' => __( 'File Upload / Document Submission', 'boldform-lite' ), 'description' => __( 'Collect documents from users — resumes, contracts, invoices — with contact details.', 'boldform-lite' ) ),
+			array( 'key' => 'consent_waiver', 'category' => 'business', 'title' => __( 'Consent / Waiver Form', 'boldform-lite' ), 'description' => __( 'Capture agreement and a signature for waivers, consents, and release forms.', 'boldform-lite' ) ),
+			array( 'key' => 'real_estate_inquiry', 'category' => 'business', 'title' => __( 'Real Estate Inquiry', 'boldform-lite' ), 'description' => __( 'Capture buyer and seller leads with inquiry type, property type, budget, and timeline.', 'boldform-lite' ) ),
+			array( 'key' => 'testimonial_submission', 'category' => 'business', 'title' => __( 'Testimonial Submission', 'boldform-lite' ), 'description' => __( 'Collect customer testimonials with a star rating, quote, and optional photo.', 'boldform-lite' ) ),
+			array( 'key' => 'rental_application', 'category' => 'business', 'title' => __( 'Rental Application', 'boldform-lite' ), 'description' => __( 'Screen rental applicants with contact, employment, occupancy, and document details.', 'boldform-lite' ) ),
+			array( 'key' => 'rma_request', 'category' => 'business', 'title' => __( 'Product Return / RMA Request', 'boldform-lite' ), 'description' => __( 'Handle returns with order number, reason, preferred resolution, and a photo.', 'boldform-lite' ) ),
+
+			// --- Events & Booking ------------------------------------------------
+			array( 'key' => 'restaurant_reservation', 'category' => 'events', 'title' => __( 'Restaurant Reservation', 'boldform-lite' ), 'description' => __( 'Take table bookings with party size, date, time, and seating preferences.', 'boldform-lite' ) ),
+			array( 'key' => 'wedding_rsvp', 'category' => 'events', 'title' => __( 'Wedding RSVP', 'boldform-lite' ), 'description' => __( 'Collect RSVPs with guest count, meal choice, and a note to the couple.', 'boldform-lite' ) ),
+			array( 'key' => 'event_ticket', 'category' => 'events', 'title' => __( 'Event Ticket Purchase', 'boldform-lite' ), 'description' => __( 'Sell event tickets with ticket tiers, quantity, and an order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'catering_estimate', 'category' => 'events', 'title' => __( 'Catering Request Estimate', 'boldform-lite' ), 'description' => __( 'Request catering and see a live estimate from guest count multiplied by price per person.', 'boldform-lite' ) ),
+
+			// --- HR & Surveys ----------------------------------------------------
+			array( 'key' => 'time_off_request', 'category' => 'hr_survey', 'title' => __( 'Time-Off / Leave Request', 'boldform-lite' ), 'description' => __( 'Employees request leave with dates and a reason, ready for an approval workflow.', 'boldform-lite' ) ),
+			array( 'key' => 'employee_onboarding', 'category' => 'hr_survey', 'title' => __( 'Employee Onboarding', 'boldform-lite' ), 'description' => __( 'Onboard new hires: personal details, document upload, and a policy signature.', 'boldform-lite' ) ),
+			array( 'key' => 'nps_survey', 'category' => 'hr_survey', 'title' => __( 'NPS Feedback Survey', 'boldform-lite' ), 'description' => __( 'Measure loyalty with a Net Promoter Score question and follow-up feedback.', 'boldform-lite' ) ),
+
+			// --- Health & Medical ------------------------------------------------
+			array( 'key' => 'patient_intake', 'category' => 'health', 'title' => __( 'Patient Intake / Medical History', 'boldform-lite' ), 'description' => __( 'Gather patient details, medical history, and a consent signature before an appointment.', 'boldform-lite' ) ),
+
+			// --- Education & Nonprofit -------------------------------------------
+			array( 'key' => 'course_enrollment', 'category' => 'education', 'title' => __( 'Course Enrollment', 'boldform-lite' ), 'description' => __( 'Enroll students in a course with plan selection, level, and an order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'volunteer_signup', 'category' => 'education', 'title' => __( 'Volunteer Signup', 'boldform-lite' ), 'description' => __( 'Recruit volunteers with areas of interest, availability, and experience.', 'boldform-lite' ) ),
+			array( 'key' => 'petition', 'category' => 'education', 'title' => __( 'Petition / Signature Drive', 'boldform-lite' ), 'description' => __( 'Gather supporters with a name, location, comment, and a signature.', 'boldform-lite' ) ),
+
+			// --- Payment & Calculation -------------------------------------------
+			array( 'key' => 'payment_order', 'category' => 'payment', 'title' => __( 'Payment Order Form', 'boldform-lite' ), 'description' => __( 'Collect product orders with a payment item, quantity, custom amount, and order summary.', 'boldform-lite' ) ),
+			array( 'key' => 'donation_form', 'category' => 'payment', 'title' => __( 'Donation Form', 'boldform-lite' ), 'description' => __( 'Accept donations with preset amounts or a custom amount, plus donor details.', 'boldform-lite' ) ),
+			array( 'key' => 'service_calculator', 'category' => 'payment', 'title' => __( 'Service Price Calculator', 'boldform-lite' ), 'description' => __( 'Let users calculate a service price from quantity multiplied by rate, with an instant total.', 'boldform-lite' ) ),
+			array( 'key' => 'loan_calculator', 'category' => 'payment', 'title' => __( 'Loan Repayment Calculator', 'boldform-lite' ), 'description' => __( 'Estimate simple-interest loan cost from amount, rate, and term.', 'boldform-lite' ) ),
+			array( 'key' => 'subscription_signup', 'category' => 'payment', 'title' => __( 'Subscription Signup', 'boldform-lite' ), 'description' => __( 'Let customers pick a subscription plan and sign up, ready for recurring billing.', 'boldform-lite' ) ),
+			array( 'key' => 'gym_membership', 'category' => 'payment', 'title' => __( 'Gym Membership Signup', 'boldform-lite' ), 'description' => __( 'Sign up new members with a plan, add-ons, emergency contact, and payment.', 'boldform-lite' ) ),
+
+			// --- Multi-Step -------------------------------------------------------
+			array( 'key' => 'multi_step_registration', 'category' => 'multi_step', 'title' => __( 'Multi-Step Registration', 'boldform-lite' ), 'description' => __( 'Three-step registration: personal information, account setup, and preferences.', 'boldform-lite' ) ),
+			array( 'key' => 'multi_step_survey', 'category' => 'multi_step', 'title' => __( 'Multi-Step Survey', 'boldform-lite' ), 'description' => __( 'A two-step satisfaction survey split across pages for better completion.', 'boldform-lite' ) ),
+			array( 'key' => 'multi_step_booking', 'category' => 'multi_step', 'title' => __( 'Multi-Step Booking + Payment', 'boldform-lite' ), 'description' => __( 'Service booking with date and time selection, attendee details, and payment.', 'boldform-lite' ) ),
+		);
 	}
 
 	/**
@@ -2360,23 +2501,21 @@ class BoldForm_Lite_Admin {
 	 * @return void
 	 */
 	public function render_forms_page() {
-		$current_view   = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$is_trash       = 'trash' === $current_view;
-		$forms          = $this->get_forms( $current_view );
-		$all_count      = $this->get_forms_count();
-		$trash_count    = $this->get_forms_count( 'trash' );
-		$entry_counts   = $this->get_entry_counts_by_form();
-		$notice         = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_view    = isset( $_GET['form_status'] ) && 'trash' === sanitize_key( wp_unslash( $_GET['form_status'] ) ) ? 'trash' : 'all'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$is_trash        = 'trash' === $current_view;
+		$all_count       = $this->get_forms_count();
+		$trash_count     = $this->get_forms_count( 'trash' );
+		$notice          = isset( $_GET['boldform_notice'] ) ? sanitize_key( wp_unslash( $_GET['boldform_notice'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		$form_action_url = $is_trash ? admin_url( 'admin.php?page=boldform-lite&form_status=trash' ) : admin_url( 'admin.php?page=boldform-lite' );
 
 		// Status filter (Active/Inactive) — applies to the non-trash view only.
 		$status_filter = isset( $_GET['status_filter'] ) ? sanitize_key( wp_unslash( $_GET['status_filter'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! in_array( $status_filter, array( 'active', 'inactive' ), true ) ) {
+		if ( ! in_array( $status_filter, array( 'active', 'inactive' ), true ) || $is_trash ) {
 			$status_filter = '';
 		}
-		if ( '' !== $status_filter && ! $is_trash ) {
-			$forms = $this->filter_forms_by_status( $forms, $status_filter );
-		}
+
+		// Search (matches against the form title).
+		$search_term = isset( $_GET['s'] ) ? trim( sanitize_text_field( wp_unslash( $_GET['s'] ) ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		// Sorting (server-side, WP-style): allowlisted column + direction.
 		$allowed_orderby = array( 'title', 'entries', 'updated' );
@@ -2385,12 +2524,26 @@ class BoldForm_Lite_Admin {
 			$orderby = '';
 		}
 		$order = ( isset( $_GET['order'] ) && 'asc' === strtolower( sanitize_key( wp_unslash( $_GET['order'] ) ) ) ) ? 'asc' : 'desc'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( '' !== $orderby ) {
-			$forms = $this->sort_forms_list( $forms, $orderby, $order, $entry_counts );
-		}
 
-		// Sort links must preserve the active status filter in the URL.
+		// Pagination — server-side, fixed 10-per-page (mirrors the Entries list).
+		// Filtering/searching/sorting all run in SQL (see get_forms()/get_forms_total()),
+		// which is required for pagination to be correct: applying them in PHP after a
+		// LIMIT/OFFSET slice would only filter/sort the current page's rows.
+		$per_page     = 10;
+		$total_items  = $this->get_forms_total( $current_view, $status_filter, $search_term );
+		$total_pages  = max( 1, (int) ceil( $total_items / $per_page ) );
+		$current_page = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$current_page = min( $current_page, $total_pages );
+		$offset       = ( $current_page - 1 ) * $per_page;
+
+		$forms = $this->get_forms( $current_view, $status_filter, $search_term, $orderby, $order, $per_page, $offset );
+
+		// Sort/search/filter links must preserve the active status filter and search term
+		// in the URL. They deliberately don't carry `paged` — changing them resets to page 1.
 		$sort_base_url = ( '' !== $status_filter ) ? add_query_arg( 'status_filter', $status_filter, $form_action_url ) : $form_action_url;
+		if ( '' !== $search_term ) {
+			$sort_base_url = add_query_arg( 's', rawurlencode( $search_term ), $sort_base_url );
+		}
 		?>
 		<?php $this->render_admin_topbar( 'boldform-lite' ); ?>
 		<div class="wrap">
@@ -2439,6 +2592,9 @@ class BoldForm_Lite_Admin {
 								<input type="hidden" name="orderby" value="<?php echo esc_attr( $orderby ); ?>">
 								<input type="hidden" name="order" value="<?php echo esc_attr( $order ); ?>">
 							<?php endif; ?>
+							<?php if ( '' !== $search_term ) : ?>
+								<input type="hidden" name="s" value="<?php echo esc_attr( $search_term ); ?>">
+							<?php endif; ?>
 							<select name="status_filter" id="boldform-status-filter">
 								<option value=""><?php esc_html_e( 'All Status', 'boldform-lite' ); ?></option>
 								<option value="active" <?php selected( $status_filter, 'active' ); ?>><?php esc_html_e( 'Active', 'boldform-lite' ); ?></option>
@@ -2447,6 +2603,22 @@ class BoldForm_Lite_Admin {
 							<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Filter', 'boldform-lite' ); ?></button>
 						</form>
 					<?php endif; ?>
+					<form method="get" class="boldform-search-form" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>">
+						<input type="hidden" name="page" value="boldform-lite">
+						<?php if ( $is_trash ) : ?>
+							<input type="hidden" name="form_status" value="trash">
+						<?php endif; ?>
+						<?php if ( '' !== $status_filter ) : ?>
+							<input type="hidden" name="status_filter" value="<?php echo esc_attr( $status_filter ); ?>">
+						<?php endif; ?>
+						<?php if ( '' !== $orderby ) : ?>
+							<input type="hidden" name="orderby" value="<?php echo esc_attr( $orderby ); ?>">
+							<input type="hidden" name="order" value="<?php echo esc_attr( $order ); ?>">
+						<?php endif; ?>
+						<label class="screen-reader-text" for="boldform-search-input"><?php esc_html_e( 'Search Forms', 'boldform-lite' ); ?></label>
+						<input type="search" id="boldform-search-input" class="boldform-search-input" name="s" value="<?php echo esc_attr( $search_term ); ?>" placeholder="<?php esc_attr_e( 'Search forms…', 'boldform-lite' ); ?>">
+						<button type="submit" class="boldform-bulk-apply"><?php esc_html_e( 'Search Forms', 'boldform-lite' ); ?></button>
+					</form>
 				</div>
 
 				<form method="post" id="boldform-bulk-form" action="<?php echo esc_url( $form_action_url ); ?>">
@@ -2468,7 +2640,18 @@ class BoldForm_Lite_Admin {
 							<?php if ( empty( $forms ) ) : ?>
 								<tr>
 									<td colspan="7" class="boldform-forms-empty">
-										<?php if ( $is_trash ) : ?>
+										<?php if ( '' !== $search_term ) : ?>
+											<span class="dashicons dashicons-search"></span>
+											<p>
+												<?php
+												printf(
+													/* translators: %s: search term. */
+													esc_html__( 'No forms found for "%s".', 'boldform-lite' ),
+													esc_html( $search_term )
+												);
+												?>
+											</p>
+										<?php elseif ( $is_trash ) : ?>
 											<span class="dashicons dashicons-trash"></span>
 											<p><?php esc_html_e( 'Trash is empty.', 'boldform-lite' ); ?></p>
 										<?php else : ?>
@@ -2482,7 +2665,7 @@ class BoldForm_Lite_Admin {
 								<?php foreach ( $forms as $form ) : ?>
 									<?php
 									$form_id_int   = absint( $form->id );
-									$form_entries  = absint( $entry_counts[ (int) $form->id ] ?? 0 );
+									$form_entries  = absint( $form->entry_count ?? 0 );
 									$form_fields   = count( $this->extract_fields_from_record( $form ) );
 									$shortcode_str = '[boldform id="' . $form_id_int . '"]';
 									?>
@@ -2563,6 +2746,43 @@ class BoldForm_Lite_Admin {
 					</table>
 					</div>
 				</form>
+
+				<?php if ( $total_pages > 1 ) : ?>
+					<div class="boldform-pagination">
+						<?php
+						$paginate_args = array(
+							'form_status'   => $is_trash ? 'trash' : '',
+							'status_filter' => $status_filter,
+							's'             => $search_term,
+							'orderby'       => $orderby,
+							'order'         => '' !== $orderby ? $order : '',
+						);
+						$paginate_args = array_filter( $paginate_args, 'strlen' );
+
+						echo wp_kses_post(
+							paginate_links(
+								array(
+									'base'      => add_query_arg(
+										array_merge(
+											array(
+												'page'  => 'boldform-lite',
+												'paged' => '%#%',
+											),
+											$paginate_args
+										),
+										admin_url( 'admin.php' )
+									),
+									'format'    => '',
+									'current'   => min( $current_page, $total_pages ),
+									'total'     => $total_pages,
+									'prev_text' => __( '&laquo;', 'boldform-lite' ),
+									'next_text' => __( '&raquo;', 'boldform-lite' ),
+								)
+							)
+						);
+						?>
+					</div>
+				<?php endif; ?>
 			</div>
 
 		</div>
@@ -3020,7 +3240,13 @@ class BoldForm_Lite_Admin {
 							?>
 						<?php endif; ?>
 					</select>
-					<button type="button" class="button button-primary" id="boldform-bulk-apply"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
+					<?php
+					// Rendered disabled: on load nothing is selected and no action is chosen, so
+					// Apply has nothing to do. The JS enables it as soon as both are true. Starting
+					// disabled also avoids a brief window where it looks clickable but silently
+					// no-ops before the inline script runs.
+					?>
+					<button type="button" class="button button-primary" id="boldform-bulk-apply" disabled title="<?php esc_attr_e( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ); ?>"><?php esc_html_e( 'Apply', 'boldform-lite' ); ?></button>
 					<?php // Export-selected menu: a single dropdown replaces the row of format buttons. Shown only while rows are selected (JS toggles the `hidden` attribute). ?>
 					<div class="boldform-dropdown boldform-bulk-export-dd" id="boldform-bulk-export-dd" hidden>
 						<button type="button" class="boldform-dropdown__trigger">
@@ -3276,7 +3502,7 @@ class BoldForm_Lite_Admin {
 									<div class="boldform-field-label"><label for="boldform-<?php echo esc_attr( $setting_key ); ?>"><?php echo esc_html( $msg_label ); ?></label></div>
 									<div class="boldform-field-control">
 										<?php
-										/* translators: %s: field type label (e.g. "Email field") */
+										/* translators: %s: field label */
 										$placeholder_text = sprintf( __( '%s is required.', 'boldform-lite' ), $msg_label );
 										?>
 										<input type="text" id="boldform-<?php echo esc_attr( $setting_key ); ?>" name="boldform_<?php echo esc_attr( $setting_key ); ?>" value="<?php echo esc_attr( $settings[ $setting_key ] ); ?>" placeholder="<?php echo esc_attr( $placeholder_text ); ?>">
@@ -3364,7 +3590,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-hcaptcha-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-hcaptcha-secret-key" name="boldform_hcaptcha_secret_key" value="" placeholder="<?php echo '' !== $settings['hcaptcha_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: hCaptcha URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>hcaptcha.com</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
@@ -3383,7 +3609,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: Cloudflare Turnstile dashboard URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
 										</div>
 									</div>
 								</div>
@@ -3988,79 +4214,140 @@ class BoldForm_Lite_Admin {
 	 * @param string $view 'all' for non-trashed forms, 'trash' for trashed forms.
 	 * @return array<int, object>
 	 */
-	private function get_forms( $view = 'all' ) {
+	private function get_forms( $view = 'all', $status_filter = '', $search_term = '', $orderby = '', $order = 'desc', $per_page = null, $offset = 0 ) {
 		global $wpdb;
 
-		$table_name = $this->plugin->get_forms_table_name();
+		$forms_table   = esc_sql( $this->plugin->get_forms_table_name() );
+		$entries_table = esc_sql( $this->plugin->get_entries_table_name() );
 
-		$safe_table = esc_sql( $table_name );
+		list( $where, $params ) = $this->build_forms_where( $view, $status_filter, $search_term );
 
-		if ( 'trash' === $view ) {
-			return $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, fields_json, updated_at FROM `{$safe_table}` WHERE status = %s ORDER BY id DESC", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$order_sql = $this->forms_order_sql( $orderby, $order );
+
+		$limit_sql = '';
+		if ( null !== $per_page ) {
+			$limit_sql = 'LIMIT %d OFFSET %d';
+			$params[]  = (int) $per_page;
+			$params[]  = (int) $offset;
 		}
 
-		return $wpdb->get_results( $wpdb->prepare( "SELECT id, title, status, fields_json, updated_at FROM `{$safe_table}` WHERE status != %s ORDER BY id DESC", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// Every interpolated part of this query is code, not data: the table names are
+		// esc_sql()'d above, $order_sql and $limit_sql come from allowlists, and $where
+		// is an array of literal fragments whose only variables are %s/%d placeholders
+		// bound from $params by prepare(). `phpcs:ignore` covers a single line, so a
+		// disable/enable pair is needed to span the whole multi-line statement.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$sql = $wpdb->prepare(
+			"SELECT f.id, f.title, f.status, f.fields_json, f.updated_at, COALESCE(ec.total, 0) AS entry_count
+			FROM `{$forms_table}` f
+			LEFT JOIN ( SELECT form_id, COUNT(*) AS total FROM `{$entries_table}` WHERE trashed_at IS NULL GROUP BY form_id ) ec ON ec.form_id = f.id
+			WHERE " . implode( ' AND ', $where ) . "
+			ORDER BY {$order_sql}
+			{$limit_sql}",
+			$params
+		);
+
+		$results = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		return $results;
 	}
 
 	/**
-	 * Filters the forms list by active/inactive status (PHP-side; the list is
-	 * not paginated). 'active' means published; anything else counts as inactive.
+	 * Returns the total number of forms matching a view/status/search combination
+	 * (for computing pagination — must reflect the same WHERE clause as get_forms()).
 	 *
-	 * @param array<int, object> $forms         Forms to filter.
-	 * @param string             $status_filter 'active' or 'inactive'.
-	 * @return array<int, object>
+	 * @param string $view          'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string $status_filter 'active', 'inactive', or '' for no filter (non-trash view only).
+	 * @param string $search_term   Search term matched against the title, or ''.
+	 * @return int
 	 */
-	private function filter_forms_by_status( $forms, $status_filter ) {
-		return array_values(
-			array_filter(
-				$forms,
-				function ( $form ) use ( $status_filter ) {
-					$is_active = 'publish' === ( $form->status ?? 'publish' );
-					return ( 'active' === $status_filter ) ? $is_active : ! $is_active;
-				}
+	private function get_forms_total( $view, $status_filter, $search_term ) {
+		global $wpdb;
+
+		$forms_table = esc_sql( $this->plugin->get_forms_table_name() );
+
+		list( $where, $params ) = $this->build_forms_where( $view, $status_filter, $search_term );
+
+		// Same reasoning as get_forms(): the table name is esc_sql()'d and $where holds
+		// literal fragments with bound placeholders. Aliased "f" to match the column
+		// prefixes build_forms_where() emits.
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+		$total = (int) $wpdb->get_var( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM `{$forms_table}` f WHERE " . implode( ' AND ', $where ),
+				$params
 			)
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		return $total;
 	}
 
 	/**
-	 * Sorts the forms list in PHP (the list is not paginated) by an allowlisted
-	 * column. Entry counts are not a forms-table column, so they are compared
-	 * via the pre-fetched counts map rather than in SQL.
+	 * Builds the shared WHERE clause + bound params for the forms list, used by
+	 * both get_forms() and get_forms_total() so the paginated rows and the total
+	 * count can never drift apart.
 	 *
-	 * @param array<int, object> $forms        Forms to sort.
-	 * @param string             $orderby      One of 'title', 'entries', 'updated'.
-	 * @param string             $order        'asc' or 'desc'.
-	 * @param array<int, int>    $entry_counts Entry counts keyed by form ID.
-	 * @return array<int, object>
+	 * @param string $view          'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string $status_filter 'active', 'inactive', or '' for no filter (non-trash view only).
+	 * @param string $search_term   Search term matched against the title, or ''.
+	 * @return array{0: string[], 1: array<int, string>} [ $where_clauses, $params ].
 	 */
-	private function sort_forms_list( $forms, $orderby, $order, $entry_counts ) {
-		$dir = ( 'asc' === $order ) ? 1 : -1;
+	private function build_forms_where( $view, $status_filter, $search_term ) {
+		global $wpdb;
 
-		usort(
-			$forms,
-			function ( $a, $b ) use ( $orderby, $entry_counts, $dir ) {
-				if ( 'title' === $orderby ) {
-					$cmp = strcasecmp( (string) $a->title, (string) $b->title );
-				} elseif ( 'entries' === $orderby ) {
-					$count_a = (int) ( $entry_counts[ (int) $a->id ] ?? 0 );
-					$count_b = (int) ( $entry_counts[ (int) $b->id ] ?? 0 );
-					$cmp     = $count_a <=> $count_b;
-				} else {
-					$time_a = isset( $a->updated_at ) ? (int) strtotime( (string) $a->updated_at ) : 0;
-					$time_b = isset( $b->updated_at ) ? (int) strtotime( (string) $b->updated_at ) : 0;
-					$cmp    = $time_a <=> $time_b;
-				}
+		$where  = array();
+		$params = array();
 
-				// Stable tiebreaker so equal values keep a deterministic order.
-				if ( 0 === $cmp ) {
-					$cmp = (int) $a->id <=> (int) $b->id;
-				}
+		if ( 'trash' === $view ) {
+			$where[]  = 'f.status = %s';
+			$params[] = 'trash';
+		} else {
+			$where[]  = 'f.status != %s';
+			$params[] = 'trash';
 
-				return $cmp * $dir;
+			// Only two non-trash statuses exist ('publish'/'draft'), so "inactive" maps
+			// directly to 'draft' rather than a PHP-side "anything but published" check.
+			if ( 'active' === $status_filter ) {
+				$where[]  = 'f.status = %s';
+				$params[] = 'publish';
+			} elseif ( 'inactive' === $status_filter ) {
+				$where[]  = 'f.status = %s';
+				$params[] = 'draft';
 			}
-		);
+		}
 
-		return $forms;
+		if ( '' !== $search_term ) {
+			$where[]  = 'f.title LIKE %s';
+			$params[] = '%' . $wpdb->esc_like( $search_term ) . '%';
+		}
+
+		return array( $where, $params );
+	}
+
+	/**
+	 * Resolves an allowlisted orderby/order pair to an ORDER BY fragment for the
+	 * forms list query. entry_count is a SELECT alias (from the entries JOIN in
+	 * get_forms()), which MySQL allows ordering by directly.
+	 *
+	 * @param string $orderby One of 'title', 'entries', 'updated', or '' for the default.
+	 * @param string $order   'asc' or 'desc'.
+	 * @return string
+	 */
+	private function forms_order_sql( $orderby, $order ) {
+		$dir = ( 'asc' === $order ) ? 'ASC' : 'DESC';
+
+		switch ( $orderby ) {
+			case 'title':
+				return 'f.title ' . $dir . ', f.id DESC';
+			case 'entries':
+				return 'entry_count ' . $dir . ', f.id DESC';
+			case 'updated':
+				return 'f.updated_at ' . $dir . ', f.id DESC';
+			default:
+				return 'f.id DESC';
+		}
 	}
 
 	/**
@@ -4125,29 +4412,6 @@ class BoldForm_Lite_Admin {
 		}
 
 		return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$safe_table}` WHERE status != %s", 'trash' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-	}
-
-	/**
-	 * Returns entry counts grouped by form ID.
-	 *
-	 * @return array<int, int> Map of form_id => count.
-	 */
-	private function get_entry_counts_by_form() {
-		global $wpdb;
-
-		$safe_table = esc_sql( $this->plugin->get_entries_table_name() );
-
-		// Exclude trashed entries — a trashed entry is on its way out and must not inflate
-		// the per-form count shown on the Forms list.
-		$results = $wpdb->get_results( "SELECT form_id, COUNT(*) AS total FROM `{$safe_table}` WHERE trashed_at IS NULL GROUP BY form_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-
-		$counts = array();
-
-		foreach ( $results as $row ) {
-			$counts[ (int) $row->form_id ] = (int) $row->total;
-		}
-
-		return $counts;
 	}
 
 	/**
@@ -5274,6 +5538,7 @@ class BoldForm_Lite_Admin {
 			// Multi-step settings (data passthrough for Pro's multi-page module).
 			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_progress_bg_color' => isset( $decoded['step_progress_bg_color'] ) && sanitize_hex_color( $decoded['step_progress_bg_color'] ) ? sanitize_hex_color( $decoded['step_progress_bg_color'] ) : '',
 			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
 			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
 			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',

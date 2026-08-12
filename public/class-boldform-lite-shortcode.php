@@ -958,7 +958,8 @@ class BoldForm_Lite_Shortcode {
 			$button_label  = $this->get_button_accessible_label( $form_settings );
 			$aria_label    = $button_label ? ' aria-label="' . esc_attr( $button_label ) . '"' : '';
 			$button_type   = $this->is_editor_preview() ? 'button' : 'submit';
-			return '<div class="boldform-lite-form__actions"><button type="' . $button_type . '" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
+			$button_align  = isset( $form_settings['button_alignment'] ) && in_array( $form_settings['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $form_settings['button_alignment'] : 'left';
+			return '<div class="boldform-lite-form__actions is-align-' . esc_attr( $button_align ) . '"><button type="' . $button_type . '" class="boldform-lite-form__submit"' . $aria_label . '>' . $this->build_button_content( $form_settings ) . '</button></div>';
 		}
 
 		/**
@@ -1348,6 +1349,16 @@ class BoldForm_Lite_Shortcode {
 				<span class="boldform-lite-form__choice-label">
 					<?php if ( '' !== $content ) : ?>
 						<span class="boldform-lite-form__terms-copy"><?php echo wp_kses_post( $content ); ?></span>
+					<?php endif; ?>
+					<?php if ( $required ) : ?>
+						<?php
+						// This renderer returns early from render_field(), so it never reaches
+						// the shared label block that draws the required asterisk — and a
+						// consent field's heading is normally blank, so there was no label to
+						// carry one anyway. Without this the checkbox was required in the
+						// markup and enforced on submit, yet looked entirely optional.
+						?>
+						<span class="boldform-lite-form__required">*</span>
 					<?php endif; ?>
 				</span>
 			</label>
@@ -1830,7 +1841,8 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'checkbox' === $type || 'radio' === $type ) {
-			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' );
+			$checkbox_style = isset( $field['checkbox_style'] ) ? (string) $field['checkbox_style'] : 'default';
+			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' ) . ( 'checkbox' === $type && 'switch' === $checkbox_style ? ' is-switch' : '' );
 			// Group semantics so SRs announce the option set as one labelled group
 			// (no <fieldset>/<legend>, which would restyle the form). Points at the
 			// field's visible <label> via aria-labelledby when one is rendered.

@@ -266,6 +266,7 @@ class BoldForm_Lite_Ajax_Save {
 						}
 
 						$options_layout = isset( $field['options_layout'] ) && 'inline' === $field['options_layout'] ? 'inline' : 'block';
+						$checkbox_style = isset( $field['checkbox_style'] ) && 'switch' === $field['checkbox_style'] ? 'switch' : 'default';
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
 						$core_field = array(
@@ -277,11 +278,16 @@ class BoldForm_Lite_Ajax_Save {
 							'required'       => ! empty( $field['required'] ),
 							'options'        => $options,
 							'options_layout' => $options_layout,
+							'checkbox_style' => $checkbox_style,
 							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
 							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
 							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
 							'allowed_types'  => isset( $field['allowed_types'] ) ? sanitize_text_field( (string) $field['allowed_types'] ) : '',
-							'max_file_size'  => isset( $field['max_file_size'] ) ? absint( $field['max_file_size'] ) : '',
+							// '' means "not set — use the site default"; keep it as '' rather than
+							// letting absint() flatten it to 0. Both take the same branch in the
+							// upload handler, but preserving '' keeps a re-save (and an import,
+							// which re-runs this sanitizer) byte-identical to what was stored.
+							'max_file_size'  => isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : '',
 							'css_class'      => isset( $field['css_class'] ) ? sanitize_html_class( (string) $field['css_class'] ) : '',
 							'show_middle_name'  => ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] ),
 							'show_last_name'    => ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] ),
@@ -332,9 +338,17 @@ class BoldForm_Lite_Ajax_Save {
 							'max_stars'       => isset( $field['max_stars'] ) ? absint( $field['max_stars'] ) : 5,
 							'star_color'      => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '',
 							'star_inactive_color' => isset( $field['star_inactive_color'] ) && sanitize_hex_color( $field['star_inactive_color'] ) ? sanitize_hex_color( $field['star_inactive_color'] ) : '',
-							'star_size'       => isset( $field['star_size'] ) ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : 20,
+							// An empty string means "not set — use the default", so it must survive
+							// as ''. Without the '' check, absint( '' ) is 0 and the clamp raises it
+							// to the MINIMUM (16), which is not the default (20) — so clearing the
+							// box silently shrinks the stars instead of restoring the default.
+							'star_size'       => isset( $field['star_size'] ) && '' !== $field['star_size'] ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : '',
 							'slider_color'    => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
-							'slider_height'   => isset( $field['slider_height'] ) ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
+							// Same as star_size: createField() seeds this as '', so WITHOUT the ''
+							// check every untouched slider was stored as 2 and rendered a 2px track
+							// instead of the 8px CSS default (and clearing the box could never
+							// restore it). Matches the btn_radius pattern below.
+							'slider_height'   => isset( $field['slider_height'] ) && '' !== $field['slider_height'] ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
 							'dual_handle'     => ! empty( $field['dual_handle'] ),
 							'step_title'      => isset( $field['step_title'] ) ? sanitize_text_field( (string) $field['step_title'] ) : '',
 							'next_text'       => isset( $field['next_text'] ) ? sanitize_text_field( (string) $field['next_text'] ) : 'Next',
@@ -515,6 +529,7 @@ class BoldForm_Lite_Ajax_Save {
 			// Multi-step settings (saved by Pro's builder UI, passed through for Pro's rendering).
 			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
+			'step_progress_bg_color' => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
 			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
 			'step_btn_text_color' => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
 			'step_btn_size'       => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',

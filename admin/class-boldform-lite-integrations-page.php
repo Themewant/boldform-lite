@@ -82,7 +82,7 @@ class BoldForm_Lite_Integrations_Page {
 		// submenus (priority 10) — so by default it would append below "Help &
 		// Support". Pass an explicit position to slot it in just before that item
 		// (Help & Support is the last core submenu, at offset 5).
-		add_submenu_page(
+		$hook = add_submenu_page(
 			'boldform-lite',
 			__( 'Integrations', 'boldform-lite' ),
 			__( 'Integrations', 'boldform-lite' ),
@@ -91,6 +91,18 @@ class BoldForm_Lite_Integrations_Page {
 			array( $this, 'render_page' ),
 			5
 		);
+
+		// See BoldForm_Lite_Admin::force_submenu_highlight() for why this is needed —
+		// WordPress's own file_exists()-based fallback for the sidebar "current" state
+		// is unreliable on some server setups, so it's set explicitly here too.
+		if ( $hook ) {
+			add_action(
+				'load-' . $hook,
+				function () {
+					$GLOBALS['submenu_file'] = 'boldform-lite-integrations';
+				}
+			);
+		}
 	}
 
 	// =====================================================================

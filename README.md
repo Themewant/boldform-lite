@@ -4,7 +4,7 @@
 
 ![WordPress](https://img.shields.io/badge/WordPress-6.3%2B-21759b)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777bb4)
-![Version](https://img.shields.io/badge/version-1.1.0-0a9396)
+![Version](https://img.shields.io/badge/version-1.1.6-0a9396)
 ![License](https://img.shields.io/badge/license-GPLv2%2B-green)
 
 BoldForm Lite is the free tier of **BoldForm**, a freemium form builder. Build any kind of form visually, embed it anywhere, and manage every submission inside the WordPress dashboard — with zero bloat. **BoldForm Pro** (a separate plugin) extends Lite through hooks; Lite never depends on Pro.
@@ -44,7 +44,7 @@ BoldForm Lite is the free tier of **BoldForm**, a freemium form builder. Build a
 - **Reports** — totals and per‑form stats via a native HTML5 canvas chart (no external library).
 - **Export / Import** — forms, a single form with entries, or global settings as JSON.
 - **Multi‑step forms** with progress indicators, and **conditional logic** (AND/OR rules).
-- **Spam protection** — honeypot, reCAPTCHA v2, hCaptcha, and math captcha.
+- **Spam protection** — honeypot, reCAPTCHA v2, hCaptcha, Cloudflare Turnstile, and math captcha.
 - **Email‑marketing integrations** — Mailchimp and Brevo.
 - **Privacy (GDPR)** — registers with WordPress's Export / Erase Personal Data tools.
 - **Accessibility** — keyboard‑ and screen‑reader‑operable fields (WCAG‑oriented).

@@ -54,14 +54,24 @@ class BoldForm_Lite_Export_Import {
 		if ( in_array( $tools_sub, array( 'export', 'import' ), true ) ) {
 			$tools_sub = 'forms';
 		}
-		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries' ), true ) ? $tools_sub : 'forms';
+		$tools_sub = in_array( $tools_sub, array( 'forms', 'entries', 'migrator' ), true ) ? $tools_sub : 'forms';
 
-		$notice = '';
+		$notice         = '';
+		$skipped_notice = '';
 
 		if ( isset( $_GET['boldform_imported'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$forms_count   = absint( $_GET['boldform_imported'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$entries_count = isset( $_GET['boldform_entries_imported'] ) ? absint( $_GET['boldform_entries_imported'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$skipped_count = isset( $_GET['boldform_import_skipped'] ) ? absint( $_GET['boldform_import_skipped'] ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$tools_sub     = 'forms';
+
+			if ( $skipped_count > 0 ) {
+				$skipped_notice = sprintf(
+					/* translators: %d: number of forms that could not be read from the import file */
+					_n( '%d form was skipped because its layout could not be read from the file.', '%d forms were skipped because their layout could not be read from the file.', $skipped_count, 'boldform-lite' ),
+					$skipped_count
+				);
+			}
 
 			if ( $entries_count > 0 ) {
 				$notice = sprintf(
@@ -90,6 +100,9 @@ class BoldForm_Lite_Export_Import {
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=entries' ) ); ?>" class="<?php echo 'entries' === $tools_sub ? 'active' : ''; ?>">
 				<?php esc_html_e( 'Entries', 'boldform-lite' ); ?>
 			</a>
+			<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=migrator' ) ); ?>" class="<?php echo 'migrator' === $tools_sub ? 'active' : ''; ?>">
+				<?php esc_html_e( 'Migrator', 'boldform-lite' ); ?>
+			</a>
 		</div>
 
 		<?php if ( 'forms' === $tools_sub ) : ?>
@@ -97,6 +110,12 @@ class BoldForm_Lite_Export_Import {
 			<?php if ( $notice ) : ?>
 				<div class="boldform-card boldform-card--success">
 					<p><?php echo esc_html( $notice ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( $skipped_notice ) : ?>
+				<div class="boldform-card boldform-card--spaced">
+					<p><strong><?php echo esc_html( $skipped_notice ); ?></strong></p>
 				</div>
 			<?php endif; ?>
 
@@ -199,6 +218,10 @@ class BoldForm_Lite_Export_Import {
 					</div>
 				</form>
 			</div>
+
+		<?php elseif ( 'migrator' === $tools_sub ) : ?>
+
+			<?php $this->plugin->get_migrator()->render_tab(); ?>
 
 		<?php else : ?>
 
@@ -675,6 +698,7 @@ class BoldForm_Lite_Export_Import {
 				array(
 					'boldform_imported'         => (int) $imported['forms'],
 					'boldform_entries_imported' => (int) $imported['entries'],
+					'boldform_import_skipped'   => (int) $imported['skipped'],
 				),
 				admin_url( 'admin.php?page=boldform-lite-settings&tab=tools&tools_tab=forms' )
 			)
@@ -686,7 +710,8 @@ class BoldForm_Lite_Export_Import {
 	 * Imports parsed export data into the database.
 	 *
 	 * @param array<string, mixed> $data Parsed JSON data.
-	 * @return array{forms:int,entries:int} Count of forms and entries imported.
+	 * @return array{forms:int,skipped:int,entries:int} Count of forms imported, forms
+	 *                                                  skipped as unreadable, and entries imported.
 	 */
 	private function import_data( $data ) {
 		global $wpdb;
@@ -700,6 +725,7 @@ class BoldForm_Lite_Export_Import {
 		}
 
 		$forms_imported   = 0;
+		$forms_skipped    = 0;
 		$entries_imported = 0;
 		$id_map           = array();
 
@@ -715,8 +741,27 @@ class BoldForm_Lite_Export_Import {
 
 				// Decode then re-sanitize the structure/settings via the builder's own sanitizers,
 				// so an imported file cannot store unvalidated field types or raw values.
-				$structure_decoded = isset( $form['fields_json'] ) ? json_decode( wp_unslash( (string) $form['fields_json'] ), true ) : array();
-				$settings_decoded  = isset( $form['settings_json'] ) ? json_decode( wp_unslash( (string) $form['settings_json'] ), true ) : array();
+				//
+				// NOT wp_unslash()'d: these come from a json_decode()'d file, which WordPress
+				// never slashed. Unslashing strips the legitimate backslash escapes INSIDE the
+				// nested JSON string (\" around HTML attributes, \uXXXX for typographic
+				// characters), so json_decode() then fails and the form imports with zero
+				// fields and default settings. Same reasoning as entry_data_json below.
+				$structure_raw     = isset( $form['fields_json'] ) ? (string) $form['fields_json'] : '';
+				$settings_raw      = isset( $form['settings_json'] ) ? (string) $form['settings_json'] : '';
+				$structure_decoded = '' !== $structure_raw ? json_decode( $structure_raw, true ) : array();
+				$settings_decoded  = '' !== $settings_raw ? json_decode( $settings_raw, true ) : array();
+
+				// A form whose layout is present but unreadable would otherwise import as a
+				// silently empty form. Skip it and report the count instead of creating a shell.
+				if ( '' !== $structure_raw && ! is_array( $structure_decoded ) ) {
+					++$forms_skipped;
+					continue;
+				}
+
+				if ( ! is_array( $settings_decoded ) ) {
+					$settings_decoded = array();
+				}
 
 				// Point the button icon at the freshly-recreated local file (if bundled),
 				// before normalize_form_settings() esc_url_raw()s it into the trusted row.
@@ -806,6 +851,7 @@ class BoldForm_Lite_Export_Import {
 
 		return array(
 			'forms'   => $forms_imported,
+			'skipped' => $forms_skipped,
 			'entries' => $entries_imported,
 		);
 	}
