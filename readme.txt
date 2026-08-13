@@ -358,6 +358,12 @@ Improvements:
 * Improve: Locked field, template and export prompts have their own switches, so an add-on that is installed but not yet active can word them for activation.
 * Improve: The Tools → Entries export format selector no longer disappears when such an add-on is installed.
 * Improve: Every upgrade prompt now goes through the same filters, so an add-on can repoint them all at once.
+* Improve: A new Set Amount Limits switch on the Custom Amount field. Off by default, so a pay-what-you-want field shows no minimum or maximum it doesn't use.
+* Improve: Custom Amount now has its own Placeholder setting, and starts empty instead of pre-filled with 0.00.
+
+Fixes:
+* Fix: Field errors now appear under the field they belong to, not only in a summary at the top.
+* Fix: The error summary now sits at the foot of the form, next to the submit button.
 
 Developer:
 * Developer: New filters — `boldform_admin_notices`, `boldform_show_locked_fields_teaser`, `boldform_show_locked_templates_teaser`, `boldform_show_locked_export_teaser`, `boldform_export_lock_hint`, plus lock title/text filters for the field library, templates, integrations and upgrade modal. `boldform_upgrade_label` gains a context argument.
