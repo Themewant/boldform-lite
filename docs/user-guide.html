@@ -325,8 +325,8 @@ pre code{background:none;padding:0;color:inherit}
   <tbody>
     <tr><td><strong>Product</strong></td><td>Select a product with price; auto-updates order total</td></tr>
     <tr><td><strong>Quantity</strong></td><td>Number input linked to product; auto-updates order total</td></tr>
-    <tr><td><strong>Custom Amount</strong></td><td>User-entered price (e.g., donation amount, custom fee)</td></tr>
-    <tr><td><strong>Order Summary</strong></td><td>Displays itemized order with total (read-only; updates live as user selects products). Needs at least one priced field (Product or Custom Amount) to charge &mdash; on its own it simply shows a $0 total and the form submits as a normal free entry.</td></tr>
+    <tr><td><strong>Custom Amount</strong></td><td>User-entered price (e.g., donation amount, tip, custom fee). Works on its own &mdash; an amount field and a submit button are enough to take a payment, with no Order Summary needed.</td></tr>
+    <tr><td><strong>Order Summary</strong></td><td>Displays itemized order with total (read-only; updates live as user selects products). Optional &mdash; checkout appears above the submit button when there is no Order Summary. Needs at least one priced field (Product or Custom Amount) to charge &mdash; on its own it simply shows a $0 total and the form submits as a normal free entry.</td></tr>
     <tr><td><strong>Calculation</strong></td><td>Formula-based field; displays calculated result based on other field values</td></tr>
   </tbody>
 </table>
@@ -434,7 +434,7 @@ the extra settings each field type exposes when selected on the canvas.</p>
     <tr><td><strong>Page Break</strong></td><td>Step Title (per step). Form-wide from any Page Break: Progress Style (Progress Bar, Numbers or Headings), Progress Color (the active/completed part) and Progress Background (the unfilled track), plus Nav Button Color, Nav Button Text Color, Nav Button Size, Nav Button Radius, and the Next/Previous button text</td></tr>
     <tr><td><strong>Product</strong></td><td>Product Options list (each row: label + price, drag-reorder); Display Style: Radio buttons or Dropdown</td></tr>
     <tr><td><strong>Quantity</strong></td><td>Linked Product Field; Min Qty; Max Qty; Default Qty</td></tr>
-    <tr><td><strong>Custom Amount</strong></td><td>Min Amount; Max Amount; Default Amount</td></tr>
+    <tr><td><strong>Custom Amount</strong></td><td>Placeholder; Set Amount Limits (off by default &mdash; switching it on reveals Minimum Amount and Maximum Amount, both shown to the visitor under the field); Default Amount (leave empty so visitors enter their own). Required by default, since a blank amount means no payment.</td></tr>
     <tr><td><strong>Order Summary</strong></td><td>No settings &mdash; automatically itemizes products/quantities and shows a live total</td></tr>
     <tr><td><strong>Calculation</strong></td><td>Formula builder (insert other fields, use +&nbsp;−&nbsp;*&nbsp;/&nbsp;( )); Decimal places; Prefix; Suffix</td></tr>
     <tr><td><strong>Signature</strong></td><td>Pen Color; Pen Width; Background Color; Height</td></tr>
@@ -959,8 +959,8 @@ you believe is spam:</p>
 <ul>
   <li><strong>Product field</strong> — let users select products with prices</li>
   <li><strong>Quantity field</strong> — adjust order quantities</li>
-  <li><strong>Custom Amount field</strong> — user-entered prices (donations, custom fees)</li>
-  <li><strong>Order Summary field</strong> — displays itemized order with live total</li>
+  <li><strong>Custom Amount field</strong> — user-entered prices (donations, tips, pay-what-you-want), with optional minimum and maximum limits. Works standalone: the amount field plus a submit button is a complete donation form.</li>
+  <li><strong>Order Summary field</strong> — displays itemized order with live total. Optional for a single-amount form.</li>
   <li><strong>Payment gateways</strong> — collect payments via PayPal and Stripe</li>
 </ul>
 
