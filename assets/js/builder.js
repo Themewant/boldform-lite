@@ -512,7 +512,42 @@ jQuery(
 		// preview and on the front end; users can edit or clear it per field.
 		function getDefaultPlaceholder( type ) {
 			var map = ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.placeholders ) || {};
-			return typeof map[ type ] !== 'undefined' ? map[ type ] : '';
+			if ( typeof map[ type ] !== 'undefined' ) {
+				return map[ type ];
+			}
+			// An amount box renders empty, so it needs a prompt of its own.
+			return 'custom_amount' === type ? 'Enter amount' : '';
+		}
+
+		/**
+		 * Currency symbol for builder previews. Supplied by the payments add-on;
+		 * falls back to "$" so Lite never depends on it being present.
+		 *
+		 * @return {string} Currency symbol.
+		 */
+		function getPaymentCurrencySymbol() {
+			return boldformLiteBuilder.paymentCurrencySymbol || '$';
+		}
+
+		/**
+		 * Whether a Custom Amount field has its "Set Amount Limits" switch on.
+		 *
+		 * Mirrors the add-on's server-side rule: fields saved before the switch
+		 * existed carry no flag, so a positive minimum or any maximum is read as
+		 * limits being in force. Without that, upgrading would silently drop a
+		 * range an admin had deliberately configured.
+		 *
+		 * @param {Object} field Field definition.
+		 * @return {boolean} True when limits apply.
+		 */
+		function hasAmountLimits( field ) {
+			if ( ! field ) {
+				return false;
+			}
+			if ( typeof field.amount_limits !== 'undefined' ) {
+				return !! field.amount_limits;
+			}
+			return parseFloat( field.amount_min || 0 ) > 0 || parseFloat( field.amount_max || 0 ) > 0;
 		}
 
 		function createField( type ) {
@@ -523,7 +558,10 @@ jQuery(
 				type: type,
 				label: libraryItem.label,
 				placeholder: getDefaultPlaceholder( type ),
-				required: false,
+				// A Custom Amount is a payment field: leaving it blank means no
+				// payment, so it is required out of the box. Every other type stays
+				// optional by default.
+				required: 'custom_amount' === type,
 				default_value: '',
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
 				options_layout: optionFieldTypes.indexOf( type ) !== -1 ? 'block' : '',
@@ -568,9 +606,15 @@ jQuery(
 				qty_min: 'quantity' === type ? '1' : '',
 				qty_max: 'quantity' === type ? '' : '',
 				qty_default: 'quantity' === type ? '1' : '',
-				amount_min: 'custom_amount' === type ? '0.00' : '',
-				amount_max: 'custom_amount' === type ? '' : '',
-				amount_default: 'custom_amount' === type ? '0.00' : '',
+				// Limits are opt-in. The min/max are seeded with sensible figures so
+				// switching "Set Amount Limits" on lands on a usable range, but they
+				// stay inert — and unrendered — until it is on.
+				amount_limits: false,
+				amount_min: 'custom_amount' === type ? '10.00' : '',
+				amount_max: 'custom_amount' === type ? '500.00' : '',
+				// Empty: a donation box pre-filled with 0.00 forces every visitor to
+				// clear it before they can type their own figure.
+				amount_default: '',
 				auto_populate_key: '',
 				calc_formula:  'calculation' === type ? '' : '',
 				calc_decimals: 'calculation' === type ? 2 : 2,
@@ -745,6 +789,14 @@ jQuery(
 			normalized.qty_min = field && typeof field.qty_min !== 'undefined' ? field.qty_min : '1';
 			normalized.qty_max = field && typeof field.qty_max !== 'undefined' ? field.qty_max : '';
 			normalized.qty_default = field && typeof field.qty_default !== 'undefined' ? field.qty_default : '1';
+			// Preserve an absent amount_limits as absent rather than coercing it to
+			// false, so hasAmountLimits() can still infer it from a legacy field's
+			// stored min/max instead of silently switching its range off.
+			if ( field && typeof field.amount_limits !== 'undefined' ) {
+				normalized.amount_limits = !! field.amount_limits;
+			} else if ( field && 'custom_amount' === field.type ) {
+				normalized.amount_limits = hasAmountLimits( field );
+			}
 			normalized.amount_min = field && typeof field.amount_min !== 'undefined' ? field.amount_min : '';
 			normalized.amount_max = field && typeof field.amount_max !== 'undefined' ? field.amount_max : '';
 			normalized.amount_default = field && typeof field.amount_default !== 'undefined' ? field.amount_default : '';
@@ -1951,13 +2003,25 @@ jQuery(
 				html += '<input type="number" value="' + escapeHtml( field.qty_default || '1' ) + '" min="' + escapeHtml( field.qty_min || '1' ) + '"' + ( field.qty_max ? ' max="' + escapeHtml( field.qty_max ) + '"' : '' ) + ' disabled>';
 				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'custom_amount' ) {
-				var caMin = field.amount_min ? parseFloat( field.amount_min ) : 0;
-				var caMax = field.amount_max ? parseFloat( field.amount_max ) : '';
-				var caDefault = field.amount_default ? parseFloat( field.amount_default ) : 0;
+				// Mirror the front end exactly: limits only apply when the switch is
+				// on, the box renders empty unless a real default was set, and the
+				// hint appears only when there is a limit to state.
+				var caLimits  = hasAmountLimits( field );
+				var caMin     = caLimits && parseFloat( field.amount_min || 0 ) > 0 ? parseFloat( field.amount_min ) : null;
+				var caMax     = caLimits && parseFloat( field.amount_max || 0 ) > 0 ? parseFloat( field.amount_max ) : null;
+				var caDefault = parseFloat( field.amount_default || 0 ) > 0 ? parseFloat( field.amount_default ).toFixed( 2 ) : '';
+				var caSymbol  = getPaymentCurrencySymbol();
 				html += '<div class="boldform-canvas-amount">';
-				html += '<span class="boldform-canvas-amount__symbol">$</span>';
-				html += '<input type="number" value="' + escapeHtml( caDefault.toFixed(2) ) + '" step="0.01"' + ( caMin > 0 ? ' min="' + caMin + '"' : '' ) + ( caMax !== '' ? ' max="' + caMax + '"' : '' ) + ' disabled>';
+				html += '<span class="boldform-canvas-amount__symbol">' + escapeHtml( caSymbol ) + '</span>';
+				html += '<input type="number" value="' + escapeHtml( caDefault ) + '" placeholder="' + escapeHtml( field.placeholder || 'Enter amount' ) + '" step="0.01"' + ( null !== caMin ? ' min="' + caMin + '"' : '' ) + ( null !== caMax ? ' max="' + caMax + '"' : '' ) + ' disabled>';
 				html += '</div>';
+				if ( null !== caMin && null !== caMax ) {
+					html += '<span class="boldform-canvas-field-hint">Minimum ' + escapeHtml( caSymbol ) + caMin.toFixed( 2 ) + ' · Maximum ' + escapeHtml( caSymbol ) + caMax.toFixed( 2 ) + '</span>';
+				} else if ( null !== caMin ) {
+					html += '<span class="boldform-canvas-field-hint">Minimum ' + escapeHtml( caSymbol ) + caMin.toFixed( 2 ) + '</span>';
+				} else if ( null !== caMax ) {
+					html += '<span class="boldform-canvas-field-hint">Maximum ' + escapeHtml( caSymbol ) + caMax.toFixed( 2 ) + '</span>';
+				}
 				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'order_summary' ) {
 				var osTotal  = 0;
@@ -3886,23 +3950,52 @@ jQuery(
 							'<input type="number" id="boldform-setting-qty-default" value="' + escapeHtml( selected.field.qty_default || '1' ) + '" min="1" placeholder="1">' +
 						'</div>';
 					}() ) : '' ) +
-					( 'custom_amount' === selected.field.type ?
-						'<div class="boldform-setting-row">' +
+					( 'custom_amount' === selected.field.type ? ( function () {
+						// The generic Placeholder control is suppressed for every type in
+						// specialFieldTypes, so an amount field needs its own. Reusing the
+						// same element id keeps the existing live-typing and save wiring —
+						// no extra plumbing, and no chance of the two drifting apart.
+						var caLimits = hasAmountLimits( selected.field );
+						var caSymbol = getPaymentCurrencySymbol();
+
+						var markup =
 							'<div class="boldform-setting-group">' +
-								'<label for="boldform-setting-amount-min">Min Amount</label>' +
-								'<input type="number" id="boldform-setting-amount-min" value="' + escapeHtml( selected.field.amount_min || '' ) + '" min="0" step="0.01" placeholder="0.00">' +
+								'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder || 'Placeholder' ) + '</label>' +
+								'<input type="text" id="boldform-setting-placeholder" value="' + escapeHtml( selected.field.placeholder || '' ) + '" placeholder="Enter amount">' +
 							'</div>' +
+							'<div class="boldform-switch-item">' +
+								'<label class="boldform-switch__row">' +
+									'<span class="boldform-switch__text">Set Amount Limits</span>' +
+									'<input type="checkbox" id="boldform-setting-amount-limits"' + ( caLimits ? ' checked' : '' ) + '>' +
+									'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+								'</label>' +
+							'</div>';
+
+						// Min/Max stay hidden until the switch is on, so a pay-what-you-want
+						// field shows nothing it does not use.
+						if ( caLimits ) {
+							markup +=
+								'<div class="boldform-setting-row">' +
+									'<div class="boldform-setting-group">' +
+										'<label for="boldform-setting-amount-min">Minimum Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+										'<input type="number" id="boldform-setting-amount-min" value="' + escapeHtml( selected.field.amount_min || '' ) + '" min="0" step="0.01" placeholder="no minimum">' +
+									'</div>' +
+									'<div class="boldform-setting-group">' +
+										'<label for="boldform-setting-amount-max">Maximum Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+										'<input type="number" id="boldform-setting-amount-max" value="' + escapeHtml( selected.field.amount_max || '' ) + '" min="0" step="0.01" placeholder="no maximum">' +
+									'</div>' +
+								'</div>';
+						}
+
+						markup +=
 							'<div class="boldform-setting-group">' +
-								'<label for="boldform-setting-amount-max">Max Amount</label>' +
-								'<input type="number" id="boldform-setting-amount-max" value="' + escapeHtml( selected.field.amount_max || '' ) + '" min="0" step="0.01" placeholder="unlimited">' +
-							'</div>' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-amount-default">Default Amount</label>' +
-							'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '0.00' ) + '" min="0" step="0.01" placeholder="0.00">' +
-						'</div>' +
-						''
-					: '' ) +
+								'<label for="boldform-setting-amount-default">Default Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+								'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '' ) + '" min="0" step="0.01" placeholder="leave empty">' +
+								'<p class="boldform-setting-desc">Leave empty so visitors enter their own amount.</p>' +
+							'</div>';
+
+						return markup;
+					}() ) : '' ) +
 					( 'order_summary' === selected.field.type ?
 						''
 					: '' ) +
@@ -7632,6 +7725,16 @@ jQuery(
 			renderAll();
 		} );
 
+		// Custom Amount — "Set Amount Limits" switch. Re-renders so the Minimum and
+		// Maximum controls appear or disappear with it, and the canvas preview picks
+		// up (or drops) the limits hint at the same time.
+		$( document ).on( 'change', '#boldform-setting-amount-limits', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			selected.field.amount_limits = $( this ).is( ':checked' );
+			renderAll();
+		} );
+
 		// Conditional logic — enable/disable toggle.
 		$( document ).on( 'change', '#boldform-setting-cond-enabled', function () {
 			var selected = getSelectedFieldLocation();
@@ -8301,6 +8404,12 @@ jQuery(
 				if ( $( '#boldform-setting-qty-default' ).length ) {
 					selected.field.qty_default = $( '#boldform-setting-qty-default' ).val();
 				}
+				if ( $( '#boldform-setting-amount-limits' ).length ) {
+					selected.field.amount_limits = $( '#boldform-setting-amount-limits' ).is( ':checked' );
+				}
+				// Min/Max are only in the DOM while the switch is on. The .length guard
+				// means switching it off leaves the stored bounds untouched, so turning
+				// it back on restores what was configured rather than a blank pair.
 				if ( $( '#boldform-setting-amount-min' ).length ) {
 					selected.field.amount_min = $( '#boldform-setting-amount-min' ).val();
 				}
