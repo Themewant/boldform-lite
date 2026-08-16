@@ -71,6 +71,7 @@ pre code{background:none;padding:0;color:inherit}
     <div class="bf-sidebar__group">Hooks &amp; Filters</div>
     <a href="#hook-reference" class="bf-sidebar__link">Complete Hook Reference</a>
     <a href="#form-rendering" class="bf-sidebar__link">Form Rendering (Detailed)</a>
+    <a href="#conversational-hooks" class="bf-sidebar__link">Conversational Forms</a>
     <a href="#field-types" class="bf-sidebar__link">Custom Field Types</a>
     <a href="#submission-flow" class="bf-sidebar__link">Submission Flow</a>
     <a href="#email-hooks" class="bf-sidebar__link">Email Notifications</a>
@@ -99,7 +100,7 @@ pre code{background:none;padding:0;color:inherit}
 
 <h1 id="introduction">BoldForm Lite &mdash; Developer Guide</h1>
 <p class="bf-subtitle">Extend, customize, and integrate with BoldForm using hooks, filters, and the plugin's architecture.</p>
-<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.6 · Pro v1.1.3 · Updated 2026-08-03</p>
+<p style="font-size:12px;color:var(--bf-muted);margin-bottom:24px">Applies to Lite v1.1.7 · Pro v1.1.4 · Updated 2026-08-12</p>
 
 <p>BoldForm Lite is designed with extensibility in mind. Every major operation &mdash; rendering, saving, validation, email &mdash; passes through WordPress filters and actions. This guide covers the public API surface available to developers.</p>
 
@@ -410,7 +411,17 @@ field type registers through <code>boldform_allowed_field_types</code> + <code>b
     <tr><td><code>boldform_builder_enqueue_assets</code></td><td>action</td><td>Enqueue scripts/styles for the builder page</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_builder_fields</code></td><td>filter</td><td>Modify the set of fields available in the builder library</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_admin_menu</code></td><td>filter</td><td>Modify the admin menu structure (add/remove items)</td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_admin_notices</code></td><td>action</td><td>Render your own admin notice on BoldForm's screens. Use this instead of <code>admin_notices</code>: BoldForm strips third-party notices on its own pages, so a direct registration is removed before it renders. Echo your own escaped markup, and guard against rendering twice in one request.</td><td>1.1.7</td></tr>
     <tr><td><code>boldform_admin_topbar_items</code></td><td>filter</td><td>Add buttons/controls to the builder top bar</td><td>1.0.0</td></tr>
+    <tr><td><code>boldform_show_locked_fields_teaser</code></td><td>filter</td><td>Show or hide the Field Library's locked "premium fields" teaser. Defaults to <code>boldform_show_upgrade_cta</code>, so an add-on that suppresses the shared upgrade prompts can keep just this one visible.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_show_locked_templates_teaser</code></td><td>filter</td><td>Same, for the locked rows in the "Choose a Template" library. Four categories contain only add-on templates, so without this the categories do not render at all.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_upgrade_label</code></td><td>filter</td><td>Text on every upgrade CTA — buttons, dialog actions and the template lock. Receives a second argument naming where it appears: <code>button</code> (a control the user clicks), <code>suffix</code> (appended to another label, e.g. &quot;Excel (.xlsx) &mdash; %s&quot;) or <code>sr_state</code> (screen-reader text describing a state, not an action). Rewriting all three to the same value produces accessible names like &quot;Export Excel Activate License&quot;, so branch on the context. Pair it with <code>boldform_upgrade_url</code> to send people somewhere other than the sales page; a URL inside the admin opens in the same tab.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_library_lock_group_title</code></td><td>filter</td><td>The heading above the Field Library's locked field group. Default <code>Premium Fields</code>.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_library_lock_title</code> / <code>boldform_library_lock_text</code></td><td>filter</td><td>Heading and body of the Field Library's locked card. Word these to match whatever <code>boldform_upgrade_label</code> puts on its button, and the group heading above.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_template_lock_title</code> / <code>boldform_template_lock_text</code></td><td>filter</td><td>Heading and body shown in the template preview pane when a locked row is selected.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_integration_lock_title</code></td><td>filter</td><td>Tooltip on a locked integration card. Receives the integration type slug as a second argument. Only the add-on that marked the card <code>locked</code> knows why, so it owns this wording.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_show_locked_export_teaser</code> / <code>boldform_export_lock_hint</code></td><td>filter</td><td>Whether the locked Excel/PDF export controls show — both the Entries screen teaser buttons and the Tools &rarr; Entries format selector — and the hint beneath the latter. Keep the teaser on if your add-on supplies extra formats but is not yet entitled to run, or the format selector disappears before your own control can replace it.</td><td>1.1.7</td></tr>
+    <tr><td><code>boldform_upgrade_modal_title</code> / <code>boldform_upgrade_modal_text</code></td><td>filter</td><td>Copy for the teaser dialogs. Both receive a second argument naming the dialog: <code>fields</code>, <code>templates</code> or <code>export</code>. The export dialog rewrites its own heading per format each time it opens, so <code>boldform_upgrade_modal_title</code> is also applied with <code>export_excel</code> and <code>export_pdf</code> — handle those two or the heading a user actually sees will not change.</td><td>1.1.7</td></tr>
     <tr><td><code>boldform_admin_bar_items</code></td><td>filter</td><td>Add items to the BoldForm WordPress admin bar dropdown</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_form_saved</code></td><td>action</td><td>Fires after a form is saved in the builder (admin context)</td><td>1.0.0</td></tr>
     <tr><td><code>boldform_form_settings_extra</code></td><td>filter</td><td>Add custom settings fields to the form Settings tab</td><td>1.0.0</td></tr>
@@ -512,6 +523,74 @@ instead of duplicating it. A source only needs to describe how to read its own f
 }, 10, 2 );</code></pre>
 
 <!-- Custom Field Types -->
+<h2 id="conversational-hooks">Conversational Forms</h2>
+
+<p>Conversational mode post-processes the <em>already rendered</em> form. It never re-renders, re-orders away or removes anything, so every field stays in the DOM &mdash; which is why conditional logic, validation and the submit path are untouched, and why field types added by an add-on work inside it with no changes on their side.</p>
+
+<p>Screens are classified by <strong>what a row renders</strong>, not by field-type name:</p>
+
+<table>
+  <thead><tr><th>Row renders</th><th>Treated as</th></tr></thead>
+  <tbody>
+    <tr><td>No focusable control and no text</td><td><strong>Static</strong> &mdash; never a screen; stays in the DOM and still posts (hidden fields, stripped page breaks)</td></tr>
+    <tr><td>No focusable control but has text</td><td><strong>Statement</strong> &mdash; a screen with nothing to answer</td></tr>
+    <tr><td>A focusable control</td><td><strong>Question</strong> &mdash; an ordinary screen</td></tr>
+  </tbody>
+</table>
+
+<p>This means a field type BoldForm has never heard of behaves correctly with no registration at all. The filters below only refine the two cases structure cannot infer.</p>
+
+<h3>boldform_conversational_tail_types</h3>
+<p>Field types pinned to the final screen instead of getting one of their own. A consent box or captcha stranded mid-form leaves the visitor on a screen they cannot complete.</p>
+<pre><code>add_filter( 'boldform_conversational_tail_types', function ( $types ) {
+    $types[] = 'order_summary';
+    return $types;
+} );</code></pre>
+<p>Default: <code>captcha</code>, <code>terms_conditions</code>.</p>
+
+<h3>boldform_conversational_stacking_types</h3>
+<p>Field types large enough that their row must never share a screen side by side.</p>
+<pre><code>add_filter( 'boldform_conversational_stacking_types', function ( $types ) {
+    return array_merge( $types, array( 'signature', 'repeater', 'matrix' ) );
+} );</code></pre>
+<p>Default: <code>name</code>, <code>address</code>, <code>file</code>.</p>
+
+<h3>boldform_conversational_enabled</h3>
+<p>Override whether conversational mode runs for a form, without changing the stored setting. Useful for disabling it site-wide or on specific templates.</p>
+<pre><code>add_filter( 'boldform_conversational_enabled', function ( $enabled, $settings, $form_id ) {
+    return is_front_page() ? false : $enabled;
+}, 10, 3 );</code></pre>
+
+<div class="bf-callout bf-callout--info">
+  <strong>Conversational mode is embedded-only.</strong> BoldForm registers no rewrite rules and no front-end URLs of its own &mdash; a conversational form renders in place, wherever the shortcode, block or widget sits. Nothing is added to your permalink structure and no path is claimed at your site root.
+</div>
+
+<h3>Render-layer priorities</h3>
+<table>
+  <thead><tr><th>Priority on <code>boldform_form_output</code></th><th>What runs</th></tr></thead>
+  <tbody>
+    <tr><td>6</td><td>Conversational strips the page-break marker, standing the multi-step renderer down</td></tr>
+    <tr><td>10</td><td>Multi-step wrapper (add-on)</td></tr>
+    <tr><td>20</td><td>Payment card element, save-and-resume, draft autosave (add-on)</td></tr>
+    <tr><td>30</td><td>Conversational injects its chrome &mdash; after everything above, so all of it lands on the right screen</td></tr>
+  </tbody>
+</table>
+
+<h3>Notes for add-on authors</h3>
+<ul>
+  <li><strong>Per-form config travels in a <code>data-</code> attribute</strong>, not <code>wp_localize_script()</code>. A render-time localize is silently dropped under block (FSE) themes.</li>
+  <li><strong><code>novalidate</code> is applied from JavaScript only.</strong> The browser validates the whole form on submit, and an invalid required control inside a hidden screen cannot be focused &mdash; so the browser refuses to submit and reports nothing. Setting it from PHP would take native validation away from visitors without JavaScript.</li>
+  <li><strong>Detect conditional hiding with <code>element.style.display</code></strong>, never a visibility test: everything inside a hidden screen measures zero.</li>
+  <li><strong>Per-screen styling is stored on whichever object IS the screen</strong> &mdash; the row when several questions share it, the field otherwise. Eleven keys in <code>fields_json</code>: eight <code>cv_media_*</code> (an <strong>attachment ID</strong>, never a URL, resolved at render time) and three colours (<code>cv_bg</code>, <code>cv_question_color</code>, <code>cv_answer_color</code>). The chrome colours are form-level only: every rule reading <code>--bfc-btn</code>, <code>--bfc-btn-text</code>, <code>--bfc-accent</code>, <code>--bfc-track</code>, <code>--bfc-prev</code>, <code>--bfc-prev-bg</code> and <code>--bfc-hint</code> is scoped to the wrapper, which is a screen&rsquo;s ancestor, so a screen-level value could never reach one. A field-screen with no image of its own falls back to its row's.</li>
+  <li><strong><code>cv_media_height</code> uses <code>0</code> for the same purpose</strong> &mdash; the renderer omits <code>--bfc-media-h</code> entirely and the stylesheet's <code>var( --bfc-media-h, min( 60vh, 460px ) )</code> fallback applies. Note it is deliberately NOT <code>absint()</code>: that returns the absolute value, so <code>-400</code> would arrive as a deliberate-looking <code>400</code> instead of falling back to the default.</li>
+  <li><strong><code>''</code> means INHERIT, and must be stored as <code>''</code>.</strong> The renderer omits the custom property entirely for an empty value, so the form-level colour cascades in untouched. Storing a resolved copy of the form's colour instead would <em>pin</em> it &mdash; every screen would silently keep the old value the day the form default changed. The same rule governs the builder's controls: an untouched colour reads <em>Form default</em> and writes nothing.</li>
+  <li><strong>The three screen colours are read at the point of use, so a screen overrides by cascade alone.</strong> Setting <code>--bfc-question</code> on a <code>.boldform-cv-screen</code> overrides it for that screen and nothing else &mdash; no extra selectors, no JS re-theming. The one exception is the background: <code>--bfc-bg</code> is consumed on the <code>.boldform-cv</code> wrapper, so a screen uses <strong><code>--bfc-screen-bg</code></strong>. Reusing the wrapper's name would make a screen repaint the wrapper's padding along with itself.</li>
+  <li><strong>A colour control that renders over a fixed <code>opacity</code> is a control that lies.</strong> The &ldquo;press Enter&rdquo; hint is deliberately dimmed &mdash; <code>0.6</code> on the text, <code>0.8</code> on the key cap &mdash; so it does not compete with the button beside it, and that default has to be a <em>faded inherit</em> rather than a fixed grey, or it stops being legible the moment a form goes dark. Adding <code>--bfc-hint</code> on top of a literal <code>opacity</code> would give an author a washed version of the colour they picked. The fix is to tokenise the opacity: <code>opacity: var( --bfc-hint-opacity, 0.6 )</code>, with <code>build_custom_properties()</code> emitting <code>--bfc-hint-opacity:1</code> <em>only</em> alongside a <code>--bfc-hint</code> that survived <code>sanitize_hex_color()</code>. Two fallbacks on one token cover both elements, and a form that sets no colour renders byte-identically.</li>
+  <li><strong>A screen is a question, not a row.</strong> A row with more than one column becomes one screen, preserving the author's side-by-side layout. A single-column row holding several fields is split at runtime into one row per field. The split <strong>moves</strong> field nodes and <strong>clones only the row wrapper</strong> (and its media figure) &mdash; cloning a field would leave the conditional-logic evaluator driving a copy that is no longer on the page.</li>
+  <li><strong>Register on <code>boldform_preview_enqueue_assets</code> as well as <code>wp_enqueue_scripts</code>.</strong> The admin form-preview screen is wp-admin, so <code>wp_enqueue_scripts</code> never fires there. Enqueueing a handle that was never registered still puts it in the queue &mdash; <code>wp_script_is( $handle, 'enqueued' )</code> returns <strong>true</strong> and nothing is printed. Check <code>'registered'</code> and a non-empty <code>src</code>, or assert on real printed output.</li>
+  <li><strong>PHP's screen count is an upper bound on purpose.</strong> <code>wrap_form_output()</code> suppresses the chrome only when a form can never have more than one screen; the engine measures the live DOM and adds <code>boldform-cv--inert</code> (restoring the form to where it was rendered) when just one screen survives. Do not re-implement the split in PHP.</li>
+</ul>
+
 <h2 id="field-types">Custom Field Types</h2>
 
 <h3>boldform_field_library</h3>
@@ -1225,7 +1304,7 @@ initializer so it only runs once per form element:</p>
     developer-guide.html  # This file</code></pre>
 
 <hr style="margin:48px 0 24px;border:none;border-top:1px solid var(--bf-border)">
-<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.6 &mdash; Developer Guide &mdash; &copy; Themewant</p>
+<p style="font-size:13px;color:var(--bf-muted)">BoldForm Lite v1.1.7 &mdash; Developer Guide &mdash; &copy; Themewant</p>
 
 </main>
 </div>

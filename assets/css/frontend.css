@@ -33,6 +33,23 @@
 	margin: 0 calc(var(--bf-col-gap, 10px) * -1);
 }
 
+/*
+ * A conversational screen's background image.
+ *
+ * The renderer emits this figure for every row that carries one, on every
+ * render, so that conversational mode never has to re-render a form to reveal
+ * it. On an ordinary form it must not be seen — and the hide belongs HERE,
+ * in the stylesheet that always ships, rather than in conversational.css, which
+ * loads only when the mode is actually converting the form. With the rule over
+ * there, a form whose mode was switched off (or set to "Own page" and also
+ * embedded) painted the picture across the page with nothing loaded to stop it.
+ *
+ * conversational.css reveals it again, scoped to .boldform-cv.is-ready.
+ */
+.boldform-lite-form__row-media {
+	display: none;
+}
+
 .boldform-lite-form__column {
 	min-width: 0;
 	padding: 0 var(--bf-col-gap, 10px);
@@ -192,6 +209,25 @@
 	border-style: var(--bf-msg-error-border-style, solid);
 	border-color: var(--bf-msg-error-border-color, #fecaca);
 	border-radius: var(--bf-msg-error-radius, 12px);
+}
+
+/* The foot copy has neighbours on BOTH sides, unlike the message at the top of
+   the form, so it needs a gap above and below and nothing else supplies either:
+   `--bf-row-gap` only spaces rows INSIDE the fields wrapper and this element
+   sits outside it, and `.boldform-lite-form__actions` carries `margin: 0`. A
+   one-sided margin welds the message either to the last field or to the button.
+
+   Margin only — colour, padding, radius and type stay shared, so a theme that
+   restyles the message restyles both.
+
+   MUST STAY BELOW `.is-error` AND `.is-success`. Those selectors carry the same
+   two-class weight as `--foot.is-error`, so the cascade is decided by source
+   order alone. Written above them this was silently overridden and the message
+   rendered flush against the field it followed, with its whole gap underneath. */
+.boldform-lite-form__message--foot,
+.boldform-lite-form__message--foot.is-error,
+.boldform-lite-form__message--foot.is-success {
+	margin: var(--bf-msg-foot-margin, 18px 0);
 }
 
 .boldform-lite-form input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),

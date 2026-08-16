@@ -26,6 +26,346 @@ jQuery(
 				.replace( /"/g, '&quot;' ).replace( /'/g, '&#39;' );
 		}
 
+	/**
+	 * The link an author can share for this form.
+	 *
+	 * Falls back to the form id when no slug is set, which is exactly what the
+	 * server does when resolving the URL — so the preview never shows a link
+	 * that would not resolve.
+	 */
+	/** Whether this form is presented one question at a time. */
+	function cvIsOn() {
+		return !! state.formSettings.cv_enabled;
+	}
+
+	/**
+	 * The value an empty Next / Back / Start field — or an empty welcome heading
+	 * — falls back to.
+	 *
+	 * Read from the renderer via boldformLiteBuilder.cvDefaults, never restated
+	 * here. These values appear as PLACEHOLDERS, which is the only place an
+	 * author is told what "leave it empty" gives them — so a local copy is a
+	 * promise the page is free to break, and did once.
+	 *
+	 * The literal is a last resort for a payload that predates the key, and is
+	 * deliberately the SAME word the renderer uses, so it cannot reintroduce the
+	 * disagreement it exists to guard against.
+	 */
+	function cvDefaultLabel( key ) {
+		var map = ( boldformLiteBuilder && boldformLiteBuilder.cvDefaults ) || {};
+		var fallback = { next: 'Next', prev: 'Back', start: 'Start', welcome: 'Let’s get started' };
+		return map[ key ] || fallback[ key ] || '';
+	}
+
+	/**
+	 * Whether anything on this form can show the progress track colour.
+	 *
+	 * --bfc-track paints the bar's groove and the dots not yet reached. A
+	 * counter and a percentage are text, and "none" renders no progress row at
+	 * all, so under those three the control would offer a colour that cannot
+	 * appear anywhere — worse than no control, because it looks like it works.
+	 */
+	function cvHasTrack() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		return 'bar' === progress || 'dots' === progress;
+	}
+
+	/**
+	 * Whether the progress indicator is something that can be moved.
+	 *
+	 * A bar spans the full width, so aligning it does nothing, and "none"
+	 * renders no indicator at all. Only the counter, the percentage and the row
+	 * of dots are inline boxes with space around them.
+	 */
+	function cvProgressMoves() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		return 'dots' === progress || 'counter' === progress || 'percent' === progress;
+	}
+
+	/**
+	 * Whether this form renders the "press Enter" hint at all.
+	 *
+	 * --bfc-hint has exactly one consumer, and build_chrome() omits it entirely
+	 * when the switch is off. Offering its colour then would be the Accent
+	 * background mistake again: a control that stores a value nothing can ever
+	 * show, which reads as broken rather than as inapplicable.
+	 *
+	 * The switch lives on the Settings tab and this control on the Style tab, so
+	 * whatever reads this has to re-render when the switch moves.
+	 */
+	function cvHasHint() {
+		return !! state.formSettings.cv_key_hint;
+	}
+
+	/**
+	 * Whether this form renders a progress indicator at all.
+	 *
+	 * --bfc-accent paints the bar's fill, the dots already passed, the counter
+	 * and the percentage — and nothing else. Under "none" there is no indicator,
+	 * so every rule reading it is on an element that was never rendered.
+	 *
+	 * The focus ring used to be the exception, and the reason this control was
+	 * kept under "none". It now reads --bfc-btn, which is what a ring around a
+	 * button should have read all along, so the exception is gone.
+	 */
+	function cvHasIndicator() {
+		return 'none' !== ( state.formSettings.cv_progress || 'bar' );
+	}
+
+	/**
+	 * What the accent colour paints on THIS form, in words.
+	 *
+	 * Only ever called where cvHasIndicator() is true, so there is no "and
+	 * nothing else" branch to write — a form with no indicator is not shown the
+	 * control at all.
+	 */
+	function cvAccentDoes() {
+		var progress = state.formSettings.cv_progress || 'bar';
+		var paints   = {
+			bar:     'fills the progress bar',
+			dots:    'fills the dots already passed',
+			counter: 'colours the question counter',
+			percent: 'colours the percentage'
+		}[ progress ];
+
+		return 'Accent ' + ( paints || 'colours the progress indicator' ) + '.';
+	}
+
+	/**
+	 * The heading the welcome cover will actually carry.
+	 *
+	 * build_welcome() falls back to a default heading when the author has left
+	 * both the heading and the text empty, so that switching the cover on is
+	 * never a no-op. The Style tab's preview has to show the same thing, and
+	 * writing the condition twice is how the two drift — so it is written here,
+	 * once, and a suite holds it against the renderer.
+	 */
+	function cvWelcomeTitle() {
+		var title = String( state.formSettings.cv_welcome_title || '' ).trim();
+		// The renderer measures the text with its tags stripped, so markup alone
+		// ("<p></p>") counts as empty on both sides.
+		var text  = String( state.formSettings.cv_welcome_text || '' ).replace( /<[^>]*>/g, '' ).trim();
+
+		if ( '' === title && '' === text ) {
+			return cvDefaultLabel( 'welcome' );
+		}
+
+		return title;
+	}
+
+	/**
+	 * One conversational colour control, using the builder's own swatch + hex
+	 * pairing.
+	 *
+	 * An untouched control keeps a data-cv-unset marker so it stores '' —
+	 * "inherit the form's existing style" — rather than the fallback shown in
+	 * the swatch. The marker is cleared as soon as the author picks a colour.
+	 *
+	 * Module scope because these controls live on the Style tab while the rest
+	 * of the conversational settings live on the Settings tab.
+	 */
+	function cvColourField( id, label, value, fallback ) {
+		var shown = value || fallback;
+		var unset = value ? '' : ' data-cv-unset="1"';
+
+		return '<div class="boldform-setting-group">' +
+			'<label for="' + id + '">' + escapeHtml( label ) + '</label>' +
+			'<div class="boldform-color-field">' +
+				'<div class="boldform-color-swatch" style="background:' + escapeHtml( shown ) + '">' +
+					'<input type="color" id="' + id + '" value="' + escapeHtml( shown ) + '"' + unset + '>' +
+				'</div>' +
+				'<input type="text" class="boldform-color-hex" maxlength="7" value="' + escapeHtml( shown ) + '" data-color-for="' + id + '" spellcheck="false">' +
+			'</div>' +
+		'</div>';
+	}
+
+	/**
+	 * The Default Screen Colours section of the Style tab.
+	 *
+	 * What every screen STARTS from. A screen that overrides one of these
+	 * stores its own value on whichever of row or field it is; this section is
+	 * what the rest still inherit, which is why removing it was never an
+	 * option — it would mean styling a twenty-screen form twenty times.
+	 *
+	 * These settings are stored as cv_* hex strings, not as --bf-* custom
+	 * properties like the rest of the Style tab, so the section is hand-built
+	 * rather than declared in bfStyleSchema(). Changing their storage to match
+	 * would be a migration, and the render layer already reads them as they are.
+	 */
+	function cvStyleSection() {
+		var labels = boldformLiteBuilder.labels || {};
+
+		if ( ! cvIsOn() ) {
+			return '<div class="boldform-style-section" data-adv-section="conversational">' +
+				'<div class="boldform-style-section__head"><h3>' + escapeHtml( labels.cvStyleTitle || 'Default Screen Colours' ) + '</h3>' +
+					'<div class="boldform-style-section__head-actions"><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+				'</div>' +
+				'<div class="boldform-style-section__body">' +
+					'<p class="boldform-setting-desc">' + escapeHtml( labels.cvStyleOff || 'Conversational mode is off for this form.' ) + '</p>' +
+				'</div>' +
+			'</div>';
+		}
+
+		return '<div class="boldform-style-section is-open" data-adv-section="conversational" data-pane="conversational-style">' +
+			'<div class="boldform-style-section__head"><h3>' + escapeHtml( labels.cvStyleTitle || 'Default Screen Colours' ) + '</h3>' +
+				'<div class="boldform-style-section__head-actions"><span class="dashicons dashicons-arrow-down-alt2"></span></div>' +
+			'</div>' +
+			'<div class="boldform-style-section__body">' +
+				// Grouped by what they colour, and in the order a visitor meets
+				// them: the screen, then the buttons, then the progress row.
+				// Background sits alone because it is the canvas the rest are
+				// read against, not half of a pair.
+				'<div class="boldform-setting-row">' +
+					cvColourField( 'boldform-cv-bg', 'Background', state.formSettings.cv_bg, '#ffffff' ) +
+				'</div>' +
+				'<div class="boldform-setting-row">' +
+					cvColourField( 'boldform-cv-question-color', 'Question text', state.formSettings.cv_question_color, '#111827' ) +
+					cvColourField( 'boldform-cv-answer-color', 'Answer text', state.formSettings.cv_answer_color, '#111827' ) +
+				'</div>' +
+				'<div class="boldform-setting-row">' +
+					cvColourField( 'boldform-cv-btn-color', 'Button', state.formSettings.cv_btn_color, '#2f80ed' ) +
+					cvColourField( 'boldform-cv-btn-text-color', 'Button text', state.formSettings.cv_btn_text_color, '#ffffff' ) +
+				'</div>' +
+				'<div class="boldform-setting-row">' +
+					// Back is the outlined half of the pair. One control for its
+					// text AND its border, because the border is currentColor and
+					// the two are the same by design; a second for its fill, which
+					// is transparent until an author says otherwise.
+					cvColourField( 'boldform-cv-prev-color', 'Back button', state.formSettings.cv_prev_color, state.formSettings.cv_btn_color || '#2f80ed' ) +
+					cvColourField( 'boldform-cv-prev-bg', 'Back background', state.formSettings.cv_prev_bg, '#ffffff' ) +
+				'</div>' +
+				'<p class="boldform-setting-desc">Back button sets its text and its border together. Left alone, both follow your Button colour and the fill stays transparent.</p>' +
+				// The hint sits in the nav row beside Next, so it belongs with the
+				// buttons rather than with the progress colours below. Withdrawn
+				// when the switch that renders it is off — see cvHasHint().
+				( cvHasHint()
+					? '<div class="boldform-setting-row">' +
+						cvColourField( 'boldform-cv-hint-color', 'Enter hint', state.formSettings.cv_hint_color, '#6b7280' ) +
+					'</div>' +
+					'<p class="boldform-setting-desc">Colours the "press Enter" text and its key cap together. Left alone it is a faded version of your Answer text, so it stays readable on a dark background; pick a colour and the hint is exactly that colour.</p>'
+					: '' ) +
+				// Accent and the track are the two halves of the progress row and
+				// belong side by side — and the whole row goes when there is no
+				// progress row to colour. Accent paints the finished part, the
+				// track the part not reached yet, and under "none" neither of
+				// those elements is rendered at all.
+				( cvHasIndicator()
+					? '<div class="boldform-setting-row">' +
+						cvColourField( 'boldform-cv-accent', 'Accent', state.formSettings.cv_accent, '#2f80ed' ) +
+						// The track is the groove behind the bar and the dots not
+						// yet reached, so it has nothing to colour under a counter
+						// or a percentage either. It is also a value a single
+						// screen cannot override: the progress row sits on the
+						// wrapper, outside every screen.
+						( cvHasTrack()
+							? cvColourField( 'boldform-cv-track-color', 'Accent background', state.formSettings.cv_track_color, '#e5e7eb' )
+							: '' ) +
+					'</div>' +
+					'<p class="boldform-setting-desc">' +
+						// Named for the indicator actually chosen. A fixed sentence
+						// about "the progress bar" is wrong three times out of four,
+						// and being told a colour does something it does not is how
+						// an author concludes the control is broken.
+						escapeHtml( cvAccentDoes() ) +
+						( cvHasTrack() ? ' Accent background is the part not reached yet.' : '' ) +
+					'</p>'
+					: '' ) +
+				'<p class="boldform-setting-desc">' + escapeHtml( labels.cvStyleHelp || 'The starting point for every screen. Any screen can override these from its own settings.' ) + '</p>' +
+			'</div>' +
+		'</div>';
+	}
+
+	/**
+	 * The screens a visitor will walk through, in the order they will see them.
+	 *
+	 * THIS MUST AGREE WITH conversational.js. The engine works on rendered DOM
+	 * and this works on the saved structure, so the rule cannot literally be
+	 * shared — but a builder that numbers screens differently from the form is
+	 * worse than a builder that numbers nothing. The rule, in both places:
+	 *
+	 *   - a field that renders nothing (hidden, page break) is never a screen
+	 *   - consent and captcha are pinned to the LAST screen
+	 *   - a row with more than one column is ONE screen (the author's layout)
+	 *   - a single-column row is one screen PER FIELD
+	 *
+	 * Returns [ { rowIndex, fieldIds[], isTail } ] in visitor order.
+	 */
+	function cvScreens() {
+		var tailTypes   = boldformLiteBuilder.cvTailTypes || [];
+		var silentTypes = boldformLiteBuilder.cvSilentTypes || [];
+		var screens     = [];
+		var tailFields  = [];
+		var tailRow     = -1;
+
+		getAllRows().forEach( function ( row, rowIndex ) {
+			var columns = row.columns || [];
+			var visible = [];
+
+			columns.forEach( function ( column ) {
+				( column.fields || [] ).forEach( function ( field ) {
+					if ( silentTypes.indexOf( field.type ) !== -1 ) {
+						return;
+					}
+					if ( tailTypes.indexOf( field.type ) !== -1 ) {
+						tailFields.push( field.id );
+						if ( tailRow < 0 ) { tailRow = rowIndex; }
+						return;
+					}
+					visible.push( field.id );
+				} );
+			} );
+
+			if ( ! visible.length ) {
+				return;
+			}
+
+			// isRow says WHICH THING is the screen — the row, or each field in it.
+			// It cannot be re-derived later from the field count: a three-column
+			// row holding a single field is still one row-screen, and counting
+			// fields would call it a field-screen, drawing the card around that
+			// one field and leaving the row's other columns outside it.
+			if ( columns.length > 1 ) {
+				screens.push( { rowIndex: rowIndex, fieldIds: visible, isTail: false, isRow: true } );
+				return;
+			}
+
+			visible.forEach( function ( id ) {
+				screens.push( { rowIndex: rowIndex, fieldIds: [ id ], isTail: false, isRow: false } );
+			} );
+		} );
+
+		if ( tailFields.length ) {
+			screens.push( { rowIndex: tailRow, fieldIds: tailFields, isTail: true, isRow: false } );
+		}
+
+		return screens;
+	}
+
+	/**
+	 * Screen number by field id, plus the rows that are a screen in their own
+	 * right (a multi-column row, where the badge belongs on the row rather than
+	 * on each of the fields sharing it).
+	 */
+	function cvScreenMap() {
+		var byField = {};
+		var byRow   = {};
+		var screens = cvScreens();
+
+		screens.forEach( function ( screen, index ) {
+			var number = index + 1;
+
+			if ( screen.isRow ) {
+				byRow[ screen.rowIndex ] = number;
+			}
+
+			screen.fieldIds.forEach( function ( id ) {
+				byField[ id ] = number;
+			} );
+		} );
+
+		return { byField: byField, byRow: byRow, total: screens.length };
+	}
+
 		function generateId() {
 			return 'bf_' + Date.now() + '_' + Math.floor( Math.random() * 100000 );
 		}
@@ -111,6 +451,31 @@ jQuery(
 				dup_method:   settings && settings.dup_method   ? settings.dup_method   : 'email',
 				dup_field_id: settings && settings.dup_field_id ? settings.dup_field_id : '',
 				dup_message:  settings && settings.dup_message  ? settings.dup_message  : '',
+				// Conversational mode. Presentation only — never alters the stored
+				// form structure, so these survive switching the mode off and back on.
+				cv_enabled:         settings && settings.cv_enabled ? true : false,
+				cv_progress:        settings && settings.cv_progress   ? settings.cv_progress   : 'bar',
+				cv_transition:      settings && settings.cv_transition ? settings.cv_transition : 'slide',
+				cv_key_hint:        ! settings || typeof settings.cv_key_hint === 'undefined' ? true : !! settings.cv_key_hint,
+				cv_next_text:       settings && settings.cv_next_text  ? settings.cv_next_text  : '',
+				cv_prev_text:       settings && settings.cv_prev_text  ? settings.cv_prev_text  : '',
+				cv_bg:              settings && settings.cv_bg              ? settings.cv_bg              : '',
+				cv_question_color:  settings && settings.cv_question_color  ? settings.cv_question_color  : '',
+				cv_answer_color:    settings && settings.cv_answer_color    ? settings.cv_answer_color    : '',
+				cv_btn_color:       settings && settings.cv_btn_color       ? settings.cv_btn_color       : '',
+				cv_btn_text_color:  settings && settings.cv_btn_text_color  ? settings.cv_btn_text_color  : '',
+				cv_accent:          settings && settings.cv_accent          ? settings.cv_accent          : '',
+				cv_track_color:     settings && settings.cv_track_color     ? settings.cv_track_color     : '',
+				cv_prev_color:      settings && settings.cv_prev_color      ? settings.cv_prev_color      : '',
+				cv_prev_bg:         settings && settings.cv_prev_bg         ? settings.cv_prev_bg         : '',
+				cv_hint_color:      settings && settings.cv_hint_color      ? settings.cv_hint_color      : '',
+				cv_nav_align:       settings && settings.cv_nav_align       ? settings.cv_nav_align       : 'left',
+				cv_progress_align:  settings && settings.cv_progress_align  ? settings.cv_progress_align  : 'left',
+				cv_welcome_enabled: settings && settings.cv_welcome_enabled ? true : false,
+				cv_welcome_title:   settings && settings.cv_welcome_title ? settings.cv_welcome_title : '',
+				cv_welcome_text:    settings && settings.cv_welcome_text  ? settings.cv_welcome_text  : '',
+				cv_welcome_btn:     settings && settings.cv_welcome_btn   ? settings.cv_welcome_btn   : '',
+				cv_media_hide_mobile: ! settings || typeof settings.cv_media_hide_mobile === 'undefined' ? true : !! settings.cv_media_hide_mobile,
 				style: normalizeStyleSettings( settings && settings.style ),
 			};
 
@@ -147,7 +512,42 @@ jQuery(
 		// preview and on the front end; users can edit or clear it per field.
 		function getDefaultPlaceholder( type ) {
 			var map = ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.placeholders ) || {};
-			return typeof map[ type ] !== 'undefined' ? map[ type ] : '';
+			if ( typeof map[ type ] !== 'undefined' ) {
+				return map[ type ];
+			}
+			// An amount box renders empty, so it needs a prompt of its own.
+			return 'custom_amount' === type ? 'Enter amount' : '';
+		}
+
+		/**
+		 * Currency symbol for builder previews. Supplied by the payments add-on;
+		 * falls back to "$" so Lite never depends on it being present.
+		 *
+		 * @return {string} Currency symbol.
+		 */
+		function getPaymentCurrencySymbol() {
+			return boldformLiteBuilder.paymentCurrencySymbol || '$';
+		}
+
+		/**
+		 * Whether a Custom Amount field has its "Set Amount Limits" switch on.
+		 *
+		 * Mirrors the add-on's server-side rule: fields saved before the switch
+		 * existed carry no flag, so a positive minimum or any maximum is read as
+		 * limits being in force. Without that, upgrading would silently drop a
+		 * range an admin had deliberately configured.
+		 *
+		 * @param {Object} field Field definition.
+		 * @return {boolean} True when limits apply.
+		 */
+		function hasAmountLimits( field ) {
+			if ( ! field ) {
+				return false;
+			}
+			if ( typeof field.amount_limits !== 'undefined' ) {
+				return !! field.amount_limits;
+			}
+			return parseFloat( field.amount_min || 0 ) > 0 || parseFloat( field.amount_max || 0 ) > 0;
 		}
 
 		function createField( type ) {
@@ -158,7 +558,10 @@ jQuery(
 				type: type,
 				label: libraryItem.label,
 				placeholder: getDefaultPlaceholder( type ),
-				required: false,
+				// A Custom Amount is a payment field: leaving it blank means no
+				// payment, so it is required out of the box. Every other type stays
+				// optional by default.
+				required: 'custom_amount' === type,
 				default_value: '',
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
 				options_layout: optionFieldTypes.indexOf( type ) !== -1 ? 'block' : '',
@@ -203,9 +606,15 @@ jQuery(
 				qty_min: 'quantity' === type ? '1' : '',
 				qty_max: 'quantity' === type ? '' : '',
 				qty_default: 'quantity' === type ? '1' : '',
-				amount_min: 'custom_amount' === type ? '0.00' : '',
-				amount_max: 'custom_amount' === type ? '' : '',
-				amount_default: 'custom_amount' === type ? '0.00' : '',
+				// Limits are opt-in. The min/max are seeded with sensible figures so
+				// switching "Set Amount Limits" on lands on a usable range, but they
+				// stay inert — and unrendered — until it is on.
+				amount_limits: false,
+				amount_min: 'custom_amount' === type ? '10.00' : '',
+				amount_max: 'custom_amount' === type ? '500.00' : '',
+				// Empty: a donation box pre-filled with 0.00 forces every visitor to
+				// clear it before they can type their own figure.
+				amount_default: '',
 				auto_populate_key: '',
 				calc_formula:  'calculation' === type ? '' : '',
 				calc_decimals: 'calculation' === type ? 2 : 2,
@@ -225,6 +634,73 @@ jQuery(
 			var field = createField( type );
 
 			return $.extend( true, field, overrides || {} );
+		}
+
+		/**
+		 * Copies a screen's own styling across a normalize — whichever of those
+		 * keys are present, and only those.
+		 *
+		 * normalizeField() and normalizeStructure() rebuild every field and row
+		 * from a whitelist, so a key not named here is dropped the moment a saved
+		 * form is reopened — and written away by the next save. The values would
+		 * round-trip through the database perfectly and still disappear.
+		 *
+		 * Both normalizers need it because a screen is a row OR a field depending
+		 * on the layout, and the styling lives on whichever one it is.
+		 *
+		 * cv_media_preview is the odd one out: the server resolves it into the
+		 * builder's structure and it is never persisted (ajax-save drops it, on
+		 * purpose — a stored URL breaks when the site moves). Dropping it here
+		 * would empty the thumbnail every time the form was reopened.
+		 *
+		 * Absent stays absent: defaulting each one to '' would turn "inherits"
+		 * into a stored value on every field of every form ever opened, which is
+		 * the exact pinning the empty string exists to avoid.
+		 *
+		 * This is the builder's half of the contract sanitize_cv_media() and
+		 * sanitize_cv_colours() enforce on the way into the database.
+		 *
+		 * THE LIST LIVES IN HERE, and must stay here. `state` is built at the top
+		 * of this file and calls normalizeStructure() on the way — which reaches
+		 * this function long before execution has passed any `var` between the
+		 * two. A function declaration hoists whole, so the call works; a `var`
+		 * hoists as undefined, so the list would not exist yet and the builder
+		 * would die on load with "Cannot read properties of undefined".
+		 */
+		/**
+		 * Where a range's thumb sits, 0-100, whatever its own min and max are.
+		 *
+		 * Brightness runs 10-100, so its value is NOT its position: at 10 the
+		 * thumb is at the far left, not a tenth of the way along. Both the
+		 * rendered track and the drag handler read this so they cannot disagree.
+		 */
+		function rangePercent( value, min, max ) {
+			var lo   = Number( min );
+			var hi   = Number( max );
+			var span = hi - lo;
+
+			if ( ! span ) {
+				return 0;
+			}
+
+			return Math.max( 0, Math.min( 100, Math.round( ( ( Number( value ) - lo ) / span ) * 100 ) ) );
+		}
+
+		function carryScreenKeys( from, to ) {
+			var keys = [
+				'cv_media_id', 'cv_media_layout', 'cv_media_x', 'cv_media_y',
+				'cv_media_brightness', 'cv_media_height', 'cv_media_alt', 'cv_media_preview',
+				'cv_bg', 'cv_question_color', 'cv_answer_color',
+				'cv_btn_color', 'cv_btn_text_color', 'cv_accent'
+			];
+
+			keys.forEach( function ( key ) {
+				if ( from && typeof from[ key ] !== 'undefined' ) {
+					to[ key ] = from[ key ];
+				}
+			} );
+
+			return to;
 		}
 
 		function normalizeField( field ) {
@@ -313,6 +789,14 @@ jQuery(
 			normalized.qty_min = field && typeof field.qty_min !== 'undefined' ? field.qty_min : '1';
 			normalized.qty_max = field && typeof field.qty_max !== 'undefined' ? field.qty_max : '';
 			normalized.qty_default = field && typeof field.qty_default !== 'undefined' ? field.qty_default : '1';
+			// Preserve an absent amount_limits as absent rather than coercing it to
+			// false, so hasAmountLimits() can still infer it from a legacy field's
+			// stored min/max instead of silently switching its range off.
+			if ( field && typeof field.amount_limits !== 'undefined' ) {
+				normalized.amount_limits = !! field.amount_limits;
+			} else if ( field && 'custom_amount' === field.type ) {
+				normalized.amount_limits = hasAmountLimits( field );
+			}
 			normalized.amount_min = field && typeof field.amount_min !== 'undefined' ? field.amount_min : '';
 			normalized.amount_max = field && typeof field.amount_max !== 'undefined' ? field.amount_max : '';
 			normalized.amount_default = field && typeof field.amount_default !== 'undefined' ? field.amount_default : '';
@@ -414,6 +898,10 @@ jQuery(
 			normalized.geo_show_map         = !! ( field && field.geo_show_map );
 			normalized.geo_map_height       = field && field.geo_map_height ? Number( field.geo_map_height ) : 250;
 			normalized.geo_store_format     = field && field.geo_store_format && [ 'both', 'latlng', 'address' ].indexOf( field.geo_store_format ) !== -1 ? field.geo_store_format : 'both';
+
+			// A single-column row is one screen per field, so a field can BE a
+			// screen and carry that screen's styling.
+			carryScreenKeys( field, normalized );
 
 			return normalized;
 		}
@@ -782,7 +1270,10 @@ jQuery(
 			if ( structure && Array.isArray( structure.rows ) ) {
 				rows = structure.rows.map(
 					function ( row ) {
-						return {
+						// A multi-column row is ONE screen, and the row is what
+						// stores that screen's styling — so it has to survive the
+						// rebuild too, not just the fields inside it.
+						return carryScreenKeys( row, {
 							id: row && row.id ? row.id : generateId(),
 							css_class: row && row.css_class ? row.css_class : '',
 							columns: Array.isArray( row && row.columns ) && row.columns.length
@@ -792,7 +1283,7 @@ jQuery(
 									}
 								)
 								: [ createColumn( '100%', [] ) ]
-						};
+						} );
 					}
 				);
 			}
@@ -1015,11 +1506,20 @@ jQuery(
 			return state.activeColumn;
 		}
 
-		function setActiveColumn( rowIndex, columnIndex ) {
+		// Whether the author actually PICKED the active column, as opposed to the
+		// builder defaulting to one on load. The two mean different things to the
+		// field library: a picked column is where clicked fields go, and with
+		// nothing picked they append to the bottom of the form, which is what
+		// "keep adding fields" should do. Without this distinction, opening a
+		// saved form and clicking a field would drop it in row 1.
+		var activeColumnChosen = false;
+
+		function setActiveColumn( rowIndex, columnIndex, chosen ) {
 			state.activeColumn = {
 				rowIndex: rowIndex,
 				columnIndex: columnIndex
 			};
+			activeColumnChosen = !! chosen;
 		}
 
 		// ── Unsaved-changes tracking ──────────────────────────────────────────────
@@ -1057,7 +1557,10 @@ jQuery(
 			insertAt = typeof fieldIndex === 'number' ? fieldIndex : column.fields.length;
 			column.fields.splice( insertAt, 0, field );
 			state.selectedFieldId = field.id;
-			setActiveColumn( rowIndex, columnIndex );
+			// Follows the field, but does not itself count as picking a column —
+			// otherwise one clicked field would pin the library to that column for
+			// the rest of the session.
+			setActiveColumn( rowIndex, columnIndex, activeColumnChosen );
 			markDirty();
 		}
 
@@ -1071,6 +1574,135 @@ jQuery(
 			switchSidebarTab( 'library' );
 			renderAll();
 			announce( 'rowAdded' );
+		}
+
+		/**
+		 * "Questions on screen N" — the columns of THAT SCREEN, and nothing else.
+		 *
+		 * In conversational mode this control is not asking for a column count. It
+		 * is asking how many questions sit side by side on one screen, and the
+		 * ordinary row behaviour answers a different question entirely: an author
+		 * with four questions on four screens picked "2" and got all four stacked
+		 * in the left half of ONE screen, an empty right half, and three screens
+		 * gone.
+		 *
+		 * THE RULE, stated once: the screen count does not change. The author is
+		 * laying out the screen in front of them, not re-cutting the form. Every
+		 * other screen is left exactly as it was, and the questions that were on
+		 * other screens stay on their own.
+		 *
+		 * That is not free, because a row is two different things here. A row with
+		 * more than one column IS a screen; a single-column row is one screen PER
+		 * FIELD. So giving screen 2 of a three-question row a second column means
+		 * lifting that one question into a row of its own — the questions above and
+		 * below it stay behind in single-column rows, still one screen each. The
+		 * row splits; the screens do not.
+		 *
+		 * Questions fill each cell before the next, so a screen already holding more
+		 * questions than the new layout has cells keeps all of them and keeps being
+		 * ONE screen. Filling in order rather than wrapping round the cells is
+		 * deliberate: wrapping would read better left to right, but it REORDERS the
+		 * questions in the DOM, and that is the order they are tabbed through,
+		 * submitted in and listed in the entry. A layout tile must not quietly
+		 * rewrite any of those.
+		 *
+		 * @param {number} rowIndex Row holding the screen.
+		 * @param {Array}  widths   Column widths of the chosen preset.
+		 * @param {string} fieldId  The question whose screen panel is open.
+		 */
+		function reflowScreenColumns( rowIndex, widths, fieldId ) {
+			var rows  = getAllRows();
+			var row   = rows[ rowIndex ];
+
+			if ( ! row ) {
+				return;
+			}
+
+			var multi = ( row.columns || [] ).length > 1;
+			var cells = widths.length;
+			var all   = [];
+
+			( row.columns || [] ).forEach( function ( column ) {
+				( column.fields || [] ).forEach( function ( field ) {
+					all.push( field );
+				} );
+			} );
+
+			// Already one question per screen and staying that way. Splitting the
+			// row into one row per question here would rewrite the form without
+			// changing a single thing the visitor sees.
+			if ( ! multi && cells < 2 ) {
+				row.columns[ 0 ].width = widths[ 0 ];
+				return;
+			}
+
+			// Which questions are ON the screen being edited. A multi-column row is
+			// one screen, so all of them. A single-column row is one screen per
+			// field, so exactly the one whose panel is open — everything above and
+			// below it belongs to other screens.
+			var at = 0;
+
+			if ( ! multi ) {
+				all.some( function ( field, index ) {
+					if ( field.id === fieldId ) {
+						at = index;
+						return true;
+					}
+					return false;
+				} );
+			}
+
+			var mine   = multi ? all : all.slice( at, at + 1 );
+			var before = multi ? [] : all.slice( 0, at );
+			var after  = multi ? [] : all.slice( at + 1 );
+			var buckets = widths.map( function () { return []; } );
+			var per     = Math.max( 1, Math.ceil( mine.length / cells ) );
+
+			mine.forEach( function ( field, index ) {
+				buckets[ Math.min( cells - 1, Math.floor( index / per ) ) ].push( field );
+			} );
+
+			// The screen keeps its look while its owner changes. A field-screen's
+			// styling lives on the field and a row-screen's lives on the row, so a
+			// screen crossing between the two has to take its cv_* keys with it —
+			// otherwise adding a column silently blanks the background image and
+			// colours the author set, with nothing on screen to explain it. Stored
+			// values are copied, never resolved ones, so a colour left inheriting
+			// carries on inheriting.
+			if ( ! multi && mine.length ) {
+				carryScreenKeys( mine[ 0 ], row );
+			} else if ( multi && cells < 2 ) {
+				// One screen becoming several: each keeps the look it already had.
+				mine.forEach( function ( field ) {
+					carryScreenKeys( row, field );
+				} );
+			}
+
+			row.columns = widths.map( function ( width, index ) {
+				return createColumn( width, buckets[ index ] );
+			} );
+
+			/** A neighbouring screen, kept single-column so it stays its own. */
+			function siblingRow( fields ) {
+				var next = createRow( [ '100%' ] );
+
+				next.css_class = row.css_class || '';
+				next.columns   = [ createColumn( '100%', fields ) ];
+
+				return next;
+			}
+
+			var replacement = [];
+
+			if ( before.length ) { replacement.push( siblingRow( before ) ); }
+			replacement.push( row );
+			if ( after.length ) { replacement.push( siblingRow( after ) ); }
+
+			if ( replacement.length > 1 ) {
+				// In place, in order: the questions either side of this screen must
+				// stay where the visitor already meets them.
+				rows.splice.apply( rows, [ rowIndex, 1 ].concat( replacement ) );
+			}
 		}
 
 		function duplicateRow( rowIndex ) {
@@ -1135,17 +1767,39 @@ jQuery(
 			renderAll();
 		}
 
+		// The click path into the canvas. It must land in the same place, and obey
+		// the same rules, as the drag path (addFieldToColumn) — the two used to
+		// disagree on both counts.
 		function addFieldToActiveColumn( type ) {
+			// Same guard as the drag path. Without it, clicking Submit Button twice
+			// produced two submit buttons while dragging it twice produced one.
+			if ( 'submit' === type && hasSubmitField() ) {
+				return;
+			}
+
 			if ( ! getAllRows().length ) {
 				addRow( [ '100%' ] );
 			}
 
-			// Always add to the last row, first column.
-			var lastRowIndex = getAllRows().length - 1;
-			setActiveColumn( lastRowIndex, 0 );
-			var activeColumn = state.activeColumn;
+			var rows   = getAllRows();
+			var target = activeColumnChosen ? state.activeColumn : null;
 
-			insertFieldAt( activeColumn.rowIndex, activeColumn.columnIndex, createField( type ) );
+			// Honour the column the author picked. The field library says
+			// "click to insert into the selected column", but this used to
+			// overwrite the pick with the last row's first column — so a row added
+			// with three columns could only ever be filled by dragging, and every
+			// clicked field piled into the first column at that column's width.
+			// Re-validated against the current structure, because rows can be
+			// deleted, moved or re-columned after the pick was made.
+			if (
+				! target
+				|| ! rows[ target.rowIndex ]
+				|| ! rows[ target.rowIndex ].columns[ target.columnIndex ]
+			) {
+				target = { rowIndex: rows.length - 1, columnIndex: 0 };
+			}
+
+			insertFieldAt( target.rowIndex, target.columnIndex, createField( type ) );
 			state.selectedFieldId = null;
 			switchEditorView( 'builder' );
 			renderAll();
@@ -1154,6 +1808,12 @@ jQuery(
 
 		function addFieldToColumn( type, rowIndex, columnIndex, newIndex ) {
 			if ( 'submit' === type && hasSubmitField() ) {
+				// The drag engine has already put the dragged library chip into
+				// the canvas by this point — refusing without a re-render left
+				// that chip sitting there as a stray element until something
+				// else happened to redraw. Rebuild from state instead, which is
+				// the only place the truth lives.
+				renderAll();
 				return;
 			}
 			insertFieldAt( rowIndex, columnIndex, createField( type ), newIndex );
@@ -1264,7 +1924,20 @@ jQuery(
 			// name), so this only affects deliberately-emptied labels — keeping the
 			// canvas WYSIWYG instead of falling back to the field-type name.
 			var labelText = field.label || '';
-			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement || '' === labelText ) ? '' : '<label>' + escapeHtml( labelText ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
+			// Carries the FRONT END's label class, and this single line is why the
+			// Style tab's conversational preview gets the real question type
+			// scale. That scale is six rules in conversational.css — a base size
+			// plus a step-down for 2, 3 and many columns, a narrow-width block and
+			// an invalid state — so re-stating it against builder markup would be
+			// six values to keep in sync, and the first attempt at that copied
+			// only the base and previewed a two-column screen a third too large.
+			// Every return path below concatenates this one variable, so naming it
+			// once here is the whole fix.
+			//
+			// Inert on the canvas: no rule in builder.css or settings.css matches
+			// this class, and every conversational rule that does is scoped under
+			// `.boldform-cv.is-ready`, which the canvas is not inside.
+			var label = ( state.formSettings.hide_labels || 'hidden' === field.label_placement || '' === labelText ) ? '' : '<label class="boldform-lite-form__label">' + escapeHtml( labelText ) + ( field.required ? ' <span class="boldform-required">*</span>' : '' ) + '</label>';
 			var html = '';
 
 			// Shared theme tokens so the advanced (Pro) field previews adopt the active
@@ -1330,13 +2003,25 @@ jQuery(
 				html += '<input type="number" value="' + escapeHtml( field.qty_default || '1' ) + '" min="' + escapeHtml( field.qty_min || '1' ) + '"' + ( field.qty_max ? ' max="' + escapeHtml( field.qty_max ) + '"' : '' ) + ' disabled>';
 				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'custom_amount' ) {
-				var caMin = field.amount_min ? parseFloat( field.amount_min ) : 0;
-				var caMax = field.amount_max ? parseFloat( field.amount_max ) : '';
-				var caDefault = field.amount_default ? parseFloat( field.amount_default ) : 0;
+				// Mirror the front end exactly: limits only apply when the switch is
+				// on, the box renders empty unless a real default was set, and the
+				// hint appears only when there is a limit to state.
+				var caLimits  = hasAmountLimits( field );
+				var caMin     = caLimits && parseFloat( field.amount_min || 0 ) > 0 ? parseFloat( field.amount_min ) : null;
+				var caMax     = caLimits && parseFloat( field.amount_max || 0 ) > 0 ? parseFloat( field.amount_max ) : null;
+				var caDefault = parseFloat( field.amount_default || 0 ) > 0 ? parseFloat( field.amount_default ).toFixed( 2 ) : '';
+				var caSymbol  = getPaymentCurrencySymbol();
 				html += '<div class="boldform-canvas-amount">';
-				html += '<span class="boldform-canvas-amount__symbol">$</span>';
-				html += '<input type="number" value="' + escapeHtml( caDefault.toFixed(2) ) + '" step="0.01"' + ( caMin > 0 ? ' min="' + caMin + '"' : '' ) + ( caMax !== '' ? ' max="' + caMax + '"' : '' ) + ' disabled>';
+				html += '<span class="boldform-canvas-amount__symbol">' + escapeHtml( caSymbol ) + '</span>';
+				html += '<input type="number" value="' + escapeHtml( caDefault ) + '" placeholder="' + escapeHtml( field.placeholder || 'Enter amount' ) + '" step="0.01"' + ( null !== caMin ? ' min="' + caMin + '"' : '' ) + ( null !== caMax ? ' max="' + caMax + '"' : '' ) + ' disabled>';
 				html += '</div>';
+				if ( null !== caMin && null !== caMax ) {
+					html += '<span class="boldform-canvas-field-hint">Minimum ' + escapeHtml( caSymbol ) + caMin.toFixed( 2 ) + ' · Maximum ' + escapeHtml( caSymbol ) + caMax.toFixed( 2 ) + '</span>';
+				} else if ( null !== caMin ) {
+					html += '<span class="boldform-canvas-field-hint">Minimum ' + escapeHtml( caSymbol ) + caMin.toFixed( 2 ) + '</span>';
+				} else if ( null !== caMax ) {
+					html += '<span class="boldform-canvas-field-hint">Maximum ' + escapeHtml( caSymbol ) + caMax.toFixed( 2 ) + '</span>';
+				}
 				return label + '<div class="boldform-canvas-field-control">' + html + '</div>';
 			} else if ( field.type === 'order_summary' ) {
 				var osTotal  = 0;
@@ -1954,11 +2639,44 @@ jQuery(
 			return value === fallback ? '' : value;
 		}
 
+		/**
+		 * The "Screen N of M" badge shown on a conversational question.
+		 *
+		 * Rendered as a plain span inside the existing row/field markup rather
+		 * than as a new wrapper: the canvas's drag-and-drop is bound to the
+		 * exact row/column/field structure, and re-nesting it to draw cards
+		 * would break dropping, sorting and selection.
+		 */
+		function cvBadge( number, total, isTail ) {
+			if ( ! number ) {
+				return '';
+			}
+
+			var text = ( boldformLiteBuilder.labels.cvScreenOf || 'Screen %1$s of %2$s' )
+				.replace( '%1$s', String( number ) )
+				.replace( '%2$s', String( total ) );
+
+			return '<span class="boldform-cv-badge' + ( isTail ? ' is-tail' : '' ) + '">' +
+				'<span class="boldform-cv-badge__num">' + escapeHtml( String( number ) ) + '</span>' +
+				'<span class="boldform-cv-badge__text">' + escapeHtml( text ) + '</span>' +
+			'</span>';
+		}
+
 		function renderCanvas() {
 			var $rows = $( '#boldform-canvas-rows' );
 			var $empty = $( '#boldform-canvas-empty' );
 			var markup = '';
 			var canvasClasses = 'boldform-canvas';
+			// Conversational canvases are laid out as a stack of numbered
+			// question cards, so the author can see the steps without leaving
+			// the editor. Stated as a class so the CSS owns the appearance and
+			// the markup stays identical in both modes.
+			var cvOn  = cvIsOn();
+			var cvMap = cvOn ? cvScreenMap() : { byField: {}, byRow: {}, total: 0 };
+
+			if ( cvOn ) {
+				canvasClasses += ' is-conversational';
+			}
 
 			$rows.empty();
 			$( '#boldform-canvas' ).attr( 'class', canvasClasses );
@@ -1974,19 +2692,126 @@ jQuery(
 			getAllRows().forEach(
 				function ( row, rowIndex ) {
 					var rowSelected = state.selectedRowIndex === rowIndex;
-					markup += '<section class="boldform-row' + ( rowSelected ? ' is-row-selected' : '' ) + '" data-row-index="' + rowIndex + '">';
-					markup += '<div class="boldform-row__head"><strong>' + escapeHtml( boldformLiteBuilder.labels.row ) + ' ' + ( rowIndex + 1 ) + '</strong><span>' + row.columns.length + ' ' + escapeHtml( boldformLiteBuilder.labels.columns ) + '</span><div class="boldform-row__actions">';
-					markup += '<button type="button" class="boldform-action-icon boldform-row-settings' + ( rowSelected ? ' is-active' : '' ) + '" title="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '"><span class="dashicons dashicons-admin-generic"></span></button>';
+					var cvRowNumber = cvOn ? ( cvMap.byRow[ rowIndex ] || 0 ) : 0;
+					// Stated as a class rather than inferred in CSS: "this row is
+					// itself one screen" is the difference between the row being
+					// the card and each field being a card, and a :has() test for
+					// a badge cannot tell a row badge from a field badge.
+					var cvRowClass  = cvRowNumber ? ' is-cv-screen' : '';
+
+					// A SEPARATE fact, and the distinction matters: "does this row
+					// put things side by side" is not "is this row a screen". The
+					// gutter used to ride on is-cv-screen, so it vanished from
+					// every multi-column row that is not one — a row still empty,
+					// a row holding only fields that render nothing, and every
+					// multi-column row once "Put every field on its own screen" is
+					// on. Two drop zones then shared an edge.
+					cvRowClass += row.columns.length > 1 ? ' is-cv-multicol' : '';
+
+					// There used to be a third class here, is-cv-split, for a
+					// multi-column row whose columns were SEPARATE screens — the
+					// state "Put every field on its own screen" produced. With
+					// that switch removed the state cannot occur: a multi-column
+					// row with visible fields is always the screen, so it always
+					// has a row number, and the class could never be added.
+
+					// ONE toolbar per screen.
+					//
+					// A row that produces field-screens is not a screen itself — its
+					// field cards are — so it must not carry a toolbar of its own.
+					// It used to, and because a field-screen's row card and field
+					// card start at the same y, the two pills landed 18px apart and
+					// read as one stacked mess. Worse than the look: it offered two
+					// toolbars for one thing.
+					//
+					// An EMPTY row keeps its toolbar regardless. It produces no
+					// screens, so nothing else could ever delete it.
+					var rowHasFields = row.columns.some( function ( c ) { return c.fields.length; } );
+					var showRowTools = ! cvOn || !! cvRowNumber || ! rowHasFields;
+
+					markup += '<section class="boldform-row' + ( rowSelected ? ' is-row-selected' : '' ) + cvRowClass + '" data-row-index="' + rowIndex + '">';
+					markup += '<div class="boldform-row__head">';
+					markup += '<strong>' + escapeHtml( boldformLiteBuilder.labels.row ) + ' ' + ( rowIndex + 1 ) + '</strong><span>' + row.columns.length + ' ' + escapeHtml( boldformLiteBuilder.labels.columns ) + '</span>';
+
+					if ( showRowTools ) {
+					markup += '<div class="boldform-row__actions">';
+					// In conversational mode the row IS the screen here, so its gear
+					// opens SCREEN settings — which lives in the field panel, and so
+					// selects the first question on the screen to get there.
+					markup += cvRowNumber
+						? '<button type="button" class="boldform-action-icon boldform-screen-settings" title="Screen ' + cvRowNumber + ' settings" aria-label="Screen ' + cvRowNumber + ' settings"><span class="dashicons dashicons-admin-generic"></span></button>'
+						: '<button type="button" class="boldform-action-icon boldform-row-settings' + ( rowSelected ? ' is-active' : '' ) + '" title="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.rowSettings || 'Row settings' ) + '"><span class="dashicons dashicons-admin-generic"></span></button>';
 					markup += '<button type="button" class="boldform-action-icon boldform-row-move" title="Move row" aria-label="Move row" draggable="true"><span class="dashicons dashicons-move"></span></button>';
 					markup += '<button type="button" class="boldform-action-icon boldform-row-duplicate" title="Duplicate row" aria-label="Duplicate row"><span class="dashicons dashicons-admin-page"></span></button>';
 					markup += '<button type="button" class="boldform-action-icon is-danger boldform-row-delete" title="Delete row" aria-label="Delete row"><span class="dashicons dashicons-trash"></span></button>';
-					markup += '</div></div>';
+					markup += '</div>';
+					}
+
+					markup += '</div>';
 					markup += '<div class="boldform-row__columns">';
+					// A multi-column row is ONE screen, and this container is the
+					// card that draws it — so the badge goes INSIDE, in the same
+					// top-left position it occupies on a single-question card.
+					// Putting it in the row head instead left the two kinds of
+					// screen looking like two different things. Safe as a child
+					// here: the container is a wrapping flex row and nothing in
+					// the JS walks it positionally — columns are found by class
+					// and data attribute.
+					markup += cvRowNumber ? cvBadge( cvRowNumber, cvMap.total, false ) : '';
+
+					// Does this row put a NUMBERED SCREEN on the canvas? Either the
+					// row is one itself, or one of its fields is.
+					//
+					// This is the line between an empty column that is clutter and
+					// one that is the only thing there is to see, and it is drawn
+					// at screens rather than at fields on purpose. The complaint
+					// was an empty card sitting BETWEEN two numbered questions, so
+					// a row that numbers nothing has no such position to be in:
+					//
+					//   - a row still being built has no other visible presence in
+					//     this mode — its head text is clipped and its toolbar only
+					//     appears on hover — so hiding its columns would make
+					//     "Add Row" look like it did nothing at all;
+					//   - a row holding only fields that render nothing to the
+					//     visitor is the same case, and hiding one of its two
+					//     columns would leave the other stranded at half width
+					//     against a gutter that is there to separate them.
+					//
+					// Measured, not argued: keying this on "the row has fields"
+					// instead took the gutter off that second row, and the canvas
+					// suite said so.
+					var rowHasScreens = !! cvRowNumber || row.columns.some( function ( column ) {
+						return ( column.fields || [] ).some( function ( f ) {
+							return !! cvMap.byField[ f.id ];
+						} );
+					} );
 
 					row.columns.forEach(
 						function ( column, columnIndex ) {
 							var columnClasses = 'boldform-column';
-							var isActive = state.activeColumn && state.activeColumn.rowIndex === rowIndex && state.activeColumn.columnIndex === columnIndex;
+
+							// PRESENTATION ONLY. The column stays in row.columns
+							// exactly as it is, keeps its width, and comes back the
+							// instant conversational mode goes off. Nothing here
+							// touches the data.
+							//
+							// An empty column drawn as a full drop-zone card reads
+							// as a step the visitor will walk through, which is the
+							// one thing this canvas must never say wrongly. Hidden
+							// while idle, revealed while a drag is in flight — see
+							// the is-dragging rules in builder.css and the listeners
+							// in bindCanvasDragState().
+							if ( cvOn && rowHasScreens && ! ( column.fields || [] ).length ) {
+								columnClasses += ' is-cv-ghost';
+							}
+							// PICKED, not merely current. The builder defaults
+							// activeColumn to a column on load and after adding a
+							// row, and painting that read as a selection the author
+							// never made — on a brand-new form the very first thing
+							// they saw was a highlighted box. The highlight answers
+							// "where will a clicked field land", which is only a
+							// question worth answering once they have chosen.
+							var isActive = activeColumnChosen && state.activeColumn && state.activeColumn.rowIndex === rowIndex && state.activeColumn.columnIndex === columnIndex;
 
 							if ( isActive ) {
 								columnClasses += ' is-active';
@@ -1998,7 +2823,15 @@ jQuery(
 							markup += '<div class="' + fieldsClasses + '" data-row-index="' + rowIndex + '" data-column-index="' + columnIndex + '">';
 
 							if ( ! column.fields.length ) {
-								markup += '<div class="boldform-column__empty">' + escapeHtml( boldformLiteBuilder.labels.dropHere ) + '</div>';
+								// Both ways in, said once. "Drop fields here" alone
+								// names the harder one and leaves the easier one —
+								// clicking a field in the library — to be guessed
+								// from a line of help text above the canvas.
+								markup += '<div class="boldform-column__empty">' +
+									'<span class="boldform-column__empty-icon dashicons dashicons-plus-alt2" aria-hidden="true"></span>' +
+									'<span class="boldform-column__empty-title">' + escapeHtml( boldformLiteBuilder.labels.dropHere ) + '</span>' +
+									'<span class="boldform-column__empty-hint">' + escapeHtml( boldformLiteBuilder.labels.dropHereHint || 'or click one in the Field Library' ) + '</span>' +
+								'</div>';
 							}
 
 							column.fields.forEach(
@@ -2013,8 +2846,27 @@ jQuery(
 										fieldClasses += ' is-label-' + fieldLabelPos;
 									}
 
+									// A field carries the badge only when it IS the screen.
+									// In a multi-column row the badge sits on the row,
+									// because both fields share one screen.
+									var cvFieldNumber = ( cvOn && ! cvMap.byRow[ rowIndex ] ) ? cvMap.byField[ field.id ] : 0;
+
+									if ( cvOn && ! cvMap.byField[ field.id ] ) {
+										// Renders nothing to the visitor, so it is never a
+										// step — said out loud rather than left looking
+										// like an unnumbered question.
+										fieldClasses += ' is-cv-silent';
+									}
+
 									markup += '<div class="' + fieldClasses + '" data-field-id="' + escapeHtml( field.id ) + '">';
+									markup += cvFieldNumber ? cvBadge( cvFieldNumber, cvMap.total, false ) : '';
 									markup += '<div class="boldform-canvas-field-actions">';
+									// This field IS the screen, so its toolbar is the
+									// screen's toolbar and leads the same way the row
+									// card's does — with the settings gear first.
+									markup += cvFieldNumber
+										? '<button type="button" class="boldform-action-icon boldform-screen-settings" title="Screen ' + cvFieldNumber + ' settings" aria-label="Screen ' + cvFieldNumber + ' settings"><span class="dashicons dashicons-admin-generic"></span></button>'
+										: '';
 									markup += '<span class="boldform-action-icon boldform-move-field" title="' + escapeHtml( boldformLiteBuilder.labels.moveField || 'Move field' ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.labels.moveField || 'Move field' ) + '" draggable="true"><span class="dashicons dashicons-move"></span></span>';
 									markup += '<button type="button" class="boldform-action-icon boldform-edit-field" title="Edit field" aria-label="Edit field"><span class="dashicons dashicons-edit"></span></button>';
 									markup += '<button type="button" class="boldform-action-icon boldform-duplicate-field" title="' + escapeHtml( boldformLiteBuilder.actions.duplicate ) + '" aria-label="' + escapeHtml( boldformLiteBuilder.actions.duplicate ) + '"><span class="dashicons dashicons-admin-page"></span></button>';
@@ -2101,9 +2953,347 @@ jQuery(
 							'<label for="boldform-setting-row-css-class">' + escapeHtml( boldformLiteBuilder.labels.cssClass || 'CSS Class' ) + '</label>' +
 							'<input type="text" id="boldform-setting-row-css-class" value="' + escapeHtml( rowObj.css_class || '' ) + '" placeholder="my-custom-row">' +
 						'</div>'
+						// No image or colour control here, on purpose. Styling
+						// belongs to a SCREEN, and a row is not reliably one — it
+						// may be several. It is set by selecting the question and
+						// using the "Screen N" panel, which edits the right thing
+						// whichever the screen turns out to be.
 					);
 					return;
 				}
+			}
+
+
+			/**
+			 * Everything that styles the SCREEN a question belongs to.
+			 *
+			 * The author selects a question; this edits the screen that question is
+			 * on. WHICH object it writes to depends on what the screen is — the
+			 * field when the field is the screen, the row when several questions
+			 * share one — but that is a storage detail, not something the author
+			 * should have to think about or navigate to.
+			 *
+			 * There is deliberately NO background or colour control in row settings.
+			 * "Go and select the row instead" is a step nobody should have to take
+			 * to style the screen they are already looking at, and it was the reason
+			 * the setting still felt like a row setting after the storage was fixed.
+			 *
+			 * Its own accordion, first in the panel, because on a conversational
+			 * form the screen is what the author came here to style — burying it
+			 * under a field's validation settings inverts that.
+			 *
+			 * Conversational mode only: on an ordinary form this section would do
+			 * nothing at all.
+			 */
+			function screenSettings( location ) {
+				if ( ! cvIsOn() || ! location || ! location.field ) {
+					return '';
+				}
+
+				var map    = cvScreenMap();
+				var number = map.byField[ location.field.id ];
+
+				if ( ! number ) {
+					// Hidden fields, page breaks — nothing the visitor ever sees.
+					return screenAccordion(
+						'Screen',
+						'<p class="boldform-setting-help">This field never becomes a screen, so it has nothing to style.</p>'
+					);
+				}
+
+				// A multi-column row is ONE screen, shared by the questions on it,
+				// so the row is where that screen's styling lives. Edited from right
+				// here all the same.
+				var shared = !! map.byRow[ location.rowIndex ];
+				var target = shared ? ( getAllRows()[ location.rowIndex ] || location.field ) : location.field;
+
+				return screenAccordion(
+					'Screen ' + number,
+					screenLayoutSettings( location, number )
+						+ cvColourSettings( target, number, shared )
+						+ cvMediaSettings(
+							target,
+							number,
+							shared
+								? 'This screen is the whole row, so the questions beside this one share it.'
+								: 'Just this question.'
+						)
+				);
+			}
+
+			/**
+			 * The accordion shell, matching Settings and Advanced below it.
+			 *
+			 * Closed by default and opened by the screen card's gear, which is the
+			 * affordance that points at it.
+			 */
+			function screenAccordion( title, body ) {
+				return '<div class="boldform-field-accordion' + ( 'screen' === state.activeSettingsAccordion ? ' is-open' : '' ) + '" data-accordion="screen">' +
+					'<button type="button" class="boldform-field-accordion__head">' + escapeHtml( title ) + ' <span class="dashicons dashicons-arrow-down-alt2"></span></button>' +
+					'<div class="boldform-field-accordion__body">' + body + '</div>' +
+				'</div>';
+			}
+
+			/**
+			 * How many questions share this screen.
+			 *
+			 * The same control as row settings' "Column Layout", asked the way it
+			 * actually matters here. It lives in screen settings because
+			 * conversational mode has no row settings panel to reach — a row that
+			 * produces field-screens carries no toolbar at all, since its field
+			 * cards are the screens.
+			 */
+			function screenLayoutSettings( location, number ) {
+				var row = getAllRows()[ location.rowIndex ];
+
+				if ( ! row ) {
+					return '';
+				}
+
+				var current = row.columns.map( function ( c ) { return c.width; } ).join( ',' );
+				var html    = '<div class="boldform-setting-group">' +
+					'<label>Questions on screen ' + number + '</label>' +
+					'<div class="boldform-row-layout-presets">';
+
+				[
+					{ label: '1', widths: '100%' },
+					{ label: '2', widths: '50%,50%' },
+					{ label: '3', widths: '33.33%,33.33%,33.33%' },
+					{ label: '2:1', widths: '66.66%,33.33%' },
+					{ label: '1:2', widths: '33.33%,66.66%' },
+					{ label: '4', widths: '25%,25%,25%,25%' }
+				].forEach( function ( preset ) {
+					html += '<button type="button" class="boldform-row-layout-btn' + ( preset.widths === current ? ' is-active' : '' ) + '" data-widths="' + escapeHtml( preset.widths ) + '" title="' + escapeHtml( preset.label ) + '">';
+					preset.widths.split( ',' ).forEach( function ( w ) {
+						html += '<span style="width:' + escapeHtml( w ) + '"></span>';
+					} );
+					html += '</button>';
+				} );
+
+				// What the chosen tile actually did, said in the same breath as
+				// the choice. Two cases now, not three: the branch describing
+				// "Put every field on its own screen" went with that switch.
+				var help;
+
+				if ( row.columns.length < 2 ) {
+					help = 'One question per screen. Add a column to put questions side by side on the same screen.';
+				} else {
+					help = 'Side-by-side questions share one screen. The other screens are not affected.';
+				}
+
+				return html + '</div>' +
+					'<p class="boldform-setting-help">' + escapeHtml( help ) + '</p></div>';
+			}
+
+			/**
+			 * This screen's six colours.
+			 *
+			 * Every one of them starts as "Form default" and stays that way until
+			 * the author changes it HERE. The alternative — pre-filling each picker
+			 * with the form's current value — looks identical and is a trap: the
+			 * author changes the form's colour six months later and nothing moves,
+			 * because every screen quietly pinned a copy of the old one. So an
+			 * untouched colour is stored as '' and the property is never emitted,
+			 * which is what leaves the form's own value free to cascade in.
+			 *
+			 * Background and question text sit side by side deliberately. Nothing
+			 * here stops an author making a screen unreadable, but the two colours
+			 * that decide it are at least visible together while choosing.
+			 */
+			function cvColourSettings( target, screenNumber, shared ) {
+				var html = '<div class="boldform-setting-group boldform-screen-colours">' +
+					'<label>Screen ' + screenNumber + ' colours</label>' +
+					'<p class="boldform-setting-help">' +
+						escapeHtml( shared
+							? 'Each one follows the form until you change it here, for every question on this screen.'
+							: 'Each one follows the form until you change it here.' ) +
+					'</p>';
+
+				/*
+				 * Three, not six.
+				 *
+				 * Accent, Button and Button text used to be offered here too, and
+				 * every one of them was inert: the only rules that read those
+				 * three tokens are the nav buttons, the progress bar, the dots and
+				 * the counter — all of which live on the WRAPPER, outside every
+				 * screen. A value set on a screen could never reach any of them,
+				 * so the controls stored a colour and changed nothing. They belong
+				 * to the form, and are on the Style tab.
+				 *
+				 * What is left is what a screen genuinely owns: what it is painted
+				 * on, and the two kinds of text inside it.
+				 */
+				[
+					[ [ 'cv_bg', 'Background', '#ffffff' ], [ 'cv_question_color', 'Question text', '#111827' ] ],
+					[ [ 'cv_answer_color', 'Answer text', '#111827' ] ]
+				].forEach( function ( pair ) {
+					html += '<div class="boldform-setting-row">';
+					pair.forEach( function ( spec ) {
+						html += screenColourField( target, spec[ 0 ], spec[ 1 ], spec[ 2 ] );
+					} );
+					html += '</div>';
+				} );
+
+				return html + '</div>';
+			}
+
+			/**
+			 * One colour, in one of two states.
+			 *
+			 * The SAME control the Style tab uses for every other colour in this
+			 * plugin, minus the opacity row these do not have: swatch, hex
+			 * box, reset. Two panels styling the same kind of thing with two
+			 * different-looking controls is a worse cost than the small amount of
+			 * markup shared here.
+			 *
+			 * A colour input cannot be empty — it reports #000000 when unset — so
+			 * "inherits" is carried outside the value: the stored string is '', the
+			 * hex box is left EMPTY so its "Default" placeholder shows, and reset
+			 * is disabled because there is nothing to undo. The swatch meanwhile
+			 * previews what the screen will actually look like, which is the form's
+			 * colour, or the stylesheet's if the form never set one.
+			 *
+			 * Classes are borrowed deliberately, and carefully: `bf-adv-colorpick`
+			 * because the generic swatch handler excludes it, `bf-adv-hex` for the
+			 * typography — but never `boldform-adv-field`, which is what scopes the
+			 * Style tab's handlers. Those write through the `--bf-*` variable
+			 * system these flat `cv_*` keys are not part of.
+			 */
+			function screenColourField( target, key, label, hardDefault ) {
+				var own       = target[ key ] || '';
+				var inherited = state.formSettings[ key ] || hardDefault;
+				var shown     = own || inherited;
+				var id        = 'boldform-screen-' + key.replace( /_/g, '-' );
+				var resetText = advLabel( 'reset' );
+
+				return '<div class="boldform-setting-group boldform-screen-colour' + ( own ? ' is-custom' : '' ) + '" data-cv-key="' + key + '">' +
+					'<label for="' + id + '">' + escapeHtml( label ) + '</label>' +
+					'<div class="boldform-color-field boldform-screen-colour__field" style="--bf-sw:' + escapeHtml( shown ) + '">' +
+						'<div class="boldform-color-swatch">' +
+							'<input type="color" id="' + id + '" class="bf-adv-colorpick" value="' + escapeHtml( shown ) + '" data-cv-key="' + key + '">' +
+						'</div>' +
+						// Empty when inheriting, so the placeholder speaks. A
+						// resolved hex here would read as a value this screen owns.
+						'<input type="text" class="bf-adv-hex bf-screen-hex" maxlength="7" placeholder="' + escapeHtml( advLabel( 'inheritDefault' ) ) + '" value="' + escapeHtml( own ) + '" spellcheck="false" data-cv-key="' + key + '">' +
+						'<button type="button" class="bf-adv-color-reset"' + ( own ? '' : ' disabled' ) + ' data-cv-key="' + key + '" title="' + escapeHtml( resetText ) + '" aria-label="' + escapeHtml( resetText ) + '">' +
+							'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>' +
+						'</button>' +
+					'</div>' +
+				'</div>';
+			}
+
+			/**
+			 * The controls themselves.
+			 *
+			 * Stores the attachment ID, not the URL: a stored URL breaks when the
+			 * site moves and cannot produce responsive sources.
+			 *
+			 * Called an IMAGE, not a background. "Behind the question" is only one
+			 * of the three placements, and the colour section directly above has a
+			 * control called Background — two different things under one word in
+			 * one panel.
+			 */
+			function cvMediaSettings( rowObj, screenNumber, coverage ) {
+				var layout   = rowObj.cv_media_layout || 'none';
+				var hasImg   = !! rowObj.cv_media_id;
+				var preview  = rowObj.cv_media_preview || '';
+
+				/** A range plus a live readout — "30" means nothing without one. */
+				function mediaRange( id, label, value, min, max, suffix ) {
+					return '<div class="boldform-setting-group boldform-row-media__range">' +
+						'<label for="' + id + '">' + escapeHtml( label ) +
+							'<output for="' + id + '" id="' + id + '-out">' + value + ( suffix || '' ) + '</output>' +
+						'</label>' +
+						// The track's fill is drawn from this, not by the browser's
+						// accent-color — which stops at the thumb's centre and left
+						// unfilled track showing under a readout saying 100%.
+						'<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" value="' + value + '" data-suffix="' + escapeHtml( suffix || '' ) + '" style="--bf-range-p:' + rangePercent( value, min, max ) + '">' +
+					'</div>';
+				}
+
+				var chooser = hasImg
+					? '<div class="boldform-row-media__thumb">' +
+							'<img src="' + escapeHtml( preview ) + '" alt="">' +
+							'<div class="boldform-row-media__thumb-actions">' +
+								'<button type="button" class="button button-small" id="boldform-row-media-pick">Replace</button>' +
+								'<button type="button" class="button button-small boldform-row-media__remove" id="boldform-row-media-remove">Remove</button>' +
+							'</div>' +
+						'</div>'
+					: '<button type="button" class="boldform-row-media__drop" id="boldform-row-media-pick">' +
+							'<span class="dashicons dashicons-format-image" aria-hidden="true"></span>' +
+							'<span class="boldform-row-media__drop-title">Choose an image</span>' +
+							'<span class="boldform-row-media__drop-hint">Wide images work best &mdash; 1600&times;900 or larger</span>' +
+						'</button>';
+
+				// WHERE the image goes, always visible — including before there is
+				// an image. It used to appear only after one was chosen, so the
+				// panel's empty state said "choose an image" and gave no hint that
+				// left, right and behind were even possible; the only placement
+				// anyone ever saw was the one it silently defaulted to.
+				//
+				// With no image yet, picking a placement IS how you add one: it
+				// records the intent and opens the media library, so the author
+				// answers "where" and "which" in that order instead of choosing
+				// blind and correcting afterwards.
+				var placements = [
+					{ value: 'left', label: 'Left' },
+					{ value: 'right', label: 'Right' },
+					{ value: 'background', label: 'Behind' }
+				].map( function ( option ) {
+					return '<button type="button" class="boldform-media-place__btn' +
+							( option.value === layout ? ' is-active' : '' ) + '"' +
+							' data-layout="' + option.value + '"' +
+							' aria-pressed="' + ( option.value === layout ? 'true' : 'false' ) + '">' +
+						'<span class="boldform-media-place__fig boldform-media-place__fig--' + option.value + '" aria-hidden="true"></span>' +
+						'<span class="boldform-media-place__label">' + escapeHtml( option.label ) + '</span>' +
+					'</button>';
+				} ).join( '' );
+
+				// Titled by the SCREEN, not by what happens to store it. The
+				// author is styling step 3, whether step 3 turns out to be a field
+				// or a row.
+				return '<div class="boldform-setting-group boldform-row-media">' +
+					'<label>Screen ' + screenNumber + ' image</label>' +
+					'<p class="boldform-setting-help">' + escapeHtml( coverage ) + '</p>' +
+					chooser +
+					'<div class="boldform-setting-group boldform-media-place">' +
+						'<label>Placement</label>' +
+						'<div class="boldform-media-place__row">' + placements + '</div>' +
+						( hasImg ? '' : '<p class="boldform-setting-help">Pick one to choose an image for it.</p>' ) +
+					'</div>' +
+					( hasImg ?
+						// Framing only matters once the image is cropped into a
+						// panel; with no placement there is nothing to position.
+						( 'none' === layout ? '' :
+							'<div class="boldform-row-media__grid">' +
+								mediaRange( 'boldform-row-media-x', 'Horizontal', ( typeof rowObj.cv_media_x === 'number' ? rowObj.cv_media_x : 50 ), 0, 100, '%' ) +
+								mediaRange( 'boldform-row-media-y', 'Vertical', ( typeof rowObj.cv_media_y === 'number' ? rowObj.cv_media_y : 50 ), 0, 100, '%' ) +
+							'</div>' +
+							mediaRange( 'boldform-row-media-brightness', 'Brightness', ( typeof rowObj.cv_media_brightness === 'number' ? rowObj.cv_media_brightness : 100 ), 10, 100, '%' ) +
+							( 'background' === layout ? '<p class="boldform-setting-help">Dim a busy image so the question stays readable on top of it.</p>' : '' ) +
+							// A number, not a range: a range cannot say "unset",
+							// and this control's whole point is that leaving it
+							// alone keeps following the default.
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-row-media-height">Height</label>' +
+								'<div class="boldform-input-suffix">' +
+									'<input type="number" id="boldform-row-media-height" min="80" max="2000" step="10" value="' + escapeHtml( rowObj.cv_media_height ? String( rowObj.cv_media_height ) : '' ) + '" placeholder="Default">' +
+									'<span class="boldform-input-suffix__unit">px</span>' +
+								'</div>' +
+								'<p class="boldform-setting-help">' +
+									escapeHtml( 'background' === layout
+										? 'How tall this screen is. Leave empty to follow the default.'
+										: 'How tall the image panel is. Leave empty to follow the default.' ) +
+								'</p>' +
+							'</div>'
+						) +
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-row-media-alt">Alt text</label>' +
+							'<input type="text" id="boldform-row-media-alt" value="' + escapeHtml( rowObj.cv_media_alt || '' ) + '" placeholder="Describe the image">' +
+							'<p class="boldform-setting-help">Leave empty if the image is decorative &mdash; it is then hidden from screen readers.</p>' +
+						'</div>'
+					: '' ) +
+				'</div>';
 			}
 
 			var isSubmitSelected = state.selectedFieldId === submitButtonId || ( selected && selected.field && 'submit' === selected.field.type );
@@ -2555,11 +3745,23 @@ jQuery(
 			$empty.hide();
 			var activeAccordion = state.activeSettingsAccordion || 'settings';
 
+			// Screen only exists in conversational mode. Left selected after the
+			// mode is switched off, every accordion in the panel would render
+			// closed and the field's settings would look like they had vanished.
+			if ( 'screen' === activeAccordion && ! cvIsOn() ) {
+				activeAccordion = 'settings';
+			}
+
 			$panel.removeAttr( 'hidden' ).html(
 				'<div class="boldform-setting-group">' +
 					'<label>' + escapeHtml( boldformLiteBuilder.labels.selectedField ) + '</label>' +
 					'<div class="boldform-setting-field-name">' + escapeHtml( selected.field.label || getLibraryItem( selected.field.type ).label ) + '</div>' +
 				'</div>' +
+
+				// --- Screen Accordion (conversational mode only) ---
+				// First, because on a conversational form the screen is the thing
+				// the author came to style. Empty string on an ordinary form.
+				screenSettings( selected ) +
 
 				// --- Settings Accordion ---
 				'<div class="boldform-field-accordion' + ( activeAccordion === 'settings' ? ' is-open' : '' ) + '" data-accordion="settings">' +
@@ -2748,23 +3950,52 @@ jQuery(
 							'<input type="number" id="boldform-setting-qty-default" value="' + escapeHtml( selected.field.qty_default || '1' ) + '" min="1" placeholder="1">' +
 						'</div>';
 					}() ) : '' ) +
-					( 'custom_amount' === selected.field.type ?
-						'<div class="boldform-setting-row">' +
+					( 'custom_amount' === selected.field.type ? ( function () {
+						// The generic Placeholder control is suppressed for every type in
+						// specialFieldTypes, so an amount field needs its own. Reusing the
+						// same element id keeps the existing live-typing and save wiring —
+						// no extra plumbing, and no chance of the two drifting apart.
+						var caLimits = hasAmountLimits( selected.field );
+						var caSymbol = getPaymentCurrencySymbol();
+
+						var markup =
 							'<div class="boldform-setting-group">' +
-								'<label for="boldform-setting-amount-min">Min Amount</label>' +
-								'<input type="number" id="boldform-setting-amount-min" value="' + escapeHtml( selected.field.amount_min || '' ) + '" min="0" step="0.01" placeholder="0.00">' +
+								'<label for="boldform-setting-placeholder">' + escapeHtml( boldformLiteBuilder.labels.placeholder || 'Placeholder' ) + '</label>' +
+								'<input type="text" id="boldform-setting-placeholder" value="' + escapeHtml( selected.field.placeholder || '' ) + '" placeholder="Enter amount">' +
 							'</div>' +
+							'<div class="boldform-switch-item">' +
+								'<label class="boldform-switch__row">' +
+									'<span class="boldform-switch__text">Set Amount Limits</span>' +
+									'<input type="checkbox" id="boldform-setting-amount-limits"' + ( caLimits ? ' checked' : '' ) + '>' +
+									'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+								'</label>' +
+							'</div>';
+
+						// Min/Max stay hidden until the switch is on, so a pay-what-you-want
+						// field shows nothing it does not use.
+						if ( caLimits ) {
+							markup +=
+								'<div class="boldform-setting-row">' +
+									'<div class="boldform-setting-group">' +
+										'<label for="boldform-setting-amount-min">Minimum Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+										'<input type="number" id="boldform-setting-amount-min" value="' + escapeHtml( selected.field.amount_min || '' ) + '" min="0" step="0.01" placeholder="no minimum">' +
+									'</div>' +
+									'<div class="boldform-setting-group">' +
+										'<label for="boldform-setting-amount-max">Maximum Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+										'<input type="number" id="boldform-setting-amount-max" value="' + escapeHtml( selected.field.amount_max || '' ) + '" min="0" step="0.01" placeholder="no maximum">' +
+									'</div>' +
+								'</div>';
+						}
+
+						markup +=
 							'<div class="boldform-setting-group">' +
-								'<label for="boldform-setting-amount-max">Max Amount</label>' +
-								'<input type="number" id="boldform-setting-amount-max" value="' + escapeHtml( selected.field.amount_max || '' ) + '" min="0" step="0.01" placeholder="unlimited">' +
-							'</div>' +
-						'</div>' +
-						'<div class="boldform-setting-group">' +
-							'<label for="boldform-setting-amount-default">Default Amount</label>' +
-							'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '0.00' ) + '" min="0" step="0.01" placeholder="0.00">' +
-						'</div>' +
-						''
-					: '' ) +
+								'<label for="boldform-setting-amount-default">Default Amount (' + escapeHtml( caSymbol ) + ')</label>' +
+								'<input type="number" id="boldform-setting-amount-default" value="' + escapeHtml( selected.field.amount_default || '' ) + '" min="0" step="0.01" placeholder="leave empty">' +
+								'<p class="boldform-setting-desc">Leave empty so visitors enter their own amount.</p>' +
+							'</div>';
+
+						return markup;
+					}() ) : '' ) +
 					( 'order_summary' === selected.field.type ?
 						''
 					: '' ) +
@@ -3289,6 +4520,20 @@ jQuery(
 		}
 
 		/**
+		 * Whether the template library should advertise its locked rows.
+		 *
+		 * Deliberately separate from showUpgradeCta(): an add-on can be installed —
+		 * which switches every shared CTA off — while still not entitled to the real
+		 * templates. Without its own switch those rows would simply disappear, taking
+		 * four whole categories with them and explaining nothing.
+		 *
+		 * @return {boolean}
+		 */
+		function showLockedTemplates() {
+			return !! boldformLiteBuilder.showLockedTemplates;
+		}
+
+		/**
 		 * A locked button that opens an upgrade dialog.
 		 *
 		 * aria-haspopup="dialog": it opens the dialog named by modalId, not a menu.
@@ -3420,7 +4665,18 @@ jQuery(
 		 * @return {void}
 		 */
 		function openUpgradeModal( id ) {
-			$( document.getElementById( id ) ).removeAttr( 'hidden' );
+			// Bail if the dialog isn't on this page. Buttons and their dialogs are
+			// gated by the same switch today, but there are now three such switches
+			// rather than one, so a future teaser could ship its button without its
+			// dialog. Without this guard that locks page scrolling with nothing
+			// visible to close.
+			var el = document.getElementById( id );
+
+			if ( ! el ) {
+				return;
+			}
+
+			$( el ).removeAttr( 'hidden' );
 			$( 'body' ).addClass( 'boldform-upgrade-modal-open' );
 		}
 
@@ -3778,10 +5034,144 @@ jQuery(
 					) +
 				'</div>';
 
+			// ── Conversational pane ──────────────────────────────────────────────
+			// Presentation-only settings. Nothing here alters the stored form, so
+			// the toggle is reversible at any time and the design survives being
+			// switched off (see cv_* in normalize_form_settings()).
+			var cvEnabled   = !! state.formSettings.cv_enabled;
+			var cvNavAlign  = state.formSettings.cv_nav_align || 'left';
+			var cvProgAlign = state.formSettings.cv_progress_align || 'left';
+			var cvProgress  = state.formSettings.cv_progress  || 'bar';
+			var cvTransition= state.formSettings.cv_transition || 'slide';
+
+			/**
+			 * One toggle row, using the builder's own switch markup.
+			 *
+			 * The switch is a label wrapping the checkbox plus a track/thumb pair;
+			 * writing a bare checkbox instead leaves an unstyled control overlapping
+			 * its own text.
+			 */
+			function cvSwitch( id, label, on ) {
+				return '<div class="boldform-switch-item">' +
+					'<label class="boldform-switch__row">' +
+						'<span class="boldform-switch__text">' + escapeHtml( label ) + '</span>' +
+						'<input type="checkbox" id="' + id + '"' + ( on ? ' checked' : '' ) + '>' +
+						'<span class="boldform-switch__track"><span class="boldform-switch__thumb"></span></span>' +
+					'</label>' +
+				'</div>';
+			}
+
+			var conversationalPane =
+				'<div class="bfs-stab-pane-head">' +
+					'<h3>Conversational Mode</h3>' +
+					'<p>Ask one question at a time, like a conversation. Your fields, layout and logic stay exactly as they are — this only changes how the form is presented, and you can switch back at any time.</p>' +
+				'</div>' +
+				'<div class="bfsп-email-block">' +
+					'<div class="bfsп-email-block__head">' +
+						'<span class="bfsп-email-block__title">Enable Conversational Mode</span>' +
+						'<label class="boldform-switch">' +
+							'<input type="checkbox" id="boldform-cv-enabled"' + ( cvEnabled ? ' checked' : '' ) + '>' +
+							'<span class="boldform-switch__slider"></span>' +
+						'</label>' +
+					'</div>' +
+					( cvEnabled ?
+						'<div class="bfsп-email-block__body">' +
+							'<div class="boldform-setting-row">' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-progress">Progress indicator</label>' +
+									'<select id="boldform-cv-progress">' +
+										'<option value="bar"' +     ( 'bar' === cvProgress ? ' selected' : '' ) +     '>Progress bar</option>' +
+										'<option value="dots"' +    ( 'dots' === cvProgress ? ' selected' : '' ) +    '>Dots</option>' +
+										'<option value="counter"' + ( 'counter' === cvProgress ? ' selected' : '' ) + '>Counter (2 of 7)</option>' +
+										'<option value="percent"' + ( 'percent' === cvProgress ? ' selected' : '' ) + '>Percentage</option>' +
+										'<option value="none"' +    ( 'none' === cvProgress ? ' selected' : '' ) +    '>None</option>' +
+									'</select>' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-transition">Transition</label>' +
+									'<select id="boldform-cv-transition">' +
+										'<option value="slide"' + ( 'slide' === cvTransition ? ' selected' : '' ) + '>Slide</option>' +
+										'<option value="fade"' +  ( 'fade' === cvTransition ? ' selected' : '' ) +  '>Fade</option>' +
+										'<option value="none"' +  ( 'none' === cvTransition ? ' selected' : '' ) +  '>None</option>' +
+									'</select>' +
+								'</div>' +
+							'</div>' +
+						'<p class="boldform-setting-desc">Visitors who prefer reduced motion never see animation, whichever option you choose.</p>' +
+							// A bar is full width and cannot move, and "none" renders
+							// no indicator at all — so this appears only for the three
+							// that are inline boxes with room around them.
+							( cvProgressMoves() ?
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-progress-align">Indicator position</label>' +
+									'<select id="boldform-cv-progress-align">' +
+										'<option value="left"' +   ( 'left' === cvProgAlign ? ' selected' : '' ) +   '>Left</option>' +
+										'<option value="center"' + ( 'center' === cvProgAlign ? ' selected' : '' ) + '>Centred</option>' +
+										'<option value="right"' +  ( 'right' === cvProgAlign ? ' selected' : '' ) +  '>Right</option>' +
+									'</select>' +
+								'</div>' : '' ) +
+							'<div class="boldform-setting-row">' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-next-text">Next button text</label>' +
+									'<input type="text" id="boldform-cv-next-text" value="' + escapeHtml( state.formSettings.cv_next_text || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'next' ) ) + '">' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-prev-text">Back button text</label>' +
+									'<input type="text" id="boldform-cv-prev-text" value="' + escapeHtml( state.formSettings.cv_prev_text || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'prev' ) ) + '">' +
+								'</div>' +
+							'</div>' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-cv-nav-align">Button alignment</label>' +
+								'<select id="boldform-cv-nav-align">' +
+									'<option value="left"' +   ( 'left' === cvNavAlign ? ' selected' : '' ) +   '>Left, with the question</option>' +
+									'<option value="center"' + ( 'center' === cvNavAlign ? ' selected' : '' ) + '>Centred</option>' +
+									'<option value="split"' +  ( 'split' === cvNavAlign ? ' selected' : '' ) +  '>Back left, Next right</option>' +
+									'<option value="right"' +  ( 'right' === cvNavAlign ? ' selected' : '' ) +  '>Both on the right</option>' +
+								'</select>' +
+							'</div>' +
+							cvSwitch( 'boldform-cv-welcome-enabled', 'Open with a welcome screen', state.formSettings.cv_welcome_enabled ) +
+							( state.formSettings.cv_welcome_enabled ?
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-welcome-title">Welcome heading</label>' +
+									// The placeholder is what an empty field actually
+									// produces, read from the renderer rather than
+									// written here — see cvDefaultLabel().
+									'<input type="text" id="boldform-cv-welcome-title" value="' + escapeHtml( state.formSettings.cv_welcome_title || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'welcome' ) ) + '">' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-welcome-text">Welcome text <span class="boldform-setting-sublabel">(optional)</span></label>' +
+									'<textarea id="boldform-cv-welcome-text" rows="2" placeholder="This will only take a minute.">' + escapeHtml( state.formSettings.cv_welcome_text || '' ) + '</textarea>' +
+								'</div>' +
+								'<div class="boldform-setting-group">' +
+									'<label for="boldform-cv-welcome-btn">Start button text</label>' +
+									'<input type="text" id="boldform-cv-welcome-btn" value="' + escapeHtml( state.formSettings.cv_welcome_btn || '' ) + '" placeholder="' + escapeHtml( cvDefaultLabel( 'start' ) ) + '">' +
+								'</div>' : ''
+							) +
+							// Named for what it DOES, now that it does it. It used
+							// to read "Show the 'press Enter' hint" and only draw
+							// the label — Enter advanced either way — so an author
+							// who turned it off to stop visitors skipping ahead
+							// got a form that still skipped ahead.
+							cvSwitch( 'boldform-cv-key-hint', 'Let Enter move to the next screen', state.formSettings.cv_key_hint ) +
+							'<p class="boldform-setting-desc">Visitors can press Enter instead of clicking, and a small "press Enter" note appears beside the button so they know. Turn this off and Enter does nothing — useful when a stray keypress should not skip a question.</p>' +
+							cvSwitch( 'boldform-cv-media-hide-mobile', 'Hide screen images on phones', state.formSettings.cv_media_hide_mobile ) +
+							// Stale since the background became a SCREEN setting: it
+							// used to say "select its row", which is the navigation
+							// step that whole change existed to remove.
+							'<p class="boldform-setting-desc">Add an image to a screen from its own settings &mdash; select the question on the Builder tab, or use the gear on its card.</p>' +
+							// Two places, and the difference matters: the Style tab
+							// sets what every screen STARTS from, a screen's own
+							// settings override it. Only behaviour is set here.
+							'<p class="boldform-setting-desc">Colours every screen starts from are on the <strong>Style</strong> tab, under Default Screen Colours. Any screen can override them from its own settings.</p>' +
+						'</div>' : ''
+					) +
+				'</div>';
+
+
 			// ── Build tabbed layout ──────────────────────────────────────────────
 			var tabs = [
 				{ id: 'confirmation',  icon: '<span class="dashicons dashicons-yes"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabConfirmation  || 'Confirmation' ),      desc: escapeHtml( boldformLiteBuilder.labels.tabConfirmationDesc  || 'Redirect or message' ) },
 				{ id: 'email',         icon: '<span class="dashicons dashicons-email-alt"></span>', label: escapeHtml( boldformLiteBuilder.labels.tabEmail         || 'Email Notification' ), desc: escapeHtml( boldformLiteBuilder.labels.tabEmailDesc         || 'Admin & user emails' ) },
+				{ id: 'conversational', icon: '<span class="dashicons dashicons-format-chat"></span>', label: 'Conversational', desc: 'One question at a time' },
 				{ id: 'security',      icon: '<span class="dashicons dashicons-privacy"></span>', label: 'Security',       desc: 'Duplicate prevention' }
 			];
 
@@ -3807,6 +5197,7 @@ jQuery(
 					'<div class="bfs-stab-content">' +
 						'<div class="bfs-stab-pane" data-pane="confirmation">' + confirmationPane + '</div>' +
 						'<div class="bfs-stab-pane" data-pane="email">' + emailPane + '</div>' +
+						'<div class="bfs-stab-pane" data-pane="conversational">' + conversationalPane + '</div>' +
 						'<div class="bfs-stab-pane" data-pane="security">' + securityPane + '</div>' +
 					'</div>' +
 				'</div>';
@@ -4037,7 +5428,8 @@ jQuery(
 					'</div>' +
 					'<div class="boldform-style-section__body">' + themeCardsHtml + '</div>' +
 				'</div>' +
-				renderAdvancedStyleSections()
+				renderAdvancedStyleSections() +
+				cvStyleSection()
 			);
 			bfSyncFormMaxWidthState();
 			bfRefreshResetStates();
@@ -4981,6 +6373,295 @@ jQuery(
 			'</div>';
 		}
 
+		/**
+		 * The Style-tab preview when conversational mode is on.
+		 *
+		 * Shows the SELECTED screen exactly as a visitor meets it — progress, the
+		 * question, the Next button and the key hint — so the six colours can be
+		 * judged against the thing they actually paint. It reuses the real
+		 * .boldform-cv class names and the real --bfc-* custom properties, so it
+		 * cannot drift from the front end the way a hand-drawn mock would.
+		 *
+		 * It follows the selection rather than pinning screen 1 because screens
+		 * can now differ from one another: an author styling screen 4 while
+		 * watching screen 1 not change is worse served by a preview than by none.
+		 *
+		 * Deliberately static: this is a colour preview, not a second engine.
+		 */
+		function cvPreviewMarkup() {
+			var screens = cvScreens();
+			var total   = screens.length;
+
+			if ( ! total ) {
+				return '<div class="boldform-style-preview-empty">' +
+					escapeHtml( boldformLiteBuilder.labels.stylePreviewEmpty || 'Add fields in the Builder tab to preview your styling here.' ) +
+				'</div>';
+			}
+
+			// Which screen the author is looking at. A field that never becomes a
+			// screen (hidden, page break) maps to nothing, so screen 1 stands in.
+			var index = ( cvScreenMap().byField[ state.selectedFieldId ] || 1 ) - 1;
+
+			if ( index < 0 || index >= total ) {
+				index = 0;
+			}
+
+			var screen = screens[ index ];
+			var shown  = index + 1;
+
+			var lookup = {};
+			getAllRows().forEach( function ( row ) {
+				( row.columns || [] ).forEach( function ( column ) {
+					( column.fields || [] ).forEach( function ( field ) { lookup[ field.id ] = field; } );
+				} );
+			} );
+
+			// Whichever object IS this screen — the same resolution the panel and
+			// the picker use.
+			var owner = screen.isRow
+				? ( getAllRows()[ screen.rowIndex ] || {} )
+				: ( lookup[ screen.fieldIds[ 0 ] ] || {} );
+
+			/** Emits only the colours that are SET: '' has to inherit here too. */
+			function cvVars( source, map ) {
+				return map.filter( function ( pair ) {
+					return !! source[ pair[ 0 ] ];
+				} ).map( function ( pair ) {
+					return pair[ 1 ] + ':' + source[ pair[ 0 ] ];
+				} ).join( ';' );
+			}
+
+			// Same property names build_custom_properties() emits, so an unset
+			// colour inherits here exactly as it does on the front end.
+			var vars = cvVars( state.formSettings, [
+				[ 'cv_bg', '--bfc-bg' ],
+				[ 'cv_question_color', '--bfc-question' ],
+				[ 'cv_answer_color', '--bfc-answer' ],
+				[ 'cv_btn_color', '--bfc-btn' ],
+				[ 'cv_btn_text_color', '--bfc-btn-text' ],
+				[ 'cv_accent', '--bfc-accent' ],
+				// Wrapper only. The screen map below deliberately does not carry
+				// these — the progress row and the nav are not inside a screen, so
+				// a screen-level value could never apply.
+				[ 'cv_track_color', '--bfc-track' ],
+				[ 'cv_prev_color', '--bfc-prev' ],
+				[ 'cv_prev_bg', '--bfc-prev-bg' ],
+				[ 'cv_hint_color', '--bfc-hint' ]
+			] );
+
+			// The hint's dimming is cancelled by a second property, emitted only
+			// when a colour is set — mirroring build_custom_properties(). Without
+			// this the preview shows the author a faded version of the colour
+			// they picked while the page shows the colour itself, and the pane
+			// that exists to answer "what will this look like" answers wrongly.
+			if ( state.formSettings.cv_hint_color ) {
+				vars += ( vars ? ';' : '' ) + '--bfc-hint-opacity:1';
+			}
+
+			// The screen's own overrides, on the screen element — the same names
+			// on the same element as the front end, so an override previews
+			// exactly as it renders. cv_bg becomes --bfc-screen-bg here for the
+			// same reason it does there: --bfc-bg paints the wrapper, and the
+			// screen sits inside it.
+			var screenVars = cvVars( owner, [
+				[ 'cv_bg', '--bfc-screen-bg' ],
+				[ 'cv_question_color', '--bfc-question' ],
+				[ 'cv_answer_color', '--bfc-answer' ]
+			] );
+
+			/**
+			 * The screen's image, as the page will build it.
+			 *
+			 * A DELIBERATE MIRROR of build_row_media_attrs() in the shortcode and
+			 * of attachMedia() in the engine, which between them decide three
+			 * things on the front end: the placement classes go on the SCREEN,
+			 * the --bfc-media-* properties go on the SCREEN, and the <figure> is
+			 * the screen's FIRST child. Any of the three in the wrong place and
+			 * the stylesheet — which is the same stylesheet — lays it out
+			 * differently here than it does on the page.
+			 *
+			 * Reads cv_media_preview, the one media key the server resolves into
+			 * the builder's structure and never persists. The front end resolves
+			 * the attachment ID instead, so the preview shows a medium file where
+			 * the page shows a large one; that is a difference in bytes, not in
+			 * layout, and nothing here depends on the size.
+			 */
+			function cvMediaPreview( source ) {
+				var none   = { cls: '', vars: '', figure: '' };
+				var layout = source.cv_media_layout || 'none';
+
+				if ( [ 'left', 'right', 'background' ].indexOf( layout ) === -1 ) {
+					return none;
+				}
+
+				// Same two-part test the renderer applies: an ID with no
+				// resolvable file degrades to no media, never a broken image.
+				if ( ! source.cv_media_id || ! source.cv_media_preview ) {
+					return none;
+				}
+
+				var clamp = function ( value, lo, hi, fallback ) {
+					var n = parseInt( value, 10 );
+					return isNaN( n ) ? fallback : Math.max( lo, Math.min( hi, n ) );
+				};
+
+				var x    = clamp( source.cv_media_x, 0, 100, 50 );
+				var y    = clamp( source.cv_media_y, 0, 100, 50 );
+				var dim  = clamp( source.cv_media_brightness, 0, 100, 100 );
+				// 0 means "use the stylesheet's default", so the property is
+				// omitted entirely rather than set to a number — the same
+				// contract the empty string carries for the colours above.
+				var high = source.cv_media_height > 0 ? clamp( source.cv_media_height, 80, 2000, 0 ) : 0;
+				var alt  = source.cv_media_alt || '';
+
+				var vars = '--bfc-media-x:' + x + '%;--bfc-media-y:' + y + '%' +
+					';--bfc-media-dim:' + ( dim / 100 ).toFixed( 2 ) +
+					( high ? ';--bfc-media-h:' + high + 'px' : '' );
+
+				return {
+					cls:  ' boldform-lite-form__row--media boldform-lite-form__row--media-' + layout,
+					vars: vars,
+					// Decorative when the author supplied no alt text, exactly as
+					// the renderer decides it.
+					figure: '<figure class="boldform-lite-form__row-media" aria-hidden="' + ( alt ? 'false' : 'true' ) + '">' +
+						'<img src="' + escapeHtml( source.cv_media_preview ) + '" alt="' + escapeHtml( alt ) + '" loading="lazy" decoding="async">' +
+					'</figure>'
+				};
+			}
+
+			var media = cvMediaPreview( owner );
+
+			if ( media.vars ) {
+				screenVars += ( screenVars ? ';' : '' ) + media.vars;
+			}
+
+			var progress   = state.formSettings.cv_progress || 'bar';
+			var transition = state.formSettings.cv_transition || 'slide';
+			var nextText   = state.formSettings.cv_next_text || cvDefaultLabel( 'next' );
+			var prevText   = state.formSettings.cv_prev_text || cvDefaultLabel( 'prev' );
+			var ratio      = Math.round( ( shown / total ) * 100 );
+
+			var progressMarkup = '';
+			if ( 'bar' === progress ) {
+				progressMarkup = '<div class="boldform-cv__bar"><span class="boldform-cv__bar-fill" style="width:' + ratio + '%"></span></div>';
+			} else if ( 'dots' === progress ) {
+				var dots = '';
+				for ( var d = 0; d < total; d++ ) {
+					dots += '<span class="boldform-cv__dot' + ( d < shown ? ' is-done' : '' ) + '"></span>';
+				}
+				progressMarkup = '<div class="boldform-cv__dots">' + dots + '</div>';
+			} else if ( 'counter' === progress ) {
+				progressMarkup = '<span class="boldform-cv__count">' + shown + ' of ' + total + '</span>';
+			} else if ( 'percent' === progress ) {
+				progressMarkup = '<span class="boldform-cv__count">' + ratio + '% completed</span>';
+			}
+
+			if ( progressMarkup ) {
+				progressMarkup = '<div class="boldform-cv__progress">' + progressMarkup + '</div>';
+			}
+
+			// The welcome cover is what a visitor sees first, so it is what the
+			// preview opens on — but only while the author is not looking at a
+			// particular question. Selecting one on the Builder tab is a request
+			// to see THAT screen, and a cover that outranked the selection would
+			// leave the question styling with no preview at all, which is the one
+			// thing this pane exists to provide.
+			var body = '';
+			// Asks cvWelcomeTitle() rather than re-deriving the fallback, so the
+			// preview and the page can never disagree about what the cover says.
+			var welcomeTitle = cvWelcomeTitle();
+			var welcomeText  = ( state.formSettings.cv_welcome_text || '' ).trim();
+			var isWelcome    = !! state.formSettings.cv_welcome_enabled && ! state.selectedFieldId;
+
+			if ( isWelcome ) {
+				body = '<div class="boldform-cv__welcome">' +
+					( welcomeTitle ? '<h2 class="boldform-cv__welcome-title">' + escapeHtml( welcomeTitle ) + '</h2>' : '' ) +
+					( welcomeText ? '<div class="boldform-cv__welcome-text">' + welcomeText + '</div>' : '' ) +
+					'<button type="button" class="boldform-cv__btn boldform-cv__welcome-btn">' +
+						escapeHtml( state.formSettings.cv_welcome_btn || cvDefaultLabel( 'start' ) ) +
+					'</button>' +
+				'</div>';
+			} else {
+				var columns = screen.isRow
+					? ( ( getAllRows()[ screen.rowIndex ] || {} ).columns || [] ).length || 1
+					: 1;
+
+				var fieldsMarkup = '';
+				screen.fieldIds.forEach( function ( id ) {
+					if ( ! lookup[ id ] ) { return; }
+					fieldsMarkup += '<div class="boldform-canvas-field"><div class="boldform-canvas-field-body">' +
+						renderInputPreview( lookup[ id ] ) +
+					'</div></div>';
+				} );
+
+				body = '<div class="boldform-cv__viewport">' +
+					'<div class="boldform-lite-form__row boldform-cv-screen boldform-cv-screen--cols-' +
+						escapeHtml( columns > 3 ? 'many' : String( columns ) ) + ' is-active' + media.cls + '"' +
+						( screenVars ? ' style="' + escapeHtml( screenVars ) + '"' : '' ) + '>' +
+						// FIRST, like the engine's insertBefore(): `left` and
+						// `right` place it with padding on the screen and an
+						// absolute figure, so source order is what decides which
+						// of two absolutely-positioned children paints on top.
+						media.figure +
+						fieldsMarkup +
+					'</div>' +
+				'</div>' +
+				'<div class="boldform-cv__nav">' +
+					// Back appears on exactly the screens it appears on for a
+					// visitor — never on the first — so the alignment an author
+					// picks previews as it will render rather than as a mock-up.
+					( shown > 1
+						? '<button type="button" class="boldform-cv__btn boldform-cv__btn--prev">' + escapeHtml( prevText ) + '</button>'
+						: '' ) +
+					'<button type="button" class="boldform-cv__btn boldform-cv__btn--next">' + escapeHtml( nextText ) + '</button>' +
+					( state.formSettings.cv_key_hint
+						? '<span class="boldform-cv__hint">press <kbd>Enter</kbd></span>'
+						: '' ) +
+				'</div>';
+			}
+
+			// The selection is made on the Builder tab and read here, so without
+			// this the author has no way to tell which screen they are judging.
+			var caption = '<div class="boldform-cv-preview-cap">' +
+				escapeHtml( isWelcome
+					? 'Welcome screen'
+					: 'Screen ' + shown + ' of ' + total ) +
+			'</div>';
+
+			// is-ready is not decoration, and there is no engine here to add it.
+			//
+			// conversational.css reveals a screen only under
+			// `.boldform-cv.is-ready` — the NO-JS CONTRACT: without JavaScript
+			// the form has to stay an ordinary submittable form, so the mode's
+			// look and its chrome stay off until the engine is actually running.
+			// 53 of that stylesheet's 87 rules sit behind it, including the
+			// question type scale, the 44px control floor, the wrapper padding
+			// and `display` on the nav.
+			//
+			// This preview is a hand-built still with no engine, so it says so
+			// itself. Without it the author was shown a plain stack of small
+			// fields and no OK button — a preview of the no-JS fallback, which
+			// is the one state they are not styling.
+			return caption +
+				'<div class="boldform-cv boldform-cv--preview is-ready boldform-cv--progress-' + escapeHtml( progress ) +
+					' boldform-cv--nav-' + escapeHtml( state.formSettings.cv_nav_align || 'left' ) +
+					' boldform-cv--progress-align-' + escapeHtml( state.formSettings.cv_progress_align || 'left' ) +
+					// "Hide screen images on phones" is a @media rule on the front
+					// end and the preview stage is a NARROWED DIV, not a narrow
+					// window, so that rule can never fire in here. builder.css
+					// answers this class under .is-device-mobile instead. Emitted
+					// unconditionally-shaped like the front end's own gate: absent
+					// key means on.
+					( ( typeof state.formSettings.cv_media_hide_mobile === 'undefined' || state.formSettings.cv_media_hide_mobile )
+						? ' boldform-cv--media-hide-mobile'
+						: '' ) +
+					' boldform-cv--motion-' + escapeHtml( transition ) + '"' +
+					( vars ? ' style="' + escapeHtml( vars ) + '"' : '' ) + '>' +
+				progressMarkup +
+				body +
+			'</div>';
+		}
+
 		function renderStylePreview() {
 			var $canvas = $( '#boldform-style-preview-canvas' );
 
@@ -4999,6 +6680,11 @@ jQuery(
 						escapeHtml( boldformLiteBuilder.labels.stylePreviewEmpty || 'Add fields in the Builder tab to preview your styling here.' ) +
 					'</div>'
 				);
+				return;
+			}
+
+			if ( cvIsOn() ) {
+				$canvas.html( cvPreviewMarkup() );
 				return;
 			}
 
@@ -5235,7 +6921,7 @@ jQuery(
 		function groupedTemplateTeasers( realTemplates ) {
 			var grouped = {};
 
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return grouped;
 			}
 
@@ -5258,7 +6944,7 @@ jQuery(
 		 * @return {Object|null} The locked entry, or null.
 		 */
 		function lockedTemplate( key ) {
-			if ( ! showUpgradeCta() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
+			if ( ! showLockedTemplates() || ! Array.isArray( boldformLiteBuilder.premiumTemplates ) ) {
 				return null;
 			}
 			var found = null;
@@ -5582,7 +7268,47 @@ jQuery(
 				);
 		}
 
+		/**
+		 * Marks the canvas while a drag is in flight, so hidden empty columns
+		 * can reappear as drop targets for exactly as long as they are useful.
+		 *
+		 * THIS IS NOT DECORATION. sortable.js finds a drop target by hit-testing
+		 * every registered container's bounding rect and skipping any that
+		 * measures 0x0 (`if ( ! rect.width && ! rect.height ) continue`). A
+		 * display:none column is therefore not merely invisible — it is not a
+		 * drop target at all, and a field could never be put back into it. The
+		 * reveal is what makes hiding them safe.
+		 *
+		 * Bound ONCE on the document, not per render: setupSortables() runs on
+		 * every canvas render, and listeners added there would multiply. The
+		 * document is also the only place that catches a drag starting in the
+		 * field library and ending on the canvas.
+		 *
+		 * Both `dragend` and `drop` clear it. `dragend` alone is the documented
+		 * pair for `dragstart`, but a drag that ends over a container which
+		 * re-renders the canvas can lose its source element first; `drop` is the
+		 * belt to that braces, and clearing twice costs nothing.
+		 */
+		function bindCanvasDragState() {
+			var canvas = document.getElementById( 'boldform-canvas' );
+
+			if ( ! canvas || canvas.__bfDragStateBound ) {
+				return;
+			}
+
+			canvas.__bfDragStateBound = true;
+
+			var on  = function () { canvas.classList.add( 'is-dragging' ); };
+			var off = function () { canvas.classList.remove( 'is-dragging' ); };
+
+			document.addEventListener( 'dragstart', on );
+			document.addEventListener( 'dragend', off );
+			document.addEventListener( 'drop', off );
+		}
+
 		function setupSortables() {
+			bindCanvasDragState();
+
 			if ( document.getElementById( 'boldform-canvas-rows' ) ) {
 				Sortable.create(
 					document.getElementById( 'boldform-canvas-rows' ),
@@ -5999,6 +7725,16 @@ jQuery(
 			renderAll();
 		} );
 
+		// Custom Amount — "Set Amount Limits" switch. Re-renders so the Minimum and
+		// Maximum controls appear or disappear with it, and the canvas preview picks
+		// up (or drops) the limits hint at the same time.
+		$( document ).on( 'change', '#boldform-setting-amount-limits', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) return;
+			selected.field.amount_limits = $( this ).is( ':checked' );
+			renderAll();
+		} );
+
 		// Conditional logic — enable/disable toggle.
 		$( document ).on( 'change', '#boldform-setting-cond-enabled', function () {
 			var selected = getSelectedFieldLocation();
@@ -6343,7 +8079,9 @@ jQuery(
 					return;
 				}
 
-				setActiveColumn( Number( $column.data( 'row-index' ) ), Number( $column.data( 'column-index' ) ) );
+				// An explicit pick — this is the one place the author says
+				// "put the next field HERE", and the field library honours it.
+				setActiveColumn( Number( $column.data( 'row-index' ) ), Number( $column.data( 'column-index' ) ), true );
 				renderCanvas();
 			}
 		);
@@ -6455,6 +8193,56 @@ jQuery(
 			}
 		);
 
+
+		// Screen settings gear — on a field card when the field is the screen, on
+		// the row card when the row is. Both land in the same panel: screen
+		// settings live in Field Settings, so a row-screen selects the first
+		// question on it to get there. One destination, so the author never has
+		// to learn which kind of screen they are looking at.
+		$( document ).on(
+			'click',
+			'.boldform-screen-settings',
+			function ( event ) {
+				event.stopPropagation();
+
+				var $field = $( this ).closest( '.boldform-canvas-field' );
+
+				if ( ! $field.length ) {
+					// The row card's gear: the screen is the row, and the panel is
+					// reached through any question on it.
+					var rowIndex = Number( $( this ).closest( '.boldform-row' ).data( 'row-index' ) );
+					var row      = getAllRows()[ rowIndex ];
+					var first    = null;
+
+					if ( row ) {
+						row.columns.some( function ( column ) {
+							if ( column.fields.length ) {
+								first = column.fields[ 0 ];
+								return true;
+							}
+							return false;
+						} );
+					}
+
+					if ( ! first ) {
+						return;
+					}
+
+					state.selectedFieldId = first.id;
+				} else {
+					state.selectedFieldId = $field.data( 'field-id' );
+				}
+
+				state.selectedRowIndex = null;
+				// The gear points AT the Screen section, so it opens it. Without
+				// this the panel opens on Settings and the author has to find the
+				// thing the button they just pressed was named after.
+				state.activeSettingsAccordion = 'screen';
+				switchEditorView( 'builder' );
+				switchSidebarTab( 'settings' );
+				renderAll();
+			}
+		);
 
 		// Row settings button click.
 		$( document ).on(
@@ -6616,6 +8404,12 @@ jQuery(
 				if ( $( '#boldform-setting-qty-default' ).length ) {
 					selected.field.qty_default = $( '#boldform-setting-qty-default' ).val();
 				}
+				if ( $( '#boldform-setting-amount-limits' ).length ) {
+					selected.field.amount_limits = $( '#boldform-setting-amount-limits' ).is( ':checked' );
+				}
+				// Min/Max are only in the DOM while the switch is on. The .length guard
+				// means switching it off leaves the stored bounds untouched, so turning
+				// it back on restores what was configured rather than a blank pair.
 				if ( $( '#boldform-setting-amount-min' ).length ) {
 					selected.field.amount_min = $( '#boldform-setting-amount-min' ).val();
 				}
@@ -6897,6 +8691,223 @@ jQuery(
 			}
 		);
 
+		// ── Screen styling: background media and colours ─────────────────────
+		// Mirrors the SVG-upload flow below, with one deliberate difference: it
+		// stores attachment.id, not attachment.url. A stored URL breaks when the
+		// site moves and cannot produce responsive sources.
+		function currentScreenTarget() {
+			// Styling belongs to a SCREEN, and a screen is sometimes a row and
+			// sometimes a field. The author only ever selects a question, so this
+			// resolves from there — and it MUST resolve exactly the way
+			// screenSettings() did. If the two ever disagreed the panel would be
+			// reading one object while every control wrote to another, and a
+			// chosen image or colour would simply never appear.
+			if ( ! cvIsOn() ) {
+				return null;
+			}
+
+			var selected = getSelectedFieldLocation();
+
+			if ( ! selected || ! selected.field ) {
+				return null;
+			}
+
+			// getAllRows() is what the panel read from, so the picker writes back
+			// to the same objects.
+			return cvScreenMap().byRow[ selected.rowIndex ]
+				? ( getAllRows()[ selected.rowIndex ] || null )
+				: selected.field;
+		}
+
+		/**
+		 * Opens the media library for the screen currently being edited.
+		 *
+		 * Shared by the drop zone, Replace, and a placement tile clicked before
+		 * there is any image — "where" and "which" are one decision, so choosing
+		 * a placement first has to be able to finish the job.
+		 */
+		function openScreenMediaPicker() {
+			if ( typeof wp === 'undefined' || ! wp.media ) { return; }
+
+			var row = currentScreenTarget();
+			if ( ! row ) { return; }
+
+			var frame = wp.media( {
+				title: 'Choose screen image',
+				button: { text: 'Use this image' },
+				multiple: false,
+				library: { type: 'image' }
+			} );
+
+			frame.on( 'select', function () {
+				var attachment = frame.state().get( 'selection' ).first().toJSON();
+				row.cv_media_id = attachment.id;
+				// Preview URL only — never persisted; the renderer resolves the
+				// attachment fresh on every render.
+				row.cv_media_preview = attachment.sizes && attachment.sizes.medium
+					? attachment.sizes.medium.url
+					: attachment.url;
+				// Only when the author expressed no preference. A placement
+				// chosen on the way in must survive the pick.
+				if ( ! row.cv_media_layout || 'none' === row.cv_media_layout ) {
+					row.cv_media_layout = 'background';
+				}
+				if ( ! row.cv_media_alt && attachment.alt ) {
+					row.cv_media_alt = attachment.alt;
+				}
+				markDirty();
+				renderAll();
+			} );
+
+			frame.open();
+		}
+
+		$( document ).on( 'click', '#boldform-row-media-pick', function ( e ) {
+			e.preventDefault();
+			openScreenMediaPicker();
+		} );
+
+		$( document ).on( 'click', '#boldform-row-media-remove', function ( e ) {
+			e.preventDefault();
+			var row = currentScreenTarget();
+			if ( ! row ) { return; }
+			row.cv_media_id = 0;
+			row.cv_media_preview = '';
+			row.cv_media_layout = 'none';
+			markDirty();
+			renderAll();
+		} );
+
+		// A placement tile. With an image it switches where that image sits;
+		// without one it records the intent and goes straight on to choosing the
+		// image, so the empty state is a real entry point rather than a preview
+		// of controls the author cannot reach yet.
+		$( document ).on( 'click', '.boldform-media-place__btn', function ( e ) {
+			e.preventDefault();
+			var row = currentScreenTarget();
+			if ( ! row ) { return; }
+
+			row.cv_media_layout = $( this ).data( 'layout' ) || 'background';
+			markDirty();
+
+			if ( ! row.cv_media_id ) {
+				openScreenMediaPicker();
+				return;
+			}
+
+			// Switching placement changes which framing controls apply, so the
+			// panel is rebuilt — unlike a range, which must not be.
+			renderAll();
+		} );
+
+		$( document ).on( 'change input', '#boldform-row-media-x, #boldform-row-media-y, #boldform-row-media-brightness, #boldform-row-media-height, #boldform-row-media-alt', function () {
+			var row = currentScreenTarget();
+			if ( ! row ) { return; }
+			if ( $( '#boldform-row-media-x' ).length )          { row.cv_media_x = Number( $( '#boldform-row-media-x' ).val() ); }
+			if ( $( '#boldform-row-media-y' ).length )          { row.cv_media_y = Number( $( '#boldform-row-media-y' ).val() ); }
+			if ( $( '#boldform-row-media-brightness' ).length ) { row.cv_media_brightness = Number( $( '#boldform-row-media-brightness' ).val() ); }
+			// An empty box means "use the default", stored as 0 and never as a
+			// resolved height — the same contract '' carries for the colours.
+			if ( $( '#boldform-row-media-height' ).length ) {
+				var rawHeight = $.trim( $( '#boldform-row-media-height' ).val() );
+				row.cv_media_height = rawHeight ? Math.max( 80, Math.min( 2000, Number( rawHeight ) || 0 ) ) : 0;
+			}
+			if ( $( '#boldform-row-media-alt' ).length )        { row.cv_media_alt = $( '#boldform-row-media-alt' ).val() || ''; }
+			markDirty();
+		} );
+
+		// Live readout beside each range, and the track's own fill. Without the
+		// readout a slider position is a number the author cannot see; without
+		// the fill the track disagrees with the number it is sitting under.
+		$( document ).on( 'input', '.boldform-row-media__range input[type="range"]', function () {
+			var $el = $( this );
+			$( '#' + $el.attr( 'id' ) + '-out' ).text( $el.val() + ( $el.attr( 'data-suffix' ) || '' ) );
+			$el.css( '--bf-range-p', rangePercent( $el.val(), $el.attr( 'min' ), $el.attr( 'max' ) ) );
+		} );
+
+		// ── Per-screen colours ───────────────────────────────────────────────
+		// Same target resolution as the media picker above, so there is exactly
+		// one answer in this file to "what is this screen?".
+		//
+		// Scoped to .boldform-screen-colour throughout. The Style tab's handlers
+		// key off .boldform-adv-field and write through the --bf-* variable
+		// system; these are flat cv_* keys on a row or field and must not be
+		// caught by them.
+
+		/** Repaints one control in place, without rebuilding the panel. */
+		function syncScreenColour( $field, value, inherited ) {
+			$field.css( '--bf-sw', value || inherited );
+			$field.closest( '.boldform-screen-colour' ).toggleClass( 'is-custom', !! value );
+			$field.find( '.bf-adv-color-reset' ).prop( 'disabled', ! value );
+		}
+
+		/** What this colour falls back to: the form's value, or the swatch's own. */
+		function screenColourInherited( $field ) {
+			return $field.find( '.bf-adv-colorpick' ).val() || '#000000';
+		}
+
+		$( document ).on( 'input', '.boldform-screen-colour .bf-adv-colorpick', function () {
+			var target = currentScreenTarget();
+			if ( ! target ) { return; }
+
+			var value = $( this ).val() || '';
+			target[ $( this ).data( 'cv-key' ) ] = value;
+			// Picking a colour IS the override, so the hex box stops showing its
+			// "Default" placeholder and starts showing the value.
+			$( this ).closest( '.boldform-color-field' ).find( '.bf-screen-hex' ).val( value );
+			syncScreenColour( $( this ).closest( '.boldform-color-field' ), value, value );
+			markDirty();
+		} );
+
+		// The panel is rebuilt only once the picker is committed. A colour input
+		// fires `input` continuously while the wheel is dragged, and re-rendering
+		// under it would tear the picker away on the first movement — the same
+		// reason the media ranges never re-render.
+		$( document ).on( 'change', '.boldform-screen-colour .bf-adv-colorpick', function () {
+			renderAll();
+		} );
+
+		// Typing a hex. Emptying the box is a reset — the same gesture the Style
+		// tab's colour fields answer to, and the reason the box is left empty
+		// rather than pre-filled when a screen is inheriting.
+		$( document ).on( 'input', '.boldform-screen-colour .bf-screen-hex', function () {
+			var target = currentScreenTarget();
+			if ( ! target ) { return; }
+
+			var $field = $( this ).closest( '.boldform-color-field' );
+			var typed  = $.trim( $( this ).val() );
+
+			if ( '' === typed ) {
+				target[ $( this ).data( 'cv-key' ) ] = '';
+				syncScreenColour( $field, '', screenColourInherited( $field ) );
+				markDirty();
+				return;
+			}
+
+			if ( ! /^#[0-9a-fA-F]{6}$/.test( typed ) ) {
+				// Mid-typing, not a decision. Leave the stored value alone.
+				return;
+			}
+
+			target[ $( this ).data( 'cv-key' ) ] = typed;
+			$field.find( '.bf-adv-colorpick' ).val( typed );
+			syncScreenColour( $field, typed, typed );
+			markDirty();
+		} );
+
+		$( document ).on( 'click', '.boldform-screen-colour .bf-adv-color-reset', function ( event ) {
+			event.preventDefault();
+			var target = currentScreenTarget();
+			if ( ! target ) { return; }
+			// '' is INHERIT, and it has to be stored as '' rather than as a copy
+			// of the form's colour: a pinned copy stops following the form the
+			// day the author changes it, which is the whole failure this design
+			// exists to avoid.
+			target[ $( this ).data( 'cv-key' ) ] = '';
+			markDirty();
+			renderAll();
+		} );
+
 		// SVG icon upload via WP media library.
 		$( document ).on( 'click', '#boldform-svg-upload-btn', function ( e ) {
 			e.preventDefault();
@@ -6968,7 +8979,7 @@ jQuery(
 
 		$( document ).on(
 			'input change',
-			'input[name="boldform-submit-mode"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color, #boldform-step-progress-style, #boldform-step-progress-color, #boldform-step-btn-color, #boldform-step-btn-text-color, #boldform-step-btn-size, #boldform-step-btn-radius, #boldform-step-next-text, #boldform-step-prev-text, #boldform-hide-labels, #boldform-hide-placeholders, #boldform-dup-enabled, input[name="boldform-dup-method"], #boldform-dup-field-id, #boldform-dup-message, #boldform-custom-css, #boldform-custom-js, .boldform-color-hex',
+			'input[name="boldform-submit-mode"], #boldform-redirect-url, #boldform-redirect-custom-url, #boldform-thank-you-message, #boldform-enable-admin-email, #boldform-enable-user-email, input[name="boldform-admin-email-type"], #boldform-admin-email, #boldform-field-size-style, #boldform-field-border-style, #boldform-field-border-width, #boldform-field-border-radius, #boldform-field-background-color, #boldform-field-border-color, #boldform-field-text-color, #boldform-label-size-style, #boldform-label-color-style, #boldform-label-subtext-color-style, #boldform-error-color-style, #boldform-button-size-style, #boldform-button-border-style, #boldform-button-border-width, #boldform-button-border-radius, #boldform-button-background-color, #boldform-button-border-color, #boldform-button-text-color, #boldform-field-focus-color, #boldform-step-progress-style, #boldform-step-progress-color, #boldform-step-btn-color, #boldform-step-btn-text-color, #boldform-step-btn-size, #boldform-step-btn-radius, #boldform-step-next-text, #boldform-step-prev-text, #boldform-hide-labels, #boldform-hide-placeholders, #boldform-dup-enabled, input[name="boldform-dup-method"], #boldform-dup-field-id, #boldform-dup-message, #boldform-custom-css, #boldform-custom-js, .boldform-color-hex, [data-pane="conversational"] input, [data-pane="conversational"] select, [data-pane="conversational"] textarea, [data-pane="conversational-style"] input',
 			function ( event ) {
 				var needsRerender = false;
 
@@ -7080,19 +9091,99 @@ jQuery(
 				if ( $( '#boldform-dup-message' ).length ) {
 					state.formSettings.dup_message = $( '#boldform-dup-message' ).val() || '';
 				}
+
+				// Conversational settings. Every read is .length-guarded because the
+				// controls only exist while the pane is rendered and expanded — an
+				// unguarded read would wipe a saved value the moment the author
+				// collapsed the section.
+				if ( $( '#boldform-cv-enabled' ).length ) {
+					state.formSettings.cv_enabled = $( '#boldform-cv-enabled' ).is( ':checked' );
+				}
+				if ( $( '#boldform-cv-progress' ).length ) {
+					state.formSettings.cv_progress = $( '#boldform-cv-progress' ).val() || 'bar';
+				}
+				if ( $( '#boldform-cv-transition' ).length ) {
+					state.formSettings.cv_transition = $( '#boldform-cv-transition' ).val() || 'slide';
+				}
+				if ( $( '#boldform-cv-key-hint' ).length ) {
+					state.formSettings.cv_key_hint = $( '#boldform-cv-key-hint' ).is( ':checked' );
+				}
+				if ( $( '#boldform-cv-welcome-enabled' ).length ) {
+					state.formSettings.cv_welcome_enabled = $( '#boldform-cv-welcome-enabled' ).is( ':checked' );
+				}
+				if ( $( '#boldform-cv-welcome-title' ).length ) {
+					state.formSettings.cv_welcome_title = $( '#boldform-cv-welcome-title' ).val() || '';
+				}
+				if ( $( '#boldform-cv-welcome-text' ).length ) {
+					state.formSettings.cv_welcome_text = $( '#boldform-cv-welcome-text' ).val() || '';
+				}
+				if ( $( '#boldform-cv-welcome-btn' ).length ) {
+					state.formSettings.cv_welcome_btn = $( '#boldform-cv-welcome-btn' ).val() || '';
+				}
+				if ( $( '#boldform-cv-media-hide-mobile' ).length ) {
+					state.formSettings.cv_media_hide_mobile = $( '#boldform-cv-media-hide-mobile' ).is( ':checked' );
+				}
+				if ( $( '#boldform-cv-next-text' ).length ) {
+					state.formSettings.cv_next_text = $( '#boldform-cv-next-text' ).val() || '';
+				}
+				if ( $( '#boldform-cv-prev-text' ).length ) {
+					state.formSettings.cv_prev_text = $( '#boldform-cv-prev-text' ).val() || '';
+				}
+				if ( $( '#boldform-cv-nav-align' ).length ) {
+					state.formSettings.cv_nav_align = $( '#boldform-cv-nav-align' ).val() || 'left';
+				}
+				if ( $( '#boldform-cv-progress-align' ).length ) {
+					state.formSettings.cv_progress_align = $( '#boldform-cv-progress-align' ).val() || 'left';
+				}
+				// A colour keeps the data-cv-unset marker until the author actually
+				// picks one, so an untouched swatch stores '' ("inherit the form's
+				// style") rather than the #000000 a colour input reports by default.
+				[
+					[ '#boldform-cv-bg',             'cv_bg' ],
+					[ '#boldform-cv-question-color', 'cv_question_color' ],
+					[ '#boldform-cv-answer-color',   'cv_answer_color' ],
+					[ '#boldform-cv-accent',         'cv_accent' ],
+					[ '#boldform-cv-track-color',    'cv_track_color' ],
+					[ '#boldform-cv-prev-color',     'cv_prev_color' ],
+					[ '#boldform-cv-prev-bg',        'cv_prev_bg' ],
+					[ '#boldform-cv-hint-color',     'cv_hint_color' ],
+					[ '#boldform-cv-btn-color',      'cv_btn_color' ],
+					[ '#boldform-cv-btn-text-color', 'cv_btn_text_color' ]
+				].forEach( function ( pair ) {
+					var $el = $( pair[ 0 ] );
+					if ( ! $el.length ) return;
+					state.formSettings[ pair[ 1 ] ] = $el.attr( 'data-cv-unset' ) ? '' : ( $el.val() || '' );
+				} );
+
 				if (
 					$( event.target ).is( 'input[name="boldform-submit-mode"]' ) ||
 					$( event.target ).is( '#boldform-enable-admin-email' ) ||
 					$( event.target ).is( '#boldform-enable-user-email' ) ||
 					$( event.target ).is( 'input[name="boldform-admin-email-type"]' ) ||
 					$( event.target ).is( '#boldform-dup-enabled' ) ||
-					$( event.target ).is( 'input[name="boldform-dup-method"]' )
+					$( event.target ).is( 'input[name="boldform-dup-method"]' ) ||
+					$( event.target ).is( '#boldform-cv-enabled' ) ||
+					$( event.target ).is( '#boldform-cv-progress' ) ||
+					$( event.target ).is( '#boldform-cv-welcome-enabled' )
 				) {
 					needsRerender = true;
 				}
 
 				renderCanvas();
 				renderStylePreview();
+
+				// The Style tab gains and loses its Default Screen Colours section
+				// with the master toggle, the Accent background control inside it
+				// with the indicator, and the Enter hint control with the hint
+				// switch — all three live on the OTHER tab, so without this they
+				// change only after a page reload.
+				if (
+					$( event.target ).is( '#boldform-cv-enabled' ) ||
+					$( event.target ).is( '#boldform-cv-progress' ) ||
+					$( event.target ).is( '#boldform-cv-key-hint' )
+				) {
+					renderStylingSettings();
+				}
 
 				if ( needsRerender ) {
 					renderFormSettings();
@@ -7106,6 +9197,17 @@ jQuery(
 				state.formTitle = $( this ).val();
 			}
 		);
+
+		// A conversational colour becomes "set" the moment the author picks one,
+		// which is what distinguishes a deliberate black from an untouched
+		// swatch. Both halves of the control count: the swatch and the hex box.
+		$( document ).on( 'input', '[id^="boldform-cv-"][type="color"]', function () {
+			$( this ).removeAttr( 'data-cv-unset' );
+		} );
+
+		$( document ).on( 'input', '.boldform-color-hex[data-color-for^="boldform-cv-"]', function () {
+			$( '#' + $( this ).attr( 'data-color-for' ) ).removeAttr( 'data-cv-unset' );
+		} );
 
 		// Color picker → update swatch background + hex text input.
 		// Excludes advanced (.bf-adv-colorpick) pickers — those have their own
@@ -7189,12 +9291,30 @@ jQuery(
 
 		// Column layout change for existing rows.
 		$( document ).on( 'click', '.boldform-row-layout-btn', function () {
-			var rowIndex = state.selectedRowIndex;
-			if ( rowIndex === null ) return;
+			// Reachable from two panels now. In conversational mode there is no
+			// row settings panel — the row's toolbar belongs to the screen — so
+			// the same control is offered in screen settings, where the question
+			// it is really asking is "how many questions share this screen?".
+			var rowIndex = null !== state.selectedRowIndex && typeof state.selectedRowIndex !== 'undefined'
+				? state.selectedRowIndex
+				: ( getSelectedFieldLocation() || {} ).rowIndex;
+
+			if ( null === rowIndex || typeof rowIndex === 'undefined' ) return;
 			var row = getAllRows()[ rowIndex ];
 			if ( ! row ) return;
 
 			var newWidths = $( this ).data( 'widths' ).toString().split( ',' );
+
+			if ( cvIsOn() ) {
+				// A different question is being asked here, so it gets a different
+				// answer. See reflowScreenColumns().
+				reflowScreenColumns( rowIndex, newWidths, state.selectedFieldId );
+				markDirty();
+				setActiveColumn( rowIndex, 0 );
+				renderAll();
+				return;
+			}
+
 			var oldColumns = row.columns;
 			var newColumns = [];
 
@@ -7428,6 +9548,21 @@ jQuery(
 
 		$( document ).on( 'click', '#boldform-setup-template', function () {
 			openTemplateModal();
+		} );
+
+		// A shortcut to a blank form with conversational mode pre-enabled — NOT a
+		// separate form type. Everything downstream (storage, builder, rendering)
+		// is identical to any other form, so the author can switch the mode off
+		// again at any point without converting or losing anything.
+		$( document ).on( 'click', '#boldform-setup-conversational', function () {
+			state.formSettings.cv_enabled = true;
+			closeSetupScreen();
+			addRow( [ '100%' ] );
+			// Behaves exactly like Blank Form — straight to the builder canvas.
+			// The only difference is that conversational mode starts switched on;
+			// jumping to the Settings tab instead would drop the author somewhere
+			// they cannot begin building.
+			renderFormSettings();
 		} );
 
 		// Import template — also closes setup screen if open.

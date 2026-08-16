@@ -1,6 +1,6 @@
 # BoldForm — Product Roadmap (Lite + Pro)
 
-_Last updated: 2026-07-22 (rev 2 — Form Migrator added as next Lite build) · Lite (free): 1.1.5 · Pro (paid): 1.1.2_
+_Last updated: 2026-08-12 (rev 3 — Conversational Forms shipped free in Lite; license enforcement shipped in Pro) · Lite (free): 1.1.7 · Pro (paid): 1.1.4_
 
 > **In one line:** BoldForm Lite is our free WordPress form builder; BoldForm Pro is the paid add-on. This roadmap says **what we build next, in what order, and why** — for both.
 
@@ -54,7 +54,7 @@ Everything else from the last wave — Conditional Email Routing and PDF Attachm
 8. **Coupons, Tax & Multi-Currency** — Extend payments with discount codes, automatic tax calculation, and support for multiple currencies.
 
 **Pro 2.0 — marquee features**
-11. **Conversational Mode** — Present forms one question at a time for a guided, engaging experience that improves completion rates.
+11. ~~**Conversational Mode**~~ — **SHIPPED in Lite 1.1.7 (2026-08-12), free.** Deliberately moved out of Pro: FormGent gives it away, so charging for it would have priced us against a free competitor on the one feature buyers use to compare us. See §7 for why it turned out to be low-risk rather than Wave-3.
 12. **A/B Testing** — Split traffic between two versions of a form to compare performance and identify the higher-converting design.
 13. **User Submission Portal** — Give logged-in users a dedicated area to view and manage their own past submissions.
 14. **Subscriptions & Recurring Payments** — Collect recurring payments through Stripe and PayPal for memberships, donations, and retainers.
@@ -148,10 +148,11 @@ Advanced fields (Rich Text, Signature, Repeater, Date Range, Calculation, Geoloc
 
 ## 3. Why we're doing this (the market in 30 seconds)
 
-Newer rivals — especially **FormGent** — give away a lot for free (multi-step, payments, conversational forms, AI builder) to grab installs fast. We are **not** matching that giveaway. Instead:
+Newer rivals — especially **FormGent** — give away a lot for free (multi-step, payments, conversational forms, AI builder) to grab installs fast. We are **not** matching that giveaway wholesale. Instead:
 
 - **Where we're already ahead:** works natively in Elementor (rivals don't), far deeper design/styling controls, stronger security, lighter/faster on the page, more mature.
-- **Where we're behind:** we lack some "conversion" features buyers expect — Save & Resume, entry editing/approval, conditional emails, PDF, conversational mode, A/B testing.
+- **Where we've matched the giveaway, deliberately:** **conversational forms, free in Lite since 1.1.7.** The one exception to the paragraph above, and a considered one — it is the feature buyers use to compare form plugins head-to-head, so being absent cost us more than giving it away does. Everything around it (payments, multi-step, entry management) still points at Pro.
+- **Where we're behind:** we lack some "conversion" features buyers expect — Save & Resume, entry editing/approval, conditional emails, PDF, A/B testing.
 - **Our headline bet:** the **AI Form Builder** (see §5) is the main "AI Powered" hype for launch — a paid flagship meant to make BoldForm stand out. (FormGent offers basic AI free, so this is a bet on quality over give-away.)
 
 **Strategy:** keep the free/paid split, close the paid-feature gaps in Pro, and market our real strengths.
@@ -235,7 +236,7 @@ _Shipped in Pro 1.0.0: entry limit + cooldown, Akismet, colour picker, import en
 
 | Feature | What it does | Why it matters | ⭐ | Priority | Effort |
 |---|---|---|---|---|---|
-| **Conversational mode** | One-question-at-a-time forms (Typeform-style) | Premium UX buyers love; a rival's headline free feature | ⭐ | High | L |
+| ~~**Conversational mode**~~ | ~~One-question-at-a-time forms (Typeform-style)~~ | **✅ Shipped free in Lite 1.1.7** — not a Pro feature. Moved because it is a rival's headline _free_ feature | ⭐ | — | — |
 | **A/B testing** | Split traffic between two form versions, pick the winner | Almost no WP form plugin does this well — a differentiator | ⭐ | High | L |
 | **User submission portal** | Logged-in users see/manage their own past submissions | Adds a whole self-service layer | ⭐ | Med | L |
 | **Subscriptions / recurring payments** | Stripe/PayPal recurring billing | Unlocks memberships, donations, retainers | ⭐ | High | L |
@@ -247,7 +248,7 @@ _Shipped in Pro 1.0.0: entry limit + cooldown, Akismet, colour picker, import en
 | **AI response tools** | Summarize entries or auto-draft replies (separate from the flagship AI Form Builder) | Extends the AI story after launch | | Med | M |
 | **More integrations** | WooCommerce, Google Places address autocomplete, richer Mailchimp tags/ActiveCampaign deals | Broaden the ecosystem | | Med | M |
 
-**Done when:** BoldForm competes head-to-head with the top plugins and offers things they don't (conversational + A/B testing).
+**Done when:** BoldForm competes head-to-head with the top plugins and offers things they don't. Conversational is done — as a free Lite feature — so A/B testing is now the load-bearing half of this goal.
 
 ---
 
@@ -292,7 +293,8 @@ Achievable and backward-safe, but each has one specific thing to get right first
 ### Wave 3 — High risk to critical paths (build last, test hard) · risk: HIGH
 These touch the two most fragile paths — form rendering and the payment flow. Do them only once Waves 1–2 are stable.
 
-- **Conversational Mode** — the frontend assumes all fields are in the DOM; one-at-a-time rendering can break conditional logic. Requires reworking the conditional-logic evaluator per-page (or disabling it in this mode). Touches the most-used code path.
+- ~~**Conversational Mode** — the frontend assumes all fields are in the DOM; one-at-a-time rendering can break conditional logic. Requires reworking the conditional-logic evaluator per-page (or disabling it in this mode). Touches the most-used code path.~~
+  **RETIRED 2026-08-09 — this risk does not exist.** It assumed the mode would re-render the form. It does not: it post-processes the already-rendered HTML and reveals one row at a time by toggling classes, so **every field stays in the DOM** and the conditional-logic evaluator is untouched. Verified at runtime — a branching form skips its hidden screens in both directions, hidden required fields never block, and every field still posts. The feature also shipped in **Lite, free** rather than as a paid item; see `CONVERSATIONAL-PLAN.md`.
 - **Subscriptions & Recurring Payments** — a billing state machine (renewals, cancellations, webhook idempotency) on top of the already-deferred payment flow. Existing one-time payment forms must keep working untouched. Get it wrong → double-charge or orphaned entries.
 
 ### The flagship sits across waves

@@ -1181,6 +1181,182 @@
 	box-shadow: 0 0 0 1px #2271b1;
 }
 
+/* ── Bulk-bar dropdown ───────────────────────────────────────────────────
+   A native <select> draws its option list as an operating-system menu — on
+   macOS a floating panel with its own font, radius and blue pill highlight,
+   rendered outside the page where no CSS can reach it. Everything below is the
+   replacement built by assets/js/admin-select.js.
+
+   The rules above still matter: with no JS the plain <select> is what shows,
+   and it must stay styled. Nothing here overrides them. */
+.boldform-select {
+	position: relative;
+	display: inline-flex;
+	max-width: 100%;
+	/* Set inline by the JS from the native control's measured height, so the
+	   toggle is exactly as tall as the select it replaced — the bulk bars on
+	   the forms list and the entries screen use different heights. */
+	--boldform-select-h: 36px;
+}
+
+/* Kept in the DOM and still the thing that submits: it holds the name, the id,
+   the `form` attribute and the value. Clipped rather than display:none so the
+   element keeps a box the browser is willing to measure. */
+.boldform-select .boldform-select__native {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	clip-path: inset(50%);
+	border: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.boldform-select__toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	height: var(--boldform-select-h);
+	padding: 0 12px;
+	border: 1px solid #d0d5dd;
+	border-radius: 8px;
+	background: #fff;
+	color: #344054;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	text-align: left;
+	cursor: pointer;
+	transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.boldform-select__toggle:hover {
+	border-color: #98a2b3;
+}
+
+.boldform-select__toggle:focus-visible,
+.boldform-select.is-open .boldform-select__toggle {
+	outline: none;
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.boldform-select__toggle:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+/* The prompt option ("Bulk Actions", "All Status") is not a choice yet, so it
+   is not shown as one. */
+.boldform-select__toggle.is-placeholder .boldform-select__label {
+	color: #667085;
+	font-weight: 400;
+}
+
+.boldform-select__label {
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* arrow-down-alt2 from Dashicons — the same caret the native control used. */
+.boldform-select__caret {
+	flex: 0 0 16px;
+	height: 16px;
+	background: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%2350575e%22%2F%3E%3C%2Fsvg%3E") no-repeat center / 16px 16px;
+	transition: transform 0.14s ease;
+}
+
+.boldform-select.is-open .boldform-select__caret {
+	transform: rotate(180deg);
+}
+
+.boldform-select__menu {
+	position: absolute;
+	z-index: 120;
+	top: calc(100% + 6px);
+	left: 0;
+	min-width: 100%;
+	max-height: 280px;
+	margin: 0;
+	padding: 6px;
+	overflow-y: auto;
+	list-style: none;
+	border: 1px solid #d0d5dd;
+	border-radius: 10px;
+	background: #fff;
+	box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+
+/* [hidden] loses to the display above in the cascade, so it is restated. */
+.boldform-select__menu[hidden] {
+	display: none;
+}
+
+.boldform-select__menu:focus {
+	outline: none;
+}
+
+.boldform-select__option {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 8px 10px;
+	border-radius: 6px;
+	color: #344054;
+	font-size: 13px;
+	line-height: 1.3;
+	white-space: nowrap;
+	cursor: pointer;
+}
+
+/* A fixed-width slot for the tick, always present. Revealing it only on the
+   selected row would shift every label sideways as the selection moved. */
+.boldform-select__option::before {
+	content: "";
+	flex: 0 0 14px;
+	height: 14px;
+	background: no-repeat center / 14px 14px;
+}
+
+.boldform-select__option.is-selected {
+	color: #2271b1;
+	font-weight: 600;
+}
+
+.boldform-select__option.is-selected::before {
+	background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M15.6%205.3l1.4%201.4L8%2015.7l-5-5%201.4-1.4L8%2012.9z%22%20fill%3D%22%232271b1%22%2F%3E%3C%2Fsvg%3E");
+}
+
+/* One highlight, driven by the keyboard and by the pointer alike, so arrowing
+   down and moving the mouse never disagree about where you are. */
+.boldform-select__option.is-active {
+	background: #f2f4f7;
+}
+
+.boldform-select__option.is-disabled {
+	color: #98a2b3;
+	cursor: not-allowed;
+}
+
+.boldform-select__option.is-disabled.is-active {
+	background: transparent;
+}
+
+/* The card clips its own content (rounded corners + the narrow-screen spill
+   guard), which would cut the menu off. Lifted only while a menu is open, the
+   same way the row-actions dropdown does it above. */
+.boldform-table-card:has(.boldform-select.is-open) {
+	overflow: visible;
+}
+
 .boldform-bulk-apply {
 	height: 36px;
 	padding: 0 16px;
