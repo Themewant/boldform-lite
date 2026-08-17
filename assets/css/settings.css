@@ -1303,6 +1303,42 @@
 	outline: none;
 }
 
+/* <optgroup>. The wrapper is what bounds the sticky label: scoped to its own
+   group, each label is pushed out by the next one instead of every label in the
+   list piling up at the same offset. */
+.boldform-select__groupwrap {
+	display: block;
+	margin: 0;
+}
+
+.boldform-select__grouplist {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* The label is a caption, not a row — it is deliberately not styled like
+   something you could click, because it is not an option and cannot be chosen.
+   Sticky so the group you have scrolled into stays named. */
+.boldform-select__group {
+	position: sticky;
+	top: -6px;
+	z-index: 1;
+	display: block;
+	margin: 6px 0 2px;
+	padding: 4px 10px;
+	background: #fff;
+	color: #667085;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.boldform-select__groupwrap:first-child .boldform-select__group {
+	margin-top: 0;
+}
+
 .boldform-select__option {
 	display: flex;
 	align-items: center;
