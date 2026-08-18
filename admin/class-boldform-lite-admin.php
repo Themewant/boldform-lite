@@ -1706,6 +1706,25 @@ class BoldForm_Lite_Admin {
 							authYes.addEventListener("change",toggleAuth);
 							authNo.addEventListener("change",toggleAuth);
 						}
+						/* AI tab: show the key and model belonging to the selected
+						   provider and hide the rest. All of them stay in the form, so
+						   the values entered for the others are still posted and survive
+						   the save. The whole row is hidden, not the control: the styled
+						   dropdown clips the native select off-screen, so hiding that
+						   would hide something already invisible and leave the visible
+						   one on the page. */
+						var aiProvider=document.querySelector("[data-bf-ai-provider]");
+						if(aiProvider){
+							var aiRows=document.querySelectorAll("[data-bf-ai-key-for],[data-bf-ai-model-for]");
+							function syncAiRows(){
+								for(var i=0;i<aiRows.length;i++){
+									var owner=aiRows[i].getAttribute("data-bf-ai-key-for")||aiRows[i].getAttribute("data-bf-ai-model-for");
+									aiRows[i].hidden=owner!==aiProvider.value;
+								}
+							}
+							aiProvider.addEventListener("change",syncAiRows);
+							syncAiRows();
+						}
 					})();'
 				);
 				if ( 'smtp' === $active_tab ) {
@@ -3730,7 +3749,7 @@ class BoldForm_Lite_Admin {
 	 */
 	public function render_settings_page() {
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$active_tab = in_array( $active_tab, array( 'general', 'captcha', 'smtp', 'tools' ), true ) ? $active_tab : 'general';
+		$active_tab = in_array( $active_tab, array( 'general', 'captcha', 'ai', 'smtp', 'tools' ), true ) ? $active_tab : 'general';
 
 		$this->handle_settings_save();
 
@@ -3739,6 +3758,9 @@ class BoldForm_Lite_Admin {
 		$tabs = array(
 			'general' => array( 'label' => __( 'General', 'boldform-lite' ), 'icon' => 'dashicons-admin-generic' ),
 			'captcha' => array( 'label' => __( 'Captcha', 'boldform-lite' ), 'icon' => 'dashicons-shield' ),
+			// `mark` opts a tab out of Dashicons. Dashicons has no sparkle, and this
+			// is the only tab that needs one; `icon` stays as the fallback.
+			'ai'      => array( 'label' => __( 'AI', 'boldform-lite' ), 'icon' => 'dashicons-superhero-alt', 'mark' => 'sparkle' ),
 			'smtp'    => array( 'label' => __( 'SMTP', 'boldform-lite' ), 'icon' => 'dashicons-email-alt' ),
 			'tools'   => array( 'label' => __( 'Tools', 'boldform-lite' ), 'icon' => 'dashicons-migrate' ),
 		);
@@ -3764,7 +3786,16 @@ class BoldForm_Lite_Admin {
 				<nav class="boldform-settings-sidebar">
 					<?php foreach ( $tabs as $tab_key => $tab ) : ?>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=' . $tab_key ) ); ?>" class="boldform-nav-item<?php echo $tab_key === $active_tab ? ' is-active' : ''; ?>">
-							<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php if ( 'sparkle' === ( $tab['mark'] ?? '' ) && class_exists( 'BoldForm_Lite_AI_Builder' ) ) : ?>
+								<?php
+								// Static markup built from literals inside the helper — there is
+								// nothing here for an escaper to act on, and running wp_kses over
+								// it would only strip the gradient it depends on.
+								echo BoldForm_Lite_AI_Builder::sparkle_svg( 'tab' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								?>
+							<?php else : ?>
+								<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php endif; ?>
 							<?php echo esc_html( $tab['label'] ); ?>
 						</a>
 					<?php endforeach; ?>
@@ -3952,6 +3983,135 @@ class BoldForm_Lite_Admin {
 										<?php esc_html_e( 'No keys required. Visitors solve a small math question before submitting.', 'boldform-lite' ); ?>
 									</p>
 								</div>
+							</div>
+
+							<div class="boldform-submit-area">
+								<?php submit_button( __( 'Save Changes', 'boldform-lite' ), 'primary', 'submit', false ); ?>
+							</div>
+						</form>
+
+					<?php elseif ( 'ai' === $active_tab ) : ?>
+						<?php
+						$ai_providers = BoldForm_Lite_AI_Builder::providers();
+						$ai_provider  = BoldForm_Lite_AI_Builder::selected_provider();
+						$ai_keys      = BoldForm_Lite_AI_Builder::api_keys();
+						$ai_models    = BoldForm_Lite_AI_Builder::models();
+						?>
+						<h2><?php esc_html_e( 'AI Form Builder', 'boldform-lite' ); ?></h2>
+						<p class="boldform-tab-description"><?php esc_html_e( 'Describe a form in plain language and have it built for you. Choose a provider and add your own API key — prompts are sent from this site straight to that provider, and usage is billed to your own account.', 'boldform-lite' ); ?></p>
+
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=ai' ) ); ?>">
+							<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
+							<input type="hidden" name="boldform_settings_tab" value="ai">
+
+							<div class="boldform-card">
+								<h3><?php esc_html_e( 'Provider', 'boldform-lite' ); ?></h3>
+								<div class="boldform-field-row">
+									<div class="boldform-field-label"><label for="boldform-ai-provider"><?php esc_html_e( 'Service', 'boldform-lite' ); ?></label></div>
+									<div class="boldform-field-control">
+										<select id="boldform-ai-provider" name="boldform_ai_provider" data-boldform-select data-bf-ai-provider>
+											<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+												<option value="<?php echo esc_attr( $bf_slug ); ?>" data-key-url="<?php echo esc_url( $bf_provider['key_url'] ); ?>" <?php selected( $ai_provider, $bf_slug ); ?>>
+													<?php echo esc_html( $bf_provider['label'] ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+
+								<?php
+								/*
+								 * One key field per provider, all rendered, only the selected one
+								 * shown. Hidden rather than omitted so every field still posts —
+								 * switching provider and saving cannot wipe the key stored for
+								 * another. Values are never printed back: each renders empty with a
+								 * "leave blank to keep" placeholder, exactly as the captcha secrets
+								 * and the SMTP password do.
+								 */
+								?>
+								<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+									<div class="boldform-field-row boldform-ai-key-field" data-bf-ai-key-for="<?php echo esc_attr( $bf_slug ); ?>"<?php echo $bf_slug === $ai_provider ? '' : ' hidden'; ?>>
+										<div class="boldform-field-label">
+											<label for="boldform-ai-key-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"><?php esc_html_e( 'API key', 'boldform-lite' ); ?></label>
+										</div>
+										<div class="boldform-field-control">
+											<input
+												type="password"
+												id="boldform-ai-key-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"
+												name="boldform_ai_api_key[<?php echo esc_attr( $bf_slug ); ?>]"
+												value=""
+												class="regular-text"
+												autocomplete="new-password"
+												spellcheck="false"
+												placeholder="<?php echo ! empty( $ai_keys[ $bf_slug ] ) ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : esc_attr( $bf_provider['key_hint'] ); ?>"
+											>
+											<p class="description">
+												<a href="<?php echo esc_url( $bf_provider['key_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+													<?php
+													/* translators: %s: AI provider name, e.g. "OpenRouter". */
+													printf( esc_html__( 'Get a key from %s', 'boldform-lite' ), esc_html( $bf_provider['label'] ) );
+													?>
+												</a>
+											</p>
+										</div>
+									</div>
+								<?php endforeach; ?>
+
+								<?php
+								/*
+								 * Model picker, only for providers that publish a catalogue — today
+								 * that means aggregators. A direct provider hosts a handful of models
+								 * and the plugin already picks the right one, so a chooser there is
+								 * mostly a way to pick a worse one.
+								 */
+								?>
+								<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+									<?php
+									if ( ! BoldForm_Lite_AI_Builder::has_model_picker( $bf_slug ) ) {
+										continue;
+									}
+									$bf_choices = BoldForm_Lite_AI_Builder::model_choices( $bf_slug );
+									$bf_current = isset( $ai_models[ $bf_slug ] ) ? $ai_models[ $bf_slug ] : '';
+									$bf_default = $bf_provider['model'];
+
+									// A stored model absent from the catalogue — newly retired, or the
+									// list failed to load — is put back at the top, so that merely
+									// opening Settings and pressing Save cannot silently reset it.
+									$bf_known = array();
+									foreach ( $bf_choices as $bf_group ) {
+										$bf_known = array_merge( $bf_known, array_keys( $bf_group ) );
+									}
+									if ( '' !== $bf_current && ! in_array( $bf_current, $bf_known, true ) ) {
+										$bf_choices = array_merge( array( __( 'Currently set', 'boldform-lite' ) => array( $bf_current => $bf_current ) ), $bf_choices );
+									}
+									?>
+									<div class="boldform-field-row boldform-ai-model-field" data-bf-ai-model-for="<?php echo esc_attr( $bf_slug ); ?>"<?php echo $bf_slug === $ai_provider ? '' : ' hidden'; ?>>
+										<div class="boldform-field-label">
+											<label for="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"><?php esc_html_e( 'Model', 'boldform-lite' ); ?></label>
+										</div>
+										<div class="boldform-field-control">
+											<?php if ( empty( $bf_choices ) ) : ?>
+												<?php // Catalogue unreachable — degrade to free text rather than to no way of setting a model at all. ?>
+												<input type="text" id="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>" name="boldform_ai_model[<?php echo esc_attr( $bf_slug ); ?>]" value="<?php echo esc_attr( $bf_current ); ?>" class="regular-text" placeholder="<?php echo esc_attr( $bf_default ); ?>" autocomplete="off" spellcheck="false">
+											<?php else : ?>
+												<select id="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>" name="boldform_ai_model[<?php echo esc_attr( $bf_slug ); ?>]" data-boldform-select>
+													<option value=""><?php
+														/* translators: %s: the provider's built-in default model id. */
+														printf( esc_html__( 'Default — %s', 'boldform-lite' ), esc_html( $bf_default ) );
+													?></option>
+													<?php foreach ( $bf_choices as $bf_vendor => $bf_group ) : ?>
+														<optgroup label="<?php echo esc_attr( $bf_vendor ); ?>">
+															<?php foreach ( $bf_group as $bf_value => $bf_label ) : ?>
+																<option value="<?php echo esc_attr( $bf_value ); ?>" <?php selected( $bf_current, $bf_value ); ?>><?php echo esc_html( $bf_label ); ?></option>
+															<?php endforeach; ?>
+														</optgroup>
+													<?php endforeach; ?>
+												</select>
+											<?php endif; ?>
+											<p class="description"><?php esc_html_e( 'Optional. Leave on Default unless you have a reason to change it. Only models that support strict JSON schema output are listed — anything else cannot build a form.', 'boldform-lite' ); ?></p>
+										</div>
+									</div>
+								<?php endforeach; ?>
 							</div>
 
 							<div class="boldform-submit-area">
@@ -4231,6 +4391,73 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
+		if ( 'ai' === $active_tab ) {
+			/*
+			 * AI settings live in their own options, NOT in $settings. The export
+			 * tool writes boldform_lite_settings into a downloadable file and
+			 * scrubs it with a flat key scan — a nested credential would slip
+			 * straight past that and ship inside an export someone might share.
+			 * Keeping them out of the array keeps them out of the export.
+			 */
+			$bf_ai_providers = BoldForm_Lite_AI_Builder::providers();
+
+			$bf_ai_provider = isset( $_POST['boldform_ai_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_ai_provider'] ) ) : '';
+			if ( '' !== $bf_ai_provider && array_key_exists( $bf_ai_provider, $bf_ai_providers ) ) {
+				update_option( 'boldform_lite_ai_provider', $bf_ai_provider, false );
+			}
+
+			/*
+			 * Keys render empty and only overwrite when something was typed — the
+			 * same contract as the captcha secrets above. A provider missing from
+			 * the POST is left alone rather than cleared: absent means unknown (the
+			 * page may predate that provider), not "delete this". Getting this
+			 * wrong once silently wiped a stored key on an ordinary save.
+			 */
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value is sanitized in the loop below.
+			$bf_posted_keys = isset( $_POST['boldform_ai_api_key'] ) && is_array( $_POST['boldform_ai_api_key'] ) ? wp_unslash( $_POST['boldform_ai_api_key'] ) : array();
+			$bf_stored_keys = BoldForm_Lite_AI_Builder::api_keys();
+
+			foreach ( $bf_posted_keys as $bf_slug => $bf_value ) {
+				$bf_slug  = sanitize_key( (string) $bf_slug );
+				$bf_value = trim( sanitize_text_field( (string) $bf_value ) );
+
+				if ( '' === $bf_value || ! array_key_exists( $bf_slug, $bf_ai_providers ) ) {
+					continue;
+				}
+
+				$bf_stored_keys[ $bf_slug ] = $bf_value;
+			}
+
+			update_option( 'boldform_lite_ai_api_keys', $bf_stored_keys, false );
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value is sanitized in the loop below.
+			$bf_posted_models = isset( $_POST['boldform_ai_model'] ) && is_array( $_POST['boldform_ai_model'] ) ? wp_unslash( $_POST['boldform_ai_model'] ) : array();
+			$bf_stored_models = BoldForm_Lite_AI_Builder::models();
+
+			foreach ( $bf_posted_models as $bf_slug => $bf_value ) {
+				$bf_slug  = sanitize_key( (string) $bf_slug );
+				$bf_value = trim( sanitize_text_field( (string) $bf_value ) );
+
+				if ( ! array_key_exists( $bf_slug, $bf_ai_providers ) ) {
+					continue;
+				}
+
+				// An empty value here IS a deliberate choice — it is the "Default"
+				// entry in the picker — so unlike a key it clears the override.
+				if ( '' === $bf_value ) {
+					unset( $bf_stored_models[ $bf_slug ] );
+					continue;
+				}
+
+				// The character class the provider catalogues actually use; rolling
+				// aliases carry a tilde.
+				if ( preg_match( '#^[A-Za-z0-9._:/~-]{1,128}$#', $bf_value ) ) {
+					$bf_stored_models[ $bf_slug ] = $bf_value;
+				}
+			}
+
+			update_option( 'boldform_lite_ai_models', $bf_stored_models, false );
+		}
 		if ( 'smtp' === $active_tab ) {
 			$settings['smtp_enabled']    = ! empty( $_POST['boldform_smtp_enabled'] );
 			$settings['smtp_from_email'] = isset( $_POST['boldform_smtp_from_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_from_email'] ) ) : '';
