@@ -433,6 +433,18 @@
 	border-bottom: 1px solid #f0f0f1;
 }
 
+/*
+ * An author `display` beats the user-agent `[hidden] { display: none }` rule
+ * whatever the specificity, so a row marked hidden stays on screen unless the
+ * rule is restated here. The AI settings shipped every provider's key field at
+ * once because of this. Written against the row rather than any one feature, so
+ * the next row to use the attribute does not have to rediscover it — the same
+ * guard the captcha panels and the select menu already carry.
+ */
+.boldform-field-row[hidden] {
+	display: none;
+}
+
 .boldform-field-row:first-child {
 	padding-top: 0;
 }

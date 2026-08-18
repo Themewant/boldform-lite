@@ -42,6 +42,14 @@ https://www.youtube.com/watch?v=wkY9uTVaYJ0
 * **Custom submit button** — set your own text, a Dashicon or custom SVG icon, and the icon colour.
 * **Form templates** — start from one of 11 ready-made templates instead of a blank canvas, then customise from there (see below).
 
+= AI Form Builder — describe a form and have it built =
+
+Type what you need — "a job application with a CV upload", "a customer feedback survey with a rating" — and the form is built on the canvas: fields, labels, help text, multi-column rows, multi-step page breaks and conditional show/hide rules, all editable afterwards like any other form.
+
+* **Bring your own key** — choose Anthropic, OpenAI, Google Gemini or OpenRouter and add your own API key. Usage is billed to your account, and prompts go from your site straight to the provider you picked. Gemini has a free tier, so this can cost nothing to try.
+* **Only your real fields** — the model is constrained to the field types your site actually has, so it cannot invent one that does not exist. Install an add-on that registers more field types and the builder starts using those too.
+* **Nothing is stored or shared** — only the sentence you type is sent. Your forms, entries and visitors are never part of it. See External Services below.
+
 = Form Template Library =
 
 Skip the blank canvas. BoldForm ships 11 ready-made forms, grouped into General, Business, Events & Booking, and HR & Surveys — import any of them into the builder with a single click, then make it yours.
@@ -229,6 +237,14 @@ Yes. When the plugin is network-activated, it automatically creates the necessar
 
 Yes. Submissions stay in your own database, and BoldForm registers a personal-data exporter and eraser with WordPress's privacy tools so you can fulfil data-subject requests by email address. See the Privacy section below for details.
 
+= Do I need to pay to use the AI form builder? =
+
+Not to BoldForm — it is part of the free plugin. You do need an API key from one of the supported providers (Anthropic, OpenAI, Google Gemini or OpenRouter), and whatever that provider charges is billed to your own account. Google's Gemini has a free tier, so you can try it without spending anything. Add your key under BoldForm > Settings > AI.
+
+= What does the AI form builder send, and where? =
+
+Only the description you type into the "Describe your form" box, plus a list of the field types your site supports so the model cannot suggest a field you do not have. It goes from your site directly to the provider you selected — there is no BoldForm server in between — and the plugin does not store your prompts. Your forms, entries and visitor data are never sent. Full details for each provider are in the External Services section below.
+
 = Is there a Pro version? =
 
 Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://wpboldform.com/).
@@ -324,7 +340,61 @@ Adds contacts to a Brevo list on form submission.
 * Terms of Use: https://www.brevo.com/legal/termsofuse/
 * Privacy Policy: https://www.brevo.com/legal/privacypolicy/
 
+= AI Form Builder — Anthropic (Claude) =
+
+Builds a form from a plain-language description you type.
+
+The plugin sends your description, plus a list of the field types your site supports, to Anthropic's Messages API and receives a form structure back. Nothing about your forms, entries, or visitors is sent — only the text you type into the "Describe your form" box. Prompts are not stored by the plugin.
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "Anthropic" is selected under BoldForm > Settings > AI and you have saved your own Anthropic API key
+* Service provider: Anthropic PBC
+* Terms of Service: https://www.anthropic.com/legal/consumer-terms
+* Privacy Policy: https://www.anthropic.com/legal/privacy
+
+= AI Form Builder — OpenAI =
+
+Builds a form from a plain-language description you type.
+
+The plugin sends your description, plus a list of the field types your site supports, to OpenAI's Chat Completions API and receives a form structure back. Nothing about your forms, entries, or visitors is sent — only the text you type into the "Describe your form" box. Prompts are not stored by the plugin.
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "OpenAI" is selected under BoldForm > Settings > AI and you have saved your own OpenAI API key
+* Service provider: OpenAI, L.L.C.
+* Terms of Service: https://openai.com/policies/row-terms-of-use/
+* Privacy Policy: https://openai.com/policies/row-privacy-policy/
+
+= AI Form Builder — Google Gemini =
+
+Builds a form from a plain-language description you type.
+
+The plugin sends your description, plus a list of the field types your site supports, to the Google Gemini API and receives a form structure back. Nothing about your forms, entries, or visitors is sent — only the text you type into the "Describe your form" box. Prompts are not stored by the plugin.
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "Google Gemini" is selected under BoldForm > Settings > AI and you have saved your own Google AI Studio API key
+* Service provider: Google LLC
+* Terms of Service: https://ai.google.dev/gemini-api/terms
+* Privacy Policy: https://policies.google.com/privacy
+
+= AI Form Builder — OpenRouter =
+
+Builds a form from a plain-language description you type, using a model you choose from OpenRouter's catalogue.
+
+The plugin sends your description, plus a list of the field types your site supports, to OpenRouter, which routes the request to the model you selected. OpenRouter is an aggregator: your description is passed on to whichever upstream provider hosts that model, so their terms apply as well. The plugin also fetches OpenRouter's public list of available models so it can offer you a choice; that request sends no data about your site. Nothing about your forms, entries, or visitors is sent — only the text you type into the "Describe your form" box. Prompts are not stored by the plugin.
+
+* Data sent: The description you type, and the list of field types available on your site. Separately, an unauthenticated request for the public model catalogue, which sends nothing about your site
+* When: Each time you press Generate in the form builder; the model catalogue is fetched at most once every 12 hours while the AI settings screen is open
+* Condition: Only when "OpenRouter" is selected under BoldForm > Settings > AI and you have saved your own OpenRouter API key
+* Service provider: OpenRouter, Inc.
+* Terms of Service: https://openrouter.ai/terms
+* Privacy Policy: https://openrouter.ai/privacy
+
 == Privacy ==
+
+The AI Form Builder is the one feature that sends anything without a visitor being involved. It is off until you save your own API key, and what leaves the site is the sentence you type into the "Describe your form" box — never your forms, your entries, or anything about your visitors. The description is sent to the provider you chose, is not stored by the plugin, and is not sent anywhere else. See External Services above for each provider's terms.
 
 When a visitor submits a form, BoldForm Lite stores the submission in your site's own database (no data is sent anywhere unless you have configured one of the external services listed above). Each stored entry includes:
 
@@ -345,6 +415,18 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+
+= 1.1.8 =
+New features:
+* New: AI Form Builder — describe a form in plain language and have it built on the canvas, with multi-column rows, multi-step page breaks, help text and conditional show/hide rules.
+* New: Choose your AI provider — Anthropic, OpenAI, Google Gemini or OpenRouter — under Settings > AI, using your own API key. Gemini has a free tier.
+* New: Pick any OpenRouter model that supports strict JSON schema output; the list is fetched live and grouped by vendor.
+* New: The generator only offers field types your site actually has, so add-ons that register more field types extend it automatically.
+
+Improvements:
+* Improved: Settings dropdowns support option groups and type-ahead, so long lists are usable from the keyboard.
+* Improved: The new-form and empty-canvas screens centre a row that is not full, instead of leaving the last card stranded on the left.
+
 = 1.1.7 =
 New features:
 * New: Conversational Forms — show any form one question at a time. Turn it on per form; your fields, layout and conditional logic stay as they are.

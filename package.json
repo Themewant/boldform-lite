@@ -18,6 +18,7 @@
     "wpml-config.xml"
   ],
   "scripts": {
+    "test:browser": "node tests/browser/ai-loader.mjs && node tests/browser/start-cards.mjs && node tests/browser/build-settings-fixture.mjs && node tests/browser/ai-settings.mjs",
     "makepot": "wp i18n make-pot . languages/boldform-lite.pot --exclude=build,node_modules,src,tests --slug=boldform-lite && sed -i.bak '/POT-Creation-Date/d' languages/boldform-lite.pot && rm -f languages/boldform-lite.pot.bak",
     "build": "npm run makepot && wp-scripts plugin-zip && { zip -qd boldform-lite.zip boldform-lite/package.json boldform-lite/README.md || true; } && rm -rf build && mkdir -p build && unzip -qo boldform-lite.zip -d build && mv -f boldform-lite.zip build/boldform-lite-$npm_package_version.zip",
     "release": "npm run makepot && { [ -z \"$(git status --porcelain)\" ] || { echo 'Working tree is not clean (commit the regenerated translation template if it changed) - commit or stash before releasing.'; exit 1; }; } && npm run build"
