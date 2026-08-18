@@ -3758,7 +3758,9 @@ class BoldForm_Lite_Admin {
 		$tabs = array(
 			'general' => array( 'label' => __( 'General', 'boldform-lite' ), 'icon' => 'dashicons-admin-generic' ),
 			'captcha' => array( 'label' => __( 'Captcha', 'boldform-lite' ), 'icon' => 'dashicons-shield' ),
-			'ai'      => array( 'label' => __( 'AI', 'boldform-lite' ), 'icon' => 'dashicons-superhero-alt' ),
+			// `mark` opts a tab out of Dashicons. Dashicons has no sparkle, and this
+			// is the only tab that needs one; `icon` stays as the fallback.
+			'ai'      => array( 'label' => __( 'AI', 'boldform-lite' ), 'icon' => 'dashicons-superhero-alt', 'mark' => 'sparkle' ),
 			'smtp'    => array( 'label' => __( 'SMTP', 'boldform-lite' ), 'icon' => 'dashicons-email-alt' ),
 			'tools'   => array( 'label' => __( 'Tools', 'boldform-lite' ), 'icon' => 'dashicons-migrate' ),
 		);
@@ -3784,7 +3786,16 @@ class BoldForm_Lite_Admin {
 				<nav class="boldform-settings-sidebar">
 					<?php foreach ( $tabs as $tab_key => $tab ) : ?>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=' . $tab_key ) ); ?>" class="boldform-nav-item<?php echo $tab_key === $active_tab ? ' is-active' : ''; ?>">
-							<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php if ( 'sparkle' === ( $tab['mark'] ?? '' ) && class_exists( 'BoldForm_Lite_AI_Builder' ) ) : ?>
+								<?php
+								// Static markup built from literals inside the helper — there is
+								// nothing here for an escaper to act on, and running wp_kses over
+								// it would only strip the gradient it depends on.
+								echo BoldForm_Lite_AI_Builder::sparkle_svg( 'tab' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								?>
+							<?php else : ?>
+								<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php endif; ?>
 							<?php echo esc_html( $tab['label'] ); ?>
 						</a>
 					<?php endforeach; ?>

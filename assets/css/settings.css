@@ -362,6 +362,21 @@
 	opacity: 0.65;
 }
 
+/*
+ * The sparkle marking the AI tab. Sized to match the dashicons beside it but a
+ * touch larger, because a star's thin arms carry less ink than a solid glyph
+ * and matching by number leaves it looking smaller than its neighbours.
+ *
+ * It keeps its own colour rather than taking the nav's, so it stays legible as
+ * the mark for this feature whether the tab is active or not — which is also
+ * why it is exempt from the 0.65 dimming above.
+ */
+.boldform-settings-sidebar .boldform-nav-item .boldform-ai-spark {
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+}
+
 .boldform-settings-sidebar .boldform-nav-item.is-active .dashicons {
 	opacity: 1;
 }

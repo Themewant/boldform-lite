@@ -134,6 +134,46 @@ class BoldForm_Lite_AI_Builder {
 	 *
 	 * @return bool
 	 */
+	/**
+	 * The sparkle mark that stands for this feature in the admin.
+	 *
+	 * Dashicons has no sparkle, and the nearest candidates all say something
+	 * else — `superhero-alt`, used here before, is a gem in a shield, which reads
+	 * as "premium" on a feature that is free. A four-point star with a smaller
+	 * companion is the mark every mainstream AI affordance uses, so it is the one
+	 * glyph a user reads as "AI" before reading the label.
+	 *
+	 * The fill is a gradient rather than `currentColor` because the mark has to
+	 * hold its meaning whatever colour surrounds it.
+	 *
+	 * Several of these can share a page, and SVG resolves `url(#id)` against the
+	 * whole document, so the gradient id is suffixed per placement — a duplicate
+	 * would make one mark paint with another's gradient. `sanitize_html_class()`
+	 * guarantees the suffix is inert even though every caller passes a literal.
+	 *
+	 * The card in the form builder draws the same mark in JavaScript, because it
+	 * is injected client-side (see `assets/js/ai-builder.js`). Change one, change
+	 * the other.
+	 *
+	 * @param string $variant Placement, used to keep the gradient id unique.
+	 * @return string Inline SVG markup, built entirely from literals.
+	 */
+	public static function sparkle_svg( $variant ) {
+		$id = 'boldform-ai-spark-' . sanitize_html_class( $variant );
+
+		return '<svg class="boldform-ai-spark" viewBox="1.9 0.45 24 24" aria-hidden="true" focusable="false">'
+			. '<defs>'
+				. '<linearGradient id="' . $id . '" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">'
+					. '<stop offset="0" stop-color="#4f46e5"></stop>'
+					. '<stop offset="0.55" stop-color="#9333ea"></stop>'
+					. '<stop offset="1" stop-color="#d946ef"></stop>'
+				. '</linearGradient>'
+			. '</defs>'
+			. '<path fill="url(#' . $id . ')" d="M12 2c.9 5.1 2 6.2 7.1 7.1-5.1.9-6.2 2-7.1 7.1-.9-5.1-2-6.2-7.1-7.1 5.1-.9 6.2-2 7.1-7.1Z"></path>'
+			. '<path fill="url(#' . $id . ')" opacity="0.75" d="M18.5 14.1c.56 3.16 1.24 3.84 4.4 4.4-3.16.56-3.84 1.24-4.4 4.4-.56-3.16-1.24-3.84-4.4-4.4 3.16-.56 3.84-1.24 4.4-4.4Z"></path>'
+			. '</svg>';
+	}
+
 	public static function is_configured() {
 		return '' !== self::api_key_for( self::selected_provider() );
 	}
