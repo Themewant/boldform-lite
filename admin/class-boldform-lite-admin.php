@@ -2022,7 +2022,7 @@ class BoldForm_Lite_Admin {
 
 					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Unlock payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
 						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
@@ -2471,7 +2471,7 @@ class BoldForm_Lite_Admin {
 					 * @param string $context Which dialog. One of 'fields', 'templates',
 					 *                        'export', 'export_excel', 'export_pdf'.
 					 */
-					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' ) );
+					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' ) );
 				?></h2>
 				<p class="boldform-upgrade-modal__text"><?php
 					/**
@@ -2632,13 +2632,13 @@ class BoldForm_Lite_Admin {
 	 */
 	private function upgrade_modal_inline_js() {
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel export', 'boldform-lite' ), 'export_excel' );
+		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel export', 'boldform-lite' ), 'export_excel' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock PDF export', 'boldform-lite' ), 'export_pdf' );
+		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'PDF export', 'boldform-lite' ), 'export_pdf' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' );
+		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' );
 
 		// Keys are the two vocabularies the openers use: data-boldform-export-feature
 		// on the Entries teaser buttons ('excel'/'pdf') and the option values in the
