@@ -79,12 +79,31 @@
 	color: #64748b;
 }
 
+/*
+ * Wrapping flex rather than a grid, so a row that isn't full sits centred
+ * instead of hugging the left edge. A grid can't do that: its columns are
+ * shared by every row, so whatever the alignment, a short last row still lines
+ * its cards up under the first row's. The card count isn't fixed — an add-on
+ * can contribute one, and there may be more here later — so one, two or four
+ * has to look as deliberate as three.
+ *
+ * The basis is what a three-up row works out to: a third of the width, less
+ * each card's share of the two gaps. Cards therefore keep one size at any
+ * count rather than stretching to fill a short row.
+ */
 .boldform-setup-choices {
-	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
 	gap: 20px;
 	max-width: 960px;
 	margin: 0 auto;
+}
+
+.boldform-setup-choices > * {
+	flex: 0 1 calc((100% - 40px) / 3);
+	/* Without this a long unbroken word in a card can push it past its basis. */
+	min-width: 0;
 }
 
 .boldform-setup-card {
@@ -152,14 +171,17 @@
 
 @media screen and (max-width: 900px) {
 	.boldform-setup-choices {
-		grid-template-columns: 1fr 1fr;
 		max-width: 640px;
+	}
+
+	.boldform-setup-choices > * {
+		flex-basis: calc((100% - 20px) / 2);
 	}
 }
 
 @media screen and (max-width: 480px) {
-	.boldform-setup-choices {
-		grid-template-columns: 1fr;
+	.boldform-setup-choices > * {
+		flex-basis: 100%;
 	}
 }
 
@@ -1497,12 +1519,20 @@
 	color: #64748b;
 }
 
+/* Centred wrapping flex for the same reason as .boldform-setup-choices above:
+   two columns and an odd number of cards leaves the last one stranded left. */
 .boldform-start-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
 	gap: 14px;
 	margin-top: 18px;
 	text-align: left;
+}
+
+.boldform-start-grid > * {
+	flex: 0 1 calc((100% - 14px) / 2);
+	min-width: 0;
 }
 
 .boldform-start-card {
@@ -5697,9 +5727,13 @@
 		grid-template-columns: 1fr;
 	}
 
-	.boldform-start-grid,
 	.boldform-template-grid {
 		grid-template-columns: 1fr;
+	}
+
+	/* .boldform-start-grid is flex, so it stacks by basis, not by track. */
+	.boldform-start-grid > * {
+		flex-basis: 100%;
 	}
 
 	.boldform-template-modal {

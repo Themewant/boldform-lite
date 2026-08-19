@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,171 +12,109 @@ Lightweight drag-and-drop WordPress form builder — contact forms and more with
 
 == Description ==
 
-**BoldForm** is a fast, lightweight drag-and-drop form builder for WordPress. Build any form you need in a visual editor — no code — then embed it anywhere with a shortcode, a Gutenberg block, or an Elementor widget. Every submission is stored safely in your WordPress database and managed right from your dashboard.
+**BoldForm** is a fast, lightweight drag-and-drop form builder for WordPress. Build any form in a visual editor — no code — then embed it with a shortcode, a Gutenberg block or an Elementor widget. Every submission is stored in your own database.
 
-From a simple contact form to a form with conditional logic, spam protection, and email-marketing sync, BoldForm gives you the tools professional forms need — without the bloat that slows your site down.
-
-* [Live Demo](https://wpboldform.com/) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant) | [Upgrade to Pro](https://wpboldform.com/)
+* [Live Demo](https://wpboldform.com/) | [Documentation](https://documentation.themewant.com/docs/boldform-user-guide/) | [Roadmap](https://wpboldform.com/roadmap/) | [Support](https://themewant.com/support/) | [Community](https://www.facebook.com/groups/themewant)
 
 https://www.youtube.com/watch?v=EWum_aGDAMc
 
 = Why BoldForm? =
 
-* **Drag & drop** — build and reorder fields visually, configure each one instantly, and watch your styling update live as you work.
-* **Conversational forms, free** — turn any form into a one-question-at-a-time experience with a single switch. No rebuild, no separate form type, no add-on.
-* **Lightweight by design** — assets load only where a form appears, the analytics chart uses the browser's native canvas (no charting library), and each form is queried once per request.
-* **No lock-in** — export and import your forms, entries, and settings as JSON at any time.
-* **Yours to control** — submissions live in your own database, with built-in tools to export or erase personal data on request.
-* **Extend anywhere** — a clean, documented action/filter API lets add-ons and developers hook into every stage of the form lifecycle.
+* **Drag & drop** — build and reorder fields visually, with styling that updates live.
+* **Conversational forms, free** — any form becomes one-question-at-a-time with a single switch. No rebuild, no add-on.
+* **Lightweight by design** — assets load only where a form appears, and each form is queried once per request.
+* **No lock-in** — export and import forms, entries and settings as JSON at any time.
+* **Yours to control** — submissions live in your own database, with tools to export or erase personal data on request.
+* **Extend anywhere** — a documented action/filter API covers every stage of the form lifecycle.
 
-Perfect for contact forms, quote requests, registrations, feedback forms, surveys, job applications, event sign-ups, and newsletter opt-ins.
+Perfect for contact forms, quote requests, registrations, feedback forms, surveys, job applications, event sign-ups and newsletter opt-ins.
 
 = Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms =
 
-Build forms visually without writing a single line of code. Drag fields from the sidebar, drop them into multi-column rows, reorder with a handle, and configure every field in its own settings panel.
+Drag fields from the sidebar into multi-column rows, reorder with a handle, and configure each field in its own panel.
+
+* **Multi-column layouts** with adjustable widths.
+* **Live Style tab** — field, label and button styling with Normal / Hover / Focus / Checked states, design themes, gradients and per-device (desktop / tablet / mobile) values.
+* **Custom submit button** — your own text, a Dashicon or custom SVG icon, and icon colour.
+* **11 form templates** across General, Business, Events & Booking, and HR & Surveys — import one in a click, then make it yours.
 
 https://www.youtube.com/watch?v=wkY9uTVaYJ0
 
-* **Multi-column layouts** — arrange fields in flexible rows and columns with adjustable widths.
-* **Live Style tab** — field, label, and button styling updates instantly beside the controls, with Normal / Hover / Focus / Checked states, selectable design themes, gradient backgrounds, and per-device (desktop / tablet / mobile) responsive values.
-* **Custom submit button** — set your own text, a Dashicon or custom SVG icon, and the icon colour.
-* **Form templates** — start from one of 11 ready-made templates instead of a blank canvas, then customise from there (see below).
+= AI Form Builder — describe a form and have it built =
 
-= Form Template Library =
+Type what you need — "a job application with a CV upload" — and the form is built on the canvas: fields, labels, help text, multi-column rows, page breaks and conditional rules, all editable afterwards.
 
-Skip the blank canvas. BoldForm ships 11 ready-made forms, grouped into General, Business, Events & Booking, and HR & Surveys — import any of them into the builder with a single click, then make it yours.
-
-https://www.youtube.com/watch?v=Iv9QXaEa2i0
-
-* **General** — Contact Form, Newsletter Signup, Feedback Form, Registration Form.
-* **Business** — Lead Capture Form, Support Ticket, Order / Quote Request.
-* **Events & Booking** — Event RSVP, Booking / Appointment.
-* **HR & Surveys** — Job Application, Customer Survey.
+* **Bring your own key** — Anthropic, OpenAI, Google Gemini or OpenRouter, using your own API key. Prompts go straight from your site to the provider you pick, billed to your account. Gemini has a free tier.
+* **Only your real fields** — the model is constrained to the field types your site actually has, so it cannot invent one. Add-ons that register more field types extend it automatically.
+* **Nothing is stored or shared** — only the sentence you type is sent. Your forms, entries and visitors are never part of it. See External Services below.
 
 = All the Fields You Need =
 
-**Standard**
-* Text, Email, URL, Phone, Number, Numeric, Textarea
-
-**Choice**
-* Select (single or multi-select custom dropdown), Multi Select, Checkbox, Radio, Country
-
-**Date & Time**
-* Date picker and Time picker (powered by the bundled Flatpickr)
-
-**Rating & Range**
-* Star Rating (per-field colours and size), Slider / Range (with an optional dual-handle min–max mode)
-
-**Advanced input**
-* Input Mask for formatted text entry
-* File Upload with a configurable size cap, stored in your WordPress uploads
-
-**Identity & address**
-* Name (structured first / middle / last)
-* Address (structured multi-line address)
-
-**Layout & content**
-* Section Break (heading + description divider), Paragraph / Static Text, HTML Editor, Terms & Conditions
+* **Standard** — Text, Email, URL, Phone, Number, Numeric, Textarea
+* **Choice** — Select, Multi Select, Checkbox, Radio, Country
+* **Date & time** — Date and Time pickers (bundled Flatpickr)
+* **Rating & range** — Star Rating with per-field colours and size, Slider / Range with an optional dual-handle mode
+* **Advanced input** — Input Mask, File Upload with a size cap, stored in your WordPress uploads
+* **Identity & address** — Name (first / middle / last), Address (structured multi-line)
+* **Layout & content** — Section Break, Paragraph / Static Text, HTML Editor, Terms & Conditions
 
 = Conversational Forms =
 
-Show any form one question at a time, like a conversation. Flip one switch in Form Settings and the form you already built is presented as a guided sequence of screens — the same fields, the same layout, the same conditional logic, the same notifications. Switch it off and the form goes straight back to normal.
+Flip one switch in Form Settings and the form you already built becomes a guided sequence of screens — same fields, same layout, same conditional logic, same notifications. Switch it off and it goes back to normal.
 
-* **Works on forms you already have** — nothing is rewritten and nothing is duplicated. Your conditional logic keeps working, and a question whose field is currently hidden is skipped rather than shown as an empty screen.
-* **Welcome screen** — open with a title, a short intro and a Start button instead of dropping the visitor straight into question one.
-* **Progress your way** — a bar, dots, a counter or a percentage, or none at all. Position it left, centre or right, and colour the unfinished part.
-* **Keyboard first** — Enter moves to the next question, Shift+Enter starts a new line in a paragraph field, and an optional on-screen hint tells visitors so.
-* **Design per screen** — give any screen its own image, placed left, right or behind the question, and its own background, question and answer colours. Anything you don't set follows the form's defaults.
-* **Degrades safely** — with JavaScript unavailable the form renders as an ordinary single-page form and still submits.
+* **Works on forms you already have** — nothing is rewritten, and a question whose field is hidden is skipped rather than shown empty.
+* **Welcome screen** — open with a title, a short intro and a Start button.
+* **Progress your way** — a bar, dots, a counter or a percentage, or none; left, centre or right.
+* **Keyboard first** — Enter advances, Shift+Enter starts a new line in a paragraph field.
+* **Design per screen** — its own image and its own background, question and answer colours.
+* **Degrades safely** — without JavaScript it renders as an ordinary single-page form and still submits.
 
 = Smart Form Features =
 
-* **Conditional Logic** — show or hide any field based on the visitor's previous answers, with AND / OR rules per field.
-* **AJAX Submission** — forms submit without a full page reload for a smooth, fast experience.
+* **Conditional Logic** — show or hide any field based on previous answers, with AND / OR rules per field.
+* **AJAX Submission** — forms submit without a full page reload.
 * **Duplicate Prevention** — optionally block repeat submissions based on a chosen field, such as email address.
 
 = Entries Management =
 
-Every submission is saved to a custom database table — a permanent record, independent of email delivery.
+Every submission is saved to a custom database table, independent of email delivery.
 
-* View, filter, and read submissions from **BoldForm → Entries**.
-* Mark entries **Read, Unread, Starred, or Spam**, with a dedicated Spam tab.
-* **Trash & restore** — move entries to a Trash tab instead of deleting them outright, then restore them (with their original status intact) or delete them permanently, so an accidental delete is recoverable.
-* **Bulk actions** — mark many entries at once, move them to Trash, or — from the Trash tab — restore or permanently delete them.
-* **CSV export** — export all entries, or just the ones you select.
-* **Reports & Analytics** — a dashboard of total forms, total entries, and per-form stats, charted with the browser's native HTML5 Canvas (no external library loaded).
+* View, filter and read submissions from **BoldForm → Entries**.
+* Mark entries **Read, Unread, Starred or Spam**, with a dedicated Spam tab.
+* **Trash & restore** — an accidental delete is recoverable, with the original status intact.
+* **Bulk actions** and **CSV export**, for all entries or just the ones you select.
+* **Reports & Analytics** — totals and per-form stats, charted with the browser's native HTML5 Canvas (no external library).
 
 = Spam Protection =
 
-* **Honeypot** — Invisible hidden field catches bots automatically, no setup required
-* **Google reCAPTCHA v2** — Checkbox challenge; requires a site key and secret key from Google
-* **hCaptcha** — Privacy-friendly alternative to reCAPTCHA; requires keys from hCaptcha
-* **Cloudflare Turnstile** — Modern, no-puzzle captcha from Cloudflare; requires keys from the Cloudflare dashboard
-* **Math Captcha** — Simple arithmetic challenge, works out of the box with no API keys
-
----
+* **Honeypot** — invisible field, catches bots with no setup
+* **Math Captcha** — arithmetic challenge, no API keys needed
+* **Google reCAPTCHA v2**, **hCaptcha** and **Cloudflare Turnstile** — each needs a site key and secret key from the provider
 
 = Email Marketing Integrations =
 
-* **Email Notifications** — send an admin notification on every submission, with a custom "From" name, reply-to, subject, and message body. Test delivery straight from the settings panel.
-* **SMTP** — route outgoing mail through your own SMTP server for reliable delivery.
-* **Mailchimp** — add contacts to any audience list with email, first-name, and last-name mapping.
-* **Brevo (formerly Sendinblue)** — add contacts to any Brevo list with field mapping.
+* **Email Notifications** — an admin notification per submission, with a custom "From" name, reply-to, subject and body. Test delivery from the settings panel.
+* **SMTP** — route outgoing mail through your own SMTP server.
+* **Mailchimp** and **Brevo (formerly Sendinblue)** — add contacts to any list with field mapping.
 
-Configure connections under **BoldForm → Settings → Integrations**, then assign one to each form.
+Configure these under **BoldForm → Settings → Integrations**, then assign one to each form.
 
 = Embed Anywhere =
 
 * **Shortcode** — `[boldform id="123"]`
-* **Gutenberg Block** — insert the BoldForm block in any page or post (Block API v3, with a styled in-editor preview).
-* **Elementor Widget** — a native widget with full styling controls for fields, labels, buttons, and more, editable right in the Elementor panel.
+* **Gutenberg Block** — Block API v3, with a styled in-editor preview.
+* **Elementor Widget** — native, with full styling controls for fields, labels and buttons.
 
-= Import, Export & Tools =
+= Tools, Privacy & Developers =
 
-Move your work between sites with one click. From **BoldForm → Tools**, export all forms, a single form together with its entries, or your global settings as a JSON file, and import them back on any other site.
-
-= Developer Friendly =
-
-BoldForm ships a documented action/filter API so add-ons and custom code can hook into validation, submission, entry storage, integrations, and rendering — without touching core. Register custom field types, resolve auto-populate keys, defer post-save actions, and render rich entry values in the admin.
-
-= Privacy & GDPR Ready =
-
-* Submissions stay in **your** database; nothing is sent anywhere unless you configure one of the external services listed below.
-* A personal-data **exporter and eraser** are registered with WordPress's privacy tools, keyed on the submitter's email address.
-* Optional "remove all data on uninstall" cleanup.
-
-= Translation & Multisite =
-
-* Every string uses the `boldform-lite` text domain and is ready for translation.
-* Network-activate on multisite and tables are created automatically for each new subsite.
+* **Import & export** — all forms, a single form with its entries, or your global settings, as JSON.
+* **Privacy & GDPR** — a personal-data exporter and eraser registered with WordPress's privacy tools, plus optional remove-all-data-on-uninstall. See Privacy below.
+* **Translation & multisite** — full `boldform-lite` text domain; tables created automatically for each new subsite.
+* **Developer API** — documented hooks for validation, submission, entry storage, integrations and rendering, plus custom field-type registration.
 
 = Meet BoldForm Pro =
 
-Ready for more? **[BoldForm Pro](https://wpboldform.com/)** unlocks advanced tools for professionals and agencies — all inside the same drag-and-drop builder you already know.
-
-**Advanced form building**
-
-* **Multi-page (step) forms** with progress indicators
-* **Advanced fields** — Rich Text, Signature, Repeater, Calculation, Geolocation, NPS and more
-* **Auto-populate & hidden data** fields
-* **Form scheduling** with open / close dates
-* **Advanced analytics** — form views and conversion tracking
-* **Webhooks** to send form data to any external URL
-
-**Payments**
-
-* **Stripe** and **PayPal** — accept one-time and recurring payments right inside your forms.
-
-**30+ integrations** — connect a form to the apps you already use:
-
-* **Email marketing** — ActiveCampaign, Kit (formerly ConvertKit), AWeber, GetResponse, MailerLite, Constant Contact, Drip, and Moosend (in addition to Mailchimp and Brevo from Lite).
-* **CRM** — HubSpot, Salesforce, Zoho CRM, Pipedrive, Freshsales, FluentCRM, Help Scout, and monday.com.
-* **Automation** — Zapier, Make, and Pabbly Connect.
-* **Productivity** — Notion, Airtable, Trello, and Asana.
-* **Storage** — Google Sheets, Google Drive, and Dropbox.
-* **Messaging & notifications** — Slack, Discord, Telegram, and Microsoft Teams.
-
-Plus **priority support and automatic updates**.
+**[BoldForm Pro](https://wpboldform.com/)** adds multi-page forms, advanced fields (Rich Text, Signature, Repeater, Calculation and more), form scheduling, conversion analytics, webhooks, Stripe and PayPal payments, and 30+ integrations — inside the same builder.
 
 [See everything in BoldForm Pro →](https://wpboldform.com/)
 
@@ -229,6 +167,14 @@ Yes. When the plugin is network-activated, it automatically creates the necessar
 
 Yes. Submissions stay in your own database, and BoldForm registers a personal-data exporter and eraser with WordPress's privacy tools so you can fulfil data-subject requests by email address. See the Privacy section below for details.
 
+= Do I need to pay to use the AI form builder? =
+
+Not to BoldForm — it is part of the free plugin. You do need an API key from one of the supported providers (Anthropic, OpenAI, Google Gemini or OpenRouter), and whatever that provider charges is billed to your own account. Google's Gemini has a free tier, so you can try it without spending anything. Add your key under BoldForm > Settings > AI.
+
+= What does the AI form builder send, and where? =
+
+Only the description you type into the "Describe your form" box, plus a list of the field types your site supports so the model cannot suggest a field you do not have. It goes from your site directly to the provider you selected — there is no BoldForm server in between — and the plugin does not store your prompts. Your forms, entries and visitor data are never sent. Full details for each provider are in the External Services section below.
+
 = Is there a Pro version? =
 
 Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advanced field types, webhooks, and 30+ integrations. See the **Meet BoldForm Pro** section above, or visit [themewant.com/plugins/boldform](https://wpboldform.com/).
@@ -246,18 +192,17 @@ Yes — **BoldForm Pro** adds payments (Stripe, PayPal), multi-page forms, advan
 
 == Bundled Libraries ==
 
-All JavaScript and CSS assets are bundled locally within the plugin directory. No scripts or styles are loaded from a CDN or any remote server except for the explicitly documented external services listed below.
+All JavaScript and CSS is bundled locally. Nothing is loaded from a CDN or any remote server, apart from the external services documented below.
 
 **Bundled third-party libraries:**
 
-* **Flatpickr** (`assets/js/flatpickr.min.js`, `assets/css/flatpickr.min.css`) — MIT License — https://github.com/flatpickr/flatpickr
-  Local copy used for the date and time picker fields. Not fetched from any CDN.
+* **Flatpickr** (`assets/js/flatpickr.min.js`, `assets/css/flatpickr.min.css`) — MIT License — https://github.com/flatpickr/flatpickr — local copy used for the date and time picker fields.
 
 **First-party scripts:**
 
-* `assets/js/sortable.js` — a small first-party drag-and-drop helper written for this plugin (used for field ordering in the builder). It is original BoldForm code, not the third-party SortableJS library, and is GPL-licensed with the rest of the plugin.
+* `assets/js/sortable.js` — a small drag-and-drop helper written for this plugin (field ordering in the builder). Original BoldForm code, not the third-party SortableJS library, GPL-licensed with the rest of the plugin.
 
-The submissions chart on the Reports page is rendered using the browser's native HTML5 Canvas API. No external charting library is loaded.
+The Reports chart uses the browser's native HTML5 Canvas API. No charting library is loaded.
 
 == External Services ==
 
@@ -324,7 +269,51 @@ Adds contacts to a Brevo list on form submission.
 * Terms of Use: https://www.brevo.com/legal/termsofuse/
 * Privacy Policy: https://www.brevo.com/legal/privacypolicy/
 
+= AI Form Builder =
+
+The AI Form Builder turns a plain-language description into a form. When you press Generate, the plugin sends the sentence you type, plus a list of the field types your site supports, to the provider you selected, and receives a form structure back. Nothing about your forms, entries or visitors is sent — only the text you type into the "Describe your form" box. Prompts are not stored by the plugin. Only the one provider selected under BoldForm > Settings > AI is contacted, and only once you have saved your own API key for it.
+
+= AI Form Builder — Anthropic (Claude) =
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "Anthropic" is selected under BoldForm > Settings > AI and you have saved your own Anthropic API key
+* Service provider: Anthropic PBC (Messages API)
+* Terms of Service: https://www.anthropic.com/legal/consumer-terms
+* Privacy Policy: https://www.anthropic.com/legal/privacy
+
+= AI Form Builder — OpenAI =
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "OpenAI" is selected under BoldForm > Settings > AI and you have saved your own OpenAI API key
+* Service provider: OpenAI, L.L.C. (Chat Completions API)
+* Terms of Service: https://openai.com/policies/row-terms-of-use/
+* Privacy Policy: https://openai.com/policies/row-privacy-policy/
+
+= AI Form Builder — Google Gemini =
+
+* Data sent: The description you type, and the list of field types available on your site
+* When: Each time you press Generate in the form builder
+* Condition: Only when "Google Gemini" is selected under BoldForm > Settings > AI and you have saved your own Google AI Studio API key
+* Service provider: Google LLC (Gemini API)
+* Terms of Service: https://ai.google.dev/gemini-api/terms
+* Privacy Policy: https://policies.google.com/privacy
+
+= AI Form Builder — OpenRouter =
+
+OpenRouter is an aggregator: your description is passed on to whichever upstream provider hosts the model you chose, so their terms apply as well. The plugin also fetches OpenRouter's public model list so it can offer you a choice; that request sends nothing about your site.
+
+* Data sent: The description you type, and the list of field types available on your site. Separately, an unauthenticated request for the public model catalogue, which sends nothing about your site
+* When: Each time you press Generate in the form builder; the model catalogue is fetched at most once every 12 hours while the AI settings screen is open
+* Condition: Only when "OpenRouter" is selected under BoldForm > Settings > AI and you have saved your own OpenRouter API key
+* Service provider: OpenRouter, Inc.
+* Terms of Service: https://openrouter.ai/terms
+* Privacy Policy: https://openrouter.ai/privacy
+
 == Privacy ==
+
+The AI Form Builder is the one feature that sends anything without a visitor being involved. It is off until you save your own API key, and what leaves the site is the sentence you type into the "Describe your form" box — never your forms, your entries, or anything about your visitors. The description is sent to the provider you chose, is not stored by the plugin, and is not sent anywhere else. See External Services above for each provider's terms.
 
 When a visitor submits a form, BoldForm Lite stores the submission in your site's own database (no data is sent anywhere unless you have configured one of the external services listed above). Each stored entry includes:
 
@@ -345,6 +334,20 @@ Integrating Appsero SDK **DOES NOT IMMEDIATELY** start gathering data, **without
 Learn more about how [Appsero collects and uses this data](https://appsero.com/privacy-policy/).
 
 == Changelog ==
+
+= 1.1.8 =
+New features:
+* New: AI Form Builder — describe a form in plain language and have it built on the canvas, with multi-column rows, multi-step page breaks, help text and conditional show/hide rules.
+* New: Choose your AI provider — Anthropic, OpenAI, Google Gemini or OpenRouter — under Settings > AI, using your own API key. Gemini has a free tier.
+* New: Pick any OpenRouter model that supports strict JSON schema output; the list is fetched live and grouped by vendor.
+* New: The generator only offers field types your site actually has, so add-ons that register more field types extend it automatically.
+
+Improvements:
+* Improved: Settings dropdowns support option groups and type-ahead, so long lists are usable from the keyboard.
+* Improved: The new-form and empty-canvas screens centre a row that is not full, instead of leaving the last card stranded on the left.
+* Improved: Upgrade prompts name the feature or the add-on instead of saying "Unlock", so nothing reads as being withheld from you.
+* Improved: The Tools export format list offers only the formats you have. Excel and PDF are described in a note instead of shown as options you cannot pick.
+
 = 1.1.7 =
 New features:
 * New: Conversational Forms — show any form one question at a time. Turn it on per form; your fields, layout and conditional logic stay as they are.
@@ -497,6 +500,9 @@ Entries for 1.1.0 and earlier have been trimmed to keep this changelog within th
 
 == Upgrade Notice ==
 
+= 1.1.8 =
+Adds the AI Form Builder: describe a form in plain language and have it built on the canvas, using your own key with Anthropic, OpenAI, Gemini or OpenRouter. Also rewords the upgrade prompts and tidies the Tools export format list. Recommended for all users.
+
 = 1.1.7 =
 Adds extension points so an add-on can show its own admin notices and word the locked field, template and export prompts for license activation rather than purchase. Fixes the Tools export format selector disappearing when an add-on was installed but not yet active. Recommended for all users.
 
@@ -504,10 +510,10 @@ Adds extension points so an add-on can show its own admin notices and word the l
 Important fix: a form exported from one site imported with no fields on another. Also adds the Form Migrator (import your Contact Form 7 forms), Page Break step and progress settings, a Switch style for checkboxes, and search, sorting and paging on the Forms list. Recommended for all users.
 
 = 1.1.5 =
-Security: an email field now rejects a malformed address instead of silently correcting it (closing a header-injection route), and Cc/Bcc on the visitor's confirmation email are re-validated the same way the admin notification's already were. Also adds recipient and attachment extension hooks and a capability API for add-ons, used by BoldForm Pro's Conditional Email Routing and PDF Attachment. Recommended for all users.
+Security: an email field now rejects a malformed address instead of silently correcting it, closing a header-injection route. Cc/Bcc on the visitor's confirmation email are re-validated the same way. Also adds recipient and attachment hooks and a capability API for add-ons.
 
 = 1.1.4 =
-Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it can no longer be spoofed with a crafted link. Also adds a rich thank-you message editor, dimension controls that start linked, a new BoldForm logo across the admin, and new entries-list and email extension hooks for add-ons. Recommended for all users.
+Security fix: the no-JavaScript confirmation message is no longer passed through the page URL, so it cannot be spoofed with a crafted link. Also adds a rich thank-you editor, linked dimension controls, and new entries-list and email hooks.
 
 = 1.1.3 =
 Adds a Trash for entries (recoverable deletion with restore), Cloudflare Turnstile captcha (server-side verified), a tidier "Export Selected" dropdown, and new entry-detail extension hooks for add-ons. Recommended for all users.

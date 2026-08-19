@@ -122,26 +122,60 @@ class BoldForm_Lite_Form_Handler {
 		$result = $this->process_submission( $_POST, true ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- nonce is verified in process_submission().
 
 		if ( $result['success'] ) {
-			wp_send_json_success(
-				array(
-					// The success message is inserted as markup by the frontend script, so
-					// it is filtered here rather than where it was read: boldform_submission_result
-					// runs after that point and can replace the message with anything.
-					// Filtering at the boundary keeps that filter from becoming a way to
-					// put script on the page. The error branch below is printed as text.
-					'message'      => wp_kses_post( (string) $result['message'] ),
-					'redirectUrl'  => $result['redirect_url'],
-				)
+			$payload = array(
+				// The success message is inserted as markup by the frontend script, so
+				// it is filtered here rather than where it was read: boldform_submission_result
+				// runs after that point and can replace the message with anything.
+				// Filtering at the boundary keeps that filter from becoming a way to
+				// put script on the page. The error branch below is printed as text.
+				'message'      => wp_kses_post( (string) $result['message'] ),
+				'redirectUrl'  => $result['redirect_url'],
 			);
+
+			/**
+			 * Filter the successful AJAX response payload sent to the browser.
+			 *
+			 * A submission is not always finished when it is saved. This lets an
+			 * extension attach whatever the browser needs to complete the work the
+			 * submission started — Pro's payment module uses it when a card issuer
+			 * interrupts for an authentication step. Pair it with the
+			 * boldform_form_submitted JS event, which lets the same extension hold
+			 * the confirmation until that work is done.
+			 *
+			 * The message and redirect URL are already escaped above; anything
+			 * added here is the adding extension's responsibility.
+			 *
+			 * @param array<string, mixed> $payload Response payload.
+			 * @param array<string, mixed> $result  Full submission result.
+			 */
+			$payload = (array) apply_filters( 'boldform_submission_response', $payload, $result );
+
+			wp_send_json_success( $payload );
 		}
 
-		wp_send_json_error(
-			array(
-				'message' => $result['message'],
-				'errors'  => $result['errors'],
-			),
-			400
+		$payload = array(
+			'message' => $result['message'],
+			'errors'  => $result['errors'],
 		);
+
+		/**
+		 * Filter the rejected AJAX response payload sent to the browser.
+		 *
+		 * Counterpart to boldform_submission_response. A rejection is not always
+		 * the end of the story: an extension may have created state the visitor's
+		 * next attempt should continue from rather than duplicate. Pro's payment
+		 * module uses this to name the entry a declined card left behind, so the
+		 * retry updates that row instead of stranding it and inserting another.
+		 *
+		 * The message and errors are printed as text by the frontend script;
+		 * anything added here is the adding extension's responsibility.
+		 *
+		 * @param array<string, mixed> $payload Response payload.
+		 * @param array<string, mixed> $result  Full submission result.
+		 */
+		$payload = (array) apply_filters( 'boldform_submission_error_response', $payload, $result );
+
+		wp_send_json_error( $payload, 400 );
 	}
 
 	/**

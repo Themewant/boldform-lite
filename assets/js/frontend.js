@@ -294,6 +294,66 @@ jQuery(
 			} );
 		}
 
+		/**
+		 * Finishes a successful submission: redirect or confirmation message,
+		 * form reset, and the submit button restored.
+		 *
+		 * Split out and exposed as window.boldformCompleteSubmission so that an
+		 * extension which took over the flow (see the boldform_form_submitted
+		 * event) can finish it without reimplementing any of this. One
+		 * implementation means the immediate and deferred paths cannot drift.
+		 *
+		 * @param {jQuery} $form    The submitted form.
+		 * @param {Object} response The server response.
+		 * @return {void}
+		 */
+		function completeSubmission( $form, response ) {
+			var $message = $form.find( '[data-boldform-message]' );
+			var $submit = $form.find( '.boldform-lite-form__submit' );
+			var message = response && response.data && response.data.message ? response.data.message : boldformLiteFrontend.successText;
+			var redirectUrl = response && response.data && response.data.redirectUrl ? response.data.redirectUrl : '';
+
+			// Fallback: read redirect URL from form data attribute.
+			if ( ! redirectUrl ) {
+				redirectUrl = $form.data( 'redirect-url' ) || '';
+			}
+
+			if ( redirectUrl ) {
+				window.location.href = redirectUrl;
+				return;
+			}
+
+			// The thank-you message is authored in a rich editor, so it is
+			// inserted as markup. It is server-authored and filtered with
+			// the post allowlist on every read, so it carries no script or
+			// event handlers. The error branch stays .text() -- those
+			// messages can quote submitted values back at the visitor.
+			$message
+				.addClass( 'is-visible is-success' )
+				.html( message );
+
+			$form.trigger( 'reset' );
+
+			// Restore the button. On the immediate path .always() has already
+			// done this; on the deferred path this is the only thing that does.
+			$submit.prop( 'disabled', false );
+
+			if ( $submit.data( 'boldformLabel' ) ) {
+				$submit.text( $submit.data( 'boldformLabel' ) );
+			}
+
+			// A native reset reverts inputs to their HTML defaults but
+			// leaves custom widgets (e.g. Pro calculation/payment
+			// displays, signature pads, date-range/NPS visuals,
+			// image-choice tiles, extra repeater rows) showing their
+			// stale state. Announce the reset so those widgets can
+			// re-sync. Lite stays Pro-agnostic — it only fires the
+			// event; each field type handles its own re-sync.
+			$( document ).trigger( 'boldform_form_reset', [ $form ] );
+		}
+
+		window.boldformCompleteSubmission = completeSubmission;
+
 		$( document ).on(
 			'submit',
 			'.boldform-lite-form',
@@ -349,6 +409,9 @@ jQuery(
 					.removeClass( 'is-visible is-success is-error' )
 					.text( boldformLiteFrontend.submittingText );
 
+				// Remembered on the element so completeSubmission() can restore the
+				// label on the deferred path, where .always() stands down.
+				$submit.data( 'boldformLabel', submitText );
 				$submit.prop( 'disabled', true ).text( boldformLiteFrontend.submittingText );
 
 				$.ajax( {
@@ -360,38 +423,29 @@ jQuery(
 				} )
 					.done(
 						function ( response ) {
-							var message = response && response.data && response.data.message ? response.data.message : boldformLiteFrontend.successText;
-							var redirectUrl = response && response.data && response.data.redirectUrl ? response.data.redirectUrl : '';
+							// Announce the response before acting on it. A submission is
+							// not always final at this point -- an extension may still have
+							// work to do that decides the outcome (Pro's payment module
+							// saves the entry as pending, then takes the payment). Calling
+							// preventDefault() on this event hands the rest of the flow --
+							// confirmation, redirect, reset, and the button state -- to
+							// that listener, which finishes by calling
+							// window.boldformCompleteSubmission().
+							//
+							// Lite stays extension-agnostic: it only announces and offers
+							// the completion routine, and knows nothing about what the
+							// listener is waiting for.
+							var submitted = $.Event( 'boldform_form_submitted' );
+							$( document ).trigger( submitted, [ $form, response ] );
 
-							// Fallback: read redirect URL from form data attribute.
-							if ( ! redirectUrl ) {
-								redirectUrl = $form.data( 'redirect-url' ) || '';
-							}
-
-							if ( redirectUrl ) {
-								window.location.href = redirectUrl;
+							if ( submitted.isDefaultPrevented() ) {
+								// Suppresses the .always() button reset below: the listener
+								// owns the button until it completes or fails.
+								$form.data( 'boldformSubmitHeld', true );
 								return;
 							}
 
-							// The thank-you message is authored in a rich editor, so it is
-							// inserted as markup. It is server-authored and filtered with
-							// the post allowlist on every read, so it carries no script or
-							// event handlers. The error branch below stays .text() -- those
-							// messages can quote submitted values back at the visitor.
-							$message
-								.addClass( 'is-visible is-success' )
-								.html( message );
-
-							$form.trigger( 'reset' );
-
-							// A native reset reverts inputs to their HTML defaults but
-							// leaves custom widgets (e.g. Pro calculation/payment
-							// displays, signature pads, date-range/NPS visuals,
-							// image-choice tiles, extra repeater rows) showing their
-							// stale state. Announce the reset so those widgets can
-							// re-sync. Lite stays Pro-agnostic — it only fires the
-							// event; each field type handles its own re-sync.
-							$( document ).trigger( 'boldform_form_reset', [ $form ] );
+							completeSubmission( $form, response );
 						}
 					)
 					.fail(
@@ -409,10 +463,23 @@ jQuery(
 								.text( message );
 
 							showFieldErrors( $form, errors );
+
+							// Counterpart to boldform_form_submitted. A listener waiting on
+							// the outcome of this submission needs to hear about a rejection
+							// too, or it waits forever for a success that is not coming.
+							$( document ).trigger( 'boldform_form_failed', [ $form, response ] );
 						}
 					)
 					.always(
 						function () {
+							// A listener that took over the submission keeps the button
+							// disabled while it works -- re-enabling here would invite a
+							// second submit in the middle of, say, a card confirmation.
+							if ( $form.data( 'boldformSubmitHeld' ) ) {
+								$form.removeData( 'boldformSubmitHeld' );
+								return;
+							}
+
 							$submit.prop( 'disabled', false ).text( submitText );
 						}
 					);
