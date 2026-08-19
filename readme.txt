@@ -4,7 +4,7 @@ Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 1.1.7
+Stable tag: 1.1.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -345,6 +345,8 @@ New features:
 Improvements:
 * Improved: Settings dropdowns support option groups and type-ahead, so long lists are usable from the keyboard.
 * Improved: The new-form and empty-canvas screens centre a row that is not full, instead of leaving the last card stranded on the left.
+* Improved: Upgrade prompts name the feature or the add-on instead of saying "Unlock", so nothing reads as being withheld from you.
+* Improved: The Tools export format list offers only the formats you have. Excel and PDF are described in a note instead of shown as options you cannot pick.
 
 = 1.1.7 =
 New features:
@@ -497,6 +499,9 @@ Developer:
 Entries for 1.1.0 and earlier have been trimmed to keep this changelog within the length WordPress.org displays. See the release notes on the plugin page for the full history.
 
 == Upgrade Notice ==
+
+= 1.1.8 =
+Adds the AI Form Builder: describe a form in plain language and have it built on the canvas, using your own key with Anthropic, OpenAI, Gemini or OpenRouter. Also rewords the upgrade prompts and tidies the Tools export format list. Recommended for all users.
 
 = 1.1.7 =
 Adds extension points so an add-on can show its own admin notices and word the locked field, template and export prompts for license activation rather than purchase. Fixes the Tools export format selector disappearing when an add-on was installed but not yet active. Recommended for all users.
