@@ -4557,8 +4557,10 @@ jQuery(
 		 * @return {string} Markup.
 		 */
 		function upgradeHint( text ) {
+			// No padlock here: the button above the hint already carries one, and a
+			// second lock on the explanatory line reads as a control being withheld
+			// rather than as a note about a separate add-on.
 			return '<p class="boldform-upgrade-hint">' +
-				'<span class="dashicons dashicons-lock" aria-hidden="true"></span>' +
 				escapeHtml( text ) +
 			'</p>';
 		}

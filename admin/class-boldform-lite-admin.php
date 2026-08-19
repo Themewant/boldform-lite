@@ -1008,15 +1008,38 @@ class BoldForm_Lite_Admin {
 						// message template rather than a post, so "Code" describes it better.
 						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
 						'editorCode'      => __( 'Code', 'boldform-lite' ),
-						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
+						/*
+						 * Teaser buttons name the FEATURE, not the action, and route their call to
+						 * action through boldform_upgrade_label — so an add-on that is installed but
+						 * not yet entitled reads "Activate" rather than selling what is already
+						 * bought. A capability verb here ("Attach a PDF of the submission") sits in
+						 * the real control's slot and reads as though this plugin withholds the
+						 * feature; the button only opens an explanatory dialog, so a noun phrase
+						 * naming a separate add-on describes it honestly.
+						 */
+						'addShortcodes'   => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Submitted-data shortcodes — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
 						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
-						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
+						'customizeEmail'  => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Custom email editor — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
 						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
-						// Labelled with the real control's wording, so the block reads the
-						// same before and after the paid feature replaces the teaser.
-						'attachDocument'  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
+						'attachDocument'  => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'PDF attachments — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
 						'attachmentTeaserHint' => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
-						'routeRecipients'   => __( 'Send to different people based on the answers', 'boldform-lite' ),
+						'routeRecipients'   => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Conditional recipients — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
 						'routingTeaserHint' => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
 						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
 						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
@@ -1999,7 +2022,7 @@ class BoldForm_Lite_Admin {
 
 					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Unlock payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
 						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
@@ -2448,7 +2471,7 @@ class BoldForm_Lite_Admin {
 					 * @param string $context Which dialog. One of 'fields', 'templates',
 					 *                        'export', 'export_excel', 'export_pdf'.
 					 */
-					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' ) );
+					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' ) );
 				?></h2>
 				<p class="boldform-upgrade-modal__text"><?php
 					/**
@@ -2477,8 +2500,10 @@ class BoldForm_Lite_Admin {
 
 	/**
 	 * Renders the Tools -> Entries export format selector for the free plugin:
-	 * JSON (the available free format) plus locked Excel/PDF options that open the
-	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields.
+	 * JSON, the one format this plugin produces. The add-on's Excel and PDF
+	 * formats are described beneath the control rather than listed inside it, so
+	 * the select never offers something this plugin cannot deliver. Hooked to
+	 * boldform_tools_entries_export_fields.
 	 * Like the Entries teaser it is gated by show_locked_export_teaser(), NOT by
 	 * boldform_show_upgrade_cta directly: an add-on that ships real multi-format export
 	 * turns the shared switch off, and this teaser has to survive that until the add-on
@@ -2491,13 +2516,8 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 
-		// Suffix on each locked option, and the hint beneath. Both route through the
-		// shared CTA label so an add-on that is installed but not yet entitled says
-		// "Activate License" here too, instead of selling what is already bought.
-		$lock_label = apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' );
-
 		/**
-		 * Filters the hint under the locked export-format select.
+		 * Filters the hint under the export-format control.
 		 *
 		 * @since 1.1.7
 		 *
@@ -2505,24 +2525,19 @@ class BoldForm_Lite_Admin {
 		 */
 		$hint = apply_filters(
 			'boldform_export_lock_hint',
-			__( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' )
+			__( 'Excel and PDF export are available in the BoldForm premium add-on.', 'boldform-lite' )
 		);
 		?>
 		<div class="boldform-field-row">
 			<div class="boldform-field-label"><label for="boldform-export-format"><?php esc_html_e( 'Export format', 'boldform-lite' ); ?></label></div>
 			<div class="boldform-field-control">
-				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
+				<select id="boldform-export-format" name="boldform_export_format" style="max-width:100%;">
 					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
-					<option value="xlsx" data-locked="1"><?php
-						/* translators: %s: call-to-action label, e.g. "Upgrade". */
-						printf( esc_html__( 'Excel (.xlsx) — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?></option>
-					<option value="pdf" data-locked="1"><?php
-						/* translators: %s: call-to-action label, e.g. "Upgrade". */
-						printf( esc_html__( 'PDF — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?></option>
 				</select>
-				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php echo esc_html( $hint ); ?></p>
+				<p class="boldform-upgrade-hint">
+					<?php echo esc_html( $hint ); ?>
+					<button type="button" class="button-link boldform-export-teaser" data-boldform-export-feature="both"><?php esc_html_e( 'Learn more', 'boldform-lite' ); ?></button>
+				</p>
 			</div>
 		</div>
 		<?php
@@ -2617,13 +2632,13 @@ class BoldForm_Lite_Admin {
 	 */
 	private function upgrade_modal_inline_js() {
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel export', 'boldform-lite' ), 'export_excel' );
+		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel export', 'boldform-lite' ), 'export_excel' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock PDF export', 'boldform-lite' ), 'export_pdf' );
+		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'PDF export', 'boldform-lite' ), 'export_pdf' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' );
+		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' );
 
 		// Keys are the two vocabularies the openers use: data-boldform-export-feature
 		// on the Entries teaser buttons ('excel'/'pdf') and the option values in the
@@ -2641,7 +2656,6 @@ class BoldForm_Lite_Admin {
 			'function openModal(f){$m.find(".boldform-upgrade-modal__title").text(titles[f]||fallback);$m.removeAttr("hidden");$("body").addClass("boldform-upgrade-modal-open");}' .
 			'function closeModal(){$m.attr("hidden","hidden");$("body").removeClass("boldform-upgrade-modal-open");}' .
 			'$(document).on("click",".boldform-export-teaser",function(e){e.preventDefault();openModal($(this).data("boldform-export-feature"));});' .
-			'$(document).on("change",".boldform-upgrade-select",function(){var o=this.options[this.selectedIndex];if(o&&o.getAttribute("data-locked")){openModal(o.value);this.value=$(this).data("free-default")||this.options[0].value;}});' .
 			'$m.on("click","[data-boldform-upgrade-close]",function(){closeModal();});' .
 			'$(document).on("keydown",function(e){if(e.key==="Escape"){closeModal();}});' .
 		'});';

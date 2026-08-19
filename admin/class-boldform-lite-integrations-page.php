@@ -279,7 +279,7 @@ class BoldForm_Lite_Integrations_Page {
 						 */
 						$lock_title = (string) apply_filters(
 							'boldform_integration_lock_title',
-							__( 'Unlock this integration', 'boldform-lite' ),
+							__( 'Available in the premium add-on', 'boldform-lite' ),
 							$type
 						);
 					}
