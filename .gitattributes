@@ -28,3 +28,4 @@
 /node_modules/        export-ignore
 /RELEASE-COMPARISON-1.0.2-to-1.1.0.md export-ignore
 /RELEASE-COMPARISON-1.1.0-to-1.1.1.md export-ignore
+/ROADMAP.md            export-ignore

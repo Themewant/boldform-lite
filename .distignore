@@ -39,5 +39,6 @@ phpcs.xml.dist
 # --- Project docs not meant for end users (readme.txt still ships) ---
 /docs
 README.md
+/ROADMAP.md
 /RELEASE-COMPARISON-1.0.2-to-1.1.0.md
 /RELEASE-COMPARISON-1.1.0-to-1.1.1.md
