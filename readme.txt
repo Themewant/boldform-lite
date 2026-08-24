@@ -2,7 +2,7 @@
 Contributors: themewant, maha25
 Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.1.7
 License: GPLv2 or later

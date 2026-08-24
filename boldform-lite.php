@@ -4,7 +4,7 @@
  * Description:       Lightweight drag and drop form builder for WordPress.
  * Version:           1.1.7
  * Requires at least: 6.3
- * Tested up to:      7.0
+ * Tested up to:      7.1
  * Requires PHP:      7.4
  * Author:      Themewant
  * Author URI:  http://themewant.com/
