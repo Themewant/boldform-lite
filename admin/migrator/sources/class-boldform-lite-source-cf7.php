@@ -76,7 +76,7 @@ class BoldForm_Lite_Source_CF7 implements BoldForm_Lite_Migration_Source {
 		$forms = array();
 
 		foreach ( $posts as $post ) {
-			$title   = '' !== trim( (string) $post->post_title )
+			$title = '' !== trim( (string) $post->post_title )
 				? $post->post_title
 				/* translators: %d: Contact Form 7 form ID. */
 				: sprintf( __( 'Contact Form #%d', 'boldform-lite' ), (int) $post->ID );

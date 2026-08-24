@@ -24,9 +24,9 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	/**
 	 * Constructor.
 	 *
-	 * @param array<string, mixed>       $data Initial widget data.
-	 * @param array<string, mixed>|null  $args Extra widget args.
-	 * @param BoldForm_Lite|null         $plugin Plugin instance.
+	 * @param array<string, mixed>      $data Initial widget data.
+	 * @param array<string, mixed>|null $args Extra widget args.
+	 * @param BoldForm_Lite|null        $plugin Plugin instance.
 	 */
 	public function __construct( $data = array(), $args = null, $plugin = null ) {
 		$this->plugin = $plugin instanceof BoldForm_Lite ? $plugin : null;
@@ -167,8 +167,14 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px', '%' ),
 				'range'      => array(
-					'px' => array( 'min' => 200, 'max' => 1400 ),
-					'%'  => array( 'min' => 10, 'max' => 100 ),
+					'px' => array(
+						'min' => 200,
+						'max' => 1400,
+					),
+					'%'  => array(
+						'min' => 10,
+						'max' => 100,
+					),
 				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form' => 'max-width: {{SIZE}}{{UNIT}};',
@@ -303,8 +309,15 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px', 'em' ),
 				'range'      => array(
-					'px' => array( 'min' => 0, 'max' => 100 ),
-					'em' => array( 'min' => 0, 'max' => 6, 'step' => 0.1 ),
+					'px' => array(
+						'min' => 0,
+						'max' => 100,
+					),
+					'em' => array(
+						'min'  => 0,
+						'max'  => 6,
+						'step' => 0.1,
+					),
 				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__fields' => 'row-gap: {{SIZE}}{{UNIT}};',
@@ -318,9 +331,14 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Column Gap', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 0, 'max' => 80 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 80,
+					),
+				),
 				'selectors'  => array(
-					'{{WRAPPER}} .boldform-lite-form__row'    => 'margin-left: -{{SIZE}}px; margin-right: -{{SIZE}}px;',
+					'{{WRAPPER}} .boldform-lite-form__row' => 'margin-left: -{{SIZE}}px; margin-right: -{{SIZE}}px;',
 					'{{WRAPPER}} .boldform-lite-form__column' => 'padding-left: {{SIZE}}px; padding-right: {{SIZE}}px;',
 				),
 			)
@@ -333,8 +351,15 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px', 'em' ),
 				'range'      => array(
-					'px' => array( 'min' => 0, 'max' => 60 ),
-					'em' => array( 'min' => 0, 'max' => 4, 'step' => 0.1 ),
+					'px' => array(
+						'min' => 0,
+						'max' => 60,
+					),
+					'em' => array(
+						'min'  => 0,
+						'max'  => 4,
+						'step' => 0.1,
+					),
 				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form' => '--bf-subfield-gap: {{SIZE}}{{UNIT}};',
@@ -494,7 +519,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Height', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 30, 'max' => 80 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 30,
+						'max' => 80,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__field input:not([type="checkbox"]):not([type="radio"]), {{WRAPPER}} .boldform-lite-form .bf-select__trigger, {{WRAPPER}} .boldform-lite-form select' => 'height: {{SIZE}}{{UNIT}}; min-height: {{SIZE}}{{UNIT}};',
 				),
@@ -507,8 +537,16 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Textarea Height', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 60, 'max' => 400 ) ),
-				'default'    => array( 'size' => 120, 'unit' => 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 60,
+						'max' => 400,
+					),
+				),
+				'default'    => array(
+					'size' => 120,
+					'unit' => 'px',
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__field textarea' => 'height: {{SIZE}}{{UNIT}}; min-height: {{SIZE}}{{UNIT}};',
 				),
@@ -716,7 +754,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Size', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 12, 'max' => 60 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 12,
+						'max' => 60,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form' => '--bf-choice-size: {{SIZE}}{{UNIT}};',
 				),
@@ -748,7 +791,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Spacing Between Options', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 0, 'max' => 24 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 0,
+						'max' => 24,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__choice' => 'margin-bottom: {{SIZE}}{{UNIT}};',
 				),
@@ -1306,8 +1354,16 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Checkbox Size', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 12, 'max' => 30 ) ),
-				'default'    => array( 'size' => 18, 'unit' => 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 12,
+						'max' => 30,
+					),
+				),
+				'default'    => array(
+					'size' => 18,
+					'unit' => 'px',
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'width: {{SIZE}}{{UNIT}}; height: {{SIZE}}{{UNIT}}; min-width: {{SIZE}}{{UNIT}};',
 				),
@@ -1320,8 +1376,16 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Checkbox Border Width', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 1, 'max' => 5 ) ),
-				'default'    => array( 'size' => 2, 'unit' => 'px' ),
+				'range'      => array(
+					'px' => array(
+						'min' => 1,
+						'max' => 5,
+					),
+				),
+				'default'    => array(
+					'size' => 2,
+					'unit' => 'px',
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__terms .boldform-lite-form__choice-control' => 'border-width: {{SIZE}}{{UNIT}};',
 				),
@@ -1355,7 +1419,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Gap Between Checkbox & Text', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 5, 'max' => 30 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 5,
+						'max' => 30,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-form__terms' => 'gap: {{SIZE}}{{UNIT}};',
 				),
@@ -1484,7 +1553,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Star Size', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 16, 'max' => 60 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 16,
+						'max' => 60,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-star-rating' => '--bf-star-size: {{SIZE}}{{UNIT}};',
 				),
@@ -1563,7 +1637,12 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 				'label'      => __( 'Track Height', 'boldform-lite' ),
 				'type'       => \Elementor\Controls_Manager::SLIDER,
 				'size_units' => array( 'px' ),
-				'range'      => array( 'px' => array( 'min' => 2, 'max' => 24 ) ),
+				'range'      => array(
+					'px' => array(
+						'min' => 2,
+						'max' => 24,
+					),
+				),
 				'selectors'  => array(
 					'{{WRAPPER}} .boldform-lite-slider' => '--bf-slider-height: {{SIZE}}{{UNIT}} !important;',
 				),

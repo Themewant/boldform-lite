@@ -203,7 +203,7 @@ class BoldForm_Lite_Shortcode {
 		// Attach the localized data at registration time so the `boldformLiteFrontend` object
 		// is always printed alongside the script — independent of when render() enqueues it.
 		// (Block/FSE themes can render the_content in a context where a render-time localize
-		// is dropped, leaving boldformLiteFrontend undefined and breaking AJAX submit.)
+		// is dropped, leaving boldformLiteFrontend undefined and breaking AJAX submit).
 		$this->localize_frontend_script();
 
 		/**
@@ -269,8 +269,8 @@ class BoldForm_Lite_Shortcode {
 			return '';
 		}
 
-		$structure     = $this->extract_structure_from_record( $form_record );
-		$form_settings = $this->extract_settings_from_record( $form_record );
+		$structure                   = $this->extract_structure_from_record( $form_record );
+		$form_settings               = $this->extract_settings_from_record( $form_record );
 		$this->current_form_settings = $form_settings;
 		$this->current_form_id       = $form_id;
 		if ( ! $this->structure_has_fields( $structure ) ) {
@@ -304,8 +304,8 @@ class BoldForm_Lite_Shortcode {
 		// Keep the first embed as "boldform-{id}" (back-compat); suffix repeats so the
 		// wrapper id stays unique when the same form is placed on a page more than once.
 		self::$render_counts[ $form_id ] = ( self::$render_counts[ $form_id ] ?? 0 ) + 1;
-		$instance_n = self::$render_counts[ $form_id ];
-		$form_uid = 'boldform-' . $form_id . ( $instance_n > 1 ? '-' . $instance_n : '' );
+		$instance_n                      = self::$render_counts[ $form_id ];
+		$form_uid                        = 'boldform-' . $form_id . ( $instance_n > 1 ? '-' . $instance_n : '' );
 
 		// Mirror the wrapper's instance suffix onto element IDs so a form embedded
 		// more than once on a page does not emit duplicate IDs / `for` targets.
@@ -338,11 +338,23 @@ class BoldForm_Lite_Shortcode {
 			<?php $has_submit_field = $this->structure_contains_field_type( $structure, 'submit' ); ?>
 			<div class="boldform-lite-form__fields">
 				<?php foreach ( $structure['rows'] as $row_index => $row ) : ?>
-					<?php if ( ! is_array( $row ) || empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) { continue; } ?>
-					<?php $row_css = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : ''; $row_media = $this->build_row_media_attrs( $row ); $row_colours = $this->build_cv_colour_style( $row ); if ( '' !== $row_colours ) { $row_media['attrs'] = '' === $row_media['attrs'] ? ' style="' . esc_attr( $row_colours ) . '"' : rtrim( $row_media['attrs'], '"' ) . ';' . esc_attr( $row_colours ) . '"'; } // A multi-column row IS the screen, so its overrides go straight on it. // Assigned on this line, and the figure emitted inline below, so a row with no media produces byte-identical output to before this feature existed. ?>
+					<?php
+					if ( ! is_array( $row ) || empty( $row['columns'] ) || ! is_array( $row['columns'] ) ) {
+						continue; }
+					?>
+					<?php
+					$row_css     = ! empty( $row['css_class'] ) ? ' ' . sanitize_html_class( $row['css_class'] ) : '';
+					$row_media   = $this->build_row_media_attrs( $row );
+					$row_colours = $this->build_cv_colour_style( $row );
+					if ( '' !== $row_colours ) {
+						$row_media['attrs'] = '' === $row_media['attrs'] ? ' style="' . esc_attr( $row_colours ) . '"' : rtrim( $row_media['attrs'], '"' ) . ';' . esc_attr( $row_colours ) . '"'; } // A multi-column row IS the screen, so its overrides go straight on it. // Assigned on this line, and the figure emitted inline below, so a row with no media produces byte-identical output to before this feature existed.
+					?>
 					<div class="boldform-lite-form__row<?php echo esc_attr( $row_css . $row_media['class'] ); ?>"<?php echo $row_media['attrs']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr/esc_url in build_row_media_attrs(). ?>><?php echo $row_media['figure'] . $this->build_field_media_figures( $row ) . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from esc_attr/esc_url in build_row_media_attrs(). The explicit newline replaces the one PHP strips after a closing tag, keeping a media-less row byte-identical to the pre-feature output. ?>
 						<?php foreach ( $row['columns'] as $column_index => $column ) : ?>
-							<?php if ( ! is_array( $column ) ) { continue; } ?>
+							<?php
+							if ( ! is_array( $column ) ) {
+								continue; }
+							?>
 							<div class="boldform-lite-form__column" style="width:<?php echo esc_attr( isset( $column['width'] ) ? (string) $column['width'] : '100%' ); ?>;">
 								<?php foreach ( ( ! empty( $column['fields'] ) && is_array( $column['fields'] ) ? $column['fields'] : array() ) as $field_index => $field ) : ?>
 									<?php
@@ -539,7 +551,11 @@ class BoldForm_Lite_Shortcode {
 	 * @return array{class:string, attrs:string, figure:string}
 	 */
 	private function build_row_media_attrs( $row ) {
-		$empty = array( 'class' => '', 'attrs' => '', 'figure' => '' );
+		$empty = array(
+			'class'  => '',
+			'attrs'  => '',
+			'figure' => '',
+		);
 
 		$id     = isset( $row['cv_media_id'] ) ? absint( $row['cv_media_id'] ) : 0;
 		$layout = isset( $row['cv_media_layout'] ) && in_array( $row['cv_media_layout'], array( 'none', 'left', 'right', 'background' ), true )
@@ -563,10 +579,10 @@ class BoldForm_Lite_Shortcode {
 		// 0 = use the stylesheet's default, so the property is omitted entirely
 		// and the CSS fallback applies — the same "'' means inherit" contract the
 		// per-screen colours use, in the shape a length takes.
-		$height     = isset( $row['cv_media_height'] ) && (int) $row['cv_media_height'] > 0
+		$height = isset( $row['cv_media_height'] ) && (int) $row['cv_media_height'] > 0
 			? max( 80, min( 2000, (int) $row['cv_media_height'] ) )
 			: 0;
-		$alt        = isset( $row['cv_media_alt'] ) ? sanitize_text_field( (string) $row['cv_media_alt'] ) : '';
+		$alt    = isset( $row['cv_media_alt'] ) ? sanitize_text_field( (string) $row['cv_media_alt'] ) : '';
 
 		$srcset = wp_get_attachment_image_srcset( $id, 'large' );
 		$sizes  = wp_get_attachment_image_sizes( $id, 'large' );
@@ -721,42 +737,48 @@ class BoldForm_Lite_Shortcode {
 		return $out;
 	}
 
+	/**
+	 * Decodes and normalizes a form's stored settings.
+	 *
+	 * @param object $form_record Form row, as returned by $wpdb (has a settings_json property).
+	 * @return array<string, mixed>
+	 */
 	private function extract_settings_from_record( $form_record ) {
 		$defaults = array(
-			'submission_type'   => 'ajax',
-			'enable_ajax'       => true,
-			'enable_redirect'   => false,
-			'redirect_url'      => '',
-			'thank_you_message' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
-			'button_text'       => __( 'Submit', 'boldform-lite' ),
-			'button_alignment'  => 'left',
-			'button_color'      => 'teal',
-			'field_style'       => '',
-			'field_size'        => '',
-			'field_focus_color' => '',
-			'field_border_width'=> '',
-			'field_border_radius'=> '',
-			'field_background_color' => '',
-			'field_border_color' => '',
-			'field_text_color'  => '',
-			'label_size'        => '',
-			'label_color'       => '',
-			'label_subtext_color' => '',
-			'error_color'       => '',
-			'button_size'       => '',
-			'button_border_style' => '',
-			'button_border_width' => '',
-			'button_border_radius' => '',
+			'submission_type'         => 'ajax',
+			'enable_ajax'             => true,
+			'enable_redirect'         => false,
+			'redirect_url'            => '',
+			'thank_you_message'       => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+			'button_text'             => __( 'Submit', 'boldform-lite' ),
+			'button_alignment'        => 'left',
+			'button_color'            => 'teal',
+			'field_style'             => '',
+			'field_size'              => '',
+			'field_focus_color'       => '',
+			'field_border_width'      => '',
+			'field_border_radius'     => '',
+			'field_background_color'  => '',
+			'field_border_color'      => '',
+			'field_text_color'        => '',
+			'label_size'              => '',
+			'label_color'             => '',
+			'label_subtext_color'     => '',
+			'error_color'             => '',
+			'button_size'             => '',
+			'button_border_style'     => '',
+			'button_border_width'     => '',
+			'button_border_radius'    => '',
 			'button_background_color' => '',
-			'button_border_color' => '',
-			'button_text_color' => '',
-			'admin_email_type'  => 'site_admin',
-			'enable_admin_email'=> true,
-			'enable_user_email' => true,
-			'admin_email'       => '',
+			'button_border_color'     => '',
+			'button_text_color'       => '',
+			'admin_email_type'        => 'site_admin',
+			'enable_admin_email'      => true,
+			'enable_user_email'       => true,
+			'admin_email'             => '',
 			// Conversational mode is off unless a stored setting says otherwise,
 			// so a form with no settings row renders exactly as it always has.
-			'cv_enabled'        => false,
+			'cv_enabled'              => false,
 		);
 
 		if ( ! $form_record || empty( $form_record->settings_json ) ) {
@@ -778,94 +800,94 @@ class BoldForm_Lite_Shortcode {
 			: ( $admin_email ? 'custom' : 'site_admin' );
 
 		return array(
-			'submission_type'   => $submission_type,
-			'enable_ajax'       => 'ajax' === $submission_type,
-			'enable_redirect'   => 'redirect' === $submission_type,
-			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
+			'submission_type'         => $submission_type,
+			'enable_ajax'             => 'ajax' === $submission_type,
+			'enable_redirect'         => 'redirect' === $submission_type,
+			'redirect_url'            => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
 			// Rich markup: filtered with the post allowlist, matching the save path.
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
-			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
-			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
-			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
-			'field_style'       => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
-			'field_size'        => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
-			'field_focus_color' => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
-			'field_border_width'=> isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
-			'field_border_radius'=> isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
-			'field_background_color' => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
-			'field_border_color' => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
-			'field_text_color'  => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
-			'label_size'        => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
-			'label_color'       => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
-			'label_subtext_color' => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
-			'error_color'       => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
-			'button_size'       => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
-			'button_border_style' => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
-			'button_border_width' => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
-			'button_border_radius' => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
+			'thank_you_message'       => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			'button_text'             => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
+			'button_alignment'        => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
+			'button_color'            => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
+			'field_style'             => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
+			'field_size'              => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
+			'field_focus_color'       => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
+			'field_border_width'      => isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
+			'field_border_radius'     => isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
+			'field_background_color'  => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
+			'field_border_color'      => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
+			'field_text_color'        => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
+			'label_size'              => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
+			'label_color'             => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
+			'label_subtext_color'     => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
+			'error_color'             => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
+			'button_size'             => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
+			'button_border_style'     => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
+			'button_border_width'     => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
+			'button_border_radius'    => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
-			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
-			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
-			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
-			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
-			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
-			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
-			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
-			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
-			'admin_email_type'  => $admin_email_type,
-			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
-			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
-			'admin_email'       => $admin_email,
-			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
-			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
-			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'button_border_color'     => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
+			'button_text_color'       => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'button_icon_type'        => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon'    => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'         => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
+			'button_icon_position'    => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'         => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'        => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'       => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
+			'admin_email_type'        => $admin_email_type,
+			'enable_admin_email'      => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email'       => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'             => $admin_email,
+			'design_theme'            => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'             => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'       => ! empty( $decoded['hide_placeholders'] ),
 			// ── Pro: Multi-step (data passthrough for Pro's multi-page module) ───
-			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
-			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
-			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
-			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
-			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
-			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
-			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
-			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			'step_progress_style'     => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
+			'step_progress_color'     => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_btn_color'          => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
+			'step_btn_text_color'     => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
+			'step_btn_size'           => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
+			'step_btn_radius'         => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
+			'step_next_text'          => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
+			'step_prev_text'          => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
 			// ── Pro: Scheduling ──────────────────────────────────────────────────
-			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )      : '',
-			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] )     : '',
-			'schedule_tz'             => isset( $decoded['schedule_tz'] )             ? sanitize_text_field( (string) $decoded['schedule_tz'] )             : '',
-			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )            : '',
-			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )            : '',
+			'schedule_open_date'      => isset( $decoded['schedule_open_date'] ) ? sanitize_text_field( (string) $decoded['schedule_open_date'] ) : '',
+			'schedule_close_date'     => isset( $decoded['schedule_close_date'] ) ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
+			'schedule_tz'             => isset( $decoded['schedule_tz'] ) ? sanitize_text_field( (string) $decoded['schedule_tz'] ) : '',
+			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] ) ? wp_kses_post( (string) $decoded['schedule_closed_msg'] ) : '',
+			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] ) ? wp_kses_post( (string) $decoded['schedule_before_msg'] ) : '',
 			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
 			// ── Conversational mode ──────────────────────────────────────────────
 			// Re-validated on read rather than trusted from the row: this method is
 			// the only settings source the renderer sees, so a value that reached
 			// the row another way is still constrained here.
-			'cv_enabled'          => ! empty( $decoded['cv_enabled'] ),
-			'cv_progress'         => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
-			'cv_transition'       => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
-			'cv_key_hint'         => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
-			'cv_next_text'        => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
-			'cv_prev_text'        => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
-			'cv_bg'               => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
-			'cv_question_color'   => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
-			'cv_answer_color'     => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
-			'cv_btn_color'        => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
-			'cv_btn_text_color'   => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
-			'cv_accent'           => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
+			'cv_enabled'              => ! empty( $decoded['cv_enabled'] ),
+			'cv_progress'             => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
+			'cv_transition'           => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
+			'cv_key_hint'             => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
+			'cv_next_text'            => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
+			'cv_prev_text'            => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
+			'cv_bg'                   => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
+			'cv_question_color'       => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
+			'cv_answer_color'         => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
+			'cv_btn_color'            => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
+			'cv_btn_text_color'       => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
+			'cv_accent'               => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
 			// Form-level only. The progress row, the nav and the hint all sit on
 			// the wrapper, outside every screen, so sanitize_cv_colours() — which
 			// is the per-screen list — deliberately carries none of them.
-			'cv_track_color'      => isset( $decoded['cv_track_color'] ) && sanitize_hex_color( $decoded['cv_track_color'] ) ? sanitize_hex_color( $decoded['cv_track_color'] ) : '',
-			'cv_prev_color'       => isset( $decoded['cv_prev_color'] ) && sanitize_hex_color( $decoded['cv_prev_color'] ) ? sanitize_hex_color( $decoded['cv_prev_color'] ) : '',
-			'cv_prev_bg'          => isset( $decoded['cv_prev_bg'] ) && sanitize_hex_color( $decoded['cv_prev_bg'] ) ? sanitize_hex_color( $decoded['cv_prev_bg'] ) : '',
-			'cv_hint_color'       => isset( $decoded['cv_hint_color'] ) && sanitize_hex_color( $decoded['cv_hint_color'] ) ? sanitize_hex_color( $decoded['cv_hint_color'] ) : '',
-			'cv_nav_align'        => isset( $decoded['cv_nav_align'] ) && in_array( $decoded['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $decoded['cv_nav_align'] : 'left',
-			'cv_progress_align'   => isset( $decoded['cv_progress_align'] ) && in_array( $decoded['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $decoded['cv_progress_align'] : 'left',
-			'cv_welcome_enabled'  => ! empty( $decoded['cv_welcome_enabled'] ),
-			'cv_welcome_title'    => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
-			'cv_welcome_text'     => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
-			'cv_welcome_btn'      => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
-			'cv_media_hide_mobile' => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
+			'cv_track_color'          => isset( $decoded['cv_track_color'] ) && sanitize_hex_color( $decoded['cv_track_color'] ) ? sanitize_hex_color( $decoded['cv_track_color'] ) : '',
+			'cv_prev_color'           => isset( $decoded['cv_prev_color'] ) && sanitize_hex_color( $decoded['cv_prev_color'] ) ? sanitize_hex_color( $decoded['cv_prev_color'] ) : '',
+			'cv_prev_bg'              => isset( $decoded['cv_prev_bg'] ) && sanitize_hex_color( $decoded['cv_prev_bg'] ) ? sanitize_hex_color( $decoded['cv_prev_bg'] ) : '',
+			'cv_hint_color'           => isset( $decoded['cv_hint_color'] ) && sanitize_hex_color( $decoded['cv_hint_color'] ) ? sanitize_hex_color( $decoded['cv_hint_color'] ) : '',
+			'cv_nav_align'            => isset( $decoded['cv_nav_align'] ) && in_array( $decoded['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $decoded['cv_nav_align'] : 'left',
+			'cv_progress_align'       => isset( $decoded['cv_progress_align'] ) && in_array( $decoded['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $decoded['cv_progress_align'] : 'left',
+			'cv_welcome_enabled'      => ! empty( $decoded['cv_welcome_enabled'] ),
+			'cv_welcome_title'        => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
+			'cv_welcome_text'         => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'          => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
+			'cv_media_hide_mobile'    => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
 			// ── Advanced (responsive) per-control style overrides → --bf-* CSS vars ──
 			'style'                   => isset( $decoded['style'] ) ? $this->sanitize_render_style_settings( $decoded['style'] ) : array(),
 		);
@@ -1073,11 +1095,13 @@ class BoldForm_Lite_Shortcode {
 
 			return sprintf(
 				'<div class="boldform-lite-form__captcha"><label class="boldform-lite-form__label" for="%4$s">%1$s</label><input id="%4$s" type="number" name="boldform_math_captcha_answer" inputmode="numeric" autocomplete="off" required><input type="hidden" name="boldform_math_captcha_challenge" value="%2$s"><input type="hidden" name="boldform_math_captcha_hash" value="%3$s"></div>',
-				esc_html( sprintf(
+				esc_html(
+					sprintf(
 					/* translators: %s: simple math question */
-					__( 'Solve this math question: %s', 'boldform-lite' ),
-					$challenge
-				) ),
+						__( 'Solve this math question: %s', 'boldform-lite' ),
+						$challenge
+					)
+				),
 				esc_attr( $challenge ),
 				esc_attr( $answer_hash ),
 				esc_attr( $answer_id )
@@ -1182,10 +1206,10 @@ class BoldForm_Lite_Shortcode {
 	 * @return string
 	 */
 	private function render_field( $field, $index ) {
-		$type           = isset( $field['type'] ) ? sanitize_key( (string) $field['type'] ) : 'text';
-		$label          = isset( $field['label'] ) ? (string) $field['label'] : '';
-		$placeholder    = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
-		$default        = isset( $field['default_value'] ) ? (string) $field['default_value'] : '';
+		$type        = isset( $field['type'] ) ? sanitize_key( (string) $field['type'] ) : 'text';
+		$label       = isset( $field['label'] ) ? (string) $field['label'] : '';
+		$placeholder = isset( $field['placeholder'] ) ? (string) $field['placeholder'] : '';
+		$default     = isset( $field['default_value'] ) ? (string) $field['default_value'] : '';
 
 		// Auto-population: resolve a value from URL param or logged-in user data.
 		$auto_key = isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '';
@@ -1259,7 +1283,7 @@ class BoldForm_Lite_Shortcode {
 				$global_settings = isset( $this->current_form_settings ) ? get_option( 'boldform_lite_settings', array() ) : array();
 				$type_msg        = ! empty( $global_settings[ 'required_msg_' . $type ] ) ? $global_settings[ 'required_msg_' . $type ] : '';
 				/* translators: %s: field label */
-				$error_msg       = $type_msg ? $type_msg : sprintf( __( '%s is required.', 'boldform-lite' ), $label ? $label : __( 'This field', 'boldform-lite' ) );
+				$error_msg = $type_msg ? $type_msg : sprintf( __( '%s is required.', 'boldform-lite' ), $label ? $label : __( 'This field', 'boldform-lite' ) );
 			}
 		}
 		?>
@@ -1284,7 +1308,7 @@ class BoldForm_Lite_Shortcode {
 					'logic'      => isset( $cond_data['logic'] ) && 'OR' === $cond_data['logic'] ? 'OR' : 'AND',
 					'conditions' => $conditions_out,
 				);
-				$cond_attrs .= ' data-bf-conditions="' . esc_attr( wp_json_encode( $cond_payload ) ) . '"';
+				$cond_attrs  .= ' data-bf-conditions="' . esc_attr( wp_json_encode( $cond_payload ) ) . '"';
 			} elseif ( ! empty( $cond_data['field_id'] ) ) {
 				// Legacy single-rule fallback.
 				$cond_attrs .= ' data-cond-action="' . esc_attr( $cond_data['action'] ?? 'show' ) . '"';
@@ -1322,7 +1346,12 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"
+		<?php
+		$cv_screen_style = $this->build_cv_colour_style( $field );
+		echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : '';
+		?>
+		<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -1441,7 +1470,7 @@ class BoldForm_Lite_Shortcode {
 					. 'width:' . $img_w . 'px;height:' . $img_w . 'px;'
 					. 'background-color:' . $icon_color . ';'
 					. '-webkit-mask:' . $mask_ref . ';mask:' . $mask_ref . ';';
-				$icon = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true"></span>';
+				$icon      = '<span class="boldform-btn-icon-svg" style="' . esc_attr( $svg_style ) . '" aria-hidden="true"></span>';
 			} else {
 				// No colour override — show the SVG's own colours via <img>.
 				$svg_style = 'width:' . $img_w . 'px;height:' . $img_w . 'px;display:inline-block;vertical-align:middle;flex-shrink:0;';
@@ -1529,7 +1558,7 @@ class BoldForm_Lite_Shortcode {
 		} else {
 			// Remove Illustrator style bloat even when no color override.
 			$existing_style = $svg_el->getAttribute( 'style' );
-			$clean = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
+			$clean          = preg_replace( '/enable-background\s*:[^;]+;?/i', '', $existing_style );
 			if ( trim( $clean ) !== '' ) {
 				$svg_el->setAttribute( 'style', trim( $clean, ';' ) );
 			} else {
@@ -1638,6 +1667,8 @@ class BoldForm_Lite_Shortcode {
 	 * emit, so it must be echoed through the same `get_field_kses_allowed()` allowlist.
 	 *
 	 * @param array<string, mixed> $args {
+	 *     Arguments.
+	 *
 	 *     @type string       $id          Element id for the native <select>.
 	 *     @type string       $name        Submit name (without trailing []; added when multiple).
 	 *     @type array|string $options     Option values (trimmed; empties dropped).
@@ -1701,7 +1732,10 @@ class BoldForm_Lite_Shortcode {
 			if ( '' === $ov ) {
 				continue;
 			}
-			$opts[]            = array( 'value' => $ov, 'label' => $ol );
+			$opts[]            = array(
+				'value' => $ov,
+				'label' => $ol,
+			);
 			$opt_values[]      = $ov;
 			$opt_labels[ $ov ] = $ol;
 		}
@@ -1825,6 +1859,11 @@ class BoldForm_Lite_Shortcode {
 		return $html;
 	}
 
+	/**
+	 * The wp_kses() allowlist used to sanitize rendered field/control markup.
+	 *
+	 * @return array<string, array<string, bool>>
+	 */
 	private function get_field_kses_allowed() {
 		$global_attrs = array(
 			'id'               => true,
@@ -1906,7 +1945,10 @@ class BoldForm_Lite_Shortcode {
 				'selected' => true,
 				'disabled' => true,
 			),
-			'optgroup' => array( 'label' => true, 'disabled' => true ),
+			'optgroup' => array(
+				'label'    => true,
+				'disabled' => true,
+			),
 			'button'   => array_merge(
 				$global_attrs,
 				array(
@@ -1916,7 +1958,14 @@ class BoldForm_Lite_Shortcode {
 					'disabled' => true,
 				)
 			),
-			'a'        => array_merge( $global_attrs, array( 'href' => true, 'target' => true, 'rel' => true ) ),
+			'a'        => array_merge(
+				$global_attrs,
+				array(
+					'href'   => true,
+					'target' => true,
+					'rel'    => true,
+				)
+			),
 			'strong'   => $global_attrs,
 			'em'       => $global_attrs,
 			'br'       => array(),
@@ -1929,7 +1978,15 @@ class BoldForm_Lite_Shortcode {
 			'h4'       => $global_attrs,
 			'h5'       => $global_attrs,
 			'h6'       => $global_attrs,
-			'img'      => array_merge( $global_attrs, array( 'src' => true, 'alt' => true, 'width' => true, 'height' => true ) ),
+			'img'      => array_merge(
+				$global_attrs,
+				array(
+					'src'    => true,
+					'alt'    => true,
+					'width'  => true,
+					'height' => true,
+				)
+			),
 			'svg'      => array_merge(
 				$global_attrs,
 				array(
@@ -1945,12 +2002,53 @@ class BoldForm_Lite_Shortcode {
 					'aria-hidden'     => true,
 				)
 			),
-			'path'     => array( 'd' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
-			'polyline' => array( 'points' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true, 'stroke-linejoin' => true ),
-			'line'     => array( 'x1' => true, 'y1' => true, 'x2' => true, 'y2' => true, 'stroke' => true, 'stroke-width' => true, 'stroke-linecap' => true ),
-			'circle'   => array( 'cx' => true, 'cy' => true, 'r' => true, 'fill' => true, 'stroke' => true, 'stroke-width' => true ),
-			'rect'     => array( 'x' => true, 'y' => true, 'width' => true, 'height' => true, 'rx' => true, 'fill' => true, 'stroke' => true ),
-			'g'        => array( 'fill' => true, 'stroke' => true, 'transform' => true ),
+			'path'     => array(
+				'd'               => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+			),
+			'polyline' => array(
+				'points'          => true,
+				'fill'            => true,
+				'stroke'          => true,
+				'stroke-width'    => true,
+				'stroke-linecap'  => true,
+				'stroke-linejoin' => true,
+			),
+			'line'     => array(
+				'x1'             => true,
+				'y1'             => true,
+				'x2'             => true,
+				'y2'             => true,
+				'stroke'         => true,
+				'stroke-width'   => true,
+				'stroke-linecap' => true,
+			),
+			'circle'   => array(
+				'cx'           => true,
+				'cy'           => true,
+				'r'            => true,
+				'fill'         => true,
+				'stroke'       => true,
+				'stroke-width' => true,
+			),
+			'rect'     => array(
+				'x'      => true,
+				'y'      => true,
+				'width'  => true,
+				'height' => true,
+				'rx'     => true,
+				'fill'   => true,
+				'stroke' => true,
+			),
+			'g'        => array(
+				'fill'      => true,
+				'stroke'    => true,
+				'transform' => true,
+			),
 		);
 
 		/**
@@ -1982,7 +2080,7 @@ class BoldForm_Lite_Shortcode {
 	 * @param array<string, mixed>     $field          Full field definition (for type-specific attributes).
 	 * @return string
 	 */
-	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) {
+	private function render_field_control( $type, $field_name, $placeholder, $default, $required, $options, $options_layout = 'block', $field = array() ) { // phpcs:ignore Universal.NamingConventions.NoReservedKeywordParameterNames.defaultFound -- renaming would touch ~500 lines of this method; not worth the regression risk for a style-only warning.
 		$required_attr = $required ? ' required' : '';
 		$default       = trim( (string) $default );
 
@@ -1998,11 +2096,11 @@ class BoldForm_Lite_Shortcode {
 		// actually rendered: a non-empty label whose placement is not 'hidden'. The
 		// `hide_labels` form setting only hides the label with CSS — the element (and
 		// its id) stays in the DOM — so it does NOT suppress the association.
-		$control_label      = isset( $field['label'] ) ? (string) $field['label'] : '';
-		$control_label_pos  = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top';
-		$has_visible_label  = ( '' !== $control_label && 'hidden' !== $control_label_pos );
-		$label_id           = $field_id_attr . '-label';
-		$group_labelledby   = $has_visible_label ? ' aria-labelledby="' . esc_attr( $label_id ) . '"' : '';
+		$control_label     = isset( $field['label'] ) ? (string) $field['label'] : '';
+		$control_label_pos = isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top';
+		$has_visible_label = ( '' !== $control_label && 'hidden' !== $control_label_pos );
+		$label_id          = $field_id_attr . '-label';
+		$group_labelledby  = $has_visible_label ? ' aria-labelledby="' . esc_attr( $label_id ) . '"' : '';
 
 		// When no custom placeholder is set, fall back to the field label so simple
 		// inputs (text/email/tel/url/number/textarea) show guidance text instead of a
@@ -2127,7 +2225,7 @@ class BoldForm_Lite_Shortcode {
 			$accept_attr = '' !== $accept ? ' accept="' . esc_attr( $accept ) . '"' : '';
 			$file_hint   = __( 'Choose file or drag & drop', 'boldform-lite' );
 			// Static inline SVG (no dashicons dependency on the front-end).
-			$file_icon   = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
+			$file_icon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>';
 			return sprintf(
 				'<div class="boldform-lite-form__file"><input id="%1$s" type="file" name="%2$s" class="boldform-lite-form__file-input"%3$s%4$s><span class="boldform-lite-form__file-icon">%5$s</span><span class="boldform-lite-form__file-text" data-placeholder="%6$s">%7$s</span></div>',
 				esc_attr( $field_id_attr ),
@@ -2154,7 +2252,6 @@ class BoldForm_Lite_Shortcode {
 				$required_attr
 			);
 		}
-
 
 		if ( 'input_mask' === $type ) {
 			$mask = isset( $field['mask_pattern'] ) ? (string) $field['mask_pattern'] : '';
@@ -2228,11 +2325,11 @@ class BoldForm_Lite_Shortcode {
 					// Flush pending pair first.
 					if ( ! empty( $pair_buffer ) ) {
 						$row_class = count( $pair_buffer ) === 2 ? ' boldform-lite-address__row--half' : '';
-						$html .= '<div class="boldform-lite-address__row' . $row_class . '">';
+						$html     .= '<div class="boldform-lite-address__row' . $row_class . '">';
 						foreach ( $pair_buffer as $pk ) {
 							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s">', esc_attr( $field_id_attr ), esc_attr( $pk ), esc_attr( $field_name ), esc_attr( $addr_labels[ $pk ] ) );
 						}
-						$html .= '</div>';
+						$html       .= '</div>';
 						$pair_buffer = array();
 					}
 					$html .= sprintf(
@@ -2250,7 +2347,7 @@ class BoldForm_Lite_Shortcode {
 						foreach ( $pair_buffer as $pk ) {
 							$html .= sprintf( '<input type="text" id="%1$s_%2$s" name="%3$s[%2$s]" placeholder="%4$s">', esc_attr( $field_id_attr ), esc_attr( $pk ), esc_attr( $field_name ), esc_attr( $addr_labels[ $pk ] ) );
 						}
-						$html .= '</div>';
+						$html       .= '</div>';
 						$pair_buffer = array();
 					}
 				}
@@ -2269,28 +2366,28 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'country' === $type ) {
-			$countries       = $this->get_country_list();
+			$countries        = $this->get_country_list();
 			$placeholder_text = $placeholder ? $placeholder : __( 'Select a country', 'boldform-lite' );
 
 			// Hidden native <select> for form submission. `required` is intentionally
 			// omitted (see the select branch above): a display:none required control
 			// makes browsers abort submit silently. Required-ness is conveyed via
 			// aria-required on the visible trigger and enforced server-side.
-			$html = sprintf(
+			$html  = sprintf(
 				'<select id="%1$s" name="%2$s" data-boldform-select="1" data-searchable="1" style="display:none">',
 				esc_attr( $field_id_attr ),
 				esc_attr( $field_name )
 			);
 			$html .= sprintf( '<option value="">%s</option>', esc_html( $placeholder_text ) );
 			foreach ( $countries as $code => $name ) {
-				$sel = $default === $code ? ' selected' : '';
+				$sel   = $default === $code ? ' selected' : '';
 				$html .= sprintf( '<option value="%s"%s>%s</option>', esc_attr( $code ), $sel, esc_html( $name ) );
 			}
 			$html .= '</select>';
 
 			// Custom select UI rendered in PHP.
-			$arrow     = '<span class="bf-select__arrow"></span>';
-			$check_svg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+			$arrow      = '<span class="bf-select__arrow"></span>';
+			$check_svg  = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 			$search_svg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
 
 			$selected_name = '';
@@ -2305,7 +2402,7 @@ class BoldForm_Lite_Shortcode {
 			if ( $has_visible_label ) {
 				$country_required_attr .= ' aria-labelledby="' . esc_attr( $label_id ) . '"';
 			} else {
-				$country_label = isset( $field['label'] ) ? (string) $field['label'] : '';
+				$country_label          = isset( $field['label'] ) ? (string) $field['label'] : '';
 				$country_required_attr .= ' aria-label="' . ( '' !== $country_label ? esc_attr( $country_label ) : esc_attr__( 'Select a country', 'boldform-lite' ) ) . '"';
 			}
 			$html .= '<div class="bf-select" data-boldform-custom-select="1" data-searchable="1">';
@@ -2321,8 +2418,8 @@ class BoldForm_Lite_Shortcode {
 			foreach ( $countries as $code => $name ) {
 				$is_active    = $default === $code;
 				$active_class = $is_active ? ' is-active' : '';
-				$html .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $code ) . '">';
-				$html .= '<span class="bf-select__option-text">' . esc_html( $name ) . '</span>';
+				$html        .= '<div class="bf-select__option' . $active_class . '" role="option" aria-selected="' . ( $is_active ? 'true' : 'false' ) . '" data-val="' . esc_attr( $code ) . '">';
+				$html        .= '<span class="bf-select__option-text">' . esc_html( $name ) . '</span>';
 				if ( $is_active ) {
 					$html .= '<span class="bf-select__active-mark">' . $check_svg . '</span>';
 				}
@@ -2336,8 +2433,8 @@ class BoldForm_Lite_Shortcode {
 		}
 
 		if ( 'star_rating' === $type ) {
-			$max        = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
-			$def        = (int) $default;
+			$max           = isset( $field['max_stars'] ) && $field['max_stars'] > 0 ? (int) $field['max_stars'] : 5;
+			$def           = (int) $default;
 			$star_color    = ! empty( $field['star_color'] ) && sanitize_hex_color( (string) $field['star_color'] ) ? sanitize_hex_color( (string) $field['star_color'] ) : '';
 			$star_inactive = ! empty( $field['star_inactive_color'] ) && sanitize_hex_color( (string) $field['star_inactive_color'] ) ? sanitize_hex_color( (string) $field['star_inactive_color'] ) : '';
 			$star_size     = ! empty( $field['star_size'] ) ? (int) $field['star_size'] : 20;
@@ -2361,7 +2458,7 @@ class BoldForm_Lite_Shortcode {
 			// Expose the widget as an ARIA radiogroup so it is keyboard- and
 			// screen-reader-operable (Arrow/Home/End/Space handled in frontend.js).
 			$star_field_label = isset( $field['label'] ) && '' !== (string) $field['label'] ? (string) $field['label'] : __( 'Rating', 'boldform-lite' );
-			$html .= '<div class="boldform-lite-star-rating" role="radiogroup" aria-label="' . esc_attr( $star_field_label ) . '"' . ( $required ? ' aria-required="true"' : '' ) . ' data-max="' . $max . '" data-field="' . esc_attr( $field_id_attr ) . '" style="' . $star_style . '">';
+			$html            .= '<div class="boldform-lite-star-rating" role="radiogroup" aria-label="' . esc_attr( $star_field_label ) . '"' . ( $required ? ' aria-required="true"' : '' ) . ' data-max="' . $max . '" data-field="' . esc_attr( $field_id_attr ) . '" style="' . $star_style . '">';
 			for ( $i = 1; $i <= $max; $i++ ) {
 				$active     = $i <= $def ? ' is-active' : '';
 				$is_checked = ( $i === $def );
@@ -2417,16 +2514,26 @@ class BoldForm_Lite_Shortcode {
 				$html .= '<div class="boldform-lite-slider__fill" style="left:' . esc_attr( (string) $fill_left ) . '%;width:' . esc_attr( (string) $fill_w ) . '%"></div>';
 				$html .= sprintf(
 					'<input type="range" class="boldform-lite-slider__input boldform-lite-slider__input--min" min="%1$s" max="%2$s" step="%3$s" value="%4$s" aria-label="%5$s">',
-					esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $lo ), esc_attr__( 'Minimum', 'boldform-lite' )
+					esc_attr( $min ),
+					esc_attr( $max ),
+					esc_attr( $step ),
+					esc_attr( $lo ),
+					esc_attr__( 'Minimum', 'boldform-lite' )
 				);
 				$html .= sprintf(
 					'<input type="range" class="boldform-lite-slider__input boldform-lite-slider__input--max" min="%1$s" max="%2$s" step="%3$s" value="%4$s" aria-label="%5$s">',
-					esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $hi ), esc_attr__( 'Maximum', 'boldform-lite' )
+					esc_attr( $min ),
+					esc_attr( $max ),
+					esc_attr( $step ),
+					esc_attr( $hi ),
+					esc_attr__( 'Maximum', 'boldform-lite' )
 				);
 				$html .= '</div>';
 				$html .= sprintf(
 					'<input type="hidden" id="%1$s" name="%2$s" value="%3$s">',
-					esc_attr( $field_id_attr ), esc_attr( $field_name ), esc_attr( $lo . ' - ' . $hi )
+					esc_attr( $field_id_attr ),
+					esc_attr( $field_name ),
+					esc_attr( $lo . ' - ' . $hi )
 				);
 				$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $lo . ' – ' . $hi ) . '</span><span>' . esc_html( $max ) . '</span></div>';
 				$html .= '</div>';
@@ -2437,7 +2544,13 @@ class BoldForm_Lite_Shortcode {
 			$html  = '<div class="boldform-lite-slider"' . ( $sl_style ? ' style="' . $sl_style . '"' : '' ) . '>';
 			$html .= sprintf(
 				'<input type="range" id="%1$s" name="%2$s" min="%3$s" max="%4$s" step="%5$s" value="%6$s"%7$s>',
-				esc_attr( $field_id_attr ), esc_attr( $field_name ), esc_attr( $min ), esc_attr( $max ), esc_attr( $step ), esc_attr( $def ), $required_attr
+				esc_attr( $field_id_attr ),
+				esc_attr( $field_name ),
+				esc_attr( $min ),
+				esc_attr( $max ),
+				esc_attr( $step ),
+				esc_attr( $def ),
+				$required_attr
 			);
 			$html .= '<div class="boldform-lite-slider__labels"><span>' . esc_html( $min ) . '</span><span class="boldform-lite-slider__value">' . esc_html( $def ) . '</span><span>' . esc_html( $max ) . '</span></div>';
 			$html .= '</div>';
@@ -2629,22 +2742,70 @@ class BoldForm_Lite_Shortcode {
 	 * @return string
 	 */
 	private function build_form_style_variables( $settings ) {
-		$field_size = isset( $settings['field_size'] ) ? (string) $settings['field_size'] : '';
-		$label_size = isset( $settings['label_size'] ) ? (string) $settings['label_size'] : '';
-		$button_size = isset( $settings['button_size'] ) ? (string) $settings['button_size'] : '';
-		$field_style = isset( $settings['field_style'] ) ? (string) $settings['field_style'] : '';
-		$size_map = array(
-			'small'       => array( 'field_y' => '10px', 'field_x' => '12px', 'field_font' => '14px', 'label_font' => '14px', 'button_y' => '10px', 'button_x' => '16px', 'button_font' => '14px' ),
-			'medium'      => array( 'field_y' => '12px', 'field_x' => '14px', 'field_font' => '15px', 'label_font' => '16px', 'button_y' => '12px', 'button_x' => '18px', 'button_font' => '15px' ),
-			'large'       => array( 'field_y' => '15px', 'field_x' => '16px', 'field_font' => '16px', 'label_font' => '18px', 'button_y' => '14px', 'button_x' => '20px', 'button_font' => '16px' ),
-			'compact'     => array( 'field_y' => '10px', 'field_x' => '12px', 'field_font' => '14px', 'label_font' => '14px', 'button_y' => '10px', 'button_x' => '16px', 'button_font' => '14px' ),
-			'comfortable' => array( 'field_y' => '12px', 'field_x' => '14px', 'field_font' => '15px', 'label_font' => '16px', 'button_y' => '12px', 'button_x' => '18px', 'button_font' => '15px' ),
-			'spacious'    => array( 'field_y' => '15px', 'field_x' => '16px', 'field_font' => '16px', 'label_font' => '18px', 'button_y' => '14px', 'button_x' => '20px', 'button_font' => '16px' ),
+		$field_size   = isset( $settings['field_size'] ) ? (string) $settings['field_size'] : '';
+		$label_size   = isset( $settings['label_size'] ) ? (string) $settings['label_size'] : '';
+		$button_size  = isset( $settings['button_size'] ) ? (string) $settings['button_size'] : '';
+		$field_style  = isset( $settings['field_style'] ) ? (string) $settings['field_style'] : '';
+		$size_map     = array(
+			'small'       => array(
+				'field_y'     => '10px',
+				'field_x'     => '12px',
+				'field_font'  => '14px',
+				'label_font'  => '14px',
+				'button_y'    => '10px',
+				'button_x'    => '16px',
+				'button_font' => '14px',
+			),
+			'medium'      => array(
+				'field_y'     => '12px',
+				'field_x'     => '14px',
+				'field_font'  => '15px',
+				'label_font'  => '16px',
+				'button_y'    => '12px',
+				'button_x'    => '18px',
+				'button_font' => '15px',
+			),
+			'large'       => array(
+				'field_y'     => '15px',
+				'field_x'     => '16px',
+				'field_font'  => '16px',
+				'label_font'  => '18px',
+				'button_y'    => '14px',
+				'button_x'    => '20px',
+				'button_font' => '16px',
+			),
+			'compact'     => array(
+				'field_y'     => '10px',
+				'field_x'     => '12px',
+				'field_font'  => '14px',
+				'label_font'  => '14px',
+				'button_y'    => '10px',
+				'button_x'    => '16px',
+				'button_font' => '14px',
+			),
+			'comfortable' => array(
+				'field_y'     => '12px',
+				'field_x'     => '14px',
+				'field_font'  => '15px',
+				'label_font'  => '16px',
+				'button_y'    => '12px',
+				'button_x'    => '18px',
+				'button_font' => '15px',
+			),
+			'spacious'    => array(
+				'field_y'     => '15px',
+				'field_x'     => '16px',
+				'field_font'  => '16px',
+				'label_font'  => '18px',
+				'button_y'    => '14px',
+				'button_x'    => '20px',
+				'button_font' => '16px',
+			),
 		);
-		$field_scale = isset( $size_map[ $field_size ] ) ? $size_map[ $field_size ] : null;
-		$label_scale = isset( $size_map[ $label_size ] ) ? $size_map[ $label_size ] : null;
+		$field_scale  = isset( $size_map[ $field_size ] ) ? $size_map[ $field_size ] : null;
+		$label_scale  = isset( $size_map[ $label_size ] ) ? $size_map[ $label_size ] : null;
 		$button_scale = isset( $size_map[ $button_size ] ) ? $size_map[ $button_size ] : null;
-		$variables = array();
+		$variables    = array();
 
 		if ( in_array( $field_style, array( 'outline', 'soft', 'minimal' ), true ) ) {
 			$field_style = 'solid';

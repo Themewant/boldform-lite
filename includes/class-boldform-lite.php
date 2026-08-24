@@ -150,7 +150,7 @@ final class BoldForm_Lite {
 	/**
 	 * Prevent unserialize.
 	 *
-	 * @throws Exception Always throws because the plugin uses a singleton.
+	 * @throws \Exception Always throws because the plugin uses a singleton.
 	 */
 	public function __wakeup() {
 		throw new \Exception( 'Cannot unserialize singleton.' );
@@ -251,7 +251,7 @@ final class BoldForm_Lite {
 		$this->loader->add_action( 'wp_ajax_boldform_lite_bulk_entry_action', $this->admin, 'ajax_bulk_entry_action' );
 		$this->loader->add_action( 'wp_ajax_boldform_lite_toggle_form_status', $this->admin, 'ajax_toggle_form_status' );
 		$this->loader->add_action( 'phpmailer_init', $this->admin, 'configure_smtp' );
-		$this->loader->add_filter( 'wp_mail_from',      $this->admin, 'filter_mail_from' );
+		$this->loader->add_filter( 'wp_mail_from', $this->admin, 'filter_mail_from' );
 		$this->loader->add_filter( 'wp_mail_from_name', $this->admin, 'filter_mail_from_name' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $this->shortcode, 'register_assets' );
 		$this->loader->add_action( 'init', $this->shortcode, 'register_shortcode' );

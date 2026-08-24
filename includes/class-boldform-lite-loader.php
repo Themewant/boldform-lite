@@ -31,11 +31,11 @@ class BoldForm_Lite_Loader {
 	/**
 	 * Adds a new action.
 	 *
-	 * @param string   $hook          Action hook name.
-	 * @param object   $component     Instance containing the callback.
-	 * @param string   $callback      Callback method name.
-	 * @param int      $priority      Hook priority.
-	 * @param int      $accepted_args Number of accepted arguments.
+	 * @param string $hook          Action hook name.
+	 * @param object $component     Instance containing the callback.
+	 * @param string $callback      Callback method name.
+	 * @param int    $priority      Hook priority.
+	 * @param int    $accepted_args Number of accepted arguments.
 	 * @return void
 	 */
 	public function add_action( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {
@@ -52,11 +52,11 @@ class BoldForm_Lite_Loader {
 	/**
 	 * Adds a new filter.
 	 *
-	 * @param string   $hook          Filter hook name.
-	 * @param object   $component     Instance containing the callback.
-	 * @param string   $callback      Callback method name.
-	 * @param int      $priority      Hook priority.
-	 * @param int      $accepted_args Number of accepted arguments.
+	 * @param string $hook          Filter hook name.
+	 * @param object $component     Instance containing the callback.
+	 * @param string $callback      Callback method name.
+	 * @param int    $priority      Hook priority.
+	 * @param int    $accepted_args Number of accepted arguments.
 	 * @return void
 	 */
 	public function add_filter( $hook, $component, $callback, $priority = 10, $accepted_args = 1 ) {

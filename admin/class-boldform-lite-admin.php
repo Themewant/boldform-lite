@@ -220,7 +220,7 @@ class BoldForm_Lite_Admin {
 		// avoids PHP 8.1+ deprecations) keeps the page reachable by URL but out of every
 		// menu, and render_upgrade_page() shows a friendly confirmation instead of the
 		// pitch. Lite never detects the add-on itself — it only reads the filter.
-		$show_upgrade_cta = apply_filters( 'boldform_show_upgrade_cta', true );
+		$show_upgrade_cta        = apply_filters( 'boldform_show_upgrade_cta', true );
 		$this->upgrade_page_hook = add_submenu_page(
 			$show_upgrade_cta ? 'boldform-lite' : '',
 			__( 'Upgrade to Pro', 'boldform-lite' ),
@@ -259,7 +259,7 @@ class BoldForm_Lite_Admin {
 		add_action(
 			'load-' . $hook,
 			function () use ( $slug ) {
-				$GLOBALS['submenu_file'] = $slug;
+				$GLOBALS['submenu_file'] = $slug; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- WordPress's own file_exists()-based sidebar highlighting is unreliable on some server setups, so it's set explicitly here.
 			}
 		);
 	}
@@ -456,7 +456,7 @@ class BoldForm_Lite_Admin {
 	public function set_preview_title() {
 		global $title;
 
-		$title = __( 'Preview Form', 'boldform-lite' );
+		$title = __( 'Preview Form', 'boldform-lite' ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- standard WP admin pattern for setting the page title of a hidden (no menu entry) admin page.
 	}
 
 	/**
@@ -505,7 +505,7 @@ class BoldForm_Lite_Admin {
 	 * @param string[]|null               $mimes    Allowed mime types.
 	 * @return array<string, string|false>
 	 */
-	public function fix_svg_filetype( $data, $file, $filename, $mimes ) {
+	public function fix_svg_filetype( $data, $file, $filename, $mimes ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- fixed wp_check_filetype_and_ext filter signature.
 		// Mirror allow_svg_upload(): only treat .svg as a valid type for users who can
 		// upload files, so the front-end upload path can never be tricked into accepting one.
 		if ( ! current_user_can( 'upload_files' ) ) {
@@ -591,6 +591,7 @@ class BoldForm_Lite_Admin {
 		$svg = preg_replace( '/<!DOCTYPE.*?>/is', '', $svg );
 		$svg = preg_replace( '/<!ENTITY[^>]*>/i', '', (string) $svg );
 
+		// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- native DOMDocument/DOMNode properties, cannot be renamed.
 		$dom                     = new DOMDocument();
 		$dom->preserveWhiteSpace = false;
 		$dom->formatOutput       = false;
@@ -600,13 +601,13 @@ class BoldForm_Lite_Admin {
 		// PHP < 8.0: explicitly disable external entity loading (default-safe on 8.0+/libxml 2.9+).
 		$entity_prev = null;
 		if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
-			$entity_prev = libxml_disable_entity_loader( true );
+			$entity_prev = libxml_disable_entity_loader( true ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded by the PHP_VERSION_ID < 80000 check above; never called on PHP 8+, where it's deprecated.
 		}
 
 		$loaded = $dom->loadXML( (string) $svg, LIBXML_NONET );
 
 		if ( null !== $entity_prev ) {
-			libxml_disable_entity_loader( $entity_prev );
+			libxml_disable_entity_loader( $entity_prev ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- only reached when $entity_prev was set above, i.e. still PHP < 8.0.
 		}
 		libxml_clear_errors();
 		libxml_use_internal_errors( $libxml_prev );
@@ -638,7 +639,7 @@ class BoldForm_Lite_Admin {
 		$href_attrs = array( 'href', 'xlink:href', 'src', 'from', 'to', 'values', 'by' );
 
 		// Single pass over every element: collect first (removal mutates the live list).
-		$xpath    = new DOMXPath( $dom );
+		$xpath     = new DOMXPath( $dom );
 		$node_list = $xpath->query( '//*' );
 		$elements  = array();
 
@@ -683,6 +684,7 @@ class BoldForm_Lite_Admin {
 		}
 
 		$clean = $dom->saveXML( $dom->documentElement );
+		// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 		if ( false === $clean || '' === trim( (string) $clean ) ) {
 			return null;
@@ -818,458 +820,472 @@ class BoldForm_Lite_Admin {
 
 			// Send the builder a fully normalized payload so the JS app does not need to understand raw DB rows.
 			$builder_data = array(
-					'ajaxUrl'            => admin_url( 'admin-ajax.php' ),
-					'nonce'              => wp_create_nonce( 'boldform_lite_save_form' ),
-					'formId'             => $form_data['id'],
-					// The labels an empty Next / Back / Start field falls back to,
-					// taken from the renderer itself. The panel shows them as
-					// placeholders, so a second copy here would let the builder
-					// promise one word while the page renders another — which is
-					// exactly what happened when the placeholder said "Next" and
-					// every renderer produced "OK". Localised rather than written
-					// in JS so a translated site agrees with itself too.
-					'cvDefaults'         => BoldForm_Lite_Conversational::default_labels(),
+				'ajaxUrl'             => admin_url( 'admin-ajax.php' ),
+				'nonce'               => wp_create_nonce( 'boldform_lite_save_form' ),
+				'formId'              => $form_data['id'],
+				// The labels an empty Next / Back / Start field falls back to,
+				// taken from the renderer itself. The panel shows them as
+				// placeholders, so a second copy here would let the builder
+				// promise one word while the page renders another — which is
+				// exactly what happened when the placeholder said "Next" and
+				// every renderer produced "OK". Localised rather than written
+				// in JS so a translated site agrees with itself too.
+				'cvDefaults'          => BoldForm_Lite_Conversational::default_labels(),
+				/**
+				 * Field types the conversational engine pins to the final
+				 * screen. The builder numbers its screen badges with the same
+				 * list so the canvas order matches what the visitor walks
+				 * through — a badge that disagrees with the form is worse
+				 * than no badge.
+				 *
+				 * @param string[] $types Field type slugs.
+				 */
+				'cvTailTypes'         => array_values(
+					array_filter(
+						array_map(
+							'sanitize_key',
+							(array) apply_filters(
+								'boldform_conversational_tail_types',
+								array( 'captcha', 'terms_conditions' )
+							)
+						)
+					)
+				),
+				/**
+				 * Field types that render no control and no text, so they never
+				 * earn a screen of their own.
+				 *
+				 * @param string[] $types Field type slugs.
+				 */
+				'cvSilentTypes'       => array_values(
+					array_filter(
+						array_map(
+							'sanitize_key',
+							(array) apply_filters(
+								'boldform_conversational_silent_types',
+								array( 'hidden_field', 'page_break' )
+							)
+						)
+					)
+				),
+				'formTitle'           => $form_data['title'],
+				'formStructure'       => $form_data['structure'],
+				'formSettings'        => $form_data['settings'],
+				'fieldLibrary'        => $this->get_field_library(),
+				'columnPresets'       => array(
+					array(
+						'value'  => '1',
+						'label'  => __( '1 Column', 'boldform-lite' ),
+						'widths' => array( '100%' ),
+					),
+					array(
+						'value'  => '2',
+						'label'  => __( '2 Columns', 'boldform-lite' ),
+						'widths' => array( '50%', '50%' ),
+					),
+					array(
+						'value'  => '3',
+						'label'  => __( '3 Columns', 'boldform-lite' ),
+						'widths' => array( '33.33%', '33.33%', '33.33%' ),
+					),
+					array(
+						'value'  => '4',
+						'label'  => __( '4 Columns', 'boldform-lite' ),
+						'widths' => array( '25%', '25%', '25%', '25%' ),
+					),
+				),
+				'saveText'            => __( 'Save Form', 'boldform-lite' ),
+				'savingText'          => __( 'Saving...', 'boldform-lite' ),
+				'emptyCanvasText'     => __( 'Start building your form by adding a row, then drag or click fields into a column.', 'boldform-lite' ),
+				'selectFieldText'     => __( 'Select a field to edit its settings.', 'boldform-lite' ),
+				'defaultFormTitle'    => __( 'Untitled Form', 'boldform-lite' ),
+				'exampleOptionsText'  => __( 'Option 1, Option 2', 'boldform-lite' ),
+				'pages'               => $this->get_pages_for_redirect(),
+				'defaults'            => array(
+					'thankYouMessage' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+					'submitText'      => __( 'Submit', 'boldform-lite' ),
+					'option1'         => __( 'Option 1', 'boldform-lite' ),
+					'option2'         => __( 'Option 2', 'boldform-lite' ),
+					'termsContent'    => __( 'I agree to the <a href="#">terms and conditions</a>.', 'boldform-lite' ),
+					'sectionDesc'     => __( 'Add a short description for this section.', 'boldform-lite' ),
+					// Default placeholder text, keyed by field type. Pre-filled into a new
+					// field's Placeholder setting so it shows in settings, canvas, preview
+					// and on the front end consistently (the builder bakes it into the
+					// saved value, so it stays editable / clearable per field).
+					'placeholders'    => array(
+						'text'           => __( 'Enter text', 'boldform-lite' ),
+						'email'          => __( 'you@example.com', 'boldform-lite' ),
+						'url'            => __( 'https://example.com', 'boldform-lite' ),
+						'tel'            => __( '+1 (555) 000-0000', 'boldform-lite' ),
+						'number'         => __( 'Enter a number', 'boldform-lite' ),
+						'numeric'        => __( 'Enter a number', 'boldform-lite' ),
+						'textarea'       => __( 'Enter your message', 'boldform-lite' ),
+						'select'         => __( 'Select…', 'boldform-lite' ),
+						'multiselect'    => __( 'Select options…', 'boldform-lite' ),
+						'date'           => __( 'Select a date', 'boldform-lite' ),
+						'time'           => __( 'Select a time', 'boldform-lite' ),
+						'password_field' => __( 'Password', 'boldform-lite' ),
+						'date_range'     => __( 'Select date range', 'boldform-lite' ),
+						'lookup'         => __( 'Type to search…', 'boldform-lite' ),
+					),
+				),
+				'actions'             => array(
+					'duplicate' => __( 'Duplicate', 'boldform-lite' ),
+					'delete'    => __( 'Delete', 'boldform-lite' ),
+					'addRow'    => __( 'Add Row', 'boldform-lite' ),
+				),
+				// Screen-reader announcements (wp.a11y.speak) for builder mutations.
+				'a11y'                => array(
+					'rowAdded'        => __( 'Row added.', 'boldform-lite' ),
+					'rowDeleted'      => __( 'Row deleted.', 'boldform-lite' ),
+					'rowDuplicated'   => __( 'Row duplicated.', 'boldform-lite' ),
+					'fieldAdded'      => __( 'Field added.', 'boldform-lite' ),
+					'fieldDeleted'    => __( 'Field deleted.', 'boldform-lite' ),
+					'fieldDuplicated' => __( 'Field duplicated.', 'boldform-lite' ),
+				),
+				'labels'              => array(
+					'label'                           => __( 'Label', 'boldform-lite' ),
+					'selectedField'                   => __( 'Selected Field', 'boldform-lite' ),
+					'placeholder'                     => __( 'Placeholder', 'boldform-lite' ),
+					'defaultValue'                    => __( 'Default Value', 'boldform-lite' ),
+					'required'                        => __( 'Required', 'boldform-lite' ),
+					'customError'                     => __( 'Custom error message', 'boldform-lite' ),
+					'options'                         => __( 'Options', 'boldform-lite' ),
+					'optionsHelp'                     => __( 'Separate options with commas.', 'boldform-lite' ),
+					'optionsLayout'                   => __( 'Options Layout', 'boldform-lite' ),
+					'optionsLayoutBlock'              => __( 'Stacked (default)', 'boldform-lite' ),
+					'optionsLayoutInline'             => __( 'Inline', 'boldform-lite' ),
+					'cancel'                          => __( 'Cancel', 'boldform-lite' ),
+					/* translators: %s: design theme name, e.g. "Royal Purple". */
+					'themeConflictTitle'              => __( 'Apply %s?', 'boldform-lite' ),
+					'themeConflictBody'               => __( 'These custom colors are overriding the theme. Applying it will replace them:', 'boldform-lite' ),
+					'themeConflictApply'              => __( 'Apply theme', 'boldform-lite' ),
+					'checkboxStyle'                   => __( 'Style', 'boldform-lite' ),
+					'checkboxStyleDefault'            => __( 'Checkbox', 'boldform-lite' ),
+					'checkboxStyleSwitch'             => __( 'Switch', 'boldform-lite' ),
+					'columnWidth'                     => __( 'Column Width', 'boldform-lite' ),
+					'layout'                          => __( 'Layout', 'boldform-lite' ),
+					'basicFields'                     => __( 'Basic Fields', 'boldform-lite' ),
+					'advancedFields'                  => __( 'Advanced Fields', 'boldform-lite' ),
+					'row'                             => __( 'Row', 'boldform-lite' ),
+					'columns'                         => __( 'columns', 'boldform-lite' ),
+					/* translators: 1: this screen's number, 2: total number of screens. Shown on each question card in the builder when conversational mode is on. */
+					'cvScreenOf'                      => __( 'Screen %1$s of %2$s', 'boldform-lite' ),
+					'cvSilent'                        => __( 'Not a screen — this field renders nothing for the visitor.', 'boldform-lite' ),
+					'cvStyleTitle'                    => __( 'Default Screen Colours', 'boldform-lite' ),
+					'cvStyleHelp'                     => __( 'The starting point for every screen. Any screen can override these from its own settings, and a colour you leave untouched here inherits your form\'s existing style.', 'boldform-lite' ),
+					'cvStyleOff'                      => __( 'Conversational mode is off for this form. Turn it on under Settings → Conversational to style it.', 'boldform-lite' ),
+					'fields'                          => __( 'fields', 'boldform-lite' ),
+					'dropHere'                        => __( 'Drop a field here', 'boldform-lite' ),
+					'dropHereHint'                    => __( 'or click one in the Field Library', 'boldform-lite' ),
+					'blankTemplateTitle'              => __( 'Blank Form', 'boldform-lite' ),
+					'contactTemplateTitle'            => __( 'Contact Form', 'boldform-lite' ),
+					'leadTemplateTitle'               => __( 'Lead Capture Form', 'boldform-lite' ),
+					'contactTemplateDescription'      => __( 'A simple contact form with name, email, subject, and message.', 'boldform-lite' ),
+					'leadTemplateDescription'         => __( 'A lead form for collecting contact details, budget, and project needs.', 'boldform-lite' ),
+					'feedbackTemplateTitle'           => __( 'Feedback Form', 'boldform-lite' ),
+					'feedbackTemplateDescription'     => __( 'Collect user feedback with rating and comments.', 'boldform-lite' ),
+					'newsletterTemplateTitle'         => __( 'Newsletter Signup', 'boldform-lite' ),
+					'newsletterTemplateDescription'   => __( 'Simple email signup with name for newsletters.', 'boldform-lite' ),
+					'registrationTemplateTitle'       => __( 'Registration Form', 'boldform-lite' ),
+					'registrationTemplateDescription' => __( 'Event or account registration with full details.', 'boldform-lite' ),
+					'importTemplate'                  => __( 'Import Template', 'boldform-lite' ),
+					/* translators: %s: comma-separated list of feature names that must be enabled. */
+					'templateNeedsModule'             => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
 					/**
-					 * Field types the conversational engine pins to the final
-					 * screen. The builder numbers its screen badges with the same
-					 * list so the canvas order matches what the visitor walks
-					 * through — a badge that disagrees with the form is worse
-					 * than no badge.
+					 * Filters the headline shown in the template preview pane when a
+					 * locked template row is selected.
 					 *
-					 * @param string[] $types Field type slugs.
-					 */
-					'cvTailTypes'        => array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
-						'boldform_conversational_tail_types',
-						array( 'captcha', 'terms_conditions' )
-					) ) ) ),
-					/**
-					 * Field types that render no control and no text, so they never
-					 * earn a screen of their own.
+					 * An add-on that is installed but not yet entitled says "activate"
+					 * rather than "upgrade" here — the visitor already owns the product,
+					 * and buying it again is not the action they need.
 					 *
-					 * @param string[] $types Field type slugs.
+					 * @since 1.1.7
+					 *
+					 * @param string $title Headline text.
 					 */
-					'cvSilentTypes'      => array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
-						'boldform_conversational_silent_types',
-						array( 'hidden_field', 'page_break' )
-					) ) ) ),
-					'formTitle'          => $form_data['title'],
-					'formStructure'      => $form_data['structure'],
-					'formSettings'       => $form_data['settings'],
-					'fieldLibrary'       => $this->get_field_library(),
-					'columnPresets'      => array(
-						array(
-							'value'  => '1',
-							'label'  => __( '1 Column', 'boldform-lite' ),
-							'widths' => array( '100%' ),
-						),
-						array(
-							'value'  => '2',
-							'label'  => __( '2 Columns', 'boldform-lite' ),
-							'widths' => array( '50%', '50%' ),
-						),
-						array(
-							'value'  => '3',
-							'label'  => __( '3 Columns', 'boldform-lite' ),
-							'widths' => array( '33.33%', '33.33%', '33.33%' ),
-						),
-						array(
-							'value'  => '4',
-							'label'  => __( '4 Columns', 'boldform-lite' ),
-							'widths' => array( '25%', '25%', '25%', '25%' ),
-						),
-					),
-					'saveText'           => __( 'Save Form', 'boldform-lite' ),
-						'savingText'         => __( 'Saving...', 'boldform-lite' ),
-					'emptyCanvasText'    => __( 'Start building your form by adding a row, then drag or click fields into a column.', 'boldform-lite' ),
-					'selectFieldText'    => __( 'Select a field to edit its settings.', 'boldform-lite' ),
-					'defaultFormTitle'   => __( 'Untitled Form', 'boldform-lite' ),
-					'exampleOptionsText' => __( 'Option 1, Option 2', 'boldform-lite' ),
-					'pages'              => $this->get_pages_for_redirect(),
-					'defaults'           => array(
-						'thankYouMessage'  => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
-						'submitText'       => __( 'Submit', 'boldform-lite' ),
-						'option1'          => __( 'Option 1', 'boldform-lite' ),
-						'option2'          => __( 'Option 2', 'boldform-lite' ),
-						'termsContent'     => __( 'I agree to the <a href="#">terms and conditions</a>.', 'boldform-lite' ),
-						'sectionDesc'      => __( 'Add a short description for this section.', 'boldform-lite' ),
-						// Default placeholder text, keyed by field type. Pre-filled into a new
-						// field's Placeholder setting so it shows in settings, canvas, preview
-						// and on the front end consistently (the builder bakes it into the
-						// saved value, so it stays editable / clearable per field).
-						'placeholders'     => array(
-							'text'           => __( 'Enter text', 'boldform-lite' ),
-							'email'          => __( 'you@example.com', 'boldform-lite' ),
-							'url'            => __( 'https://example.com', 'boldform-lite' ),
-							'tel'            => __( '+1 (555) 000-0000', 'boldform-lite' ),
-							'number'         => __( 'Enter a number', 'boldform-lite' ),
-							'numeric'        => __( 'Enter a number', 'boldform-lite' ),
-							'textarea'       => __( 'Enter your message', 'boldform-lite' ),
-							'select'         => __( 'Select…', 'boldform-lite' ),
-							'multiselect'    => __( 'Select options…', 'boldform-lite' ),
-							'date'           => __( 'Select a date', 'boldform-lite' ),
-							'time'           => __( 'Select a time', 'boldform-lite' ),
-							'password_field' => __( 'Password', 'boldform-lite' ),
-							'date_range'     => __( 'Select date range', 'boldform-lite' ),
-							'lookup'         => __( 'Type to search…', 'boldform-lite' ),
-						),
-					),
-					'actions'            => array(
-						'duplicate' => __( 'Duplicate', 'boldform-lite' ),
-						'delete'    => __( 'Delete', 'boldform-lite' ),
-						'addRow'    => __( 'Add Row', 'boldform-lite' ),
-					),
-					// Screen-reader announcements (wp.a11y.speak) for builder mutations.
-					'a11y'               => array(
-						'rowAdded'        => __( 'Row added.', 'boldform-lite' ),
-						'rowDeleted'      => __( 'Row deleted.', 'boldform-lite' ),
-						'rowDuplicated'   => __( 'Row duplicated.', 'boldform-lite' ),
-						'fieldAdded'      => __( 'Field added.', 'boldform-lite' ),
-						'fieldDeleted'    => __( 'Field deleted.', 'boldform-lite' ),
-						'fieldDuplicated' => __( 'Field duplicated.', 'boldform-lite' ),
-					),
-					'labels'             => array(
-						'label'        => __( 'Label', 'boldform-lite' ),
-						'selectedField'=> __( 'Selected Field', 'boldform-lite' ),
-						'placeholder'  => __( 'Placeholder', 'boldform-lite' ),
-						'defaultValue' => __( 'Default Value', 'boldform-lite' ),
-						'required'     => __( 'Required', 'boldform-lite' ),
-						'customError'  => __( 'Custom error message', 'boldform-lite' ),
-						'options'      => __( 'Options', 'boldform-lite' ),
-						'optionsHelp'  => __( 'Separate options with commas.', 'boldform-lite' ),
-						'optionsLayout'      => __( 'Options Layout', 'boldform-lite' ),
-						'optionsLayoutBlock'  => __( 'Stacked (default)', 'boldform-lite' ),
-						'optionsLayoutInline' => __( 'Inline', 'boldform-lite' ),
-						'cancel'               => __( 'Cancel', 'boldform-lite' ),
-						/* translators: %s: design theme name, e.g. "Royal Purple". */
-						'themeConflictTitle'   => __( 'Apply %s?', 'boldform-lite' ),
-						'themeConflictBody'    => __( 'These custom colors are overriding the theme. Applying it will replace them:', 'boldform-lite' ),
-						'themeConflictApply'   => __( 'Apply theme', 'boldform-lite' ),
-						'checkboxStyle'        => __( 'Style', 'boldform-lite' ),
-						'checkboxStyleDefault' => __( 'Checkbox', 'boldform-lite' ),
-						'checkboxStyleSwitch'  => __( 'Switch', 'boldform-lite' ),
-						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
-						'layout'       => __( 'Layout', 'boldform-lite' ),
-						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),
-						'advancedFields' => __( 'Advanced Fields', 'boldform-lite' ),
-						'row'          => __( 'Row', 'boldform-lite' ),
-						'columns'      => __( 'columns', 'boldform-lite' ),
-						/* translators: 1: this screen's number, 2: total number of screens. Shown on each question card in the builder when conversational mode is on. */
-						'cvScreenOf'   => __( 'Screen %1$s of %2$s', 'boldform-lite' ),
-						'cvSilent'     => __( 'Not a screen — this field renders nothing for the visitor.', 'boldform-lite' ),
-						'cvStyleTitle' => __( 'Default Screen Colours', 'boldform-lite' ),
-						'cvStyleHelp'  => __( 'The starting point for every screen. Any screen can override these from its own settings, and a colour you leave untouched here inherits your form\'s existing style.', 'boldform-lite' ),
-						'cvStyleOff'   => __( 'Conversational mode is off for this form. Turn it on under Settings → Conversational to style it.', 'boldform-lite' ),
-						'fields'       => __( 'fields', 'boldform-lite' ),
-						'dropHere'     => __( 'Drop a field here', 'boldform-lite' ),
-						'dropHereHint' => __( 'or click one in the Field Library', 'boldform-lite' ),
-						'blankTemplateTitle' => __( 'Blank Form', 'boldform-lite' ),
-						'contactTemplateTitle' => __( 'Contact Form', 'boldform-lite' ),
-						'leadTemplateTitle' => __( 'Lead Capture Form', 'boldform-lite' ),
-						'contactTemplateDescription' => __( 'A simple contact form with name, email, subject, and message.', 'boldform-lite' ),
-						'leadTemplateDescription' => __( 'A lead form for collecting contact details, budget, and project needs.', 'boldform-lite' ),
-						'feedbackTemplateTitle' => __( 'Feedback Form', 'boldform-lite' ),
-						'feedbackTemplateDescription' => __( 'Collect user feedback with rating and comments.', 'boldform-lite' ),
-						'newsletterTemplateTitle' => __( 'Newsletter Signup', 'boldform-lite' ),
-						'newsletterTemplateDescription' => __( 'Simple email signup with name for newsletters.', 'boldform-lite' ),
-						'registrationTemplateTitle' => __( 'Registration Form', 'boldform-lite' ),
-						'registrationTemplateDescription' => __( 'Event or account registration with full details.', 'boldform-lite' ),
-						'importTemplate' => __( 'Import Template', 'boldform-lite' ),
-						/* translators: %s: comma-separated list of feature names that must be enabled. */
-						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
-						/**
-						 * Filters the headline shown in the template preview pane when a
-						 * locked template row is selected.
-						 *
-						 * An add-on that is installed but not yet entitled says "activate"
-						 * rather than "upgrade" here — the visitor already owns the product,
-						 * and buying it again is not the action they need.
-						 *
-						 * @since 1.1.7
-						 *
-						 * @param string $title Headline text.
-						 */
-						'templateLockTitle' => apply_filters( 'boldform_template_lock_title', __( 'Available with an upgrade', 'boldform-lite' ) ),
+					'templateLockTitle'               => apply_filters( 'boldform_template_lock_title', __( 'Available with an upgrade', 'boldform-lite' ) ),
 
-						/**
-						 * Filters the body copy shown in the template preview pane when a
-						 * locked template row is selected.
-						 *
-						 * @since 1.1.7
-						 *
-						 * @param string $text Body copy.
-						 */
-						'templateLockText'  => apply_filters( 'boldform_template_lock_text', __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ) ),
-						'upgradeNow'        => apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ), 'button' ),
-						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
-						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
-						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
-						'thankYouMessage' => __( 'Thank you message', 'boldform-lite' ),
-						// WordPress labels the editor's second tab "Text". This holds a
-						// message template rather than a post, so "Code" describes it better.
-						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
-						'editorCode'      => __( 'Code', 'boldform-lite' ),
-						'addShortcodes'   => __( 'Add Shortcodes', 'boldform-lite' ),
-						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
-						'customizeEmail'  => __( 'Customize this email', 'boldform-lite' ),
-						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
-						// Labelled with the real control's wording, so the block reads the
-						// same before and after the paid feature replaces the teaser.
-						'attachDocument'  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
-						'attachmentTeaserHint' => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
-						'routeRecipients'   => __( 'Send to different people based on the answers', 'boldform-lite' ),
-						'routingTeaserHint' => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
-						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
-						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
-						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
-						'submissionType' => __( 'After Submit', 'boldform-lite' ),
-						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
-						'ajaxSubmitHelp' => __( 'Submit without page reload and show a success message.', 'boldform-lite' ),
-						'customPageRedirect' => __( 'Custom page redirect', 'boldform-lite' ),
-						'customPageRedirectHelp' => __( 'Send the user to a custom URL after submit.', 'boldform-lite' ),
-						'enableAdminEmail' => __( 'Enable admin email', 'boldform-lite' ),
-						'enableUserEmail' => __( 'Enable user confirmation email', 'boldform-lite' ),
-						'adminEmailAddress' => __( 'Admin email address', 'boldform-lite' ),
-						'emailRecipient' => __( 'Admin Email Recipient', 'boldform-lite' ),
-						'siteAdminEmail' => __( 'Site admin email', 'boldform-lite' ),
-						'siteAdminEmailHelp' => __( 'Use the email address from WordPress settings.', 'boldform-lite' ),
-						'customEmail' => __( 'Custom email', 'boldform-lite' ),
-						'customEmailHelp' => __( 'Send notifications to a custom email address.', 'boldform-lite' ),
-						'adminNotifications' => __( 'Admin Notifications', 'boldform-lite' ),
-						'userNotifications' => __( 'User Confirmation Email', 'boldform-lite' ),
-						'termsContent' => __( 'Terms text', 'boldform-lite' ),
-						'captchaNotice' => __( 'This field will use the captcha provider selected in global settings.', 'boldform-lite' ),
-						'npsColors'      => __( 'Zone Colors', 'boldform-lite' ),
-						'npsDetractor'   => __( 'Detractors (0–6)', 'boldform-lite' ),
-						'npsPassive'     => __( 'Passives (7–8)', 'boldform-lite' ),
-						'npsPromoter'    => __( 'Promoters (9–10)', 'boldform-lite' ),
-						'resetColor'     => __( 'Reset to default', 'boldform-lite' ),
-						'starSizeField'        => __( 'Icon Size (px)', 'boldform-lite' ),
-						'starColorField'       => __( 'Star Color', 'boldform-lite' ),
-						'starActiveColorField' => __( 'Active Color', 'boldform-lite' ),
-						'fileUploadHint' => __( 'Choose file or drag & drop', 'boldform-lite' ),
-						'allowedTypes'   => __( 'Allowed file types', 'boldform-lite' ),
-						'maxFileSize'    => __( 'Max file size (MB)', 'boldform-lite' ),
-						'sectionDescription' => __( 'Description', 'boldform-lite' ),
-						'submitButton' => __( 'Submit Button', 'boldform-lite' ),
-						'buttonText' => __( 'Button text', 'boldform-lite' ),
-						'buttonAlignment' => __( 'Button alignment', 'boldform-lite' ),
-						'buttonLayout' => __( 'Button layout', 'boldform-lite' ),
-						'buttonIconType'  => __( 'Icon', 'boldform-lite' ),
-						'dashicon'        => __( 'Dashicon', 'boldform-lite' ),
-						'customSvg'       => __( 'Custom SVG', 'boldform-lite' ),
-						'dashiconClass'   => __( 'Dashicon', 'boldform-lite' ),
-						'uploadSvg'       => __( 'Upload SVG', 'boldform-lite' ),
-						'changeSvg'       => __( 'Change SVG', 'boldform-lite' ),
-						'useSvg'          => __( 'Use this SVG', 'boldform-lite' ),
-						'svgCode'         => __( 'SVG Icon', 'boldform-lite' ),
-						'iconPosition'    => __( 'Icon position', 'boldform-lite' ),
-						'iconGap'         => __( 'Icon gap (px)', 'boldform-lite' ),
-						'cssClass'          => __( 'CSS Class', 'boldform-lite' ),
-						'autoPopulateKey'   => __( 'Auto Populate Key', 'boldform-lite' ),
-						'autoPopulateDesc'  => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
-						'rowSettings'     => __( 'Row settings', 'boldform-lite' ),
-						'moveUp'          => __( 'Move up', 'boldform-lite' ),
-						'moveDown'        => __( 'Move down', 'boldform-lite' ),
-						'column'          => __( 'Column', 'boldform-lite' ),
-						'width'           => __( 'Width', 'boldform-lite' ),
-						'belowFields' => __( 'Below fields', 'boldform-lite' ),
-						'inlineLastRow' => __( 'Inline with last row', 'boldform-lite' ),
-						'buttonColor' => __( 'Button color', 'boldform-lite' ),
-						'fieldAppearance' => __( 'Field Appearance', 'boldform-lite' ),
-						'fieldStyle' => __( 'Field style', 'boldform-lite' ),
-						'fieldSize' => __( 'Field size', 'boldform-lite' ),
-						'fieldFocusColor' => __( 'Focus color', 'boldform-lite' ),
-						'fieldStyles' => __( 'Field Styles', 'boldform-lite' ),
-						'labelStyles' => __( 'Label Styles', 'boldform-lite' ),
-						'buttonStyles' => __( 'Button Styles', 'boldform-lite' ),
-						'stylePreviewEmpty' => __( 'Add fields in the Builder tab to preview your styling here.', 'boldform-lite' ),
-						'size' => __( 'Size', 'boldform-lite' ),
-						'border' => __( 'Border', 'boldform-lite' ),
-						'borderSize' => __( 'Border Size', 'boldform-lite' ),
-						'borderRadius' => __( 'Border Radius', 'boldform-lite' ),
-						'background' => __( 'Background', 'boldform-lite' ),
-						'text' => __( 'Text', 'boldform-lite' ),
-						'defaultStyle' => __( 'Default', 'boldform-lite' ),
-						'subLabel' => __( 'Sublabel', 'boldform-lite' ),
-						'error' => __( 'Error', 'boldform-lite' ),
-						'solid' => __( 'Solid', 'boldform-lite' ),
-						'dashed' => __( 'Dashed', 'boldform-lite' ),
-						'none' => __( 'None', 'boldform-lite' ),
-						'small' => __( 'Small', 'boldform-lite' ),
-						'medium' => __( 'Medium', 'boldform-lite' ),
-						'large' => __( 'Large', 'boldform-lite' ),
-						'left' => __( 'Left', 'boldform-lite' ),
-						'center' => __( 'Center', 'boldform-lite' ),
-						'right' => __( 'Right', 'boldform-lite' ),
-						'teal' => __( 'Teal', 'boldform-lite' ),
-						'blue' => __( 'Blue', 'boldform-lite' ),
-						'green' => __( 'Green', 'boldform-lite' ),
-						'red' => __( 'Red', 'boldform-lite' ),
-						'dark' => __( 'Dark', 'boldform-lite' ),
-					),
-					// Labels for the advanced (full-parity) Style-tab controls.
-					'advStyle'           => array(
-						'secContainer'    => __( 'Form Container', 'boldform-lite' ),
-						'secLayout'       => __( 'Layout & Spacing', 'boldform-lite' ),
-						'secLabels'       => __( 'Labels', 'boldform-lite' ),
-						'secInputs'       => __( 'Input Fields', 'boldform-lite' ),
-						'secPlaceholder'  => __( 'Placeholder', 'boldform-lite' ),
-						'secChoice'       => __( 'Checkbox & Radio', 'boldform-lite' ),
-						'secSelect'       => __( 'Select Dropdown', 'boldform-lite' ),
-						'secTerms'        => __( 'Terms & Conditions', 'boldform-lite' ),
-						'secFile'         => __( 'File Upload', 'boldform-lite' ),
-						'secSection'      => __( 'Section Break', 'boldform-lite' ),
-						'secButton'       => __( 'Submit Button', 'boldform-lite' ),
-						'secError'        => __( 'Error Messages', 'boldform-lite' ),
-						'secSuccess'      => __( 'Success Message', 'boldform-lite' ),
-						'maxWidth'        => __( 'Max Width', 'boldform-lite' ),
-						'alignment'       => __( 'Alignment', 'boldform-lite' ),
-						'alignLeft'       => __( 'Left', 'boldform-lite' ),
-						'alignCenter'     => __( 'Center', 'boldform-lite' ),
-						'alignRight'      => __( 'Right', 'boldform-lite' ),
-						'alignJustify'    => __( 'Full Width', 'boldform-lite' ),
-						'padding'         => __( 'Padding', 'boldform-lite' ),
-						'margin'          => __( 'Margin', 'boldform-lite' ),
-						'borderColor'     => __( 'Border Color', 'boldform-lite' ),
-						'colorLabel'      => __( 'Color', 'boldform-lite' ),
-						'boxShadow'       => __( 'Box Shadow', 'boldform-lite' ),
-						'hoverShadow'     => __( 'Box Shadow (Hover)', 'boldform-lite' ),
-						'focusShadow'     => __( 'Box Shadow (Focus)', 'boldform-lite' ),
-						'stateNormal'     => __( 'Normal', 'boldform-lite' ),
-						'stateHover'      => __( 'Hover', 'boldform-lite' ),
-						'stateFocus'      => __( 'Focus', 'boldform-lite' ),
-						'stateChecked'    => __( 'Checked', 'boldform-lite' ),
-						'stateSelected'   => __( 'Selected', 'boldform-lite' ),
-						'rowGap'          => __( 'Row Gap', 'boldform-lite' ),
-						'columnGap'       => __( 'Column Gap', 'boldform-lite' ),
-						'fieldMargin'     => __( 'Field Margin', 'boldform-lite' ),
-						'inputMargin'     => __( 'Input Margin', 'boldform-lite' ),
-						'typography'      => __( 'Typography', 'boldform-lite' ),
-						'requiredColor'   => __( 'Required Mark Color', 'boldform-lite' ),
-						'height'          => __( 'Height', 'boldform-lite' ),
-						'textareaHeight'  => __( 'Textarea Height', 'boldform-lite' ),
-						'textColor'       => __( 'Text Color', 'boldform-lite' ),
-						'placeholderColor'=> __( 'Placeholder Color', 'boldform-lite' ),
-						'focusBorderColor'=> __( 'Focus Border Color', 'boldform-lite' ),
-						'focusBgColor'    => __( 'Focus Background', 'boldform-lite' ),
-						'accentColor'     => __( 'Accent Color', 'boldform-lite' ),
-						'labelColor'      => __( 'Label Color', 'boldform-lite' ),
-						'linkColor'       => __( 'Link Color', 'boldform-lite' ),
-						'spacing'         => __( 'Spacing', 'boldform-lite' ),
-						'gap'             => __( 'Gap', 'boldform-lite' ),
-						'checkedColor'    => __( 'Checked Color', 'boldform-lite' ),
-						'arrowColor'      => __( 'Arrow Color', 'boldform-lite' ),
-						'panelBg'         => __( 'Panel Background', 'boldform-lite' ),
-						'panelBorder'     => __( 'Panel Border Color', 'boldform-lite' ),
-						'optionBg'        => __( 'Option Background', 'boldform-lite' ),
-						'optionText'      => __( 'Option Text', 'boldform-lite' ),
-						'optionHoverBg'   => __( 'Option Hover Background', 'boldform-lite' ),
-						'optionHoverText' => __( 'Option Hover Text Color', 'boldform-lite' ),
-						'optionActiveBg'  => __( 'Selected Option Background', 'boldform-lite' ),
-						'searchBox'       => __( 'Search Box', 'boldform-lite' ),
-						'searchBg'        => __( 'Search Background', 'boldform-lite' ),
-						'searchText'      => __( 'Search Text Color', 'boldform-lite' ),
-						'searchPh'        => __( 'Search Placeholder Color', 'boldform-lite' ),
-						'copyText'        => __( 'Copy Text', 'boldform-lite' ),
-						'borderWidth'     => __( 'Border Width', 'boldform-lite' ),
-						'borderStyle'     => __( 'Border Style', 'boldform-lite' ),
-						'btnBg'           => __( 'Button Background', 'boldform-lite' ),
-						'btnText'         => __( 'Button Text Color', 'boldform-lite' ),
-						'titleColor'      => __( 'Title Color', 'boldform-lite' ),
-						'descColor'       => __( 'Description Color', 'boldform-lite' ),
-						'noticeBg'        => __( 'Notice Background', 'boldform-lite' ),
-						'noticeText'      => __( 'Notice Text Color', 'boldform-lite' ),
-						'fullWidth'       => __( 'Full Width', 'boldform-lite' ),
-						'iconColor'       => __( 'Icon Color', 'boldform-lite' ),
-						'hoverTextColor'  => __( 'Hover Text Color', 'boldform-lite' ),
-						'hoverBg'         => __( 'Hover Background', 'boldform-lite' ),
-						'hoverBorderColor'=> __( 'Hover Border Color', 'boldform-lite' ),
-						'hover'           => __( 'Hover', 'boldform-lite' ),
-						'focus'           => __( 'Focus', 'boldform-lite' ),
-						'focusRing'       => __( 'Focus Ring Color', 'boldform-lite' ),
-						'ringColor'       => __( 'Ring Color', 'boldform-lite' ),
-						'hoverColor'      => __( 'Hover Color', 'boldform-lite' ),
-						'linkHoverColor'  => __( 'Link Hover Color', 'boldform-lite' ),
-						'focusLabelColor' => __( 'Focused Label Color', 'boldform-lite' ),
-						'states'          => __( 'States', 'boldform-lite' ),
-						'subLabel'        => __( 'Sub-field Label', 'boldform-lite' ),
-						'subLabelColor'   => __( 'Sub-label Color', 'boldform-lite' ),
-						'subfieldGap'     => __( 'Sub-field Gap', 'boldform-lite' ),
-						'buttonMargin'    => __( 'Button Margin', 'boldform-lite' ),
-						'containerMargin' => __( 'Container Margin', 'boldform-lite' ),
-						'fontFamily'      => __( 'Font Family', 'boldform-lite' ),
-						'fontSize'        => __( 'Font Size', 'boldform-lite' ),
-						'fontWeight'      => __( 'Weight', 'boldform-lite' ),
-						'lineHeight'      => __( 'Line Height', 'boldform-lite' ),
-						'letterSpacing'   => __( 'Letter Spacing', 'boldform-lite' ),
-						'textTransform'   => __( 'Transform', 'boldform-lite' ),
-						'shadowX'         => __( 'X Offset', 'boldform-lite' ),
-						'shadowY'         => __( 'Y Offset', 'boldform-lite' ),
-						'shadowBlur'      => __( 'Blur', 'boldform-lite' ),
-						'shadowSpread'    => __( 'Spread', 'boldform-lite' ),
-						'shadowColor'     => __( 'Shadow Color', 'boldform-lite' ),
-						'inset'           => __( 'Inset', 'boldform-lite' ),
-						'gradient'        => __( 'Gradient', 'boldform-lite' ),
-						'solidFill'       => __( 'Solid', 'boldform-lite' ),
-						'angle'           => __( 'Angle', 'boldform-lite' ),
-						'colorStop1'      => __( 'Color 1', 'boldform-lite' ),
-						'colorStop2'      => __( 'Color 2', 'boldform-lite' ),
-						'styleLabel'      => __( 'Style', 'boldform-lite' ),
-						'widthLabel'      => __( 'Width', 'boldform-lite' ),
-						'radiusLabel'     => __( 'Radius', 'boldform-lite' ),
-						'linkSides'       => __( 'Link sides', 'boldform-lite' ),
-						'sideTop'         => __( 'Top', 'boldform-lite' ),
-						'sideRight'       => __( 'Right', 'boldform-lite' ),
-						'sideBottom'      => __( 'Bottom', 'boldform-lite' ),
-						'sideLeft'        => __( 'Left', 'boldform-lite' ),
-						'inheritDefault'  => __( 'Default', 'boldform-lite' ),
-						'opacity'         => __( 'Opacity (%)', 'boldform-lite' ),
-						'reset'           => __( 'Reset color', 'boldform-lite' ),
-						'resetSection'    => __( 'Reset this section', 'boldform-lite' ),
-						'previewStates'   => __( 'Preview states — messages & open dropdown', 'boldform-lite' ),
-						'sampleSuccess'   => __( 'Your form has been submitted successfully.', 'boldform-lite' ),
-						'sampleError'     => __( 'Please correct the highlighted fields below.', 'boldform-lite' ),
-						'sampleFieldLabel' => __( 'Field with an error', 'boldform-lite' ),
-						'sampleValue'     => __( 'Invalid value', 'boldform-lite' ),
-						'sampleRequired'  => __( 'This field is required.', 'boldform-lite' ),
-						'sampleDropdown'  => __( 'Dropdown (open)', 'boldform-lite' ),
-						'sampleSearch'    => __( 'Search…', 'boldform-lite' ),
-						'optionSelected'  => __( 'Selected option', 'boldform-lite' ),
-						'optionAnother'   => __( 'Another option', 'boldform-lite' ),
-						'themeFont'       => __( 'Theme Default', 'boldform-lite' ),
-						'uppercase'       => __( 'UPPERCASE', 'boldform-lite' ),
-						'lowercase'       => __( 'lowercase', 'boldform-lite' ),
-						'capitalize'      => __( 'Capitalize', 'boldform-lite' ),
-						'dotted'          => __( 'Dotted', 'boldform-lite' ),
-					),
-					'messages'           => array(
-						'emptyFields' => __( 'Add at least one field before saving.', 'boldform-lite' ),
-						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
-						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
-					),
-					// Thank-you message shortcode picker. The builder always renders the
-					// slot; this flag only decides whether the free teaser goes inside it.
-					// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
-					// off, so the slot is left empty for it to fill on the
-					// boldform:form_settings_rendered event.
-					//
-					// Must stay a bool: wp_localize_script casts top-level scalars with
-					// (string), so this reaches JS as '1' or '' and the empty string is
-					// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
-					// as the string '0', which is truthy, and the teaser would then show
-					// even with an add-on active.
-					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
-					// Same bool rule as showUpgradeCta above. Gates ONLY the template
-					// library's locked rows, so an add-on that suppresses the shared CTAs
-					// can still advertise templates it has not unlocked yet.
-					'showLockedTemplates' => $this->show_locked_templates_teaser(),
-					// Locked entries advertised in the "Choose a Template" library. Empty
-					// once the teaser above is off, at which point an add-on supplies the
-					// real templates through proTemplates instead — the two never show
-					// together. See premium_template_teasers().
-					'premiumTemplates'   => $this->premium_template_teasers(),
+					/**
+					 * Filters the body copy shown in the template preview pane when a
+					 * locked template row is selected.
+					 *
+					 * @since 1.1.7
+					 *
+					 * @param string $text Body copy.
+					 */
+					'templateLockText'                => apply_filters( 'boldform_template_lock_text', __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ) ),
+					'upgradeNow'                      => apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ), 'button' ),
+					'enableAjax'                      => __( 'Enable AJAX submit', 'boldform-lite' ),
+					'enableRedirect'                  => __( 'Enable redirect after submit', 'boldform-lite' ),
+					'redirectUrl'                     => __( 'Redirect URL', 'boldform-lite' ),
+					'thankYouMessage'                 => __( 'Thank you message', 'boldform-lite' ),
+					// WordPress labels the editor's second tab "Text". This holds a
+					// message template rather than a post, so "Code" describes it better.
+					'editorVisual'                    => __( 'Visual', 'boldform-lite' ),
+					'editorCode'                      => __( 'Code', 'boldform-lite' ),
+					'addShortcodes'                   => __( 'Add Shortcodes', 'boldform-lite' ),
+					'shortcodeHint'                   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
+					'customizeEmail'                  => __( 'Customize this email', 'boldform-lite' ),
+					'emailTeaserHint'                 => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
+					// Labelled with the real control's wording, so the block reads the
+					// same before and after the paid feature replaces the teaser.
+					'attachDocument'                  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
+					'attachmentTeaserHint'            => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
+					'routeRecipients'                 => __( 'Send to different people based on the answers', 'boldform-lite' ),
+					'routingTeaserHint'               => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
+					'integrationUpgrade'              => __( 'Upgrade', 'boldform-lite' ),
+					'integrationLocked'               => __( 'Available with an upgrade', 'boldform-lite' ),
+					'submitBehavior'                  => __( 'Submission Settings', 'boldform-lite' ),
+					'submissionType'                  => __( 'After Submit', 'boldform-lite' ),
+					'ajaxSubmit'                      => __( 'AJAX submit', 'boldform-lite' ),
+					'ajaxSubmitHelp'                  => __( 'Submit without page reload and show a success message.', 'boldform-lite' ),
+					'customPageRedirect'              => __( 'Custom page redirect', 'boldform-lite' ),
+					'customPageRedirectHelp'          => __( 'Send the user to a custom URL after submit.', 'boldform-lite' ),
+					'enableAdminEmail'                => __( 'Enable admin email', 'boldform-lite' ),
+					'enableUserEmail'                 => __( 'Enable user confirmation email', 'boldform-lite' ),
+					'adminEmailAddress'               => __( 'Admin email address', 'boldform-lite' ),
+					'emailRecipient'                  => __( 'Admin Email Recipient', 'boldform-lite' ),
+					'siteAdminEmail'                  => __( 'Site admin email', 'boldform-lite' ),
+					'siteAdminEmailHelp'              => __( 'Use the email address from WordPress settings.', 'boldform-lite' ),
+					'customEmail'                     => __( 'Custom email', 'boldform-lite' ),
+					'customEmailHelp'                 => __( 'Send notifications to a custom email address.', 'boldform-lite' ),
+					'adminNotifications'              => __( 'Admin Notifications', 'boldform-lite' ),
+					'userNotifications'               => __( 'User Confirmation Email', 'boldform-lite' ),
+					'termsContent'                    => __( 'Terms text', 'boldform-lite' ),
+					'captchaNotice'                   => __( 'This field will use the captcha provider selected in global settings.', 'boldform-lite' ),
+					'npsColors'                       => __( 'Zone Colors', 'boldform-lite' ),
+					'npsDetractor'                    => __( 'Detractors (0–6)', 'boldform-lite' ),
+					'npsPassive'                      => __( 'Passives (7–8)', 'boldform-lite' ),
+					'npsPromoter'                     => __( 'Promoters (9–10)', 'boldform-lite' ),
+					'resetColor'                      => __( 'Reset to default', 'boldform-lite' ),
+					'starSizeField'                   => __( 'Icon Size (px)', 'boldform-lite' ),
+					'starColorField'                  => __( 'Star Color', 'boldform-lite' ),
+					'starActiveColorField'            => __( 'Active Color', 'boldform-lite' ),
+					'fileUploadHint'                  => __( 'Choose file or drag & drop', 'boldform-lite' ),
+					'allowedTypes'                    => __( 'Allowed file types', 'boldform-lite' ),
+					'maxFileSize'                     => __( 'Max file size (MB)', 'boldform-lite' ),
+					'sectionDescription'              => __( 'Description', 'boldform-lite' ),
+					'submitButton'                    => __( 'Submit Button', 'boldform-lite' ),
+					'buttonText'                      => __( 'Button text', 'boldform-lite' ),
+					'buttonAlignment'                 => __( 'Button alignment', 'boldform-lite' ),
+					'buttonLayout'                    => __( 'Button layout', 'boldform-lite' ),
+					'buttonIconType'                  => __( 'Icon', 'boldform-lite' ),
+					'dashicon'                        => __( 'Dashicon', 'boldform-lite' ),
+					'customSvg'                       => __( 'Custom SVG', 'boldform-lite' ),
+					'dashiconClass'                   => __( 'Dashicon', 'boldform-lite' ),
+					'uploadSvg'                       => __( 'Upload SVG', 'boldform-lite' ),
+					'changeSvg'                       => __( 'Change SVG', 'boldform-lite' ),
+					'useSvg'                          => __( 'Use this SVG', 'boldform-lite' ),
+					'svgCode'                         => __( 'SVG Icon', 'boldform-lite' ),
+					'iconPosition'                    => __( 'Icon position', 'boldform-lite' ),
+					'iconGap'                         => __( 'Icon gap (px)', 'boldform-lite' ),
+					'cssClass'                        => __( 'CSS Class', 'boldform-lite' ),
+					'autoPopulateKey'                 => __( 'Auto Populate Key', 'boldform-lite' ),
+					'autoPopulateDesc'                => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
+					'rowSettings'                     => __( 'Row settings', 'boldform-lite' ),
+					'moveUp'                          => __( 'Move up', 'boldform-lite' ),
+					'moveDown'                        => __( 'Move down', 'boldform-lite' ),
+					'column'                          => __( 'Column', 'boldform-lite' ),
+					'width'                           => __( 'Width', 'boldform-lite' ),
+					'belowFields'                     => __( 'Below fields', 'boldform-lite' ),
+					'inlineLastRow'                   => __( 'Inline with last row', 'boldform-lite' ),
+					'buttonColor'                     => __( 'Button color', 'boldform-lite' ),
+					'fieldAppearance'                 => __( 'Field Appearance', 'boldform-lite' ),
+					'fieldStyle'                      => __( 'Field style', 'boldform-lite' ),
+					'fieldSize'                       => __( 'Field size', 'boldform-lite' ),
+					'fieldFocusColor'                 => __( 'Focus color', 'boldform-lite' ),
+					'fieldStyles'                     => __( 'Field Styles', 'boldform-lite' ),
+					'labelStyles'                     => __( 'Label Styles', 'boldform-lite' ),
+					'buttonStyles'                    => __( 'Button Styles', 'boldform-lite' ),
+					'stylePreviewEmpty'               => __( 'Add fields in the Builder tab to preview your styling here.', 'boldform-lite' ),
+					'size'                            => __( 'Size', 'boldform-lite' ),
+					'border'                          => __( 'Border', 'boldform-lite' ),
+					'borderSize'                      => __( 'Border Size', 'boldform-lite' ),
+					'borderRadius'                    => __( 'Border Radius', 'boldform-lite' ),
+					'background'                      => __( 'Background', 'boldform-lite' ),
+					'text'                            => __( 'Text', 'boldform-lite' ),
+					'defaultStyle'                    => __( 'Default', 'boldform-lite' ),
+					'subLabel'                        => __( 'Sublabel', 'boldform-lite' ),
+					'error'                           => __( 'Error', 'boldform-lite' ),
+					'solid'                           => __( 'Solid', 'boldform-lite' ),
+					'dashed'                          => __( 'Dashed', 'boldform-lite' ),
+					'none'                            => __( 'None', 'boldform-lite' ),
+					'small'                           => __( 'Small', 'boldform-lite' ),
+					'medium'                          => __( 'Medium', 'boldform-lite' ),
+					'large'                           => __( 'Large', 'boldform-lite' ),
+					'left'                            => __( 'Left', 'boldform-lite' ),
+					'center'                          => __( 'Center', 'boldform-lite' ),
+					'right'                           => __( 'Right', 'boldform-lite' ),
+					'teal'                            => __( 'Teal', 'boldform-lite' ),
+					'blue'                            => __( 'Blue', 'boldform-lite' ),
+					'green'                           => __( 'Green', 'boldform-lite' ),
+					'red'                             => __( 'Red', 'boldform-lite' ),
+					'dark'                            => __( 'Dark', 'boldform-lite' ),
+				),
+				// Labels for the advanced (full-parity) Style-tab controls.
+				'advStyle'            => array(
+					'secContainer'     => __( 'Form Container', 'boldform-lite' ),
+					'secLayout'        => __( 'Layout & Spacing', 'boldform-lite' ),
+					'secLabels'        => __( 'Labels', 'boldform-lite' ),
+					'secInputs'        => __( 'Input Fields', 'boldform-lite' ),
+					'secPlaceholder'   => __( 'Placeholder', 'boldform-lite' ),
+					'secChoice'        => __( 'Checkbox & Radio', 'boldform-lite' ),
+					'secSelect'        => __( 'Select Dropdown', 'boldform-lite' ),
+					'secTerms'         => __( 'Terms & Conditions', 'boldform-lite' ),
+					'secFile'          => __( 'File Upload', 'boldform-lite' ),
+					'secSection'       => __( 'Section Break', 'boldform-lite' ),
+					'secButton'        => __( 'Submit Button', 'boldform-lite' ),
+					'secError'         => __( 'Error Messages', 'boldform-lite' ),
+					'secSuccess'       => __( 'Success Message', 'boldform-lite' ),
+					'maxWidth'         => __( 'Max Width', 'boldform-lite' ),
+					'alignment'        => __( 'Alignment', 'boldform-lite' ),
+					'alignLeft'        => __( 'Left', 'boldform-lite' ),
+					'alignCenter'      => __( 'Center', 'boldform-lite' ),
+					'alignRight'       => __( 'Right', 'boldform-lite' ),
+					'alignJustify'     => __( 'Full Width', 'boldform-lite' ),
+					'padding'          => __( 'Padding', 'boldform-lite' ),
+					'margin'           => __( 'Margin', 'boldform-lite' ),
+					'borderColor'      => __( 'Border Color', 'boldform-lite' ),
+					'colorLabel'       => __( 'Color', 'boldform-lite' ),
+					'boxShadow'        => __( 'Box Shadow', 'boldform-lite' ),
+					'hoverShadow'      => __( 'Box Shadow (Hover)', 'boldform-lite' ),
+					'focusShadow'      => __( 'Box Shadow (Focus)', 'boldform-lite' ),
+					'stateNormal'      => __( 'Normal', 'boldform-lite' ),
+					'stateHover'       => __( 'Hover', 'boldform-lite' ),
+					'stateFocus'       => __( 'Focus', 'boldform-lite' ),
+					'stateChecked'     => __( 'Checked', 'boldform-lite' ),
+					'stateSelected'    => __( 'Selected', 'boldform-lite' ),
+					'rowGap'           => __( 'Row Gap', 'boldform-lite' ),
+					'columnGap'        => __( 'Column Gap', 'boldform-lite' ),
+					'fieldMargin'      => __( 'Field Margin', 'boldform-lite' ),
+					'inputMargin'      => __( 'Input Margin', 'boldform-lite' ),
+					'typography'       => __( 'Typography', 'boldform-lite' ),
+					'requiredColor'    => __( 'Required Mark Color', 'boldform-lite' ),
+					'height'           => __( 'Height', 'boldform-lite' ),
+					'textareaHeight'   => __( 'Textarea Height', 'boldform-lite' ),
+					'textColor'        => __( 'Text Color', 'boldform-lite' ),
+					'placeholderColor' => __( 'Placeholder Color', 'boldform-lite' ),
+					'focusBorderColor' => __( 'Focus Border Color', 'boldform-lite' ),
+					'focusBgColor'     => __( 'Focus Background', 'boldform-lite' ),
+					'accentColor'      => __( 'Accent Color', 'boldform-lite' ),
+					'labelColor'       => __( 'Label Color', 'boldform-lite' ),
+					'linkColor'        => __( 'Link Color', 'boldform-lite' ),
+					'spacing'          => __( 'Spacing', 'boldform-lite' ),
+					'gap'              => __( 'Gap', 'boldform-lite' ),
+					'checkedColor'     => __( 'Checked Color', 'boldform-lite' ),
+					'arrowColor'       => __( 'Arrow Color', 'boldform-lite' ),
+					'panelBg'          => __( 'Panel Background', 'boldform-lite' ),
+					'panelBorder'      => __( 'Panel Border Color', 'boldform-lite' ),
+					'optionBg'         => __( 'Option Background', 'boldform-lite' ),
+					'optionText'       => __( 'Option Text', 'boldform-lite' ),
+					'optionHoverBg'    => __( 'Option Hover Background', 'boldform-lite' ),
+					'optionHoverText'  => __( 'Option Hover Text Color', 'boldform-lite' ),
+					'optionActiveBg'   => __( 'Selected Option Background', 'boldform-lite' ),
+					'searchBox'        => __( 'Search Box', 'boldform-lite' ),
+					'searchBg'         => __( 'Search Background', 'boldform-lite' ),
+					'searchText'       => __( 'Search Text Color', 'boldform-lite' ),
+					'searchPh'         => __( 'Search Placeholder Color', 'boldform-lite' ),
+					'copyText'         => __( 'Copy Text', 'boldform-lite' ),
+					'borderWidth'      => __( 'Border Width', 'boldform-lite' ),
+					'borderStyle'      => __( 'Border Style', 'boldform-lite' ),
+					'btnBg'            => __( 'Button Background', 'boldform-lite' ),
+					'btnText'          => __( 'Button Text Color', 'boldform-lite' ),
+					'titleColor'       => __( 'Title Color', 'boldform-lite' ),
+					'descColor'        => __( 'Description Color', 'boldform-lite' ),
+					'noticeBg'         => __( 'Notice Background', 'boldform-lite' ),
+					'noticeText'       => __( 'Notice Text Color', 'boldform-lite' ),
+					'fullWidth'        => __( 'Full Width', 'boldform-lite' ),
+					'iconColor'        => __( 'Icon Color', 'boldform-lite' ),
+					'hoverTextColor'   => __( 'Hover Text Color', 'boldform-lite' ),
+					'hoverBg'          => __( 'Hover Background', 'boldform-lite' ),
+					'hoverBorderColor' => __( 'Hover Border Color', 'boldform-lite' ),
+					'hover'            => __( 'Hover', 'boldform-lite' ),
+					'focus'            => __( 'Focus', 'boldform-lite' ),
+					'focusRing'        => __( 'Focus Ring Color', 'boldform-lite' ),
+					'ringColor'        => __( 'Ring Color', 'boldform-lite' ),
+					'hoverColor'       => __( 'Hover Color', 'boldform-lite' ),
+					'linkHoverColor'   => __( 'Link Hover Color', 'boldform-lite' ),
+					'focusLabelColor'  => __( 'Focused Label Color', 'boldform-lite' ),
+					'states'           => __( 'States', 'boldform-lite' ),
+					'subLabel'         => __( 'Sub-field Label', 'boldform-lite' ),
+					'subLabelColor'    => __( 'Sub-label Color', 'boldform-lite' ),
+					'subfieldGap'      => __( 'Sub-field Gap', 'boldform-lite' ),
+					'buttonMargin'     => __( 'Button Margin', 'boldform-lite' ),
+					'containerMargin'  => __( 'Container Margin', 'boldform-lite' ),
+					'fontFamily'       => __( 'Font Family', 'boldform-lite' ),
+					'fontSize'         => __( 'Font Size', 'boldform-lite' ),
+					'fontWeight'       => __( 'Weight', 'boldform-lite' ),
+					'lineHeight'       => __( 'Line Height', 'boldform-lite' ),
+					'letterSpacing'    => __( 'Letter Spacing', 'boldform-lite' ),
+					'textTransform'    => __( 'Transform', 'boldform-lite' ),
+					'shadowX'          => __( 'X Offset', 'boldform-lite' ),
+					'shadowY'          => __( 'Y Offset', 'boldform-lite' ),
+					'shadowBlur'       => __( 'Blur', 'boldform-lite' ),
+					'shadowSpread'     => __( 'Spread', 'boldform-lite' ),
+					'shadowColor'      => __( 'Shadow Color', 'boldform-lite' ),
+					'inset'            => __( 'Inset', 'boldform-lite' ),
+					'gradient'         => __( 'Gradient', 'boldform-lite' ),
+					'solidFill'        => __( 'Solid', 'boldform-lite' ),
+					'angle'            => __( 'Angle', 'boldform-lite' ),
+					'colorStop1'       => __( 'Color 1', 'boldform-lite' ),
+					'colorStop2'       => __( 'Color 2', 'boldform-lite' ),
+					'styleLabel'       => __( 'Style', 'boldform-lite' ),
+					'widthLabel'       => __( 'Width', 'boldform-lite' ),
+					'radiusLabel'      => __( 'Radius', 'boldform-lite' ),
+					'linkSides'        => __( 'Link sides', 'boldform-lite' ),
+					'sideTop'          => __( 'Top', 'boldform-lite' ),
+					'sideRight'        => __( 'Right', 'boldform-lite' ),
+					'sideBottom'       => __( 'Bottom', 'boldform-lite' ),
+					'sideLeft'         => __( 'Left', 'boldform-lite' ),
+					'inheritDefault'   => __( 'Default', 'boldform-lite' ),
+					'opacity'          => __( 'Opacity (%)', 'boldform-lite' ),
+					'reset'            => __( 'Reset color', 'boldform-lite' ),
+					'resetSection'     => __( 'Reset this section', 'boldform-lite' ),
+					'previewStates'    => __( 'Preview states — messages & open dropdown', 'boldform-lite' ),
+					'sampleSuccess'    => __( 'Your form has been submitted successfully.', 'boldform-lite' ),
+					'sampleError'      => __( 'Please correct the highlighted fields below.', 'boldform-lite' ),
+					'sampleFieldLabel' => __( 'Field with an error', 'boldform-lite' ),
+					'sampleValue'      => __( 'Invalid value', 'boldform-lite' ),
+					'sampleRequired'   => __( 'This field is required.', 'boldform-lite' ),
+					'sampleDropdown'   => __( 'Dropdown (open)', 'boldform-lite' ),
+					'sampleSearch'     => __( 'Search…', 'boldform-lite' ),
+					'optionSelected'   => __( 'Selected option', 'boldform-lite' ),
+					'optionAnother'    => __( 'Another option', 'boldform-lite' ),
+					'themeFont'        => __( 'Theme Default', 'boldform-lite' ),
+					'uppercase'        => __( 'UPPERCASE', 'boldform-lite' ),
+					'lowercase'        => __( 'lowercase', 'boldform-lite' ),
+					'capitalize'       => __( 'Capitalize', 'boldform-lite' ),
+					'dotted'           => __( 'Dotted', 'boldform-lite' ),
+				),
+				'messages'            => array(
+					'emptyFields' => __( 'Add at least one field before saving.', 'boldform-lite' ),
+					'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
+					'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
+				),
+				// Thank-you message shortcode picker. The builder always renders the
+				// slot; this flag only decides whether the free teaser goes inside it.
+				// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
+				// off, so the slot is left empty for it to fill on the
+				// boldform:form_settings_rendered event.
+				//
+				// Must stay a bool: wp_localize_script casts top-level scalars with
+				// (string), so this reaches JS as '1' or '' and the empty string is
+				// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
+				// as the string '0', which is truthy, and the teaser would then show
+				// even with an add-on active.
+				'showUpgradeCta'      => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
+				// Same bool rule as showUpgradeCta above. Gates ONLY the template
+				// library's locked rows, so an add-on that suppresses the shared CTAs
+				// can still advertise templates it has not unlocked yet.
+				'showLockedTemplates' => $this->show_locked_templates_teaser(),
+				// Locked entries advertised in the "Choose a Template" library. Empty
+				// once the teaser above is off, at which point an add-on supplies the
+				// real templates through proTemplates instead — the two never show
+				// together. See premium_template_teasers().
+				'premiumTemplates'    => $this->premium_template_teasers(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
-				);
+			);
 
 			/**
 			 * Filter the data passed to the builder JS.
@@ -1503,7 +1519,7 @@ class BoldForm_Lite_Admin {
 						'exportUrl'        => admin_url( 'admin.php?page=boldform-lite-entries' ),
 						'exportNonce'      => wp_create_nonce( 'boldform_lite_csv_export' ),
 						'selectedText'     => __( 'selected', 'boldform-lite' ),
-					'applyHintText'    => __( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ),
+						'applyHintText'    => __( 'Select one or more entries and choose a bulk action.', 'boldform-lite' ),
 						/* translators: %d: number of selected entries to delete. */
 						'confirmDelete'    => __( 'Permanently delete %d selected entries? This cannot be undone.', 'boldform-lite' ),
 						'errorText'        => __( 'Something went wrong. Please try again.', 'boldform-lite' ),
@@ -1713,10 +1729,10 @@ class BoldForm_Lite_Admin {
 						'boldform-lite-admin',
 						'boldformAdminSmtp',
 						array(
-							'testMailNonce'   => wp_create_nonce( 'boldform_lite_test_mail' ),
-							'sendingText'     => __( 'Sending...', 'boldform-lite' ),
-							'sentText'        => __( 'Email sent successfully!', 'boldform-lite' ),
-							'failedText'      => __( 'Failed to send email.', 'boldform-lite' ),
+							'testMailNonce' => wp_create_nonce( 'boldform_lite_test_mail' ),
+							'sendingText'   => __( 'Sending...', 'boldform-lite' ),
+							'sentText'      => __( 'Email sent successfully!', 'boldform-lite' ),
+							'failedText'    => __( 'Failed to send email.', 'boldform-lite' ),
 						)
 					);
 					wp_add_inline_script(
@@ -1748,7 +1764,6 @@ class BoldForm_Lite_Admin {
 				}
 			}
 		}
-
 	}
 
 	/**
@@ -1837,48 +1852,188 @@ class BoldForm_Lite_Admin {
 
 		return array(
 			// --- General ---------------------------------------------------------
-			array( 'key' => 'contest_entry', 'category' => 'general', 'title' => __( 'Contest / Giveaway Entry', 'boldform-lite' ), 'description' => __( 'Run a contest or giveaway with entrant details and a skill-testing question.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'contest_entry',
+				'category'    => 'general',
+				'title'       => __( 'Contest / Giveaway Entry', 'boldform-lite' ),
+				'description' => __( 'Run a contest or giveaway with entrant details and a skill-testing question.', 'boldform-lite' ),
+			),
 
 			// --- Business --------------------------------------------------------
-			array( 'key' => 'quote_request', 'category' => 'business', 'title' => __( 'Project Quote Request', 'boldform-lite' ), 'description' => __( 'Let prospects describe a project and request a price quote with budget and timeline.', 'boldform-lite' ) ),
-			array( 'key' => 'file_upload', 'category' => 'business', 'title' => __( 'File Upload / Document Submission', 'boldform-lite' ), 'description' => __( 'Collect documents from users — resumes, contracts, invoices — with contact details.', 'boldform-lite' ) ),
-			array( 'key' => 'consent_waiver', 'category' => 'business', 'title' => __( 'Consent / Waiver Form', 'boldform-lite' ), 'description' => __( 'Capture agreement and a signature for waivers, consents, and release forms.', 'boldform-lite' ) ),
-			array( 'key' => 'real_estate_inquiry', 'category' => 'business', 'title' => __( 'Real Estate Inquiry', 'boldform-lite' ), 'description' => __( 'Capture buyer and seller leads with inquiry type, property type, budget, and timeline.', 'boldform-lite' ) ),
-			array( 'key' => 'testimonial_submission', 'category' => 'business', 'title' => __( 'Testimonial Submission', 'boldform-lite' ), 'description' => __( 'Collect customer testimonials with a star rating, quote, and optional photo.', 'boldform-lite' ) ),
-			array( 'key' => 'rental_application', 'category' => 'business', 'title' => __( 'Rental Application', 'boldform-lite' ), 'description' => __( 'Screen rental applicants with contact, employment, occupancy, and document details.', 'boldform-lite' ) ),
-			array( 'key' => 'rma_request', 'category' => 'business', 'title' => __( 'Product Return / RMA Request', 'boldform-lite' ), 'description' => __( 'Handle returns with order number, reason, preferred resolution, and a photo.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'quote_request',
+				'category'    => 'business',
+				'title'       => __( 'Project Quote Request', 'boldform-lite' ),
+				'description' => __( 'Let prospects describe a project and request a price quote with budget and timeline.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'file_upload',
+				'category'    => 'business',
+				'title'       => __( 'File Upload / Document Submission', 'boldform-lite' ),
+				'description' => __( 'Collect documents from users — resumes, contracts, invoices — with contact details.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'consent_waiver',
+				'category'    => 'business',
+				'title'       => __( 'Consent / Waiver Form', 'boldform-lite' ),
+				'description' => __( 'Capture agreement and a signature for waivers, consents, and release forms.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'real_estate_inquiry',
+				'category'    => 'business',
+				'title'       => __( 'Real Estate Inquiry', 'boldform-lite' ),
+				'description' => __( 'Capture buyer and seller leads with inquiry type, property type, budget, and timeline.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'testimonial_submission',
+				'category'    => 'business',
+				'title'       => __( 'Testimonial Submission', 'boldform-lite' ),
+				'description' => __( 'Collect customer testimonials with a star rating, quote, and optional photo.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'rental_application',
+				'category'    => 'business',
+				'title'       => __( 'Rental Application', 'boldform-lite' ),
+				'description' => __( 'Screen rental applicants with contact, employment, occupancy, and document details.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'rma_request',
+				'category'    => 'business',
+				'title'       => __( 'Product Return / RMA Request', 'boldform-lite' ),
+				'description' => __( 'Handle returns with order number, reason, preferred resolution, and a photo.', 'boldform-lite' ),
+			),
 
 			// --- Events & Booking ------------------------------------------------
-			array( 'key' => 'restaurant_reservation', 'category' => 'events', 'title' => __( 'Restaurant Reservation', 'boldform-lite' ), 'description' => __( 'Take table bookings with party size, date, time, and seating preferences.', 'boldform-lite' ) ),
-			array( 'key' => 'wedding_rsvp', 'category' => 'events', 'title' => __( 'Wedding RSVP', 'boldform-lite' ), 'description' => __( 'Collect RSVPs with guest count, meal choice, and a note to the couple.', 'boldform-lite' ) ),
-			array( 'key' => 'event_ticket', 'category' => 'events', 'title' => __( 'Event Ticket Purchase', 'boldform-lite' ), 'description' => __( 'Sell event tickets with ticket tiers, quantity, and an order summary.', 'boldform-lite' ) ),
-			array( 'key' => 'catering_estimate', 'category' => 'events', 'title' => __( 'Catering Request Estimate', 'boldform-lite' ), 'description' => __( 'Request catering and see a live estimate from guest count multiplied by price per person.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'restaurant_reservation',
+				'category'    => 'events',
+				'title'       => __( 'Restaurant Reservation', 'boldform-lite' ),
+				'description' => __( 'Take table bookings with party size, date, time, and seating preferences.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'wedding_rsvp',
+				'category'    => 'events',
+				'title'       => __( 'Wedding RSVP', 'boldform-lite' ),
+				'description' => __( 'Collect RSVPs with guest count, meal choice, and a note to the couple.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'event_ticket',
+				'category'    => 'events',
+				'title'       => __( 'Event Ticket Purchase', 'boldform-lite' ),
+				'description' => __( 'Sell event tickets with ticket tiers, quantity, and an order summary.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'catering_estimate',
+				'category'    => 'events',
+				'title'       => __( 'Catering Request Estimate', 'boldform-lite' ),
+				'description' => __( 'Request catering and see a live estimate from guest count multiplied by price per person.', 'boldform-lite' ),
+			),
 
 			// --- HR & Surveys ----------------------------------------------------
-			array( 'key' => 'time_off_request', 'category' => 'hr_survey', 'title' => __( 'Time-Off / Leave Request', 'boldform-lite' ), 'description' => __( 'Employees request leave with dates and a reason, ready for an approval workflow.', 'boldform-lite' ) ),
-			array( 'key' => 'employee_onboarding', 'category' => 'hr_survey', 'title' => __( 'Employee Onboarding', 'boldform-lite' ), 'description' => __( 'Onboard new hires: personal details, document upload, and a policy signature.', 'boldform-lite' ) ),
-			array( 'key' => 'nps_survey', 'category' => 'hr_survey', 'title' => __( 'NPS Feedback Survey', 'boldform-lite' ), 'description' => __( 'Measure loyalty with a Net Promoter Score question and follow-up feedback.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'time_off_request',
+				'category'    => 'hr_survey',
+				'title'       => __( 'Time-Off / Leave Request', 'boldform-lite' ),
+				'description' => __( 'Employees request leave with dates and a reason, ready for an approval workflow.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'employee_onboarding',
+				'category'    => 'hr_survey',
+				'title'       => __( 'Employee Onboarding', 'boldform-lite' ),
+				'description' => __( 'Onboard new hires: personal details, document upload, and a policy signature.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'nps_survey',
+				'category'    => 'hr_survey',
+				'title'       => __( 'NPS Feedback Survey', 'boldform-lite' ),
+				'description' => __( 'Measure loyalty with a Net Promoter Score question and follow-up feedback.', 'boldform-lite' ),
+			),
 
 			// --- Health & Medical ------------------------------------------------
-			array( 'key' => 'patient_intake', 'category' => 'health', 'title' => __( 'Patient Intake / Medical History', 'boldform-lite' ), 'description' => __( 'Gather patient details, medical history, and a consent signature before an appointment.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'patient_intake',
+				'category'    => 'health',
+				'title'       => __( 'Patient Intake / Medical History', 'boldform-lite' ),
+				'description' => __( 'Gather patient details, medical history, and a consent signature before an appointment.', 'boldform-lite' ),
+			),
 
 			// --- Education & Nonprofit -------------------------------------------
-			array( 'key' => 'course_enrollment', 'category' => 'education', 'title' => __( 'Course Enrollment', 'boldform-lite' ), 'description' => __( 'Enroll students in a course with plan selection, level, and an order summary.', 'boldform-lite' ) ),
-			array( 'key' => 'volunteer_signup', 'category' => 'education', 'title' => __( 'Volunteer Signup', 'boldform-lite' ), 'description' => __( 'Recruit volunteers with areas of interest, availability, and experience.', 'boldform-lite' ) ),
-			array( 'key' => 'petition', 'category' => 'education', 'title' => __( 'Petition / Signature Drive', 'boldform-lite' ), 'description' => __( 'Gather supporters with a name, location, comment, and a signature.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'course_enrollment',
+				'category'    => 'education',
+				'title'       => __( 'Course Enrollment', 'boldform-lite' ),
+				'description' => __( 'Enroll students in a course with plan selection, level, and an order summary.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'volunteer_signup',
+				'category'    => 'education',
+				'title'       => __( 'Volunteer Signup', 'boldform-lite' ),
+				'description' => __( 'Recruit volunteers with areas of interest, availability, and experience.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'petition',
+				'category'    => 'education',
+				'title'       => __( 'Petition / Signature Drive', 'boldform-lite' ),
+				'description' => __( 'Gather supporters with a name, location, comment, and a signature.', 'boldform-lite' ),
+			),
 
 			// --- Payment & Calculation -------------------------------------------
-			array( 'key' => 'payment_order', 'category' => 'payment', 'title' => __( 'Payment Order Form', 'boldform-lite' ), 'description' => __( 'Collect product orders with a payment item, quantity, custom amount, and order summary.', 'boldform-lite' ) ),
-			array( 'key' => 'donation_form', 'category' => 'payment', 'title' => __( 'Donation Form', 'boldform-lite' ), 'description' => __( 'Accept donations with preset amounts or a custom amount, plus donor details.', 'boldform-lite' ) ),
-			array( 'key' => 'service_calculator', 'category' => 'payment', 'title' => __( 'Service Price Calculator', 'boldform-lite' ), 'description' => __( 'Let users calculate a service price from quantity multiplied by rate, with an instant total.', 'boldform-lite' ) ),
-			array( 'key' => 'loan_calculator', 'category' => 'payment', 'title' => __( 'Loan Repayment Calculator', 'boldform-lite' ), 'description' => __( 'Estimate simple-interest loan cost from amount, rate, and term.', 'boldform-lite' ) ),
-			array( 'key' => 'subscription_signup', 'category' => 'payment', 'title' => __( 'Subscription Signup', 'boldform-lite' ), 'description' => __( 'Let customers pick a subscription plan and sign up, ready for recurring billing.', 'boldform-lite' ) ),
-			array( 'key' => 'gym_membership', 'category' => 'payment', 'title' => __( 'Gym Membership Signup', 'boldform-lite' ), 'description' => __( 'Sign up new members with a plan, add-ons, emergency contact, and payment.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'payment_order',
+				'category'    => 'payment',
+				'title'       => __( 'Payment Order Form', 'boldform-lite' ),
+				'description' => __( 'Collect product orders with a payment item, quantity, custom amount, and order summary.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'donation_form',
+				'category'    => 'payment',
+				'title'       => __( 'Donation Form', 'boldform-lite' ),
+				'description' => __( 'Accept donations with preset amounts or a custom amount, plus donor details.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'service_calculator',
+				'category'    => 'payment',
+				'title'       => __( 'Service Price Calculator', 'boldform-lite' ),
+				'description' => __( 'Let users calculate a service price from quantity multiplied by rate, with an instant total.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'loan_calculator',
+				'category'    => 'payment',
+				'title'       => __( 'Loan Repayment Calculator', 'boldform-lite' ),
+				'description' => __( 'Estimate simple-interest loan cost from amount, rate, and term.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'subscription_signup',
+				'category'    => 'payment',
+				'title'       => __( 'Subscription Signup', 'boldform-lite' ),
+				'description' => __( 'Let customers pick a subscription plan and sign up, ready for recurring billing.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'gym_membership',
+				'category'    => 'payment',
+				'title'       => __( 'Gym Membership Signup', 'boldform-lite' ),
+				'description' => __( 'Sign up new members with a plan, add-ons, emergency contact, and payment.', 'boldform-lite' ),
+			),
 
 			// --- Multi-Step -------------------------------------------------------
-			array( 'key' => 'multi_step_registration', 'category' => 'multi_step', 'title' => __( 'Multi-Step Registration', 'boldform-lite' ), 'description' => __( 'Three-step registration: personal information, account setup, and preferences.', 'boldform-lite' ) ),
-			array( 'key' => 'multi_step_survey', 'category' => 'multi_step', 'title' => __( 'Multi-Step Survey', 'boldform-lite' ), 'description' => __( 'A two-step satisfaction survey split across pages for better completion.', 'boldform-lite' ) ),
-			array( 'key' => 'multi_step_booking', 'category' => 'multi_step', 'title' => __( 'Multi-Step Booking + Payment', 'boldform-lite' ), 'description' => __( 'Service booking with date and time selection, attendee details, and payment.', 'boldform-lite' ) ),
+			array(
+				'key'         => 'multi_step_registration',
+				'category'    => 'multi_step',
+				'title'       => __( 'Multi-Step Registration', 'boldform-lite' ),
+				'description' => __( 'Three-step registration: personal information, account setup, and preferences.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'multi_step_survey',
+				'category'    => 'multi_step',
+				'title'       => __( 'Multi-Step Survey', 'boldform-lite' ),
+				'description' => __( 'A two-step satisfaction survey split across pages for better completion.', 'boldform-lite' ),
+			),
+			array(
+				'key'         => 'multi_step_booking',
+				'category'    => 'multi_step',
+				'title'       => __( 'Multi-Step Booking + Payment', 'boldform-lite' ),
+				'description' => __( 'Service booking with date and time selection, attendee details, and payment.', 'boldform-lite' ),
+			),
 		);
 	}
 
@@ -2028,7 +2183,17 @@ class BoldForm_Lite_Admin {
 						<path d="M318 52l1.5 5.1 4.9 1.3-4.9 1.3-1.5 5.1-1.5-5.1-4.9-1.3 4.9-1.3z" fill="#2c4bff" opacity=".55"/>
 						<path d="M330 146l1.7 5.7 5.5 1.5-5.5 1.5-1.7 5.7-1.7-5.7-5.5-1.5 5.5-1.5z" fill="#2c4bff" opacity=".7"/>
 					</svg>
-					<span class="boldform-admin-notice__logo"><?php boldform_lite_brand_icon( array( 'class' => '', 'size' => 26, 'fill' => '#ffffff' ) ); ?></span>
+					<span class="boldform-admin-notice__logo">
+					<?php
+					boldform_lite_brand_icon(
+						array(
+							'class' => '',
+							'size'  => 26,
+							'fill'  => '#ffffff',
+						)
+					);
+					?>
+																</span>
 				</div>
 			</div>
 		</div>
@@ -2412,7 +2577,8 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-export-upgrade-modal-title">
 				<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 				<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php
+				<h2 id="boldform-export-upgrade-modal-title" class="boldform-upgrade-modal__title">
+				<?php
 					/**
 					 * Filters the heading of a locked-content upgrade dialog.
 					 *
@@ -2430,8 +2596,10 @@ class BoldForm_Lite_Admin {
 					 *                        'export', 'export_excel', 'export_pdf'.
 					 */
 					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' ) );
-				?></h2>
-				<p class="boldform-upgrade-modal__text"><?php
+				?>
+				</h2>
+				<p class="boldform-upgrade-modal__text">
+				<?php
 					/**
 					 * Filters the body copy of a locked-content upgrade dialog.
 					 *
@@ -2441,7 +2609,8 @@ class BoldForm_Lite_Admin {
 					 * @param string $context Which dialog. One of 'fields', 'templates', 'export'.
 					 */
 					echo esc_html( apply_filters( 'boldform_upgrade_modal_text', __( 'BoldForm Lite exports your entries to CSV. Upgrade to download them as formatted Excel spreadsheets and print-ready PDF files, right from this screen.', 'boldform-lite' ), 'export' ) );
-				?></p>
+				?>
+				</p>
 				<ul class="boldform-upgrade-modal__list">
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Formatted Excel (.xlsx) for reporting and analysis', 'boldform-lite' ); ?></li>
 					<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Print-ready PDF records to share or archive', 'boldform-lite' ); ?></li>
@@ -2494,14 +2663,18 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-field-control">
 				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
 					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
-					<option value="xlsx" data-locked="1"><?php
+					<option value="xlsx" data-locked="1">
+					<?php
 						/* translators: %s: call-to-action label, e.g. "Upgrade". */
 						printf( esc_html__( 'Excel (.xlsx) — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?></option>
-					<option value="pdf" data-locked="1"><?php
+					?>
+					</option>
+					<option value="pdf" data-locked="1">
+					<?php
 						/* translators: %s: call-to-action label, e.g. "Upgrade". */
 						printf( esc_html__( 'PDF — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?></option>
+					?>
+					</option>
 				</select>
 				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php echo esc_html( $hint ); ?></p>
 			</div>
@@ -2526,13 +2699,13 @@ class BoldForm_Lite_Admin {
 	 *
 	 * @since 1.1.7
 	 *
-	 * @param string $class   CSS class for the anchor.
-	 * @param string $default Default label, in case this CTA reads differently.
+	 * @param string $css_class     CSS class for the anchor.
+	 * @param string $default_label Default label, in case this CTA reads differently.
 	 * @return void
 	 */
-	public function render_upgrade_cta( $class = 'boldform-upgrade-modal__cta', $default = '' ) {
-		if ( '' === $default ) {
-			$default = __( 'Upgrade Now', 'boldform-lite' );
+	public function render_upgrade_cta( $css_class = 'boldform-upgrade-modal__cta', $default_label = '' ) {
+		if ( '' === $default_label ) {
+			$default_label = __( 'Upgrade Now', 'boldform-lite' );
 		}
 
 		/**
@@ -2565,7 +2738,7 @@ class BoldForm_Lite_Admin {
 		 *                        'suffix'   — appended to another label, e.g. "Excel (.xlsx) — %s";
 		 *                        'sr_state' — screen-reader text describing a state, not an action.
 		 */
-		$label = (string) apply_filters( 'boldform_upgrade_label', $default, 'button' );
+		$label = (string) apply_filters( 'boldform_upgrade_label', $default_label, 'button' );
 
 		// An in-admin destination stays in this tab; anything else is an external site
 		// and opens in a new one so the user does not lose their place in the builder.
@@ -2573,7 +2746,7 @@ class BoldForm_Lite_Admin {
 
 		printf(
 			'<a class="%1$s" href="%2$s"%3$s>%4$s</a>',
-			esc_attr( $class ),
+			esc_attr( $css_class ),
 			esc_url( $url ),
 			$is_local ? '' : ' target="_blank" rel="noopener noreferrer"',
 			esc_html( $label )
@@ -2669,22 +2842,86 @@ class BoldForm_Lite_Admin {
 		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
 		// or a string (a short qualifier shown as text).
 		$features = array(
-			array( 'label' => __( 'Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
-			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Conditional logic', 'boldform-lite' ),                                 'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),        'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),                     'lite' => true,                                  'pro' => true ),
-			array( 'label' => __( 'Integrations', 'boldform-lite' ),                                      'lite' => __( 'Mailchimp & Brevo', 'boldform-lite' ), 'pro' => __( '35+ apps', 'boldform-lite' ) ),
-			array( 'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),                           'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Payments — Stripe & PayPal', 'boldform-lite' ),                        'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)', 'boldform-lite' ), 'lite' => false,    'pro' => true ),
-			array( 'label' => __( 'Webhooks', 'boldform-lite' ),                                          'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Form scheduling (open / close dates)', 'boldform-lite' ),              'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Auto-populate & hidden data', 'boldform-lite' ),                       'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Advanced analytics (views & conversions)', 'boldform-lite' ),          'lite' => false,                                 'pro' => true ),
-			array( 'label' => __( 'Priority support & automatic updates', 'boldform-lite' ),             'lite' => false,                                 'pro' => true ),
+			array(
+				'label' => __( 'Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Conditional logic', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),
+				'lite'  => true,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Integrations', 'boldform-lite' ),
+				'lite'  => __( 'Mailchimp & Brevo', 'boldform-lite' ),
+				'pro'   => __( '35+ apps', 'boldform-lite' ),
+			),
+			array(
+				'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Payments — Stripe & PayPal', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Webhooks', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Form scheduling (open / close dates)', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Auto-populate & hidden data', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Advanced analytics (views & conversions)', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
+			array(
+				'label' => __( 'Priority support & automatic updates', 'boldform-lite' ),
+				'lite'  => false,
+				'pro'   => true,
+			),
 		);
 
 		$render_cell = static function ( $value ) {
@@ -2762,34 +2999,34 @@ class BoldForm_Lite_Admin {
 
 		$nav_items = array(
 			array(
-				'id'     => 'boldform-bar-forms',
-				'title'  => __( 'All Forms', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite' ),
+				'id'    => 'boldform-bar-forms',
+				'title' => __( 'All Forms', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite' ),
 			),
 			array(
-				'id'     => 'boldform-bar-entries',
-				'title'  => __( 'Entries', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite-entries' ),
+				'id'    => 'boldform-bar-entries',
+				'title' => __( 'Entries', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite-entries' ),
 			),
 			array(
-				'id'     => 'boldform-bar-reports',
-				'title'  => __( 'Reports', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
+				'id'    => 'boldform-bar-reports',
+				'title' => __( 'Reports', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite-reports' ),
 			),
 			array(
-				'id'     => 'boldform-bar-settings',
-				'title'  => __( 'Settings', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite-settings' ),
+				'id'    => 'boldform-bar-settings',
+				'title' => __( 'Settings', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite-settings' ),
 			),
 			array(
-				'id'     => 'boldform-bar-smtp',
-				'title'  => __( 'SMTP', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ),
+				'id'    => 'boldform-bar-smtp',
+				'title' => __( 'SMTP', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ),
 			),
 			array(
-				'id'     => 'boldform-bar-tools',
-				'title'  => __( 'Tools', 'boldform-lite' ),
-				'href'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
+				'id'    => 'boldform-bar-tools',
+				'title' => __( 'Tools', 'boldform-lite' ),
+				'href'  => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
 			),
 		);
 
@@ -3140,70 +3377,70 @@ class BoldForm_Lite_Admin {
 	public function render_docs_page() {
 		$cards = array(
 			array(
-				'icon'        => 'dashicons-book',
-				'icon_color'  => '#0f766e',
-				'bg_color'    => '#f0fdf4',
-				'border'      => '#bbf7d0',
-				'title'       => __( 'User Guide', 'boldform-lite' ),
-				'desc'        => __( 'Learn how to create forms, manage entries, configure settings, and embed forms on your site.', 'boldform-lite' ),
-				'btn_label'   => __( 'Open User Guide', 'boldform-lite' ),
-				'btn_color'   => '#0f766e',
-				'url'         => 'https://documentation.themewant.com/docs/boldform-user-guide/',
+				'icon'       => 'dashicons-book',
+				'icon_color' => '#0f766e',
+				'bg_color'   => '#f0fdf4',
+				'border'     => '#bbf7d0',
+				'title'      => __( 'User Guide', 'boldform-lite' ),
+				'desc'       => __( 'Learn how to create forms, manage entries, configure settings, and embed forms on your site.', 'boldform-lite' ),
+				'btn_label'  => __( 'Open User Guide', 'boldform-lite' ),
+				'btn_color'  => '#0f766e',
+				'url'        => 'https://documentation.themewant.com/docs/boldform-user-guide/',
 			),
 			array(
-				'icon'        => 'dashicons-editor-code',
-				'icon_color'  => '#6366f1',
-				'bg_color'    => '#f5f3ff',
-				'border'      => '#ddd6fe',
-				'title'       => __( 'Developer Guide', 'boldform-lite' ),
-				'desc'        => __( 'Hooks, filters, custom field types, integrations API, database schema, and file structure reference.', 'boldform-lite' ),
-				'btn_label'   => __( 'Open Developer Guide', 'boldform-lite' ),
-				'btn_color'   => '#6366f1',
-				'url'         => 'https://documentation.themewant.com/docs/bold-form-developer-guide/',
+				'icon'       => 'dashicons-editor-code',
+				'icon_color' => '#6366f1',
+				'bg_color'   => '#f5f3ff',
+				'border'     => '#ddd6fe',
+				'title'      => __( 'Developer Guide', 'boldform-lite' ),
+				'desc'       => __( 'Hooks, filters, custom field types, integrations API, database schema, and file structure reference.', 'boldform-lite' ),
+				'btn_label'  => __( 'Open Developer Guide', 'boldform-lite' ),
+				'btn_color'  => '#6366f1',
+				'url'        => 'https://documentation.themewant.com/docs/bold-form-developer-guide/',
 			),
 			array(
-				'icon'        => 'dashicons-sos',
-				'icon_color'  => '#0ea5e9',
-				'bg_color'    => '#f0f9ff',
-				'border'      => '#bae6fd',
-				'title'       => __( 'Support', 'boldform-lite' ),
-				'desc'        => __( 'Run into an issue? Open a support ticket and our team will help you get back on track quickly.', 'boldform-lite' ),
-				'btn_label'   => __( 'Get Support', 'boldform-lite' ),
-				'btn_color'   => '#0ea5e9',
-				'url'         => 'https://themewant.com/support/',
+				'icon'       => 'dashicons-sos',
+				'icon_color' => '#0ea5e9',
+				'bg_color'   => '#f0f9ff',
+				'border'     => '#bae6fd',
+				'title'      => __( 'Support', 'boldform-lite' ),
+				'desc'       => __( 'Run into an issue? Open a support ticket and our team will help you get back on track quickly.', 'boldform-lite' ),
+				'btn_label'  => __( 'Get Support', 'boldform-lite' ),
+				'btn_color'  => '#0ea5e9',
+				'url'        => 'https://themewant.com/support/',
 			),
 			array(
-				'icon'        => 'dashicons-groups',
-				'icon_color'  => '#f59e0b',
-				'bg_color'    => '#fffbeb',
-				'border'      => '#fde68a',
-				'title'       => __( 'Community', 'boldform-lite' ),
-				'desc'        => __( 'Join the BoldForm community to share tips, ask questions, and connect with other users and developers.', 'boldform-lite' ),
-				'btn_label'   => __( 'Join Community', 'boldform-lite' ),
-				'btn_color'   => '#f59e0b',
-				'url'         => 'https://www.facebook.com/groups/themewant',
+				'icon'       => 'dashicons-groups',
+				'icon_color' => '#f59e0b',
+				'bg_color'   => '#fffbeb',
+				'border'     => '#fde68a',
+				'title'      => __( 'Community', 'boldform-lite' ),
+				'desc'       => __( 'Join the BoldForm community to share tips, ask questions, and connect with other users and developers.', 'boldform-lite' ),
+				'btn_label'  => __( 'Join Community', 'boldform-lite' ),
+				'btn_color'  => '#f59e0b',
+				'url'        => 'https://www.facebook.com/groups/themewant',
 			),
 			array(
-				'icon'        => 'dashicons-star-filled',
-				'icon_color'  => '#ef4444',
-				'bg_color'    => '#fff1f2',
-				'border'      => '#fecdd3',
-				'title'       => __( 'Leave a Review', 'boldform-lite' ),
-				'desc'        => __( 'Enjoying BoldForm? A quick 5-star review on WordPress.org helps others find the plugin and motivates us to keep improving.', 'boldform-lite' ),
-				'btn_label'   => __( 'Leave a Review', 'boldform-lite' ),
-				'btn_color'   => '#ef4444',
-				'url'         => 'https://wordpress.org/support/plugin/boldform-lite/reviews/#new-post',
+				'icon'       => 'dashicons-star-filled',
+				'icon_color' => '#ef4444',
+				'bg_color'   => '#fff1f2',
+				'border'     => '#fecdd3',
+				'title'      => __( 'Leave a Review', 'boldform-lite' ),
+				'desc'       => __( 'Enjoying BoldForm? A quick 5-star review on WordPress.org helps others find the plugin and motivates us to keep improving.', 'boldform-lite' ),
+				'btn_label'  => __( 'Leave a Review', 'boldform-lite' ),
+				'btn_color'  => '#ef4444',
+				'url'        => 'https://wordpress.org/support/plugin/boldform-lite/reviews/#new-post',
 			),
 			array(
-				'icon'        => 'dashicons-lightbulb',
-				'icon_color'  => '#8b5cf6',
-				'bg_color'    => '#faf5ff',
-				'border'      => '#e9d5ff',
-				'title'       => __( 'Request a Feature', 'boldform-lite' ),
-				'desc'        => __( 'Have an idea that would make BoldForm even better? Share it with us — your feedback shapes our roadmap.', 'boldform-lite' ),
-				'btn_label'   => __( 'Request a Feature', 'boldform-lite' ),
-				'btn_color'   => '#8b5cf6',
-				'url'         => 'https://wordpress.org/support/plugin/boldform-lite/',
+				'icon'       => 'dashicons-lightbulb',
+				'icon_color' => '#8b5cf6',
+				'bg_color'   => '#faf5ff',
+				'border'     => '#e9d5ff',
+				'title'      => __( 'Request a Feature', 'boldform-lite' ),
+				'desc'       => __( 'Have an idea that would make BoldForm even better? Share it with us — your feedback shapes our roadmap.', 'boldform-lite' ),
+				'btn_label'  => __( 'Request a Feature', 'boldform-lite' ),
+				'btn_color'  => '#8b5cf6',
+				'url'        => 'https://wordpress.org/support/plugin/boldform-lite/',
 			),
 		);
 		?>
@@ -3222,7 +3459,7 @@ class BoldForm_Lite_Admin {
 					<h2 style="font-size:15px;font-weight:700;margin:0;padding:0;border:none;color:#0f172a;"><?php echo esc_html( $card['title'] ); ?></h2>
 					<p style="color:#475569;font-size:13px;line-height:1.6;margin:0;flex:1;"><?php echo esc_html( $card['desc'] ); ?></p>
 					<a href="<?php echo esc_url( $card['url'] ); ?>" target="_blank" rel="noopener noreferrer"
-					   style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:<?php echo esc_attr( $card['btn_color'] ); ?>;color:#fff;font-size:13px;font-weight:600;text-decoration:none;margin-top:4px;">
+						style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:<?php echo esc_attr( $card['btn_color'] ); ?>;color:#fff;font-size:13px;font-weight:600;text-decoration:none;margin-top:4px;">
 						<?php echo esc_html( $card['btn_label'] ); ?>
 						<span class="dashicons dashicons-external" style="font-size:14px;width:14px;height:14px;line-height:14px;"></span>
 					</a>
@@ -3333,15 +3570,21 @@ class BoldForm_Lite_Admin {
 			'date_to'   => $filter_to,
 		);
 
-		$current_page = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$per_page     = 10;
-		$total_items  = $this->get_entries_count( $filters );
-		$total_pages  = max( 1, (int) ceil( $total_items / $per_page ) );
-		$entries      = $this->get_entries( $current_page, $per_page, $filters );
-		$all_forms    = $this->get_forms();
-		$count_all    = $this->get_entries_count( array( 'form_id' => $filter_form, 'date_from' => $filter_from, 'date_to' => $filter_to ) );
-		$count_unread = $this->get_entries_count( array_merge( $filters, array( 'status' => 'unread' ) ) );
-		$count_read   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'read' ) ) );
+		$current_page  = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$per_page      = 10;
+		$total_items   = $this->get_entries_count( $filters );
+		$total_pages   = max( 1, (int) ceil( $total_items / $per_page ) );
+		$entries       = $this->get_entries( $current_page, $per_page, $filters );
+		$all_forms     = $this->get_forms();
+		$count_all     = $this->get_entries_count(
+			array(
+				'form_id'   => $filter_form,
+				'date_from' => $filter_from,
+				'date_to'   => $filter_to,
+			)
+		);
+		$count_unread  = $this->get_entries_count( array_merge( $filters, array( 'status' => 'unread' ) ) );
+		$count_read    = $this->get_entries_count( array_merge( $filters, array( 'status' => 'read' ) ) );
 		$count_starred = $this->get_entries_count( array_merge( $filters, array( 'status' => 'starred' ) ) );
 		$count_spam    = $this->get_entries_count( array_merge( $filters, array( 'status' => 'spam' ) ) );
 		$count_trash   = $this->get_entries_count( array_merge( $filters, array( 'status' => 'trash' ) ) );
@@ -3361,7 +3604,12 @@ class BoldForm_Lite_Admin {
 				$params['date_to']   = isset( $overrides['date_to'] ) ? $overrides['date_to'] : $filter_to;
 			}
 			// Remove empty values.
-			$params = array_filter( $params, function ( $v ) { return '' !== $v && '0' !== (string) $v && 'all' !== $v; } );
+			$params = array_filter(
+				$params,
+				function ( $v ) {
+					return '' !== $v && '0' !== (string) $v && 'all' !== $v;
+				}
+			);
 			return add_query_arg( $params, $base_url );
 		};
 		?>
@@ -3371,7 +3619,27 @@ class BoldForm_Lite_Admin {
 			<div class="boldform-page-header">
 				<h1><?php esc_html_e( 'Entries', 'boldform-lite' ); ?></h1>
 				<?php if ( ! empty( $entries ) ) : ?>
-					<a href="<?php echo esc_url( wp_nonce_url( add_query_arg( array_filter( array( 'form_id' => $filter_form, 'status' => 'all' !== $filter_status ? $filter_status : '', 'date_range' => $filter_date, 'date_from' => $filter_from, 'date_to' => $filter_to ) ), admin_url( 'admin.php?page=boldform-lite-entries&boldform_export_csv=1' ) ), 'boldform_lite_csv_export' ) ); ?>" class="boldform-btn-add">
+					<a href="
+					<?php
+					echo esc_url(
+						wp_nonce_url(
+							add_query_arg(
+								array_filter(
+									array(
+										'form_id'    => $filter_form,
+										'status'     => 'all' !== $filter_status ? $filter_status : '',
+										'date_range' => $filter_date,
+										'date_from'  => $filter_from,
+										'date_to'    => $filter_to,
+									)
+								),
+								admin_url( 'admin.php?page=boldform-lite-entries&boldform_export_csv=1' )
+							),
+							'boldform_lite_csv_export'
+						)
+					);
+					?>
+								" class="boldform-btn-add">
 						<span class="dashicons dashicons-download"></span>
 						<?php esc_html_e( 'Export CSV', 'boldform-lite' ); ?>
 					</a>
@@ -3471,7 +3739,7 @@ class BoldForm_Lite_Admin {
 
 					<!-- Date filter -->
 					<?php
-					$date_labels = array(
+					$date_labels       = array(
 						''           => __( 'All Time', 'boldform-lite' ),
 						'today'      => __( 'Today', 'boldform-lite' ),
 						'yesterday'  => __( 'Yesterday', 'boldform-lite' ),
@@ -3531,8 +3799,14 @@ class BoldForm_Lite_Admin {
 			<div id="boldform-custom-dates" class="boldform-custom-dates"<?php echo 'custom' !== $filter_date ? ' hidden' : ''; ?>>
 				<form method="get" action="<?php echo esc_url( $base_url ); ?>" class="boldform-custom-dates__form">
 					<input type="hidden" name="page" value="boldform-lite-entries">
-					<?php if ( $filter_form ) : ?><input type="hidden" name="form_id" value="<?php echo absint( $filter_form ); ?>"><?php endif; ?>
-					<?php if ( 'all' !== $filter_status ) : ?><input type="hidden" name="status" value="<?php echo esc_attr( $filter_status ); ?>"><?php endif; ?>
+					<?php
+					if ( $filter_form ) :
+						?>
+						<input type="hidden" name="form_id" value="<?php echo absint( $filter_form ); ?>"><?php endif; ?>
+					<?php
+					if ( 'all' !== $filter_status ) :
+						?>
+						<input type="hidden" name="status" value="<?php echo esc_attr( $filter_status ); ?>"><?php endif; ?>
 					<input type="hidden" name="date_range" value="custom">
 					<label><?php esc_html_e( 'From', 'boldform-lite' ); ?> <input type="date" name="date_from" value="<?php echo esc_attr( $filter_from ); ?>"></label>
 					<label><?php esc_html_e( 'To', 'boldform-lite' ); ?> <input type="date" name="date_to" value="<?php echo esc_attr( $filter_to ); ?>"></label>
@@ -3737,10 +4011,22 @@ class BoldForm_Lite_Admin {
 		$settings = $this->get_global_settings();
 
 		$tabs = array(
-			'general' => array( 'label' => __( 'General', 'boldform-lite' ), 'icon' => 'dashicons-admin-generic' ),
-			'captcha' => array( 'label' => __( 'Captcha', 'boldform-lite' ), 'icon' => 'dashicons-shield' ),
-			'smtp'    => array( 'label' => __( 'SMTP', 'boldform-lite' ), 'icon' => 'dashicons-email-alt' ),
-			'tools'   => array( 'label' => __( 'Tools', 'boldform-lite' ), 'icon' => 'dashicons-migrate' ),
+			'general' => array(
+				'label' => __( 'General', 'boldform-lite' ),
+				'icon'  => 'dashicons-admin-generic',
+			),
+			'captcha' => array(
+				'label' => __( 'Captcha', 'boldform-lite' ),
+				'icon'  => 'dashicons-shield',
+			),
+			'smtp'    => array(
+				'label' => __( 'SMTP', 'boldform-lite' ),
+				'icon'  => 'dashicons-email-alt',
+			),
+			'tools'   => array(
+				'label' => __( 'Tools', 'boldform-lite' ),
+				'icon'  => 'dashicons-migrate',
+			),
 		);
 		?>
 		<?php
@@ -3827,7 +4113,7 @@ class BoldForm_Lite_Admin {
 								);
 								foreach ( $msg_fields as $msg_key => $msg_label ) :
 									$setting_key = 'required_msg_' . $msg_key;
-								?>
+									?>
 								<div class="boldform-field-row">
 									<div class="boldform-field-label"><label for="boldform-<?php echo esc_attr( $setting_key ); ?>"><?php echo esc_html( $msg_label ); ?></label></div>
 									<div class="boldform-field-control">
@@ -4129,16 +4415,16 @@ class BoldForm_Lite_Admin {
 	 */
 	private function get_global_settings() {
 		$defaults = array(
-			'form_style_mode'      => 'plugin',
-			'default_email'        => '',
-			'uninstall_data'       => false,
-			'captcha_provider'     => 'simple_math',
-			'recaptcha_site_key'   => '',
-			'recaptcha_secret_key' => '',
-			'hcaptcha_site_key'    => '',
-			'hcaptcha_secret_key'  => '',
-			'turnstile_site_key'   => '',
-			'turnstile_secret_key' => '',
+			'form_style_mode'       => 'plugin',
+			'default_email'         => '',
+			'uninstall_data'        => false,
+			'captcha_provider'      => 'simple_math',
+			'recaptcha_site_key'    => '',
+			'recaptcha_secret_key'  => '',
+			'hcaptcha_site_key'     => '',
+			'hcaptcha_secret_key'   => '',
+			'turnstile_site_key'    => '',
+			'turnstile_secret_key'  => '',
 			'required_msg_text'     => '',
 			'required_msg_email'    => '',
 			'required_msg_number'   => '',
@@ -4148,16 +4434,16 @@ class BoldForm_Lite_Admin {
 			'required_msg_radio'    => '',
 			'required_msg_date'     => '',
 			'required_msg_time'     => '',
-			'smtp_enabled'         => false,
-			'smtp_from_email'      => '',
-			'smtp_from_name'       => '',
-			'smtp_reply_to'        => '',
-			'smtp_host'            => '',
-			'smtp_encryption'      => 'none',
-			'smtp_port'            => '',
-			'smtp_auth'            => false,
-			'smtp_username'        => '',
-			'smtp_password'        => '',
+			'smtp_enabled'          => false,
+			'smtp_from_email'       => '',
+			'smtp_from_name'        => '',
+			'smtp_reply_to'         => '',
+			'smtp_host'             => '',
+			'smtp_encryption'       => 'none',
+			'smtp_port'             => '',
+			'smtp_auth'             => false,
+			'smtp_username'         => '',
+			'smtp_password'         => '',
 		);
 
 		$saved = get_option( 'boldform_lite_settings', array() );
@@ -4198,25 +4484,25 @@ class BoldForm_Lite_Admin {
 		$active_tab = isset( $_POST['boldform_settings_tab'] ) ? sanitize_key( wp_unslash( $_POST['boldform_settings_tab'] ) ) : 'general';
 
 		if ( 'general' === $active_tab ) {
-			$form_style_mode                  = isset( $_POST['boldform_form_style_mode'] ) ? sanitize_key( wp_unslash( $_POST['boldform_form_style_mode'] ) ) : 'plugin';
-			$settings['form_style_mode']      = in_array( $form_style_mode, array( 'plugin', 'theme' ), true ) ? $form_style_mode : 'plugin';
-			$settings['default_email']        = isset( $_POST['boldform_default_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_default_email'] ) ) : '';
-			$settings['uninstall_data']       = ! empty( $_POST['boldform_uninstall_data'] );
+			$form_style_mode             = isset( $_POST['boldform_form_style_mode'] ) ? sanitize_key( wp_unslash( $_POST['boldform_form_style_mode'] ) ) : 'plugin';
+			$settings['form_style_mode'] = in_array( $form_style_mode, array( 'plugin', 'theme' ), true ) ? $form_style_mode : 'plugin';
+			$settings['default_email']   = isset( $_POST['boldform_default_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_default_email'] ) ) : '';
+			$settings['uninstall_data']  = ! empty( $_POST['boldform_uninstall_data'] );
 
 			// Validation messages.
 			$msg_types = array( 'text', 'email', 'number', 'textarea', 'select', 'checkbox', 'radio', 'date', 'time' );
 			foreach ( $msg_types as $msg_type ) {
-				$msg_key = 'required_msg_' . $msg_type;
+				$msg_key              = 'required_msg_' . $msg_type;
 				$settings[ $msg_key ] = isset( $_POST[ 'boldform_' . $msg_key ] ) ? sanitize_text_field( wp_unslash( $_POST[ 'boldform_' . $msg_key ] ) ) : '';
 			}
 		}
 
 		if ( 'captcha' === $active_tab ) {
-			$captcha_provider                 = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
-			$settings['captcha_provider']     = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
-			$settings['recaptcha_site_key']   = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
-			$settings['hcaptcha_site_key']    = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
-			$settings['turnstile_site_key']   = isset( $_POST['boldform_turnstile_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_site_key'] ) ) : '';
+			$captcha_provider               = isset( $_POST['boldform_captcha_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_captcha_provider'] ) ) : 'simple_math';
+			$settings['captcha_provider']   = in_array( $captcha_provider, array( 'recaptcha', 'hcaptcha', 'turnstile', 'simple_math' ), true ) ? $captcha_provider : 'simple_math';
+			$settings['recaptcha_site_key'] = isset( $_POST['boldform_recaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_recaptcha_site_key'] ) ) : '';
+			$settings['hcaptcha_site_key']  = isset( $_POST['boldform_hcaptcha_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_hcaptcha_site_key'] ) ) : '';
+			$settings['turnstile_site_key'] = isset( $_POST['boldform_turnstile_site_key'] ) ? sanitize_text_field( wp_unslash( $_POST['boldform_turnstile_site_key'] ) ) : '';
 
 			// Secret keys are masked on render (value=""); only overwrite when a new value is
 			// submitted, so re-saving the page with a blank field preserves the stored key.
@@ -4355,7 +4641,7 @@ class BoldForm_Lite_Admin {
 		} elseif ( 'ssl' === $settings['smtp_encryption'] ) {
 			$phpmailer->SMTPSecure = 'ssl'; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		} else {
-			$phpmailer->SMTPSecure = ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$phpmailer->SMTPSecure  = ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 			$phpmailer->SMTPAutoTLS = false; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		}
 
@@ -4372,7 +4658,6 @@ class BoldForm_Lite_Admin {
 		if ( ! empty( $settings['smtp_from_name'] ) ) {
 			$phpmailer->FromName = $settings['smtp_from_name']; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 		}
-
 	}
 
 	/**
@@ -4541,7 +4826,13 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Returns a list of forms filtered by view.
 	 *
-	 * @param string $view 'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string   $view          'all' for non-trashed forms, 'trash' for trashed forms.
+	 * @param string   $status_filter Restrict to this form status, or '' for any.
+	 * @param string   $search_term   Search term matched against the form title, or '' for none.
+	 * @param string   $orderby       Column to sort by.
+	 * @param string   $order         'asc' or 'desc'.
+	 * @param int|null $per_page      Results per page, or null for no limit.
+	 * @param int      $offset        Row offset, used with $per_page.
 	 * @return array<int, object>
 	 */
 	private function get_forms( $view = 'all', $status_filter = '', $search_term = '', $orderby = '', $order = 'desc', $per_page = null, $offset = 0 ) {
@@ -4812,7 +5103,7 @@ class BoldForm_Lite_Admin {
 		}
 
 		list( $type, $message ) = $messages[ $notice ];
-		$icon = ( 'error' === $type ) ? 'dashicons-warning' : 'dashicons-yes-alt';
+		$icon                   = ( 'error' === $type ) ? 'dashicons-warning' : 'dashicons-yes-alt';
 		// Keep `notice is-dismissible` so WordPress still wires up the dismiss (×)
 		// button; the boldform-inline-notice classes restyle it into a modern alert.
 		// NB: a distinct namespace from the full-width promo card (.boldform-admin-notice
@@ -4936,8 +5227,9 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Returns paginated entries.
 	 *
-	 * @param int $page     Current page.
-	 * @param int $per_page Items per page.
+	 * @param int                  $page     Current page.
+	 * @param int                  $per_page Items per page.
+	 * @param array<string, mixed> $filters  Entry filters (status, search, orderby, etc.).
 	 * @return array<int, object>
 	 */
 	private function get_entries( $page, $per_page, $filters = array() ) {
@@ -5101,17 +5393,32 @@ class BoldForm_Lite_Admin {
 											// to the file link / escaped text below, so CSV, email and privacy
 											// export (plain-text boldform_format_field_value) stay unaffected.
 											$value_html = apply_filters( 'boldform_entry_value_admin_html', '', isset( $field['value'] ) ? $field['value'] : '', $type, $field );
-											if ( '' !== (string) $value_html ) :
-												echo wp_kses(
-													(string) $value_html,
-													array(
-														'img'  => array( 'src' => true, 'alt' => true, 'class' => true, 'style' => true, 'width' => true, 'height' => true ),
-														'a'    => array( 'href' => true, 'class' => true, 'download' => true, 'target' => true, 'rel' => true, 'style' => true ),
-														'span' => array( 'class' => true ),
+										if ( '' !== (string) $value_html ) :
+											echo wp_kses(
+												(string) $value_html,
+												array(
+													'img'  => array(
+														'src' => true,
+														'alt' => true,
+														'class' => true,
+														'style' => true,
+														'width' => true,
+														'height' => true,
 													),
-													array( 'http', 'https', 'data' )
-												);
-											elseif ( $is_file && ! empty( $value ) ) : ?>
+													'a'    => array(
+														'href' => true,
+														'class' => true,
+														'download' => true,
+														'target' => true,
+														'rel'  => true,
+														'style' => true,
+													),
+													'span' => array( 'class' => true ),
+												),
+												array( 'http', 'https', 'data' )
+											);
+											elseif ( $is_file && ! empty( $value ) ) :
+												?>
 											<a href="<?php echo esc_url( (string) $value ); ?>" target="_blank" class="boldform-entry-file-link">
 												<span class="dashicons dashicons-media-default"></span>
 												<?php echo esc_html( basename( (string) $value ) ); ?>
@@ -5297,7 +5604,7 @@ class BoldForm_Lite_Admin {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$action  = isset( $_POST['bulk_action'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : '';
+		$action = isset( $_POST['bulk_action'] ) ? sanitize_key( wp_unslash( $_POST['bulk_action'] ) ) : '';
 		// Each element is cast with absint() on the next line, so the raw array is safe.
 		$raw_ids = isset( $_POST['entry_ids'] ) && is_array( $_POST['entry_ids'] ) ? wp_unslash( $_POST['entry_ids'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
@@ -5342,13 +5649,13 @@ class BoldForm_Lite_Admin {
 		} elseif ( 'trash' === $action ) {
 			// Set the trash timestamp; leave `status` untouched so restore recovers it.
 			$params = array_merge( array( current_time( 'mysql' ) ), $ids );
-			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sql    = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		} elseif ( 'restore' === $action ) {
 			// Clear the trash timestamp; the preserved `status` is the restored state.
 			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET trashed_at = NULL WHERE id IN ( {$placeholders} )", $ids ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		} else {
 			$params = array_merge( array( $action ), $ids );
-			$sql = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$sql    = $wpdb->prepare( "UPDATE `{$safe_table}` SET status = %s WHERE id IN ( {$placeholders} )", $params ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		}
 
 		$affected = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -5568,6 +5875,8 @@ class BoldForm_Lite_Admin {
 				break;
 			}
 
+			$batch_count = count( $batch );
+
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );
 
@@ -5585,7 +5894,7 @@ class BoldForm_Lite_Admin {
 			}
 
 			$offset += $batch_size;
-		} while ( count( $batch ) === $batch_size );
+		} while ( $batch_size === $batch_count );
 
 		call_user_func( $on_columns, $columns );
 
@@ -5600,6 +5909,8 @@ class BoldForm_Lite_Admin {
 			if ( ! is_array( $batch ) ) {
 				break;
 			}
+
+			$batch_count = count( $batch );
 
 			foreach ( $batch as $entry ) {
 				$data = json_decode( $entry['entry_data_json'], true );
@@ -5637,7 +5948,7 @@ class BoldForm_Lite_Admin {
 			}
 
 			$offset += $batch_size;
-		} while ( count( $batch ) === $batch_size );
+		} while ( $batch_size === $batch_count );
 	}
 
 	/**
@@ -5662,6 +5973,7 @@ class BoldForm_Lite_Admin {
 	/**
 	 * Returns total entries count.
 	 *
+	 * @param array<string, mixed> $filters Entry filters (status, search, orderby, etc.).
 	 * @return int
 	 */
 	private function get_entries_count( $filters = array() ) {
@@ -5770,37 +6082,37 @@ class BoldForm_Lite_Admin {
 	 */
 	private function extract_settings_from_record( $form_record ) {
 		$defaults = array(
-			'submission_type'   => 'ajax',
-			'enable_ajax'       => true,
-			'enable_redirect'   => false,
-			'redirect_url'      => '',
-			'thank_you_message' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
-			'button_text'       => __( 'Submit', 'boldform-lite' ),
-			'button_alignment'  => 'left',
-			'button_color'      => 'teal',
-			'field_style'       => '',
-			'field_size'        => '',
-			'field_focus_color' => '',
-			'field_border_width'=> '',
-			'field_border_radius'=> '',
-			'field_background_color' => '',
-			'field_border_color' => '',
-			'field_text_color'  => '',
-			'label_size'        => '',
-			'label_color'       => '',
-			'label_subtext_color' => '',
-			'error_color'       => '',
-			'button_size'       => '',
-			'button_border_style' => '',
-			'button_border_width' => '',
-			'button_border_radius' => '',
+			'submission_type'         => 'ajax',
+			'enable_ajax'             => true,
+			'enable_redirect'         => false,
+			'redirect_url'            => '',
+			'thank_you_message'       => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+			'button_text'             => __( 'Submit', 'boldform-lite' ),
+			'button_alignment'        => 'left',
+			'button_color'            => 'teal',
+			'field_style'             => '',
+			'field_size'              => '',
+			'field_focus_color'       => '',
+			'field_border_width'      => '',
+			'field_border_radius'     => '',
+			'field_background_color'  => '',
+			'field_border_color'      => '',
+			'field_text_color'        => '',
+			'label_size'              => '',
+			'label_color'             => '',
+			'label_subtext_color'     => '',
+			'error_color'             => '',
+			'button_size'             => '',
+			'button_border_style'     => '',
+			'button_border_width'     => '',
+			'button_border_radius'    => '',
 			'button_background_color' => '',
-			'button_border_color' => '',
-			'button_text_color' => '',
-			'admin_email_type'  => 'site_admin',
-			'enable_admin_email'=> true,
-			'enable_user_email' => true,
-			'admin_email'       => '',
+			'button_border_color'     => '',
+			'button_text_color'       => '',
+			'admin_email_type'        => 'site_admin',
+			'enable_admin_email'      => true,
+			'enable_user_email'       => true,
+			'admin_email'             => '',
 		);
 
 		if ( ! $form_record || empty( $form_record->settings_json ) ) {
@@ -5813,104 +6125,104 @@ class BoldForm_Lite_Admin {
 			return $defaults;
 		}
 
-		$submission_type = isset( $decoded['submission_type'] ) && in_array( $decoded['submission_type'], array( 'ajax', 'redirect' ), true )
+		$submission_type  = isset( $decoded['submission_type'] ) && in_array( $decoded['submission_type'], array( 'ajax', 'redirect' ), true )
 			? $decoded['submission_type']
 			: ( ! empty( $decoded['enable_redirect'] ) ? 'redirect' : 'ajax' );
-		$admin_email     = isset( $decoded['admin_email'] ) ? sanitize_email( (string) $decoded['admin_email'] ) : $defaults['admin_email'];
+		$admin_email      = isset( $decoded['admin_email'] ) ? sanitize_email( (string) $decoded['admin_email'] ) : $defaults['admin_email'];
 		$admin_email_type = isset( $decoded['admin_email_type'] ) && in_array( $decoded['admin_email_type'], array( 'site_admin', 'custom' ), true )
 			? $decoded['admin_email_type']
 			: ( $admin_email ? 'custom' : 'site_admin' );
 
 		$settings = array(
-			'submission_type'   => $submission_type,
-			'enable_ajax'       => 'ajax' === $submission_type,
-			'enable_redirect'   => 'redirect' === $submission_type,
-			'redirect_type'     => isset( $decoded['redirect_type'] ) && in_array( $decoded['redirect_type'], array( 'page', 'custom' ), true )
+			'submission_type'         => $submission_type,
+			'enable_ajax'             => 'ajax' === $submission_type,
+			'enable_redirect'         => 'redirect' === $submission_type,
+			'redirect_type'           => isset( $decoded['redirect_type'] ) && in_array( $decoded['redirect_type'], array( 'page', 'custom' ), true )
 				? $decoded['redirect_type']
 				: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' ),
-			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
+			'redirect_url'            => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : $defaults['redirect_url'],
 			// Rich markup: filtered with the post allowlist, matching the save path.
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
-			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
-			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
-			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
-			'field_style'       => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
-			'field_size'        => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
-			'field_focus_color' => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
-			'field_border_width'=> isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
-			'field_border_radius'=> isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
-			'field_background_color' => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
-			'field_border_color' => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
-			'field_text_color'  => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
-			'label_size'        => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
-			'label_color'       => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
-			'label_subtext_color' => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
-			'error_color'       => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
-			'button_size'       => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
-			'button_border_style' => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
-			'button_border_width' => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
-			'button_border_radius' => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
+			'thank_you_message'       => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			'button_text'             => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
+			'button_alignment'        => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
+			'button_color'            => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
+			'field_style'             => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
+			'field_size'              => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
+			'field_focus_color'       => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
+			'field_border_width'      => isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
+			'field_border_radius'     => isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
+			'field_background_color'  => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
+			'field_border_color'      => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
+			'field_text_color'        => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
+			'label_size'              => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
+			'label_color'             => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
+			'label_subtext_color'     => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
+			'error_color'             => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
+			'button_size'             => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
+			'button_border_style'     => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
+			'button_border_width'     => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
+			'button_border_radius'    => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
-			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
-			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
-			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
-			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? (string) $decoded['button_icon_svg'] : '',
-			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
-			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
-			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
-			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
-			'button_layout'     => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : 'below',
-			'admin_email_type'  => $admin_email_type,
-			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
-			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
-			'admin_email'       => $admin_email,
+			'button_border_color'     => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
+			'button_text_color'       => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'button_icon_type'        => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon'    => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'         => isset( $decoded['button_icon_svg'] ) ? (string) $decoded['button_icon_svg'] : '',
+			'button_icon_position'    => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'         => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'        => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'       => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
+			'button_layout'           => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : 'below',
+			'admin_email_type'        => $admin_email_type,
+			'enable_admin_email'      => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email'       => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'             => $admin_email,
 			// Multi-step settings (data passthrough for Pro's multi-page module).
-			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
-			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
-			'step_progress_bg_color' => isset( $decoded['step_progress_bg_color'] ) && sanitize_hex_color( $decoded['step_progress_bg_color'] ) ? sanitize_hex_color( $decoded['step_progress_bg_color'] ) : '',
-			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
-			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
-			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
-			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
-			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
-			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
-			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
-			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
-			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
-			'dup_enabled'         => ! empty( $decoded['dup_enabled'] ),
-			'dup_method'          => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
-			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
-			'dup_message'         => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
-			'style'               => $this->extract_style_from_record_settings( $decoded ),
+			'step_progress_style'     => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
+			'step_progress_color'     => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_progress_bg_color'  => isset( $decoded['step_progress_bg_color'] ) && sanitize_hex_color( $decoded['step_progress_bg_color'] ) ? sanitize_hex_color( $decoded['step_progress_bg_color'] ) : '',
+			'step_btn_color'          => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
+			'step_btn_text_color'     => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
+			'step_btn_size'           => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
+			'step_btn_radius'         => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
+			'step_next_text'          => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
+			'step_prev_text'          => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			'design_theme'            => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'             => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'       => ! empty( $decoded['hide_placeholders'] ),
+			'dup_enabled'             => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'              => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id'            => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'             => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
+			'style'                   => $this->extract_style_from_record_settings( $decoded ),
 			// Conversational mode. This list is a hard gate, not a convenience: a
 			// key absent here never reaches the builder, so the pane would reopen
 			// showing its defaults and the next save would write those defaults
 			// back over the author's choices. Re-validated on read because a
 			// hand-edited settings_json is untrusted input.
-			'cv_enabled'          => ! empty( $decoded['cv_enabled'] ),
-			'cv_progress'         => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
-			'cv_transition'       => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
-			'cv_key_hint'         => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
-			'cv_next_text'        => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
-			'cv_prev_text'        => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
-			'cv_bg'               => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
-			'cv_question_color'   => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
-			'cv_answer_color'     => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
-			'cv_btn_color'        => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
-			'cv_btn_text_color'   => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
-			'cv_accent'           => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
-			'cv_track_color'      => isset( $decoded['cv_track_color'] ) && sanitize_hex_color( $decoded['cv_track_color'] ) ? sanitize_hex_color( $decoded['cv_track_color'] ) : '',
-			'cv_prev_color'       => isset( $decoded['cv_prev_color'] ) && sanitize_hex_color( $decoded['cv_prev_color'] ) ? sanitize_hex_color( $decoded['cv_prev_color'] ) : '',
-			'cv_prev_bg'          => isset( $decoded['cv_prev_bg'] ) && sanitize_hex_color( $decoded['cv_prev_bg'] ) ? sanitize_hex_color( $decoded['cv_prev_bg'] ) : '',
-			'cv_hint_color'       => isset( $decoded['cv_hint_color'] ) && sanitize_hex_color( $decoded['cv_hint_color'] ) ? sanitize_hex_color( $decoded['cv_hint_color'] ) : '',
-			'cv_nav_align'        => isset( $decoded['cv_nav_align'] ) && in_array( $decoded['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $decoded['cv_nav_align'] : 'left',
-			'cv_progress_align'   => isset( $decoded['cv_progress_align'] ) && in_array( $decoded['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $decoded['cv_progress_align'] : 'left',
-			'cv_welcome_enabled'  => ! empty( $decoded['cv_welcome_enabled'] ),
-			'cv_welcome_title'    => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
-			'cv_welcome_text'     => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
-			'cv_welcome_btn'      => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
-			'cv_media_hide_mobile' => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
+			'cv_enabled'              => ! empty( $decoded['cv_enabled'] ),
+			'cv_progress'             => isset( $decoded['cv_progress'] ) && in_array( $decoded['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $decoded['cv_progress'] : 'bar',
+			'cv_transition'           => isset( $decoded['cv_transition'] ) && in_array( $decoded['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $decoded['cv_transition'] : 'slide',
+			'cv_key_hint'             => isset( $decoded['cv_key_hint'] ) ? ! empty( $decoded['cv_key_hint'] ) : true,
+			'cv_next_text'            => isset( $decoded['cv_next_text'] ) ? sanitize_text_field( (string) $decoded['cv_next_text'] ) : '',
+			'cv_prev_text'            => isset( $decoded['cv_prev_text'] ) ? sanitize_text_field( (string) $decoded['cv_prev_text'] ) : '',
+			'cv_bg'                   => isset( $decoded['cv_bg'] ) && sanitize_hex_color( $decoded['cv_bg'] ) ? sanitize_hex_color( $decoded['cv_bg'] ) : '',
+			'cv_question_color'       => isset( $decoded['cv_question_color'] ) && sanitize_hex_color( $decoded['cv_question_color'] ) ? sanitize_hex_color( $decoded['cv_question_color'] ) : '',
+			'cv_answer_color'         => isset( $decoded['cv_answer_color'] ) && sanitize_hex_color( $decoded['cv_answer_color'] ) ? sanitize_hex_color( $decoded['cv_answer_color'] ) : '',
+			'cv_btn_color'            => isset( $decoded['cv_btn_color'] ) && sanitize_hex_color( $decoded['cv_btn_color'] ) ? sanitize_hex_color( $decoded['cv_btn_color'] ) : '',
+			'cv_btn_text_color'       => isset( $decoded['cv_btn_text_color'] ) && sanitize_hex_color( $decoded['cv_btn_text_color'] ) ? sanitize_hex_color( $decoded['cv_btn_text_color'] ) : '',
+			'cv_accent'               => isset( $decoded['cv_accent'] ) && sanitize_hex_color( $decoded['cv_accent'] ) ? sanitize_hex_color( $decoded['cv_accent'] ) : '',
+			'cv_track_color'          => isset( $decoded['cv_track_color'] ) && sanitize_hex_color( $decoded['cv_track_color'] ) ? sanitize_hex_color( $decoded['cv_track_color'] ) : '',
+			'cv_prev_color'           => isset( $decoded['cv_prev_color'] ) && sanitize_hex_color( $decoded['cv_prev_color'] ) ? sanitize_hex_color( $decoded['cv_prev_color'] ) : '',
+			'cv_prev_bg'              => isset( $decoded['cv_prev_bg'] ) && sanitize_hex_color( $decoded['cv_prev_bg'] ) ? sanitize_hex_color( $decoded['cv_prev_bg'] ) : '',
+			'cv_hint_color'           => isset( $decoded['cv_hint_color'] ) && sanitize_hex_color( $decoded['cv_hint_color'] ) ? sanitize_hex_color( $decoded['cv_hint_color'] ) : '',
+			'cv_nav_align'            => isset( $decoded['cv_nav_align'] ) && in_array( $decoded['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $decoded['cv_nav_align'] : 'left',
+			'cv_progress_align'       => isset( $decoded['cv_progress_align'] ) && in_array( $decoded['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $decoded['cv_progress_align'] : 'left',
+			'cv_welcome_enabled'      => ! empty( $decoded['cv_welcome_enabled'] ),
+			'cv_welcome_title'        => isset( $decoded['cv_welcome_title'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_title'] ) : '',
+			'cv_welcome_text'         => isset( $decoded['cv_welcome_text'] ) ? wp_kses_post( (string) $decoded['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'          => isset( $decoded['cv_welcome_btn'] ) ? sanitize_text_field( (string) $decoded['cv_welcome_btn'] ) : '',
+			'cv_media_hide_mobile'    => isset( $decoded['cv_media_hide_mobile'] ) ? ! empty( $decoded['cv_media_hide_mobile'] ) : true,
 		);
 
 		/**
@@ -6190,7 +6502,13 @@ class BoldForm_Lite_Admin {
 	 * @return array<int, array<string, string>>
 	 */
 	private function get_pages_for_redirect() {
-		$pages  = get_pages( array( 'post_status' => 'publish', 'sort_column' => 'post_title', 'sort_order' => 'ASC' ) );
+		$pages  = get_pages(
+			array(
+				'post_status' => 'publish',
+				'sort_column' => 'post_title',
+				'sort_order'  => 'ASC',
+			)
+		);
 		$result = array();
 
 		if ( $pages ) {
@@ -6213,117 +6531,117 @@ class BoldForm_Lite_Admin {
 	 */
 	private function get_field_library() {
 		$library = array(
-			'text'     => array(
+			'text'             => array(
 				'label' => __( 'Text', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-textcolor',
 				'group' => 'basic',
 			),
-			'name'     => array(
+			'name'             => array(
 				'label' => __( 'Name', 'boldform-lite' ),
 				'icon'  => 'dashicons-admin-users',
 				'group' => 'basic',
 			),
-			'email'    => array(
+			'email'            => array(
 				'label' => __( 'Email', 'boldform-lite' ),
 				'icon'  => 'dashicons-email',
 				'group' => 'basic',
 			),
-			'number'   => array(
+			'number'           => array(
 				'label' => __( 'Number', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-ol',
 				'group' => 'basic',
 			),
-			'textarea' => array(
+			'textarea'         => array(
 				'label' => __( 'Textarea', 'boldform-lite' ),
 				'icon'  => 'dashicons-media-text',
 				'group' => 'basic',
 			),
-			'date'     => array(
+			'date'             => array(
 				'label' => __( 'Date Picker', 'boldform-lite' ),
 				'icon'  => 'dashicons-calendar-alt',
 				'group' => 'basic',
 			),
-			'time'     => array(
+			'time'             => array(
 				'label' => __( 'Time Picker', 'boldform-lite' ),
 				'icon'  => 'dashicons-clock',
 				'group' => 'basic',
 			),
-			'select'   => array(
+			'select'           => array(
 				'label' => __( 'Select', 'boldform-lite' ),
 				'icon'  => 'dashicons-arrow-down-alt2',
 				'group' => 'basic',
 			),
-			'multiselect' => array(
+			'multiselect'      => array(
 				'label' => __( 'Multi Select', 'boldform-lite' ),
 				'icon'  => 'dashicons-list-view',
 				'group' => 'basic',
 			),
-			'checkbox' => array(
+			'checkbox'         => array(
 				'label' => __( 'Checkbox', 'boldform-lite' ),
 				'icon'  => 'dashicons-yes-alt',
 				'group' => 'basic',
 			),
-			'radio'    => array(
+			'radio'            => array(
 				'label' => __( 'Radio', 'boldform-lite' ),
 				'icon'  => 'dashicons-marker',
 				'group' => 'basic',
 			),
-			'tel'      => array(
+			'tel'              => array(
 				'label' => __( 'Phone', 'boldform-lite' ),
 				'icon'  => 'dashicons-phone',
 				'group' => 'basic',
 			),
-			'url'      => array(
+			'url'              => array(
 				'label' => __( 'URL', 'boldform-lite' ),
 				'icon'  => 'dashicons-admin-links',
 				'group' => 'basic',
 			),
-			'numeric'  => array(
+			'numeric'          => array(
 				'label' => __( 'Numeric', 'boldform-lite' ),
 				'icon'  => 'dashicons-calculator',
 				'group' => 'basic',
 			),
-			'input_mask' => array(
+			'input_mask'       => array(
 				'label' => __( 'Input Mask', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-customchar',
 				'group' => 'basic',
 			),
-			'html_editor' => array(
+			'html_editor'      => array(
 				'label' => __( 'HTML Editor', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-code',
 				'group' => 'basic',
 			),
-			'paragraph' => array(
+			'paragraph'        => array(
 				'label' => __( 'Paragraph', 'boldform-lite' ),
 				'icon'  => 'dashicons-editor-paragraph',
 				'group' => 'basic',
 			),
-			'address'  => array(
+			'address'          => array(
 				'label' => __( 'Address', 'boldform-lite' ),
 				'icon'  => 'dashicons-location',
 				'group' => 'basic',
 			),
-			'country'  => array(
+			'country'          => array(
 				'label' => __( 'Country', 'boldform-lite' ),
 				'icon'  => 'dashicons-admin-site-alt3',
 				'group' => 'basic',
 			),
-			'star_rating' => array(
+			'star_rating'      => array(
 				'label' => __( 'Star Rating', 'boldform-lite' ),
 				'icon'  => 'dashicons-star-filled',
 				'group' => 'basic',
 			),
-			'slider_range' => array(
+			'slider_range'     => array(
 				'label' => __( 'Slider Range', 'boldform-lite' ),
 				'icon'  => 'dashicons-leftright',
 				'group' => 'basic',
 			),
-			'captcha'  => array(
+			'captcha'          => array(
 				'label' => __( 'Captcha', 'boldform-lite' ),
 				'icon'  => 'dashicons-shield',
 				'group' => 'advanced',
 			),
-			'section_break' => array(
+			'section_break'    => array(
 				'label' => __( 'Section Break', 'boldform-lite' ),
 				'icon'  => 'dashicons-minus',
 				'group' => 'advanced',
@@ -6333,12 +6651,12 @@ class BoldForm_Lite_Admin {
 				'icon'  => 'dashicons-media-document',
 				'group' => 'advanced',
 			),
-			'file' => array(
+			'file'             => array(
 				'label' => __( 'File Upload', 'boldform-lite' ),
 				'icon'  => 'dashicons-upload',
 				'group' => 'advanced',
 			),
-			'submit' => array(
+			'submit'           => array(
 				'label' => __( 'Submit Button', 'boldform-lite' ),
 				'icon'  => 'dashicons-button',
 				'group' => 'advanced',
@@ -6368,7 +6686,7 @@ class BoldForm_Lite_Admin {
 		$forms_table   = esc_sql( $this->plugin->get_forms_table_name() );
 
 		// Overview stats.
-		$total_forms   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$total_forms = (int) $wpdb->get_var( "SELECT COUNT(*) FROM `{$forms_table}` WHERE status != 'trash'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		// Spam AND trashed entries are excluded from every reporting stat below — spam is
 		// not a genuine submission and a trashed entry is on its way to deletion; either
 		// would skew totals, per-form counts, and the trend chart.
@@ -6380,8 +6698,8 @@ class BoldForm_Lite_Admin {
 		$today_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", wp_date( 'Y-m-d' ) . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// This week entries.
-		$week_start  = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
-		$week_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$week_start = wp_date( 'Y-m-d', strtotime( 'monday this week' ) );
+		$week_count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$entries_table}` WHERE status != 'spam' AND trashed_at IS NULL AND created_at >= %s", $week_start . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
 		// Entries per form.
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table names sanitized via esc_sql() above.
@@ -6663,7 +6981,7 @@ class BoldForm_Lite_Admin {
 											</span>
 											<span class="boldform-reports-activity__meta">
 												<span class="boldform-status-badge boldform-status--<?php echo esc_attr( $entry->status ); ?>"><?php echo esc_html( ucfirst( (string) $entry->status ) ); ?></span>
-												<span class="boldform-reports-activity__date"><?php echo esc_html( human_time_diff( strtotime( (string) $entry->created_at ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'ago', 'boldform-lite' ); ?></span>
+												<span class="boldform-reports-activity__date"><?php echo esc_html( human_time_diff( strtotime( (string) $entry->created_at ), current_time( 'timestamp' ) ) ); // phpcs:ignore WordPress.DateTime.CurrentTimeTimestamp.Requested -- created_at is a site-local MySQL datetime string; both operands must use the same local-time convention, not a true UTC timestamp. ?> <?php esc_html_e( 'ago', 'boldform-lite' ); ?></span>
 											</span>
 										</div>
 									</a>

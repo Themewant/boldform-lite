@@ -178,7 +178,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 											if ( ! isset( $boldform_lite_field_data['group'] ) || $boldform_lite_group_key !== $boldform_lite_field_data['group'] ) :
 												continue;
 											endif;
-										?>
+											?>
 											<button
 												type="button"
 												class="boldform-library-item"
@@ -220,20 +220,51 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 								 */
 								if ( apply_filters( 'boldform_show_locked_fields_teaser', apply_filters( 'boldform_show_upgrade_cta', true ) ) ) :
 									$boldform_lite_premium_fields = array(
-										array( 'label' => __( 'Page Break', 'boldform-lite' ), 'icon' => 'dashicons-layout' ),
-										array( 'label' => __( 'Payment Item', 'boldform-lite' ), 'icon' => 'dashicons-tag' ),
-										array( 'label' => __( 'Quantity', 'boldform-lite' ), 'icon' => 'dashicons-plus-alt2' ),
-										array( 'label' => __( 'Order Summary', 'boldform-lite' ), 'icon' => 'dashicons-list-view' ),
-										array( 'label' => __( 'Calculation', 'boldform-lite' ), 'icon' => 'dashicons-calculator' ),
-										array( 'label' => __( 'Image Choice', 'boldform-lite' ), 'icon' => 'dashicons-format-image' ),
-										array( 'label' => __( 'Repeater', 'boldform-lite' ), 'icon' => 'dashicons-editor-table' ),
-										array( 'label' => __( 'Signature', 'boldform-lite' ), 'icon' => 'dashicons-edit' ),
-										array( 'label' => __( 'Matrix / Grid', 'boldform-lite' ), 'icon' => 'dashicons-grid-view' ),
-										array( 'label' => __( 'Geolocation', 'boldform-lite' ), 'icon' => 'dashicons-location' ),
+										array(
+											'label' => __( 'Page Break', 'boldform-lite' ),
+											'icon'  => 'dashicons-layout',
+										),
+										array(
+											'label' => __( 'Payment Item', 'boldform-lite' ),
+											'icon'  => 'dashicons-tag',
+										),
+										array(
+											'label' => __( 'Quantity', 'boldform-lite' ),
+											'icon'  => 'dashicons-plus-alt2',
+										),
+										array(
+											'label' => __( 'Order Summary', 'boldform-lite' ),
+											'icon'  => 'dashicons-list-view',
+										),
+										array(
+											'label' => __( 'Calculation', 'boldform-lite' ),
+											'icon'  => 'dashicons-calculator',
+										),
+										array(
+											'label' => __( 'Image Choice', 'boldform-lite' ),
+											'icon'  => 'dashicons-format-image',
+										),
+										array(
+											'label' => __( 'Repeater', 'boldform-lite' ),
+											'icon'  => 'dashicons-editor-table',
+										),
+										array(
+											'label' => __( 'Signature', 'boldform-lite' ),
+											'icon'  => 'dashicons-edit',
+										),
+										array(
+											'label' => __( 'Matrix / Grid', 'boldform-lite' ),
+											'icon'  => 'dashicons-grid-view',
+										),
+										array(
+											'label' => __( 'Geolocation', 'boldform-lite' ),
+											'icon'  => 'dashicons-location',
+										),
 									);
-								?>
+									?>
 								<div class="boldform-library-group boldform-library-group--locked">
-									<h3><?php
+									<h3>
+									<?php
 										/**
 										 * Filters the heading above the locked field group in the Field Library.
 										 *
@@ -247,7 +278,8 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 										 * @param string $title Heading text. Default 'Premium Fields'.
 										 */
 										echo esc_html( apply_filters( 'boldform_library_lock_group_title', __( 'Premium Fields', 'boldform-lite' ) ) );
-									?></h3>
+									?>
+									</h3>
 									<div class="boldform-library-lockwrap">
 										<div class="boldform-library-grid boldform-library-grid--locked" aria-hidden="true">
 											<?php foreach ( $boldform_lite_premium_fields as $boldform_lite_pf ) : ?>
@@ -259,7 +291,8 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 										</div>
 										<div class="boldform-library-lock">
 											<span class="boldform-library-lock__badge dashicons dashicons-lock" aria-hidden="true"></span>
-											<strong class="boldform-library-lock__title"><?php
+											<strong class="boldform-library-lock__title">
+											<?php
 												/**
 												 * Filters the headline on the Field Library's lock overlay.
 												 *
@@ -271,8 +304,10 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 												 * @param string $title Headline text.
 												 */
 												echo esc_html( apply_filters( 'boldform_library_lock_title', __( 'Unlock premium fields', 'boldform-lite' ) ) );
-											?></strong>
-											<p class="boldform-library-lock__text"><?php
+											?>
+											</strong>
+											<p class="boldform-library-lock__text">
+											<?php
 												/**
 												 * Filters the body copy on the Field Library's lock overlay.
 												 *
@@ -281,7 +316,8 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 												 * @param string $text Body copy.
 												 */
 												echo esc_html( apply_filters( 'boldform_library_lock_text', __( 'Payments, multi-page breaks, repeaters, signatures and more — drag them straight into your forms with an upgrade.', 'boldform-lite' ) ) );
-											?></p>
+											?>
+											</p>
 											<button type="button" class="boldform-upgrade-btn boldform-library-lock__cta" aria-haspopup="dialog" data-upgrade-modal="boldform-fields-upgrade-modal">
 												<span class="dashicons dashicons-lock" aria-hidden="true"></span>
 												<?php echo esc_html( apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ), 'button' ) ); ?>
