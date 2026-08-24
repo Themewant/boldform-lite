@@ -1,4 +1,6 @@
 <?php
+// phpcs:ignoreFile WordPress.Files.FileName.InvalidClassFileName -- kept as admin/ajax-save.php (required by name from several files); renaming is out of scope for this cleanup.
+
 /**
  * AJAX save handler for builder forms.
  *
@@ -47,14 +49,14 @@ class BoldForm_Lite_Ajax_Save {
 			);
 		}
 
-		$form_id           = isset( $_POST['form_id'] ) ? absint( wp_unslash( $_POST['form_id'] ) ) : 0;
-		$title             = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
+		$form_id = isset( $_POST['form_id'] ) ? absint( wp_unslash( $_POST['form_id'] ) ) : 0;
+		$title   = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- raw JSON string; sanitize_text_field() would strip HTML used in terms/content fields. Every decoded value is individually sanitized below via sanitize_text_field(), sanitize_key(), wp_kses_post(), absint(), etc.
-		$structure_raw     = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : '';
+		$structure_raw = isset( $_POST['structure'] ) ? wp_unslash( $_POST['structure'] ) : '';
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- same as above; decoded values sanitized in normalize_form_settings().
-		$settings_raw      = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : '';
-		$payload           = json_decode( $structure_raw, true );
-		$settings_payload  = json_decode( $settings_raw, true );
+		$settings_raw     = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : '';
+		$payload          = json_decode( $structure_raw, true );
+		$settings_payload = json_decode( $settings_raw, true );
 
 		if ( ! is_array( $payload ) ) {
 			$payload = array();
@@ -346,37 +348,43 @@ class BoldForm_Lite_Ajax_Save {
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
 						$core_field = array(
-							'id'             => $field_id,
-							'type'           => $field_type,
-							'label'          => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
-							'placeholder'    => isset( $field['placeholder'] ) ? sanitize_text_field( (string) $field['placeholder'] ) : '',
-							'default_value'  => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
-							'required'       => ! empty( $field['required'] ),
-							'options'        => $options,
-							'options_layout' => $options_layout,
-							'checkbox_style' => $checkbox_style,
-							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
-							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
-							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
-							'allowed_types'  => isset( $field['allowed_types'] ) ? sanitize_text_field( (string) $field['allowed_types'] ) : '',
+							'id'                  => $field_id,
+							'type'                => $field_type,
+							'label'               => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
+							'placeholder'         => isset( $field['placeholder'] ) ? sanitize_text_field( (string) $field['placeholder'] ) : '',
+							'default_value'       => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
+							'required'            => ! empty( $field['required'] ),
+							'options'             => $options,
+							'options_layout'      => $options_layout,
+							'checkbox_style'      => $checkbox_style,
+							'content'             => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
+							'description'         => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
+							'custom_error'        => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
+							'allowed_types'       => isset( $field['allowed_types'] ) ? sanitize_text_field( (string) $field['allowed_types'] ) : '',
 							// '' means "not set — use the site default"; keep it as '' rather than
 							// letting absint() flatten it to 0. Both take the same branch in the
 							// upload handler, but preserving '' keeps a re-save (and an import,
 							// which re-runs this sanitizer) byte-identical to what was stored.
-							'max_file_size'  => isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : '',
-							'css_class'      => isset( $field['css_class'] ) ? sanitize_html_class( (string) $field['css_class'] ) : '',
-							'show_middle_name'  => ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] ),
-							'show_last_name'    => ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] ),
-							'address_order'     => isset( $field['address_order'] ) && is_array( $field['address_order'] ) ? array_values( array_intersect( array_map( 'sanitize_key', $field['address_order'] ), array( 'street', 'city', 'state', 'zip', 'country' ) ) ) : array( 'street', 'city', 'state', 'zip', 'country' ),
-							'address_fields'    => isset( $field['address_fields'] ) && is_array( $field['address_fields'] ) ? array(
+							'max_file_size'       => isset( $field['max_file_size'] ) && '' !== $field['max_file_size'] ? absint( $field['max_file_size'] ) : '',
+							'css_class'           => isset( $field['css_class'] ) ? sanitize_html_class( (string) $field['css_class'] ) : '',
+							'show_middle_name'    => ! isset( $field['show_middle_name'] ) || ! empty( $field['show_middle_name'] ),
+							'show_last_name'      => ! isset( $field['show_last_name'] ) || ! empty( $field['show_last_name'] ),
+							'address_order'       => isset( $field['address_order'] ) && is_array( $field['address_order'] ) ? array_values( array_intersect( array_map( 'sanitize_key', $field['address_order'] ), array( 'street', 'city', 'state', 'zip', 'country' ) ) ) : array( 'street', 'city', 'state', 'zip', 'country' ),
+							'address_fields'      => isset( $field['address_fields'] ) && is_array( $field['address_fields'] ) ? array(
 								'street'  => ! isset( $field['address_fields']['street'] ) || ! empty( $field['address_fields']['street'] ),
 								'city'    => ! isset( $field['address_fields']['city'] ) || ! empty( $field['address_fields']['city'] ),
 								'state'   => ! isset( $field['address_fields']['state'] ) || ! empty( $field['address_fields']['state'] ),
 								'zip'     => ! isset( $field['address_fields']['zip'] ) || ! empty( $field['address_fields']['zip'] ),
 								'country' => ! isset( $field['address_fields']['country'] ) || ! empty( $field['address_fields']['country'] ),
-							) : array( 'street' => true, 'city' => true, 'state' => true, 'zip' => true, 'country' => true ),
-							'label_placement'   => isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top',
-							'conditional'       => ( function () use ( $field ) {
+							) : array(
+								'street'  => true,
+								'city'    => true,
+								'state'   => true,
+								'zip'     => true,
+								'country' => true,
+							),
+							'label_placement'     => isset( $field['label_placement'] ) && in_array( $field['label_placement'], array( 'top', 'left', 'right', 'bottom', 'hidden' ), true ) ? $field['label_placement'] : 'top',
+							'conditional'         => ( function () use ( $field ) {
 								$raw     = isset( $field['conditional'] ) && is_array( $field['conditional'] ) ? $field['conditional'] : array();
 								$enabled = ! empty( $raw['enabled'] );
 								$action  = isset( $raw['action'] ) && 'hide' === $raw['action'] ? 'hide' : 'show';
@@ -386,7 +394,9 @@ class BoldForm_Lite_Ajax_Save {
 								$conditions  = array();
 								if ( isset( $raw['conditions'] ) && is_array( $raw['conditions'] ) ) {
 									foreach ( $raw['conditions'] as $cond ) {
-										if ( ! is_array( $cond ) ) continue;
+										if ( ! is_array( $cond ) ) {
+											continue;
+										}
 										$conditions[] = array(
 											'field_id' => isset( $cond['field_id'] ) ? sanitize_key( (string) $cond['field_id'] ) : '',
 											'operator' => isset( $cond['operator'] ) && in_array( $cond['operator'], $allowed_ops, true ) ? $cond['operator'] : 'is',
@@ -395,7 +405,11 @@ class BoldForm_Lite_Ajax_Save {
 									}
 								}
 								if ( empty( $conditions ) ) {
-									$conditions[] = array( 'field_id' => '', 'operator' => 'is', 'value' => '' );
+									$conditions[] = array(
+										'field_id' => '',
+										'operator' => 'is',
+										'value'    => '',
+									);
 								}
 
 								return array(
@@ -405,37 +419,37 @@ class BoldForm_Lite_Ajax_Save {
 									'conditions' => $conditions,
 								);
 							} )(),
-							'select_searchable' => ! empty( $field['select_searchable'] ),
-							'select_multiple'   => ! empty( $field['select_multiple'] ),
-							'mask_pattern'    => isset( $field['mask_pattern'] ) ? sanitize_text_field( (string) $field['mask_pattern'] ) : '',
-							'min_value'       => isset( $field['min_value'] ) ? sanitize_text_field( (string) $field['min_value'] ) : '',
-							'max_value'       => isset( $field['max_value'] ) ? sanitize_text_field( (string) $field['max_value'] ) : '',
-							'step_value'      => isset( $field['step_value'] ) ? sanitize_text_field( (string) $field['step_value'] ) : '',
-							'max_stars'       => isset( $field['max_stars'] ) ? absint( $field['max_stars'] ) : 5,
-							'star_color'      => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '',
+							'select_searchable'   => ! empty( $field['select_searchable'] ),
+							'select_multiple'     => ! empty( $field['select_multiple'] ),
+							'mask_pattern'        => isset( $field['mask_pattern'] ) ? sanitize_text_field( (string) $field['mask_pattern'] ) : '',
+							'min_value'           => isset( $field['min_value'] ) ? sanitize_text_field( (string) $field['min_value'] ) : '',
+							'max_value'           => isset( $field['max_value'] ) ? sanitize_text_field( (string) $field['max_value'] ) : '',
+							'step_value'          => isset( $field['step_value'] ) ? sanitize_text_field( (string) $field['step_value'] ) : '',
+							'max_stars'           => isset( $field['max_stars'] ) ? absint( $field['max_stars'] ) : 5,
+							'star_color'          => isset( $field['star_color'] ) && sanitize_hex_color( $field['star_color'] ) ? sanitize_hex_color( $field['star_color'] ) : '',
 							'star_inactive_color' => isset( $field['star_inactive_color'] ) && sanitize_hex_color( $field['star_inactive_color'] ) ? sanitize_hex_color( $field['star_inactive_color'] ) : '',
 							// An empty string means "not set — use the default", so it must survive
 							// as ''. Without the '' check, absint( '' ) is 0 and the clamp raises it
 							// to the MINIMUM (16), which is not the default (20) — so clearing the
 							// box silently shrinks the stars instead of restoring the default.
-							'star_size'       => isset( $field['star_size'] ) && '' !== $field['star_size'] ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : '',
-							'slider_color'    => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
+							'star_size'           => isset( $field['star_size'] ) && '' !== $field['star_size'] ? max( 16, min( 60, absint( $field['star_size'] ) ) ) : '',
+							'slider_color'        => isset( $field['slider_color'] ) && sanitize_hex_color( $field['slider_color'] ) ? sanitize_hex_color( $field['slider_color'] ) : '',
 							// Same as star_size: createField() seeds this as '', so WITHOUT the ''
 							// check every untouched slider was stored as 2 and rendered a 2px track
 							// instead of the 8px CSS default (and clearing the box could never
 							// restore it). Matches the btn_radius pattern below.
-							'slider_height'   => isset( $field['slider_height'] ) && '' !== $field['slider_height'] ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
-							'dual_handle'     => ! empty( $field['dual_handle'] ),
-							'step_title'      => isset( $field['step_title'] ) ? sanitize_text_field( (string) $field['step_title'] ) : '',
-							'next_text'       => isset( $field['next_text'] ) ? sanitize_text_field( (string) $field['next_text'] ) : 'Next',
-							'prev_text'       => isset( $field['prev_text'] ) ? sanitize_text_field( (string) $field['prev_text'] ) : 'Previous',
-							'btn_color'       => isset( $field['btn_color'] ) && sanitize_hex_color( $field['btn_color'] ) ? sanitize_hex_color( $field['btn_color'] ) : '',
-							'btn_text_color'  => isset( $field['btn_text_color'] ) && sanitize_hex_color( $field['btn_text_color'] ) ? sanitize_hex_color( $field['btn_text_color'] ) : '',
-							'btn_size'        => isset( $field['btn_size'] ) && in_array( $field['btn_size'], array( 'small', 'medium', 'large' ), true ) ? $field['btn_size'] : 'medium',
-							'btn_radius'      => isset( $field['btn_radius'] ) && '' !== $field['btn_radius'] ? max( 0, min( 50, absint( $field['btn_radius'] ) ) ) : '',
-							'progress_color'  => isset( $field['progress_color'] ) && sanitize_hex_color( $field['progress_color'] ) ? sanitize_hex_color( $field['progress_color'] ) : '',
-							'progress_style'  => isset( $field['progress_style'] ) && in_array( $field['progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $field['progress_style'] : 'bar',
-							'auto_populate_key' => isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '',
+							'slider_height'       => isset( $field['slider_height'] ) && '' !== $field['slider_height'] ? max( 2, min( 20, absint( $field['slider_height'] ) ) ) : '',
+							'dual_handle'         => ! empty( $field['dual_handle'] ),
+							'step_title'          => isset( $field['step_title'] ) ? sanitize_text_field( (string) $field['step_title'] ) : '',
+							'next_text'           => isset( $field['next_text'] ) ? sanitize_text_field( (string) $field['next_text'] ) : 'Next',
+							'prev_text'           => isset( $field['prev_text'] ) ? sanitize_text_field( (string) $field['prev_text'] ) : 'Previous',
+							'btn_color'           => isset( $field['btn_color'] ) && sanitize_hex_color( $field['btn_color'] ) ? sanitize_hex_color( $field['btn_color'] ) : '',
+							'btn_text_color'      => isset( $field['btn_text_color'] ) && sanitize_hex_color( $field['btn_text_color'] ) ? sanitize_hex_color( $field['btn_text_color'] ) : '',
+							'btn_size'            => isset( $field['btn_size'] ) && in_array( $field['btn_size'], array( 'small', 'medium', 'large' ), true ) ? $field['btn_size'] : 'medium',
+							'btn_radius'          => isset( $field['btn_radius'] ) && '' !== $field['btn_radius'] ? max( 0, min( 50, absint( $field['btn_radius'] ) ) ) : '',
+							'progress_color'      => isset( $field['progress_color'] ) && sanitize_hex_color( $field['progress_color'] ) ? sanitize_hex_color( $field['progress_color'] ) : '',
+							'progress_style'      => isset( $field['progress_style'] ) && in_array( $field['progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $field['progress_style'] : 'bar',
+							'auto_populate_key'   => isset( $field['auto_populate_key'] ) ? sanitize_key( (string) $field['auto_populate_key'] ) : '',
 						);
 
 						/**
@@ -528,196 +542,196 @@ class BoldForm_Lite_Ajax_Save {
 	 */
 	public static function normalize_form_settings( $settings_payload ) {
 		$defaults = array(
-			'submission_type'   => 'ajax',
-			'enable_ajax'       => true,
-			'enable_redirect'   => false,
-			'redirect_url'      => '',
-			'thank_you_message' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
-			'button_text'       => __( 'Submit', 'boldform-lite' ),
-			'button_alignment'  => 'left',
-			'button_layout'     => 'below',
-			'button_color'      => 'teal',
-			'field_style'       => '',
-			'field_size'        => '',
-			'field_focus_color' => '',
-			'field_border_width'=> '',
-			'field_border_radius'=> '',
-			'field_background_color' => '',
-			'field_border_color' => '',
-			'field_text_color'  => '',
-			'label_size'        => '',
-			'label_color'       => '',
-			'label_subtext_color' => '',
-			'error_color'       => '',
-			'button_size'       => '',
-			'button_border_style' => '',
-			'button_border_width' => '',
-			'button_border_radius' => '',
+			'submission_type'         => 'ajax',
+			'enable_ajax'             => true,
+			'enable_redirect'         => false,
+			'redirect_url'            => '',
+			'thank_you_message'       => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+			'button_text'             => __( 'Submit', 'boldform-lite' ),
+			'button_alignment'        => 'left',
+			'button_layout'           => 'below',
+			'button_color'            => 'teal',
+			'field_style'             => '',
+			'field_size'              => '',
+			'field_focus_color'       => '',
+			'field_border_width'      => '',
+			'field_border_radius'     => '',
+			'field_background_color'  => '',
+			'field_border_color'      => '',
+			'field_text_color'        => '',
+			'label_size'              => '',
+			'label_color'             => '',
+			'label_subtext_color'     => '',
+			'error_color'             => '',
+			'button_size'             => '',
+			'button_border_style'     => '',
+			'button_border_width'     => '',
+			'button_border_radius'    => '',
 			'button_background_color' => '',
-			'button_border_color' => '',
-			'button_text_color' => '',
-			'style'             => array(),
-			'admin_email_type'  => 'site_admin',
-			'enable_admin_email'=> true,
-			'enable_user_email' => true,
-			'admin_email'       => '',
+			'button_border_color'     => '',
+			'button_text_color'       => '',
+			'style'                   => array(),
+			'admin_email_type'        => 'site_admin',
+			'enable_admin_email'      => true,
+			'enable_user_email'       => true,
+			'admin_email'             => '',
 			// Conversational mode. Off by default so an existing form renders
 			// byte-identically until the author opts in.
-			'cv_enabled'          => false,
-			'cv_progress'         => 'bar',
-			'cv_transition'       => 'slide',
-			'cv_key_hint'         => true,
-			'cv_next_text'        => '',
-			'cv_prev_text'        => '',
-			'cv_bg'               => '',
-			'cv_question_color'   => '',
-			'cv_answer_color'     => '',
-			'cv_btn_color'        => '',
-			'cv_btn_text_color'   => '',
-			'cv_accent'           => '',
+			'cv_enabled'              => false,
+			'cv_progress'             => 'bar',
+			'cv_transition'           => 'slide',
+			'cv_key_hint'             => true,
+			'cv_next_text'            => '',
+			'cv_prev_text'            => '',
+			'cv_bg'                   => '',
+			'cv_question_color'       => '',
+			'cv_answer_color'         => '',
+			'cv_btn_color'            => '',
+			'cv_btn_text_color'       => '',
+			'cv_accent'               => '',
 			// The progress bar's track and the dots not yet reached. Form-level
 			// only, unlike the six above: the progress row lives on the wrapper,
 			// outside every screen, so a per-screen value could never apply.
-			'cv_track_color'      => '',
+			'cv_track_color'          => '',
 			// The Back button: one colour for its text AND its border, which are
 			// the same by design, plus its own background. Both fall back to the
 			// Button colour and to transparent, which is how it rendered before
 			// either existed.
-			'cv_prev_color'       => '',
-			'cv_prev_bg'          => '',
+			'cv_prev_color'           => '',
+			'cv_prev_bg'              => '',
 			// The "press Enter" hint. Form-level for the same reason as the two
 			// above — it sits in the nav row, outside every screen. Unset, it is
 			// a dimmed version of the answer colour, which is what keeps it
 			// legible on a dark screen as well as a light one.
-			'cv_hint_color'       => '',
-			'cv_nav_align'        => 'left',
+			'cv_hint_color'           => '',
+			'cv_nav_align'            => 'left',
 			// Only the inline indicators can be aligned; a bar is full width.
-			'cv_progress_align'   => 'left',
-			'cv_welcome_enabled'  => false,
-			'cv_welcome_title'    => '',
-			'cv_welcome_text'     => '',
-			'cv_welcome_btn'      => '',
-			'cv_media_hide_mobile' => true,
+			'cv_progress_align'       => 'left',
+			'cv_welcome_enabled'      => false,
+			'cv_welcome_title'        => '',
+			'cv_welcome_text'         => '',
+			'cv_welcome_btn'          => '',
+			'cv_media_hide_mobile'    => true,
 		);
 
 		if ( ! is_array( $settings_payload ) ) {
 			return $defaults;
 		}
 
-		$submission_type = isset( $settings_payload['submission_type'] ) && in_array( $settings_payload['submission_type'], array( 'ajax', 'redirect' ), true )
+		$submission_type  = isset( $settings_payload['submission_type'] ) && in_array( $settings_payload['submission_type'], array( 'ajax', 'redirect' ), true )
 			? $settings_payload['submission_type']
 			: ( ! empty( $settings_payload['enable_redirect'] ) ? 'redirect' : 'ajax' );
 		$admin_email_type = isset( $settings_payload['admin_email_type'] ) && in_array( $settings_payload['admin_email_type'], array( 'site_admin', 'custom' ), true )
 			? $settings_payload['admin_email_type']
 			: ( ! empty( $settings_payload['admin_email'] ) ? 'custom' : 'site_admin' );
-		$admin_email = isset( $settings_payload['admin_email'] ) ? sanitize_email( (string) $settings_payload['admin_email'] ) : '';
+		$admin_email      = isset( $settings_payload['admin_email'] ) ? sanitize_email( (string) $settings_payload['admin_email'] ) : '';
 
 		$redirect_type = isset( $settings_payload['redirect_type'] ) && in_array( $settings_payload['redirect_type'], array( 'page', 'custom' ), true )
 			? $settings_payload['redirect_type']
 			: ( ! empty( $settings_payload['redirect_url'] ) ? 'custom' : 'page' );
 
 		$normalized = array(
-			'submission_type'   => $submission_type,
-			'enable_ajax'       => 'ajax' === $submission_type,
-			'enable_redirect'   => 'redirect' === $submission_type,
-			'redirect_type'     => $redirect_type,
+			'submission_type'         => $submission_type,
+			'enable_ajax'             => 'ajax' === $submission_type,
+			'enable_redirect'         => 'redirect' === $submission_type,
+			'redirect_type'           => $redirect_type,
 			// Persist a redirect URL only in redirect mode; AJAX/message mode always
 			// stores an empty URL so switching back to AJAX can't leave a stale redirect.
-			'redirect_url'      => 'redirect' === $submission_type && isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
+			'redirect_url'            => 'redirect' === $submission_type && isset( $settings_payload['redirect_url'] ) && '' !== $settings_payload['redirect_url'] ? esc_url_raw( (string) $settings_payload['redirect_url'] ) : '',
 			// Authored in a rich editor and rendered as markup, so the message is filtered
 			// with the post allowlist rather than flattened to plain text. Every read path
 			// applies the same filter, so markup reaching the row another way is still
 			// filtered before it is output.
-			'thank_you_message' => isset( $settings_payload['thank_you_message'] ) ? wp_kses_post( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
-			'button_text'       => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],
-			'button_alignment'  => isset( $settings_payload['button_alignment'] ) && in_array( $settings_payload['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['button_alignment'] : $defaults['button_alignment'],
-			'button_layout'     => isset( $settings_payload['button_layout'] ) && in_array( $settings_payload['button_layout'], array( 'below', 'inline' ), true ) ? $settings_payload['button_layout'] : $defaults['button_layout'],
-			'button_icon_type'     => isset( $settings_payload['button_icon_type'] ) && in_array( $settings_payload['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $settings_payload['button_icon_type'] : 'none',
-			'button_icon_dashicon' => isset( $settings_payload['button_icon_dashicon'] ) ? sanitize_text_field( (string) $settings_payload['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $settings_payload['button_icon_svg'] ) ? esc_url_raw( (string) $settings_payload['button_icon_svg'] ) : '',
-			'button_icon_position' => isset( $settings_payload['button_icon_position'] ) && in_array( $settings_payload['button_icon_position'], array( 'left', 'right' ), true ) ? $settings_payload['button_icon_position'] : 'right',
-			'button_icon_gap'      => isset( $settings_payload['button_icon_gap'] ) ? max( 0, min( 30, absint( $settings_payload['button_icon_gap'] ) ) ) : 8,
-			'button_icon_size'     => isset( $settings_payload['button_icon_size'] ) ? max( 10, min( 60, absint( $settings_payload['button_icon_size'] ) ) ) : 18,
-			'button_icon_color'    => isset( $settings_payload['button_icon_color'] ) && sanitize_hex_color( $settings_payload['button_icon_color'] ) ? sanitize_hex_color( $settings_payload['button_icon_color'] ) : '',
-			'button_color'      => isset( $settings_payload['button_color'] ) && in_array( $settings_payload['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $settings_payload['button_color'] : $defaults['button_color'],
-			'field_style'       => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $settings_payload['field_style'] : '',
-			'field_size'        => isset( $settings_payload['field_size'] ) && in_array( $settings_payload['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $settings_payload['field_size'] : '',
-			'field_focus_color' => isset( $settings_payload['field_focus_color'] ) && in_array( $settings_payload['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $settings_payload['field_focus_color'] : '',
-			'field_border_width'=> isset( $settings_payload['field_border_width'] ) && '' !== $settings_payload['field_border_width'] ? max( 0, min( 10, absint( $settings_payload['field_border_width'] ) ) ) : '',
-			'field_border_radius'=> isset( $settings_payload['field_border_radius'] ) && '' !== $settings_payload['field_border_radius'] ? max( 0, min( 50, absint( $settings_payload['field_border_radius'] ) ) ) : '',
-			'field_background_color' => isset( $settings_payload['field_background_color'] ) && sanitize_hex_color( $settings_payload['field_background_color'] ) ? sanitize_hex_color( $settings_payload['field_background_color'] ) : '',
-			'field_border_color' => isset( $settings_payload['field_border_color'] ) && sanitize_hex_color( $settings_payload['field_border_color'] ) ? sanitize_hex_color( $settings_payload['field_border_color'] ) : '',
-			'field_text_color'  => isset( $settings_payload['field_text_color'] ) && sanitize_hex_color( $settings_payload['field_text_color'] ) ? sanitize_hex_color( $settings_payload['field_text_color'] ) : '',
-			'label_size'        => isset( $settings_payload['label_size'] ) && in_array( $settings_payload['label_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['label_size'] : '',
-			'label_color'       => isset( $settings_payload['label_color'] ) && sanitize_hex_color( $settings_payload['label_color'] ) ? sanitize_hex_color( $settings_payload['label_color'] ) : '',
-			'label_subtext_color' => isset( $settings_payload['label_subtext_color'] ) && sanitize_hex_color( $settings_payload['label_subtext_color'] ) ? sanitize_hex_color( $settings_payload['label_subtext_color'] ) : '',
-			'error_color'       => isset( $settings_payload['error_color'] ) && sanitize_hex_color( $settings_payload['error_color'] ) ? sanitize_hex_color( $settings_payload['error_color'] ) : '',
-			'button_size'       => isset( $settings_payload['button_size'] ) && in_array( $settings_payload['button_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['button_size'] : '',
-			'button_border_style' => isset( $settings_payload['button_border_style'] ) && in_array( $settings_payload['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $settings_payload['button_border_style'] : '',
-			'button_border_width' => isset( $settings_payload['button_border_width'] ) && '' !== $settings_payload['button_border_width'] ? max( 0, min( 10, absint( $settings_payload['button_border_width'] ) ) ) : '',
-			'button_border_radius' => isset( $settings_payload['button_border_radius'] ) && '' !== $settings_payload['button_border_radius'] ? max( 0, min( 50, absint( $settings_payload['button_border_radius'] ) ) ) : '',
+			'thank_you_message'       => isset( $settings_payload['thank_you_message'] ) ? wp_kses_post( (string) $settings_payload['thank_you_message'] ) : $defaults['thank_you_message'],
+			'button_text'             => isset( $settings_payload['button_text'] ) ? sanitize_text_field( (string) $settings_payload['button_text'] ) : $defaults['button_text'],
+			'button_alignment'        => isset( $settings_payload['button_alignment'] ) && in_array( $settings_payload['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['button_alignment'] : $defaults['button_alignment'],
+			'button_layout'           => isset( $settings_payload['button_layout'] ) && in_array( $settings_payload['button_layout'], array( 'below', 'inline' ), true ) ? $settings_payload['button_layout'] : $defaults['button_layout'],
+			'button_icon_type'        => isset( $settings_payload['button_icon_type'] ) && in_array( $settings_payload['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $settings_payload['button_icon_type'] : 'none',
+			'button_icon_dashicon'    => isset( $settings_payload['button_icon_dashicon'] ) ? sanitize_text_field( (string) $settings_payload['button_icon_dashicon'] ) : '',
+			'button_icon_svg'         => isset( $settings_payload['button_icon_svg'] ) ? esc_url_raw( (string) $settings_payload['button_icon_svg'] ) : '',
+			'button_icon_position'    => isset( $settings_payload['button_icon_position'] ) && in_array( $settings_payload['button_icon_position'], array( 'left', 'right' ), true ) ? $settings_payload['button_icon_position'] : 'right',
+			'button_icon_gap'         => isset( $settings_payload['button_icon_gap'] ) ? max( 0, min( 30, absint( $settings_payload['button_icon_gap'] ) ) ) : 8,
+			'button_icon_size'        => isset( $settings_payload['button_icon_size'] ) ? max( 10, min( 60, absint( $settings_payload['button_icon_size'] ) ) ) : 18,
+			'button_icon_color'       => isset( $settings_payload['button_icon_color'] ) && sanitize_hex_color( $settings_payload['button_icon_color'] ) ? sanitize_hex_color( $settings_payload['button_icon_color'] ) : '',
+			'button_color'            => isset( $settings_payload['button_color'] ) && in_array( $settings_payload['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $settings_payload['button_color'] : $defaults['button_color'],
+			'field_style'             => isset( $settings_payload['field_style'] ) && in_array( $settings_payload['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $settings_payload['field_style'] : '',
+			'field_size'              => isset( $settings_payload['field_size'] ) && in_array( $settings_payload['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $settings_payload['field_size'] : '',
+			'field_focus_color'       => isset( $settings_payload['field_focus_color'] ) && in_array( $settings_payload['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $settings_payload['field_focus_color'] : '',
+			'field_border_width'      => isset( $settings_payload['field_border_width'] ) && '' !== $settings_payload['field_border_width'] ? max( 0, min( 10, absint( $settings_payload['field_border_width'] ) ) ) : '',
+			'field_border_radius'     => isset( $settings_payload['field_border_radius'] ) && '' !== $settings_payload['field_border_radius'] ? max( 0, min( 50, absint( $settings_payload['field_border_radius'] ) ) ) : '',
+			'field_background_color'  => isset( $settings_payload['field_background_color'] ) && sanitize_hex_color( $settings_payload['field_background_color'] ) ? sanitize_hex_color( $settings_payload['field_background_color'] ) : '',
+			'field_border_color'      => isset( $settings_payload['field_border_color'] ) && sanitize_hex_color( $settings_payload['field_border_color'] ) ? sanitize_hex_color( $settings_payload['field_border_color'] ) : '',
+			'field_text_color'        => isset( $settings_payload['field_text_color'] ) && sanitize_hex_color( $settings_payload['field_text_color'] ) ? sanitize_hex_color( $settings_payload['field_text_color'] ) : '',
+			'label_size'              => isset( $settings_payload['label_size'] ) && in_array( $settings_payload['label_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['label_size'] : '',
+			'label_color'             => isset( $settings_payload['label_color'] ) && sanitize_hex_color( $settings_payload['label_color'] ) ? sanitize_hex_color( $settings_payload['label_color'] ) : '',
+			'label_subtext_color'     => isset( $settings_payload['label_subtext_color'] ) && sanitize_hex_color( $settings_payload['label_subtext_color'] ) ? sanitize_hex_color( $settings_payload['label_subtext_color'] ) : '',
+			'error_color'             => isset( $settings_payload['error_color'] ) && sanitize_hex_color( $settings_payload['error_color'] ) ? sanitize_hex_color( $settings_payload['error_color'] ) : '',
+			'button_size'             => isset( $settings_payload['button_size'] ) && in_array( $settings_payload['button_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['button_size'] : '',
+			'button_border_style'     => isset( $settings_payload['button_border_style'] ) && in_array( $settings_payload['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $settings_payload['button_border_style'] : '',
+			'button_border_width'     => isset( $settings_payload['button_border_width'] ) && '' !== $settings_payload['button_border_width'] ? max( 0, min( 10, absint( $settings_payload['button_border_width'] ) ) ) : '',
+			'button_border_radius'    => isset( $settings_payload['button_border_radius'] ) && '' !== $settings_payload['button_border_radius'] ? max( 0, min( 50, absint( $settings_payload['button_border_radius'] ) ) ) : '',
 			'button_background_color' => isset( $settings_payload['button_background_color'] ) && sanitize_hex_color( $settings_payload['button_background_color'] ) ? sanitize_hex_color( $settings_payload['button_background_color'] ) : '',
-			'button_border_color' => isset( $settings_payload['button_border_color'] ) && sanitize_hex_color( $settings_payload['button_border_color'] ) ? sanitize_hex_color( $settings_payload['button_border_color'] ) : '',
-			'button_text_color' => isset( $settings_payload['button_text_color'] ) && sanitize_hex_color( $settings_payload['button_text_color'] ) ? sanitize_hex_color( $settings_payload['button_text_color'] ) : '',
-			'style'             => self::normalize_style_settings( isset( $settings_payload['style'] ) ? $settings_payload['style'] : array() ),
-			'admin_email_type'  => $admin_email_type,
-			'enable_admin_email'=> isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
-			'enable_user_email' => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
-			'admin_email'       => 'custom' === $admin_email_type ? $admin_email : '',
+			'button_border_color'     => isset( $settings_payload['button_border_color'] ) && sanitize_hex_color( $settings_payload['button_border_color'] ) ? sanitize_hex_color( $settings_payload['button_border_color'] ) : '',
+			'button_text_color'       => isset( $settings_payload['button_text_color'] ) && sanitize_hex_color( $settings_payload['button_text_color'] ) ? sanitize_hex_color( $settings_payload['button_text_color'] ) : '',
+			'style'                   => self::normalize_style_settings( isset( $settings_payload['style'] ) ? $settings_payload['style'] : array() ),
+			'admin_email_type'        => $admin_email_type,
+			'enable_admin_email'      => isset( $settings_payload['enable_admin_email'] ) ? (bool) $settings_payload['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email'       => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'             => 'custom' === $admin_email_type ? $admin_email : '',
 			// Multi-step settings (saved by Pro's builder UI, passed through for Pro's rendering).
-			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
-			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
-			'step_progress_bg_color' => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
-			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
-			'step_btn_text_color' => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
-			'step_btn_size'       => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
-			'step_btn_radius'     => isset( $settings_payload['step_btn_radius'] ) && '' !== $settings_payload['step_btn_radius'] ? max( 0, min( 50, absint( $settings_payload['step_btn_radius'] ) ) ) : '',
-			'step_next_text'      => isset( $settings_payload['step_next_text'] ) ? sanitize_text_field( (string) $settings_payload['step_next_text'] ) : 'Next',
-			'step_prev_text'      => isset( $settings_payload['step_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['step_prev_text'] ) : 'Previous',
-			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
-			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
-			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
-			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
-			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
-			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
-			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
+			'step_progress_style'     => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
+			'step_progress_color'     => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
+			'step_progress_bg_color'  => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
+			'step_btn_color'          => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
+			'step_btn_text_color'     => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
+			'step_btn_size'           => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
+			'step_btn_radius'         => isset( $settings_payload['step_btn_radius'] ) && '' !== $settings_payload['step_btn_radius'] ? max( 0, min( 50, absint( $settings_payload['step_btn_radius'] ) ) ) : '',
+			'step_next_text'          => isset( $settings_payload['step_next_text'] ) ? sanitize_text_field( (string) $settings_payload['step_next_text'] ) : 'Next',
+			'step_prev_text'          => isset( $settings_payload['step_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['step_prev_text'] ) : 'Previous',
+			'design_theme'            => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
+			'hide_labels'             => ! empty( $settings_payload['hide_labels'] ),
+			'hide_placeholders'       => ! empty( $settings_payload['hide_placeholders'] ),
+			'dup_enabled'             => ! empty( $settings_payload['dup_enabled'] ),
+			'dup_method'              => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
+			'dup_field_id'            => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
+			'dup_message'             => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
 			// ── Conversational mode ────────────────────────────────────────────
 			// Presentation only: these never alter the stored form structure, so
 			// toggling cv_enabled off restores the ordinary render exactly. Keys
 			// persist while inactive so a form can be switched back and forth
 			// without losing its conversational design.
-			'cv_enabled'          => ! empty( $settings_payload['cv_enabled'] ),
+			'cv_enabled'              => ! empty( $settings_payload['cv_enabled'] ),
 			// sanitize_title() also lowercases and strips accents, so the stored
 			// slug always matches what the rewrite rule will receive.
-			'cv_progress'         => isset( $settings_payload['cv_progress'] ) && in_array( $settings_payload['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $settings_payload['cv_progress'] : $defaults['cv_progress'],
-			'cv_transition'       => isset( $settings_payload['cv_transition'] ) && in_array( $settings_payload['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $settings_payload['cv_transition'] : $defaults['cv_transition'],
+			'cv_progress'             => isset( $settings_payload['cv_progress'] ) && in_array( $settings_payload['cv_progress'], array( 'bar', 'dots', 'counter', 'percent', 'none' ), true ) ? $settings_payload['cv_progress'] : $defaults['cv_progress'],
+			'cv_transition'           => isset( $settings_payload['cv_transition'] ) && in_array( $settings_payload['cv_transition'], array( 'slide', 'fade', 'none' ), true ) ? $settings_payload['cv_transition'] : $defaults['cv_transition'],
 			// Absent means "not sent by this payload" — default on. Present and
 			// falsy means the author unchecked it.
-			'cv_key_hint'         => isset( $settings_payload['cv_key_hint'] ) ? ! empty( $settings_payload['cv_key_hint'] ) : $defaults['cv_key_hint'],
-			'cv_next_text'        => isset( $settings_payload['cv_next_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_next_text'] ) : '',
-			'cv_prev_text'        => isset( $settings_payload['cv_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_prev_text'] ) : '',
-			'cv_bg'               => isset( $settings_payload['cv_bg'] ) && sanitize_hex_color( $settings_payload['cv_bg'] ) ? sanitize_hex_color( $settings_payload['cv_bg'] ) : '',
-			'cv_question_color'   => isset( $settings_payload['cv_question_color'] ) && sanitize_hex_color( $settings_payload['cv_question_color'] ) ? sanitize_hex_color( $settings_payload['cv_question_color'] ) : '',
-			'cv_answer_color'     => isset( $settings_payload['cv_answer_color'] ) && sanitize_hex_color( $settings_payload['cv_answer_color'] ) ? sanitize_hex_color( $settings_payload['cv_answer_color'] ) : '',
-			'cv_btn_color'        => isset( $settings_payload['cv_btn_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_color'] ) : '',
-			'cv_btn_text_color'   => isset( $settings_payload['cv_btn_text_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) : '',
-			'cv_accent'           => isset( $settings_payload['cv_accent'] ) && sanitize_hex_color( $settings_payload['cv_accent'] ) ? sanitize_hex_color( $settings_payload['cv_accent'] ) : '',
-			'cv_track_color'      => isset( $settings_payload['cv_track_color'] ) && sanitize_hex_color( $settings_payload['cv_track_color'] ) ? sanitize_hex_color( $settings_payload['cv_track_color'] ) : '',
-			'cv_prev_color'       => isset( $settings_payload['cv_prev_color'] ) && sanitize_hex_color( $settings_payload['cv_prev_color'] ) ? sanitize_hex_color( $settings_payload['cv_prev_color'] ) : '',
-			'cv_prev_bg'          => isset( $settings_payload['cv_prev_bg'] ) && sanitize_hex_color( $settings_payload['cv_prev_bg'] ) ? sanitize_hex_color( $settings_payload['cv_prev_bg'] ) : '',
-			'cv_hint_color'       => isset( $settings_payload['cv_hint_color'] ) && sanitize_hex_color( $settings_payload['cv_hint_color'] ) ? sanitize_hex_color( $settings_payload['cv_hint_color'] ) : '',
-			'cv_nav_align'        => isset( $settings_payload['cv_nav_align'] ) && in_array( $settings_payload['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $settings_payload['cv_nav_align'] : $defaults['cv_nav_align'],
-			'cv_progress_align'   => isset( $settings_payload['cv_progress_align'] ) && in_array( $settings_payload['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['cv_progress_align'] : $defaults['cv_progress_align'],
-			'cv_welcome_enabled'  => ! empty( $settings_payload['cv_welcome_enabled'] ),
-			'cv_welcome_title'    => isset( $settings_payload['cv_welcome_title'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_title'] ) : '',
+			'cv_key_hint'             => isset( $settings_payload['cv_key_hint'] ) ? ! empty( $settings_payload['cv_key_hint'] ) : $defaults['cv_key_hint'],
+			'cv_next_text'            => isset( $settings_payload['cv_next_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_next_text'] ) : '',
+			'cv_prev_text'            => isset( $settings_payload['cv_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['cv_prev_text'] ) : '',
+			'cv_bg'                   => isset( $settings_payload['cv_bg'] ) && sanitize_hex_color( $settings_payload['cv_bg'] ) ? sanitize_hex_color( $settings_payload['cv_bg'] ) : '',
+			'cv_question_color'       => isset( $settings_payload['cv_question_color'] ) && sanitize_hex_color( $settings_payload['cv_question_color'] ) ? sanitize_hex_color( $settings_payload['cv_question_color'] ) : '',
+			'cv_answer_color'         => isset( $settings_payload['cv_answer_color'] ) && sanitize_hex_color( $settings_payload['cv_answer_color'] ) ? sanitize_hex_color( $settings_payload['cv_answer_color'] ) : '',
+			'cv_btn_color'            => isset( $settings_payload['cv_btn_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_color'] ) : '',
+			'cv_btn_text_color'       => isset( $settings_payload['cv_btn_text_color'] ) && sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['cv_btn_text_color'] ) : '',
+			'cv_accent'               => isset( $settings_payload['cv_accent'] ) && sanitize_hex_color( $settings_payload['cv_accent'] ) ? sanitize_hex_color( $settings_payload['cv_accent'] ) : '',
+			'cv_track_color'          => isset( $settings_payload['cv_track_color'] ) && sanitize_hex_color( $settings_payload['cv_track_color'] ) ? sanitize_hex_color( $settings_payload['cv_track_color'] ) : '',
+			'cv_prev_color'           => isset( $settings_payload['cv_prev_color'] ) && sanitize_hex_color( $settings_payload['cv_prev_color'] ) ? sanitize_hex_color( $settings_payload['cv_prev_color'] ) : '',
+			'cv_prev_bg'              => isset( $settings_payload['cv_prev_bg'] ) && sanitize_hex_color( $settings_payload['cv_prev_bg'] ) ? sanitize_hex_color( $settings_payload['cv_prev_bg'] ) : '',
+			'cv_hint_color'           => isset( $settings_payload['cv_hint_color'] ) && sanitize_hex_color( $settings_payload['cv_hint_color'] ) ? sanitize_hex_color( $settings_payload['cv_hint_color'] ) : '',
+			'cv_nav_align'            => isset( $settings_payload['cv_nav_align'] ) && in_array( $settings_payload['cv_nav_align'], array( 'left', 'center', 'split', 'right' ), true ) ? $settings_payload['cv_nav_align'] : $defaults['cv_nav_align'],
+			'cv_progress_align'       => isset( $settings_payload['cv_progress_align'] ) && in_array( $settings_payload['cv_progress_align'], array( 'left', 'center', 'right' ), true ) ? $settings_payload['cv_progress_align'] : $defaults['cv_progress_align'],
+			'cv_welcome_enabled'      => ! empty( $settings_payload['cv_welcome_enabled'] ),
+			'cv_welcome_title'        => isset( $settings_payload['cv_welcome_title'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_title'] ) : '',
 			// Authored as a short paragraph and rendered as markup, so it is
 			// filtered with the post allowlist rather than flattened — matching
 			// how thank_you_message is handled.
-			'cv_welcome_text'     => isset( $settings_payload['cv_welcome_text'] ) ? wp_kses_post( (string) $settings_payload['cv_welcome_text'] ) : '',
-			'cv_welcome_btn'      => isset( $settings_payload['cv_welcome_btn'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_btn'] ) : '',
+			'cv_welcome_text'         => isset( $settings_payload['cv_welcome_text'] ) ? wp_kses_post( (string) $settings_payload['cv_welcome_text'] ) : '',
+			'cv_welcome_btn'          => isset( $settings_payload['cv_welcome_btn'] ) ? sanitize_text_field( (string) $settings_payload['cv_welcome_btn'] ) : '',
 			// Default ON: a decorative image is the first thing worth dropping on
 			// a phone, both for layout and for bandwidth.
-			'cv_media_hide_mobile' => isset( $settings_payload['cv_media_hide_mobile'] ) ? ! empty( $settings_payload['cv_media_hide_mobile'] ) : $defaults['cv_media_hide_mobile'],
+			'cv_media_hide_mobile'    => isset( $settings_payload['cv_media_hide_mobile'] ) ? ! empty( $settings_payload['cv_media_hide_mobile'] ) : $defaults['cv_media_hide_mobile'],
 		);
 
 		/**

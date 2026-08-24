@@ -129,8 +129,8 @@ class BoldForm_Lite_Form_Handler {
 					// runs after that point and can replace the message with anything.
 					// Filtering at the boundary keeps that filter from becoming a way to
 					// put script on the page. The error branch below is printed as text.
-					'message'      => wp_kses_post( (string) $result['message'] ),
-					'redirectUrl'  => $result['redirect_url'],
+					'message'     => wp_kses_post( (string) $result['message'] ),
+					'redirectUrl' => $result['redirect_url'],
 				)
 			);
 		}
@@ -151,7 +151,7 @@ class BoldForm_Lite_Form_Handler {
 	 * @param bool                 $is_ajax Whether the request is AJAX.
 	 * @return array<string, mixed>
 	 */
-	public function process_submission( $request, $is_ajax = false ) {
+	public function process_submission( $request, $is_ajax = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- part of the public method's calling contract (ajax_submit_form() vs. the non-AJAX POST fallback pass different values); kept for callers/extensions to rely on.
 		$form_id = isset( $request['boldform_form_id'] ) ? absint( $request['boldform_form_id'] ) : 0;
 		$nonce   = isset( $request['boldform_nonce'] ) ? sanitize_text_field( wp_unslash( $request['boldform_nonce'] ) ) : '';
 
@@ -513,8 +513,8 @@ class BoldForm_Lite_Form_Handler {
 
 		global $wpdb;
 
-		$method     = isset( $settings['dup_method'] ) ? (string) $settings['dup_method'] : 'email';
-		$table      = esc_sql( $this->plugin->get_entries_table_name() );
+		$method = isset( $settings['dup_method'] ) ? (string) $settings['dup_method'] : 'email';
+		$table  = esc_sql( $this->plugin->get_entries_table_name() );
 
 		switch ( $method ) {
 
@@ -658,17 +658,28 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		switch ( $operator ) {
-			case 'is':           return $raw === $cond_val;
-			case 'is_not':       return $raw !== $cond_val;
-			case 'contains':     return false !== stripos( $raw, $cond_val );
-			case 'not_contains': return false === stripos( $raw, $cond_val );
-			case 'starts_with':  return 0 === stripos( $raw, $cond_val );
-			case 'ends_with':    return '' !== $cond_val && strlen( $raw ) >= strlen( $cond_val ) && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
-			case 'greater_than': return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw > (float) $cond_val;
-			case 'less_than':    return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw < (float) $cond_val;
-			case 'not_empty':    return '' !== $raw;
-			case 'empty':        return '' === $raw;
-			default:             return false;
+			case 'is':
+				return $raw === $cond_val;
+			case 'is_not':
+				return $raw !== $cond_val;
+			case 'contains':
+				return false !== stripos( $raw, $cond_val );
+			case 'not_contains':
+				return false === stripos( $raw, $cond_val );
+			case 'starts_with':
+				return 0 === stripos( $raw, $cond_val );
+			case 'ends_with':
+				return '' !== $cond_val && strlen( $raw ) >= strlen( $cond_val ) && ( substr_compare( strtolower( $raw ), strtolower( $cond_val ), -strlen( $cond_val ) ) === 0 );
+			case 'greater_than':
+				return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw > (float) $cond_val;
+			case 'less_than':
+				return is_numeric( $raw ) && is_numeric( $cond_val ) && (float) $raw < (float) $cond_val;
+			case 'not_empty':
+				return '' !== $raw;
+			case 'empty':
+				return '' === $raw;
+			default:
+				return false;
 		}
 	}
 
@@ -696,9 +707,12 @@ class BoldForm_Lite_Form_Handler {
 				$conditions = $cond['conditions'];
 				$field_key  = 'boldform_' . sanitize_key( (string) ( $field['id'] ?? '' ) );
 
-				$results = array_map( function ( $c ) use ( $request ) {
-					return $this->evaluate_condition( $c, $request );
-				}, $conditions );
+				$results = array_map(
+					function ( $c ) use ( $request ) {
+						return $this->evaluate_condition( $c, $request );
+					},
+					$conditions
+				);
 
 				$condition_met = 'OR' === $logic
 					? in_array( true, $results, true )
@@ -710,8 +724,8 @@ class BoldForm_Lite_Form_Handler {
 				}
 			} elseif ( ! empty( $cond['field_id'] ) ) {
 				// Legacy single-rule fallback.
-				$match  = $this->evaluate_condition( $cond, $request );
-				$action = isset( $cond['action'] ) ? (string) $cond['action'] : 'show';
+				$match     = $this->evaluate_condition( $cond, $request );
+				$action    = isset( $cond['action'] ) ? (string) $cond['action'] : 'show';
 				$field_key = 'boldform_' . sanitize_key( (string) ( $field['id'] ?? '' ) );
 				if ( ( 'show' === $action && ! $match ) || ( 'hide' === $action && $match ) ) {
 					unset( $request[ $field_key ] );
@@ -729,38 +743,38 @@ class BoldForm_Lite_Form_Handler {
 	 */
 	private function extract_settings_from_record( $form_record ) {
 		$defaults = array(
-			'submission_type'   => 'ajax',
-			'enable_ajax'       => true,
-			'enable_redirect'   => false,
-			'redirect_url'      => '',
-			'thank_you_message' => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
-			'button_text'       => __( 'Submit', 'boldform-lite' ),
-			'button_alignment'  => 'left',
-			'button_layout'     => 'below',
-			'button_color'      => 'teal',
-			'field_style'            => '',
-			'field_size'             => '',
-			'field_focus_color'      => '',
-			'field_border_width'     => '',
-			'field_border_radius'    => '',
-			'field_background_color' => '',
-			'field_border_color'     => '',
-			'field_text_color'       => '',
-			'label_size'             => '',
-			'label_color'            => '',
-			'label_subtext_color' => '',
-			'error_color'          => '',
-			'button_size'          => '',
-			'button_border_style' => '',
-			'button_border_width' => '',
-			'button_border_radius' => '',
+			'submission_type'         => 'ajax',
+			'enable_ajax'             => true,
+			'enable_redirect'         => false,
+			'redirect_url'            => '',
+			'thank_you_message'       => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+			'button_text'             => __( 'Submit', 'boldform-lite' ),
+			'button_alignment'        => 'left',
+			'button_layout'           => 'below',
+			'button_color'            => 'teal',
+			'field_style'             => '',
+			'field_size'              => '',
+			'field_focus_color'       => '',
+			'field_border_width'      => '',
+			'field_border_radius'     => '',
+			'field_background_color'  => '',
+			'field_border_color'      => '',
+			'field_text_color'        => '',
+			'label_size'              => '',
+			'label_color'             => '',
+			'label_subtext_color'     => '',
+			'error_color'             => '',
+			'button_size'             => '',
+			'button_border_style'     => '',
+			'button_border_width'     => '',
+			'button_border_radius'    => '',
 			'button_background_color' => '',
-			'button_border_color' => '',
-			'button_text_color' => '',
-			'admin_email_type'   => 'site_admin',
-			'enable_admin_email' => true,
-			'enable_user_email' => true,
-			'admin_email'        => '',
+			'button_border_color'     => '',
+			'button_text_color'       => '',
+			'admin_email_type'        => 'site_admin',
+			'enable_admin_email'      => true,
+			'enable_user_email'       => true,
+			'admin_email'             => '',
 		);
 
 		if ( ! $form_record || empty( $form_record->settings_json ) ) {
@@ -786,63 +800,63 @@ class BoldForm_Lite_Form_Handler {
 			: ( ! empty( $decoded['redirect_url'] ) ? 'custom' : 'page' );
 
 		return array(
-			'submission_type'   => $submission_type,
-			'enable_ajax'       => 'ajax' === $submission_type,
-			'enable_redirect'   => 'redirect' === $submission_type,
-			'redirect_type'     => $redirect_type,
-			'redirect_url'      => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : '',
+			'submission_type'         => $submission_type,
+			'enable_ajax'             => 'ajax' === $submission_type,
+			'enable_redirect'         => 'redirect' === $submission_type,
+			'redirect_type'           => $redirect_type,
+			'redirect_url'            => isset( $decoded['redirect_url'] ) ? esc_url_raw( (string) $decoded['redirect_url'] ) : '',
 			// Rich markup: filtered with the post allowlist, matching the save path. This is
 			// the filter the AJAX success message is rendered from, so it runs on every
 			// submission rather than trusting what the row happens to hold.
-			'thank_you_message' => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
-			'button_text'       => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
-			'button_alignment'  => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
-			'button_layout'     => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : $defaults['button_layout'],
-			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
-			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
-			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
-			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
-			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
-			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
-			'button_color'      => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
-			'field_style'            => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
-			'field_size'             => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
-			'field_focus_color'      => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
-			'field_border_width'     => isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
-			'field_border_radius'    => isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
-			'field_background_color' => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
-			'field_border_color'     => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
-			'field_text_color'       => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
-			'label_size'             => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
-			'label_color'            => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
-			'label_subtext_color' => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
-			'error_color'          => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
-			'button_size'          => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
-			'button_border_style' => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
-			'button_border_width' => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
-			'button_border_radius' => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
+			'thank_you_message'       => isset( $decoded['thank_you_message'] ) ? wp_kses_post( (string) $decoded['thank_you_message'] ) : $defaults['thank_you_message'],
+			'button_text'             => isset( $decoded['button_text'] ) ? sanitize_text_field( (string) $decoded['button_text'] ) : $defaults['button_text'],
+			'button_alignment'        => isset( $decoded['button_alignment'] ) && in_array( $decoded['button_alignment'], array( 'left', 'center', 'right' ), true ) ? $decoded['button_alignment'] : $defaults['button_alignment'],
+			'button_layout'           => isset( $decoded['button_layout'] ) && in_array( $decoded['button_layout'], array( 'below', 'inline' ), true ) ? $decoded['button_layout'] : $defaults['button_layout'],
+			'button_icon_type'        => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon'    => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'         => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
+			'button_icon_position'    => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'         => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'        => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'       => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
+			'button_color'            => isset( $decoded['button_color'] ) && in_array( $decoded['button_color'], array( 'teal', 'blue', 'green', 'red', 'dark' ), true ) ? $decoded['button_color'] : $defaults['button_color'],
+			'field_style'             => isset( $decoded['field_style'] ) && in_array( $decoded['field_style'], array( 'solid', 'dashed', 'none', 'outline', 'soft', 'minimal' ), true ) ? $decoded['field_style'] : '',
+			'field_size'              => isset( $decoded['field_size'] ) && in_array( $decoded['field_size'], array( 'small', 'medium', 'large', 'compact', 'comfortable', 'spacious' ), true ) ? $decoded['field_size'] : '',
+			'field_focus_color'       => isset( $decoded['field_focus_color'] ) && in_array( $decoded['field_focus_color'], array( 'teal', 'blue', 'green', 'dark' ), true ) ? $decoded['field_focus_color'] : '',
+			'field_border_width'      => isset( $decoded['field_border_width'] ) && '' !== $decoded['field_border_width'] ? max( 0, min( 10, absint( $decoded['field_border_width'] ) ) ) : '',
+			'field_border_radius'     => isset( $decoded['field_border_radius'] ) && '' !== $decoded['field_border_radius'] ? max( 0, min( 50, absint( $decoded['field_border_radius'] ) ) ) : '',
+			'field_background_color'  => isset( $decoded['field_background_color'] ) && sanitize_hex_color( $decoded['field_background_color'] ) ? sanitize_hex_color( $decoded['field_background_color'] ) : '',
+			'field_border_color'      => isset( $decoded['field_border_color'] ) && sanitize_hex_color( $decoded['field_border_color'] ) ? sanitize_hex_color( $decoded['field_border_color'] ) : '',
+			'field_text_color'        => isset( $decoded['field_text_color'] ) && sanitize_hex_color( $decoded['field_text_color'] ) ? sanitize_hex_color( $decoded['field_text_color'] ) : '',
+			'label_size'              => isset( $decoded['label_size'] ) && in_array( $decoded['label_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['label_size'] : '',
+			'label_color'             => isset( $decoded['label_color'] ) && sanitize_hex_color( $decoded['label_color'] ) ? sanitize_hex_color( $decoded['label_color'] ) : '',
+			'label_subtext_color'     => isset( $decoded['label_subtext_color'] ) && sanitize_hex_color( $decoded['label_subtext_color'] ) ? sanitize_hex_color( $decoded['label_subtext_color'] ) : '',
+			'error_color'             => isset( $decoded['error_color'] ) && sanitize_hex_color( $decoded['error_color'] ) ? sanitize_hex_color( $decoded['error_color'] ) : '',
+			'button_size'             => isset( $decoded['button_size'] ) && in_array( $decoded['button_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['button_size'] : '',
+			'button_border_style'     => isset( $decoded['button_border_style'] ) && in_array( $decoded['button_border_style'], array( 'solid', 'dashed', 'none' ), true ) ? $decoded['button_border_style'] : '',
+			'button_border_width'     => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
+			'button_border_radius'    => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
-			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
-			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
-			'admin_email_type'   => $admin_email_type,
-			'enable_admin_email' => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
-			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
-			'admin_email'        => $admin_email,
+			'button_border_color'     => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
+			'button_text_color'       => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'admin_email_type'        => $admin_email_type,
+			'enable_admin_email'      => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email'       => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'             => $admin_email,
 			// Integrations — assigned connections + field mapping (saved by boldform_form_settings_extra filter).
-			'assigned_connections' => isset( $decoded['assigned_connections'] ) && is_array( $decoded['assigned_connections'] ) ? $decoded['assigned_connections'] : array(),
-			'connection_field_map' => isset( $decoded['connection_field_map'] ) && is_array( $decoded['connection_field_map'] ) ? $decoded['connection_field_map'] : array(),
+			'assigned_connections'    => isset( $decoded['assigned_connections'] ) && is_array( $decoded['assigned_connections'] ) ? $decoded['assigned_connections'] : array(),
+			'connection_field_map'    => isset( $decoded['connection_field_map'] ) && is_array( $decoded['connection_field_map'] ) ? $decoded['connection_field_map'] : array(),
 			// Duplicate-submission prevention (configured in the builder, enforced in check_duplicate_entry()).
-			'dup_enabled'  => ! empty( $decoded['dup_enabled'] ),
-			'dup_method'   => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
-			'dup_field_id' => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
-			'dup_message'  => isset( $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
+			'dup_enabled'             => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'              => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id'            => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'             => isset( $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
 			// Pro: Scheduling.
-			'schedule_open_date'      => isset( $decoded['schedule_open_date'] )      ? sanitize_text_field( (string) $decoded['schedule_open_date'] )  : '',
-			'schedule_close_date'     => isset( $decoded['schedule_close_date'] )     ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
-			'schedule_tz'             => isset( $decoded['schedule_tz'] )             ? sanitize_text_field( (string) $decoded['schedule_tz'] )         : '',
-			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] )     ? wp_kses_post( (string) $decoded['schedule_closed_msg'] )        : '',
-			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] )     ? wp_kses_post( (string) $decoded['schedule_before_msg'] )        : '',
+			'schedule_open_date'      => isset( $decoded['schedule_open_date'] ) ? sanitize_text_field( (string) $decoded['schedule_open_date'] ) : '',
+			'schedule_close_date'     => isset( $decoded['schedule_close_date'] ) ? sanitize_text_field( (string) $decoded['schedule_close_date'] ) : '',
+			'schedule_tz'             => isset( $decoded['schedule_tz'] ) ? sanitize_text_field( (string) $decoded['schedule_tz'] ) : '',
+			'schedule_closed_msg'     => isset( $decoded['schedule_closed_msg'] ) ? wp_kses_post( (string) $decoded['schedule_closed_msg'] ) : '',
+			'schedule_before_msg'     => isset( $decoded['schedule_before_msg'] ) ? wp_kses_post( (string) $decoded['schedule_before_msg'] ) : '',
 			'schedule_show_countdown' => ! empty( $decoded['schedule_show_countdown'] ),
 		);
 	}
@@ -974,8 +988,8 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		list( $left_number, $right_number ) = array_map( 'intval', explode( '+', $challenge ) );
-		$expected_answer = $left_number + $right_number;
-		$expected_hash   = wp_hash( $challenge . '|' . $expected_answer );
+		$expected_answer                    = $left_number + $right_number;
+		$expected_hash                      = wp_hash( $challenge . '|' . $expected_answer );
 
 		if ( ! hash_equals( $expected_hash, $hash ) || $answer !== $expected_answer ) {
 			return array(
@@ -1079,9 +1093,9 @@ class BoldForm_Lite_Form_Handler {
 				continue;
 			}
 
-			$raw      = isset( $request[ $key ] ) ? wp_unslash( $request[ $key ] ) : null;
-			$options  = isset( $field['options'] ) && is_array( $field['options'] ) ? $this->normalize_options( $field['options'] ) : array();
-			$value    = $this->sanitize_field_value( $type, $raw );
+			$raw     = isset( $request[ $key ] ) ? wp_unslash( $request[ $key ] ) : null;
+			$options = isset( $field['options'] ) && is_array( $field['options'] ) ? $this->normalize_options( $field['options'] ) : array();
+			$value   = $this->sanitize_field_value( $type, $raw );
 
 			// A provided-but-malformed email would otherwise be blanked by sanitize_email()
 			// and reported as "required" (or silently saved empty). Flag it as invalid instead.
@@ -1125,8 +1139,8 @@ class BoldForm_Lite_Form_Handler {
 				if ( $custom_error ) {
 					$errors[ $field_id ] = $custom_error;
 				} else {
-					$global   = get_option( 'boldform_lite_settings', array() );
-					$type_msg = ! empty( $global[ 'required_msg_' . $type ] ) ? $global[ 'required_msg_' . $type ] : '';
+					$global              = get_option( 'boldform_lite_settings', array() );
+					$type_msg            = ! empty( $global[ 'required_msg_' . $type ] ) ? $global[ 'required_msg_' . $type ] : '';
 					$errors[ $field_id ] = $type_msg ? $type_msg : sprintf(
 						/* translators: %s: field label */
 						__( '%s is required.', 'boldform-lite' ),
@@ -1446,8 +1460,8 @@ class BoldForm_Lite_Form_Handler {
 		// regardless of the field's allowed types. SVGs can carry executable scripts and
 		// HTML/PHP files can host stored XSS or code when served inline, so they must never
 		// be accepted from untrusted submitters.
-		$submitted_ext   = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
-		$blocked_exts    = array( 'svg', 'svgz', 'htm', 'html', 'xhtml', 'shtml', 'xht', 'phtml', 'php', 'php3', 'php4', 'php5', 'phps' );
+		$submitted_ext = strtolower( pathinfo( sanitize_file_name( (string) $file['name'] ), PATHINFO_EXTENSION ) );
+		$blocked_exts  = array( 'svg', 'svgz', 'htm', 'html', 'xhtml', 'shtml', 'xht', 'phtml', 'php', 'php3', 'php4', 'php5', 'phps' );
 		if ( in_array( $submitted_ext, $blocked_exts, true ) ) {
 			return array(
 				'error' => sprintf(
@@ -1635,13 +1649,13 @@ class BoldForm_Lite_Form_Handler {
 		}
 
 		$data = array(
-			'form_id'          => $form_id,
-			'entry_data_json'  => $entry_data_json,
-			'submission_key'   => wp_hash( uniqid( 'boldform_', true ) ),
-			'user_id'          => get_current_user_id(),
-			'user_ip'          => $this->sanitize_ip_address( $user_ip ),
-			'user_agent'       => $user_agent,
-			'status'           => $status,
+			'form_id'         => $form_id,
+			'entry_data_json' => $entry_data_json,
+			'submission_key'  => wp_hash( uniqid( 'boldform_', true ) ),
+			'user_id'         => get_current_user_id(),
+			'user_ip'         => $this->sanitize_ip_address( $user_ip ),
+			'user_agent'      => $user_agent,
+			'status'          => $status,
 		);
 
 		$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -1656,9 +1670,10 @@ class BoldForm_Lite_Form_Handler {
 	/**
 	 * Builds a normalized operation result.
 	 *
-	 * @param bool                       $success Whether the operation succeeded.
-	 * @param string                     $message Result message.
-	 * @param array<string, string>      $errors  Validation errors.
+	 * @param bool                  $success      Whether the operation succeeded.
+	 * @param string                $message      Result message.
+	 * @param array<string, string> $errors       Validation errors.
+	 * @param string                $redirect_url Redirect URL, if any.
 	 * @return array<string, mixed>
 	 */
 	private function build_result( $success, $message, $errors, $redirect_url = '' ) {

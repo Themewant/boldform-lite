@@ -180,10 +180,12 @@ class BoldForm_Lite_Privacy {
 		// deleting matched rows shrinks the table, which would make OFFSET paging skip
 		// rows. An id cursor is unaffected by deletions, so no entry is missed. All
 		// matches are erased in this single invocation, so we always report done = true.
-		$last_id = 0;
+		$last_id     = 0;
+		$entry_count = 0;
 
 		do {
-			$entries = $this->get_entries_after( $last_id );
+			$entries     = $this->get_entries_after( $last_id );
+			$entry_count = count( $entries );
 
 			foreach ( $entries as $entry ) {
 				$last_id = (int) $entry->id;
@@ -201,7 +203,7 @@ class BoldForm_Lite_Privacy {
 				);
 
 				if ( false !== $deleted && $deleted > 0 ) {
-					$items_removed++;
+					++$items_removed;
 				} else {
 					$items_retained = true;
 					$messages[]     = sprintf(
@@ -211,7 +213,7 @@ class BoldForm_Lite_Privacy {
 					);
 				}
 			}
-		} while ( count( $entries ) === self::PER_PAGE );
+		} while ( self::PER_PAGE === $entry_count );
 
 		return array(
 			'items_removed'  => $items_removed,

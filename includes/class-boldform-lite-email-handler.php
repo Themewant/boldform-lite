@@ -33,10 +33,10 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Sends enabled notifications for a saved entry.
 	 *
-	 * @param object                           $form_record Form record.
-	 * @param array<string, mixed>             $settings Form settings.
+	 * @param object                             $form_record Form record.
+	 * @param array<string, mixed>               $settings Form settings.
 	 * @param array<string, array<string,mixed>> $entry_data Sanitized entry data.
-	 * @param int                              $entry_id ID of the saved entry (0 if unknown).
+	 * @param int                                $entry_id ID of the saved entry (0 if unknown).
 	 * @return void
 	 */
 	public function send_notifications( $form_record, $settings, $entry_data, $entry_id = 0 ) {
@@ -318,16 +318,16 @@ class BoldForm_Lite_Email_Handler {
 	 * an array to string yields "Array" — which validates to nothing, so the routing
 	 * would be dropped in silence with a PHP warning on the public submission path.
 	 *
-	 * @param string|array<int, string>|mixed $list One address, several separated by
-	 *                                              commas, or an array of addresses.
+	 * @param string|array<int, string>|mixed $address_list One address, several separated by
+	 *                                                      commas, or an array of addresses.
 	 * @return array<int, string> Valid addresses, possibly empty.
 	 */
-	private static function valid_addresses( $list ) {
+	private static function valid_addresses( $address_list ) {
 		$valid = array();
 
-		$candidates = is_array( $list )
-			? $list
-			: explode( ',', is_scalar( $list ) ? (string) $list : '' );
+		$candidates = is_array( $address_list )
+			? $address_list
+			: explode( ',', is_scalar( $address_list ) ? (string) $address_list : '' );
 
 		foreach ( $candidates as $candidate ) {
 			$candidate = is_scalar( $candidate ) ? trim( (string) $candidate ) : '';
@@ -510,9 +510,9 @@ class BoldForm_Lite_Email_Handler {
 	/**
 	 * Builds a simple HTML email template from entry data.
 	 *
-	 * @param string                              $title Form title.
-	 * @param array<string, array<string,mixed>>  $entry_data Entry data.
-	 * @param string                              $intro Intro text.
+	 * @param string                             $title Form title.
+	 * @param array<string, array<string,mixed>> $entry_data Entry data.
+	 * @param string                             $intro Intro text.
 	 * @return string
 	 */
 	private function build_email_template( $title, $entry_data, $intro ) {
@@ -544,5 +544,4 @@ class BoldForm_Lite_Email_Handler {
 			. '<table style="border-collapse:collapse;width:100%;max-width:680px;">' . $rows . '</table>'
 			. '</div>';
 	}
-
 }

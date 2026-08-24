@@ -85,8 +85,8 @@ function boldform_lite_migrate_settings_autoload() {
 add_action( 'admin_init', 'boldform_lite_migrate_settings_autoload' );
 
 // Multisite: create tables for each new subsite when the plugin is network-active.
-add_action( 'wp_initialize_site', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // WP 5.1+
-add_action( 'wpmu_new_blog',      array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // legacy fallback
+add_action( 'wp_initialize_site', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // WP 5.1+.
+add_action( 'wpmu_new_blog', array( 'BoldForm_Lite_Activator', 'on_new_site' ) ); // legacy fallback.
 
 /**
  * Starts the plugin.

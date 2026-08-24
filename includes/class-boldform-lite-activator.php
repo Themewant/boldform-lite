@@ -27,7 +27,12 @@ class BoldForm_Lite_Activator {
 	public static function activate( $network_wide = false ) {
 		if ( is_multisite() && $network_wide ) {
 			// Network activation — create tables for every existing subsite.
-			$site_ids = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
+			$site_ids = get_sites(
+				array(
+					'fields' => 'ids',
+					'number' => 0,
+				)
+			);
 			foreach ( $site_ids as $site_id ) {
 				switch_to_blog( $site_id );
 				self::create_tables();

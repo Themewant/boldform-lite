@@ -28,7 +28,7 @@ class BoldForm_Lite_Integrations_Page {
 	private $plugin;
 
 	/**
-	 * wp_options key for global connections.
+	 * The wp_options key for global connections.
 	 */
 	const OPTION_KEY = 'boldform_connections';
 
@@ -59,13 +59,13 @@ class BoldForm_Lite_Integrations_Page {
 	 * @return void
 	 */
 	public function init(): void {
-		add_action( 'admin_menu',                              array( $this, 'register_menu' ), 20 );
-		add_action( 'wp_ajax_boldform_connection_save',        array( $this, 'ajax_save_connection' ) );
-		add_action( 'wp_ajax_boldform_connection_delete',      array( $this, 'ajax_delete_connection' ) );
-		add_action( 'wp_ajax_boldform_connection_test',        array( $this, 'ajax_test_connection' ) );
-		add_action( 'wp_ajax_boldform_connection_toggle',      array( $this, 'ajax_toggle_connection' ) );
+		add_action( 'admin_menu', array( $this, 'register_menu' ), 20 );
+		add_action( 'wp_ajax_boldform_connection_save', array( $this, 'ajax_save_connection' ) );
+		add_action( 'wp_ajax_boldform_connection_delete', array( $this, 'ajax_delete_connection' ) );
+		add_action( 'wp_ajax_boldform_connection_test', array( $this, 'ajax_test_connection' ) );
+		add_action( 'wp_ajax_boldform_connection_toggle', array( $this, 'ajax_toggle_connection' ) );
 		add_action( 'wp_ajax_boldform_connection_fetch_lists', array( $this, 'ajax_fetch_lists' ) );
-		add_action( 'admin_enqueue_scripts',                   array( $this, 'enqueue_assets' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
 
 	// =====================================================================
@@ -99,7 +99,7 @@ class BoldForm_Lite_Integrations_Page {
 			add_action(
 				'load-' . $hook,
 				function () {
-					$GLOBALS['submenu_file'] = 'boldform-lite-integrations';
+					$GLOBALS['submenu_file'] = 'boldform-lite-integrations'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- see BoldForm_Lite_Admin::force_submenu_highlight().
 				}
 			);
 		}
@@ -178,23 +178,23 @@ class BoldForm_Lite_Integrations_Page {
 			array(
 				'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 				'nonce'       => wp_create_nonce( 'boldform_integration_nonce' ),
-				'connections' => (object) $connections, // keyed by conn_id; api_key stripped
+				'connections' => (object) $connections, // keyed by conn_id; api_key stripped.
 				'typeDefs'    => array_values( $this->get_type_defs() ),
 				'i18n'        => array(
-					'save'           => __( 'Save', 'boldform-lite' ),
-					'saving'         => __( 'Saving…', 'boldform-lite' ),
-					'test'           => __( 'Test Connection', 'boldform-lite' ),
-					'testing'        => __( 'Testing…', 'boldform-lite' ),
-					'delete'         => __( 'Delete', 'boldform-lite' ),
-					'confirmDelete'  => __( 'Remove this connection and its settings?', 'boldform-lite' ),
-					'selectList'     => __( '— select —', 'boldform-lite' ),
-					'active'         => __( 'Active', 'boldform-lite' ),
-					'inactive'       => __( 'Inactive', 'boldform-lite' ),
-					'testOk'         => __( 'Connection successful!', 'boldform-lite' ),
-					'testFail'       => __( 'Connection failed: ', 'boldform-lite' ),
-					'saved'          => __( 'Saved.', 'boldform-lite' ),
-					'errRequired'    => __( 'API Key is required.', 'boldform-lite' ),
-					'keepKey'        => __( 'Saved — leave blank to keep current key', 'boldform-lite' ),
+					'save'          => __( 'Save', 'boldform-lite' ),
+					'saving'        => __( 'Saving…', 'boldform-lite' ),
+					'test'          => __( 'Test Connection', 'boldform-lite' ),
+					'testing'       => __( 'Testing…', 'boldform-lite' ),
+					'delete'        => __( 'Delete', 'boldform-lite' ),
+					'confirmDelete' => __( 'Remove this connection and its settings?', 'boldform-lite' ),
+					'selectList'    => __( '— select —', 'boldform-lite' ),
+					'active'        => __( 'Active', 'boldform-lite' ),
+					'inactive'      => __( 'Inactive', 'boldform-lite' ),
+					'testOk'        => __( 'Connection successful!', 'boldform-lite' ),
+					'testFail'      => __( 'Connection failed: ', 'boldform-lite' ),
+					'saved'         => __( 'Saved.', 'boldform-lite' ),
+					'errRequired'   => __( 'API Key is required.', 'boldform-lite' ),
+					'keepKey'       => __( 'Saved — leave blank to keep current key', 'boldform-lite' ),
 				),
 			)
 		);
@@ -240,9 +240,9 @@ class BoldForm_Lite_Integrations_Page {
 					'storage'      => __( 'Storage', 'boldform-lite' ),
 				);
 				foreach ( $tabs as $tab_key => $tab_label ) :
-				?>
+					?>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-integrations&tab=' . $tab_key ) ); ?>"
-					   class="boldform-int-tab<?php echo $tab_key === $active_tab ? ' is-active' : ''; ?>">
+						class="boldform-int-tab<?php echo $tab_key === $active_tab ? ' is-active' : ''; ?>">
 						<?php echo esc_html( $tab_label ); ?>
 					</a>
 				<?php endforeach; ?>
@@ -250,7 +250,8 @@ class BoldForm_Lite_Integrations_Page {
 
 			<!-- Integration grid -->
 			<div class="bf-int-grid">
-				<?php foreach ( $type_defs as $type => $def ) :
+				<?php
+				foreach ( $type_defs as $type => $def ) :
 					if ( 'all' !== $active_tab && ( $def['category'] ?? 'newsletter' ) !== $active_tab ) {
 						continue;
 					}
@@ -294,10 +295,13 @@ class BoldForm_Lite_Integrations_Page {
 					}
 
 					$is_on = $conn && 'active' === ( $conn['status'] ?? 'inactive' );
-				?>
+					?>
 					<div class="bf-int-card<?php echo $is_on ? ' is-on' : ''; ?><?php echo $is_locked ? ' is-locked' : ''; ?>"
-						 <?php if ( ! $is_static ) : ?>data-type="<?php echo esc_attr( $type ); ?>" data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"<?php endif; ?>
-						 style="--bf-svc-color:<?php echo esc_attr( $def['color'] ); ?>">
+						<?php
+						if ( ! $is_static ) :
+							?>
+							data-type="<?php echo esc_attr( $type ); ?>" data-conn-id="<?php echo esc_attr( $conn ? $conn['id'] : '' ); ?>"<?php endif; ?>
+						style="--bf-svc-color:<?php echo esc_attr( $def['color'] ); ?>">
 
 						<div class="bf-int-card__icon" style="background:<?php echo esc_attr( $def['color'] ); ?>">
 							<span class="dashicons <?php echo esc_attr( $def['icon'] ); ?>" style="color:<?php echo esc_attr( $def['icon_color'] ); ?>"></span>
@@ -366,13 +370,49 @@ class BoldForm_Lite_Integrations_Page {
 	 */
 	private function render_topbar(): void {
 		$nav_items = array(
-			array( 'slug' => 'boldform-lite',              'label' => __( 'Forms', 'boldform-lite' ),        'icon' => 'dashicons-feedback', 'brand' => true, 'url' => admin_url( 'admin.php?page=boldform-lite' ) ),
-			array( 'slug' => 'boldform-lite-entries',       'label' => __( 'Entries', 'boldform-lite' ),      'icon' => 'dashicons-email-alt',     'url' => admin_url( 'admin.php?page=boldform-lite-entries' ) ),
-			array( 'slug' => 'boldform-lite-reports',       'label' => __( 'Reports', 'boldform-lite' ),      'icon' => 'dashicons-chart-bar',     'url' => admin_url( 'admin.php?page=boldform-lite-reports' ) ),
-			array( 'slug' => 'boldform-lite-integrations',  'label' => __( 'Integrations', 'boldform-lite' ), 'icon' => 'dashicons-randomize',     'url' => admin_url( 'admin.php?page=boldform-lite-integrations' ) ),
-			array( 'slug' => 'boldform-lite-settings',      'label' => __( 'Settings', 'boldform-lite' ),     'icon' => 'dashicons-admin-generic', 'url' => admin_url( 'admin.php?page=boldform-lite-settings' ) ),
-			array( 'slug' => 'boldform-lite-settings#smtp',  'label' => __( 'SMTP', 'boldform-lite' ),        'icon' => 'dashicons-email',         'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ) ),
-			array( 'slug' => 'boldform-lite-settings#tools', 'label' => __( 'Tools', 'boldform-lite' ),       'icon' => 'dashicons-admin-tools',   'url' => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ) ),
+			array(
+				'slug'  => 'boldform-lite',
+				'label' => __( 'Forms', 'boldform-lite' ),
+				'icon'  => 'dashicons-feedback',
+				'brand' => true,
+				'url'   => admin_url( 'admin.php?page=boldform-lite' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-entries',
+				'label' => __( 'Entries', 'boldform-lite' ),
+				'icon'  => 'dashicons-email-alt',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-entries' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-reports',
+				'label' => __( 'Reports', 'boldform-lite' ),
+				'icon'  => 'dashicons-chart-bar',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-reports' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-integrations',
+				'label' => __( 'Integrations', 'boldform-lite' ),
+				'icon'  => 'dashicons-randomize',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-integrations' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-settings',
+				'label' => __( 'Settings', 'boldform-lite' ),
+				'icon'  => 'dashicons-admin-generic',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-settings' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-settings#smtp',
+				'label' => __( 'SMTP', 'boldform-lite' ),
+				'icon'  => 'dashicons-email',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=smtp' ),
+			),
+			array(
+				'slug'  => 'boldform-lite-settings#tools',
+				'label' => __( 'Tools', 'boldform-lite' ),
+				'icon'  => 'dashicons-admin-tools',
+				'url'   => admin_url( 'admin.php?page=boldform-lite-settings&tab=tools' ),
+			),
 			array(
 				'slug'     => 'boldform-lite-docs',
 				'label'    => __( 'Documentation', 'boldform-lite' ),
@@ -380,8 +420,18 @@ class BoldForm_Lite_Integrations_Page {
 				'url'      => 'https://documentation.themewant.com/docs/boldform-user-guide/',
 				'external' => true,
 				'children' => array(
-					array( 'label' => __( 'User Documentation', 'boldform-lite' ), 'icon' => 'dashicons-admin-users', 'url' => 'https://documentation.themewant.com/docs/boldform-user-guide/', 'external' => true ),
-					array( 'label' => __( 'Admin Documentation', 'boldform-lite' ), 'icon' => 'dashicons-admin-tools', 'url' => 'https://documentation.themewant.com/docs/bold-form-developer-guide/', 'external' => true ),
+					array(
+						'label'    => __( 'User Documentation', 'boldform-lite' ),
+						'icon'     => 'dashicons-admin-users',
+						'url'      => 'https://documentation.themewant.com/docs/boldform-user-guide/',
+						'external' => true,
+					),
+					array(
+						'label'    => __( 'Admin Documentation', 'boldform-lite' ),
+						'icon'     => 'dashicons-admin-tools',
+						'url'      => 'https://documentation.themewant.com/docs/bold-form-developer-guide/',
+						'external' => true,
+					),
 				),
 			),
 		);
@@ -468,7 +518,11 @@ class BoldForm_Lite_Integrations_Page {
 	// Connection CRUD
 	// =====================================================================
 
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Returns all stored connections, keyed by connection id.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
 	public function get_all_connections(): array {
 		$raw = get_option( self::OPTION_KEY, array() );
 		return is_array( $raw ) ? $raw : array();
@@ -508,13 +562,23 @@ class BoldForm_Lite_Integrations_Page {
 		return $conn;
 	}
 
-	/** @return array<string, mixed>|null */
+	/**
+	 * Returns a single connection by id.
+	 *
+	 * @param string $id Connection id.
+	 * @return array<string, mixed>|null
+	 */
 	public function get_connection( string $id ): ?array {
 		$all = $this->get_all_connections();
 		return $all[ $id ] ?? null;
 	}
 
-	/** @return string Connection ID. */
+	/**
+	 * Creates or updates a connection.
+	 *
+	 * @param array<string, mixed> $data Connection data.
+	 * @return string Connection ID.
+	 */
 	public function upsert_connection( array $data ): string {
 		$all  = $this->get_all_connections();
 		$id   = ! empty( $data['id'] ) ? sanitize_key( (string) $data['id'] ) : 'conn_' . wp_generate_uuid4();
@@ -542,7 +606,12 @@ class BoldForm_Lite_Integrations_Page {
 		return $id;
 	}
 
-	/** @return void */
+	/**
+	 * Deletes a connection.
+	 *
+	 * @param string $id Connection id.
+	 * @return void
+	 */
 	public function delete_connection( string $id ): void {
 		$all = $this->get_all_connections();
 		unset( $all[ $id ] );
@@ -571,14 +640,18 @@ class BoldForm_Lite_Integrations_Page {
 	// Type definitions
 	// =====================================================================
 
-	/** @return array<string, array<string, mixed>> */
+	/**
+	 * Returns the static registry of supported connection types.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
 	public function get_type_defs(): array {
-		if ( self::$type_defs !== null ) {
+		if ( null !== self::$type_defs ) {
 			return self::$type_defs;
 		}
 
 		$defs = array(
-			'mailchimp' => array(
+			'mailchimp'       => array(
 				'type'       => 'mailchimp',
 				'label'      => 'Mailchimp',
 				'icon'       => 'dashicons-email-alt',
@@ -588,13 +661,33 @@ class BoldForm_Lite_Integrations_Page {
 				'desc'       => __( 'Sync subscribers to a Mailchimp audience.', 'boldform-lite' ),
 				'list_label' => __( 'Audience', 'boldform-lite' ),
 				'fields'     => array(
-					array( 'key' => 'api_key',      'label' => 'API Key',              'type' => 'password', 'required' => true, 'placeholder' => 'xxxxxxxxxxxx-us6' ),
-					array( 'key' => 'list_id',      'label' => 'Audience',             'type' => 'list_select', 'required' => true ),
-					array( 'key' => 'tags',         'label' => 'Tags',                 'type' => 'text',     'placeholder' => 'newsletter, webform' ),
-					array( 'key' => 'double_optin', 'label' => 'Enable double opt-in', 'type' => 'checkbox' ),
+					array(
+						'key'         => 'api_key',
+						'label'       => 'API Key',
+						'type'        => 'password',
+						'required'    => true,
+						'placeholder' => 'xxxxxxxxxxxx-us6',
+					),
+					array(
+						'key'      => 'list_id',
+						'label'    => 'Audience',
+						'type'     => 'list_select',
+						'required' => true,
+					),
+					array(
+						'key'         => 'tags',
+						'label'       => 'Tags',
+						'type'        => 'text',
+						'placeholder' => 'newsletter, webform',
+					),
+					array(
+						'key'   => 'double_optin',
+						'label' => 'Enable double opt-in',
+						'type'  => 'checkbox',
+					),
 				),
 			),
-			'brevo' => array(
+			'brevo'           => array(
 				'type'       => 'brevo',
 				'label'      => 'Brevo',
 				'icon'       => 'dashicons-email',
@@ -606,13 +699,24 @@ class BoldForm_Lite_Integrations_Page {
 				// No Tags field: Brevo's POST /v3/contacts endpoint has no tags parameter,
 				// so tagging is not supported here (unlike Mailchimp).
 				'fields'     => array(
-					array( 'key' => 'api_key', 'label' => 'API Key',      'type' => 'password', 'required' => true, 'placeholder' => 'xkeysib-…' ),
-					array( 'key' => 'list_id', 'label' => 'Contact List', 'type' => 'list_select', 'required' => true ),
+					array(
+						'key'         => 'api_key',
+						'label'       => 'API Key',
+						'type'        => 'password',
+						'required'    => true,
+						'placeholder' => 'xkeysib-…',
+					),
+					array(
+						'key'      => 'list_id',
+						'label'    => 'Contact List',
+						'type'     => 'list_select',
+						'required' => true,
+					),
 				),
 			),
 			// Additional types — shown as static cards. Pro replaces with functional entries via filter.
-			// ── Newsletter ──
-			'activecampaign' => array(
+			// ── Newsletter ──.
+			'activecampaign'  => array(
 				'type'       => 'activecampaign',
 				'label'      => 'ActiveCampaign',
 				'icon'       => 'dashicons-megaphone',
@@ -624,7 +728,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'convertkit' => array(
+			'convertkit'      => array(
 				'type'       => 'convertkit',
 				'label'      => 'Kit (ConvertKit)',
 				'icon'       => 'dashicons-rss',
@@ -636,7 +740,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'aweber' => array(
+			'aweber'          => array(
 				'type'       => 'aweber',
 				'label'      => 'AWeber',
 				'icon'       => 'dashicons-email-alt2',
@@ -648,7 +752,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'getresponse' => array(
+			'getresponse'     => array(
 				'type'       => 'getresponse',
 				'label'      => 'GetResponse',
 				'icon'       => 'dashicons-email',
@@ -660,7 +764,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'mailerlite' => array(
+			'mailerlite'      => array(
 				'type'       => 'mailerlite',
 				'label'      => 'MailerLite',
 				'icon'       => 'dashicons-email-alt',
@@ -673,7 +777,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── CRM & Apps ──
-			'hubspot' => array(
+			'hubspot'         => array(
 				'type'       => 'hubspot',
 				'label'      => 'HubSpot',
 				'icon'       => 'dashicons-networking',
@@ -685,7 +789,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'zoho' => array(
+			'zoho'            => array(
 				'type'       => 'zoho',
 				'label'      => 'Zoho CRM',
 				'icon'       => 'dashicons-groups',
@@ -697,7 +801,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'helpscout' => array(
+			'helpscout'       => array(
 				'type'       => 'helpscout',
 				'label'      => 'Help Scout',
 				'icon'       => 'dashicons-sos',
@@ -709,7 +813,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'fluentcrm' => array(
+			'fluentcrm'       => array(
 				'type'       => 'fluentcrm',
 				'label'      => 'FluentCRM',
 				'icon'       => 'dashicons-admin-users',
@@ -721,7 +825,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'googlesheets' => array(
+			'googlesheets'    => array(
 				'type'       => 'googlesheets',
 				'label'      => 'Google Sheets',
 				'icon'       => 'dashicons-media-spreadsheet',
@@ -733,7 +837,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'dropbox' => array(
+			'dropbox'         => array(
 				'type'       => 'dropbox',
 				'label'      => 'Dropbox',
 				'icon'       => 'dashicons-cloud-saved',
@@ -745,7 +849,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'slack' => array(
+			'slack'           => array(
 				'type'       => 'slack',
 				'label'      => 'Slack',
 				'icon'       => 'dashicons-format-chat',
@@ -770,7 +874,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'drip' => array(
+			'drip'            => array(
 				'type'       => 'drip',
 				'label'      => 'Drip',
 				'icon'       => 'dashicons-migrate',
@@ -782,7 +886,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'moosend' => array(
+			'moosend'         => array(
 				'type'       => 'moosend',
 				'label'      => 'Moosend',
 				'icon'       => 'dashicons-email',
@@ -795,7 +899,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── CRM (new) ──
-			'salesforce' => array(
+			'salesforce'      => array(
 				'type'       => 'salesforce',
 				'label'      => 'Salesforce',
 				'icon'       => 'dashicons-cloud',
@@ -807,7 +911,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'pipedrive' => array(
+			'pipedrive'       => array(
 				'type'       => 'pipedrive',
 				'label'      => 'Pipedrive',
 				'icon'       => 'dashicons-chart-line',
@@ -819,7 +923,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'freshsales' => array(
+			'freshsales'      => array(
 				'type'       => 'freshsales',
 				'label'      => 'Freshsales',
 				'icon'       => 'dashicons-businessman',
@@ -831,7 +935,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'monday' => array(
+			'monday'          => array(
 				'type'       => 'monday',
 				'label'      => 'Monday.com',
 				'icon'       => 'dashicons-grid-view',
@@ -844,7 +948,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── Productivity ──
-			'notion' => array(
+			'notion'          => array(
 				'type'       => 'notion',
 				'label'      => 'Notion',
 				'icon'       => 'dashicons-editor-table',
@@ -856,7 +960,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'airtable' => array(
+			'airtable'        => array(
 				'type'       => 'airtable',
 				'label'      => 'Airtable',
 				'icon'       => 'dashicons-layout',
@@ -868,7 +972,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'trello' => array(
+			'trello'          => array(
 				'type'       => 'trello',
 				'label'      => 'Trello',
 				'icon'       => 'dashicons-columns',
@@ -880,7 +984,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'asana' => array(
+			'asana'           => array(
 				'type'       => 'asana',
 				'label'      => 'Asana',
 				'icon'       => 'dashicons-list-view',
@@ -893,7 +997,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── Automation ──
-			'zapier' => array(
+			'zapier'          => array(
 				'type'       => 'zapier',
 				'label'      => 'Zapier',
 				'icon'       => 'dashicons-controls-repeat',
@@ -905,7 +1009,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'make' => array(
+			'make'            => array(
 				'type'       => 'make',
 				'label'      => 'Make (Integromat)',
 				'icon'       => 'dashicons-update',
@@ -917,7 +1021,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'pabbly' => array(
+			'pabbly'          => array(
 				'type'       => 'pabbly',
 				'label'      => 'Pabbly Connect',
 				'icon'       => 'dashicons-randomize',
@@ -930,7 +1034,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── Messaging ──
-			'discord' => array(
+			'discord'         => array(
 				'type'       => 'discord',
 				'label'      => 'Discord',
 				'icon'       => 'dashicons-format-status',
@@ -942,7 +1046,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'telegram' => array(
+			'telegram'        => array(
 				'type'       => 'telegram',
 				'label'      => 'Telegram',
 				'icon'       => 'dashicons-share-alt2',
@@ -954,7 +1058,7 @@ class BoldForm_Lite_Integrations_Page {
 				'fields'     => array(),
 				'pro'        => true,
 			),
-			'msteams' => array(
+			'msteams'         => array(
 				'type'       => 'msteams',
 				'label'      => 'Microsoft Teams',
 				'icon'       => 'dashicons-groups',
@@ -967,7 +1071,7 @@ class BoldForm_Lite_Integrations_Page {
 				'pro'        => true,
 			),
 			// ── Storage ──
-			'googledrive' => array(
+			'googledrive'     => array(
 				'type'       => 'googledrive',
 				'label'      => 'Google Drive',
 				'icon'       => 'dashicons-cloud-upload',
@@ -1007,7 +1111,7 @@ class BoldForm_Lite_Integrations_Page {
 
 		// Use type label as default name.
 		if ( empty( $data['name'] ) ) {
-			$defs = $this->get_type_defs();
+			$defs         = $this->get_type_defs();
 			$data['name'] = $defs[ $data['type'] ]['label'] ?? $data['type'];
 		}
 
@@ -1038,7 +1142,7 @@ class BoldForm_Lite_Integrations_Page {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$type   = isset( $_POST['type'] )   ? sanitize_key( wp_unslash( $_POST['type'] ) )   : '';
+		$type   = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
 		$enable = isset( $_POST['enable'] ) && 'true' === $_POST['enable']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
 
 		if ( ! $type ) {
@@ -1090,8 +1194,8 @@ class BoldForm_Lite_Integrations_Page {
 
 			// Activate the existing, configured connection.
 			$found['status'] = 'active';
-			$id   = $this->upsert_connection( $found );
-			$conn = $this->client_safe_connection( $this->get_connection( $id ) );
+			$id              = $this->upsert_connection( $found );
+			$conn            = $this->client_safe_connection( $this->get_connection( $id ) );
 			wp_send_json_success( array( 'connection' => $conn ) );
 		} else {
 			// Deactivate (keep settings).
@@ -1110,9 +1214,9 @@ class BoldForm_Lite_Integrations_Page {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'boldform-lite' ) ), 403 );
 		}
 
-		$type    = isset( $_POST['type'] )    ? sanitize_key( wp_unslash( $_POST['type'] ) )           : '';
+		$type    = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
 		$api_key = isset( $_POST['api_key'] ) ? sanitize_text_field( wp_unslash( $_POST['api_key'] ) ) : '';
-		$extra = isset( $_POST['extra'] ) ? map_deep( wp_unslash( $_POST['extra'] ), 'sanitize_text_field' ) : array();
+		$extra   = isset( $_POST['extra'] ) ? map_deep( wp_unslash( $_POST['extra'] ), 'sanitize_text_field' ) : array();
 
 		$result = $this->fetch_lists_for_type( $type, $api_key, $extra );
 
@@ -1152,6 +1256,9 @@ class BoldForm_Lite_Integrations_Page {
 	/**
 	 * Dispatches list-fetch to the correct handler.
 	 *
+	 * @param string               $type    Connection type.
+	 * @param string               $api_key API key.
+	 * @param array<string, mixed> $extra   Extra connection data, passed through to add-on handlers.
 	 * @return array|WP_Error|null
 	 */
 	public function fetch_lists_for_type( string $type, string $api_key, array $extra = array() ) {
@@ -1188,6 +1295,12 @@ class BoldForm_Lite_Integrations_Page {
 		return '';
 	}
 
+	/**
+	 * Fetches the account's audience/list names from the Mailchimp API.
+	 *
+	 * @param string $api_key Mailchimp API key.
+	 * @return array<int, array<string, string>>|WP_Error
+	 */
 	private function fetch_mailchimp_lists( string $api_key ) {
 		$api_key = trim( $api_key );
 		$dc      = self::mailchimp_datacenter( $api_key );
@@ -1206,36 +1319,61 @@ class BoldForm_Lite_Integrations_Page {
 			)
 		);
 
-		if ( is_wp_error( $response ) ) return $response;
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $code !== 200 || ! isset( $body['lists'] ) ) {
+		if ( 200 !== $code || ! isset( $body['lists'] ) ) {
 			return new WP_Error( 'mailchimp_error', $body['detail'] ?? __( 'Invalid API key.', 'boldform-lite' ) );
 		}
 
-		return array_map( fn( $l ) => array( 'id' => (string) $l['id'], 'name' => (string) $l['name'] ), (array) $body['lists'] );
+		return array_map(
+			fn( $l ) => array(
+				'id'   => (string) $l['id'],
+				'name' => (string) $l['name'],
+			),
+			(array) $body['lists']
+		);
 	}
 
+	/**
+	 * Fetches the account's contact list names from the Brevo API.
+	 *
+	 * @param string $api_key Brevo API key.
+	 * @return array<int, array<string, string>>|WP_Error
+	 */
 	private function fetch_brevo_lists( string $api_key ) {
 		$response = wp_remote_get(
 			'https://api.brevo.com/v3/contacts/lists?limit=50&offset=0',
 			array(
 				'timeout' => 15,
-				'headers' => array( 'api-key' => trim( $api_key ), 'Accept' => 'application/json' ),
+				'headers' => array(
+					'api-key' => trim( $api_key ),
+					'Accept'  => 'application/json',
+				),
 			)
 		);
 
-		if ( is_wp_error( $response ) ) return $response;
+		if ( is_wp_error( $response ) ) {
+			return $response;
+		}
 
 		$code = (int) wp_remote_retrieve_response_code( $response );
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $code !== 200 || ! isset( $body['lists'] ) ) {
+		if ( 200 !== $code || ! isset( $body['lists'] ) ) {
 			return new WP_Error( 'brevo_error', $body['message'] ?? __( 'Invalid API key.', 'boldform-lite' ) );
 		}
 
-		return array_map( fn( $l ) => array( 'id' => (string) $l['id'], 'name' => (string) $l['name'] ), (array) $body['lists'] );
+		return array_map(
+			fn( $l ) => array(
+				'id'   => (string) $l['id'],
+				'name' => (string) $l['name'],
+			),
+			(array) $body['lists']
+		);
 	}
 }
