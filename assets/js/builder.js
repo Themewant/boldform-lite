@@ -447,6 +447,13 @@ jQuery(
 				design_theme: settings && settings.design_theme ? settings.design_theme : '',
 				hide_labels: false,
 				hide_placeholders: false,
+				// Checkbox/radio presentation. Structural rather than cosmetic — it
+				// swaps which element carries the visual treatment — so it lives here
+				// as a form setting, not in the per-device style layer: "buttons on
+				// desktop, boxes on mobile" is not a thing anyone wants, and a class
+				// cannot be media-queried anyway. The --bf-choice-btn-* vars that
+				// dress the button ARE in the style layer and stay per-device.
+				choice_style: settings && 'button' === settings.choice_style ? 'button' : 'default',
 				dup_enabled:  settings && settings.dup_enabled  ? true : false,
 				dup_method:   settings && settings.dup_method   ? settings.dup_method   : 'email',
 				dup_field_id: settings && settings.dup_field_id ? settings.dup_field_id : '',
@@ -1986,7 +1993,7 @@ jQuery(
 					// the canvas CSS hides the native input, draws the custom radio, and
 					// stacks rows with min-width:0 (no overflow). Frontend __choices alone
 					// leaves native radios styled as full-width input lines.
-					html += '<div class="boldform-canvas-field-choices">';
+					html += '<div class="boldform-canvas-field-choices' + ( 'button' === state.formSettings.choice_style ? ' is-btn' : '' ) + '">';
 					// The price <em> must use the button-bg-FIRST accent chain, mirroring
 					// the front end's .bfp-product-price rule (Pro payments.css). Keying
 					// off --bf-focus-color alone renders teal under every theme whose
@@ -2114,7 +2121,11 @@ jQuery(
 			} else if ( field.type === 'checkbox' || field.type === 'radio' ) {
 				var choiceDefaults = ( field.default_value || '' ).split( ',' ).map( function ( v ) { return $.trim( v ); } ).filter( function ( v ) { return v.length; } );
 				var isSwitchStyle = 'checkbox' === field.type && 'switch' === field.checkbox_style;
-				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + '">';
+				// Mirrors the front end exactly (see render_field_control): the
+				// form-level Style: Button applies unless this field is already a
+				// Switch, which is a deliberate per-field choice that wins.
+				var isBtnStyle = 'button' === state.formSettings.choice_style && ! isSwitchStyle;
+				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + ( isBtnStyle ? ' is-btn' : '' ) + '">';
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
@@ -2341,10 +2352,14 @@ jQuery(
 					}
 					if ( 'radio' === t || 'checkbox' === t ) {
 						var items = opts.length ? opts : [ 'Option 1', 'Option 2' ];
-						var markCls = 'boldform-canvas-repeater__mark' + ( 'radio' === t ? ' boldform-canvas-repeater__mark--radio' : '' );
-						var ch = '<div class="boldform-canvas-repeater__choices">';
+						// A repeater's choice sub-fields ARE checkboxes and radios, so the
+						// canvas draws them with the same markup as a top-level choice field
+						// and they answer to the Checkbox & Radio style group, the
+						// Default/Button Style option included — exactly what the front end
+						// renders (see BoldForm_Pro_Repeater::render_sub_field()).
+						var ch = '<div class="boldform-canvas-field-choices boldform-canvas-repeater__choices' + ( 'button' === state.formSettings.choice_style ? ' is-btn' : '' ) + '">';
 						items.slice( 0, 6 ).forEach( function ( o ) {
-							ch += '<span class="boldform-canvas-repeater__choice"><span class="' + markCls + '"></span>' + escapeHtml( ( o || '' ).toString() ) + '</span>';
+							ch += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( t ) + '" disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( ( o || '' ).toString() ) + '</span></label>';
 						} );
 						ch += '</div>';
 						return ch;
@@ -4182,9 +4197,14 @@ jQuery(
 							repRowsHtml +=
 								'<div class="boldform-rep-field-row" data-rep-index="' + idx + '">' +
 									'<div class="boldform-rep-field-row__main">' +
-										'<select class="boldform-rep-field__type" data-rep-index="' + idx + '">' +
+										// Named with the SAME label the field palette uses for that
+										// type — "Textarea", "Select", "Date Picker" — instead of the
+										// raw slug. getLibraryItem() is already localised, so this
+										// introduces no new strings to translate and cannot drift from
+										// what the palette calls the field the sub-field will become.
+										'<select class="boldform-rep-field__type" data-rep-index="' + idx + '" aria-label="' + escapeHtml( 'Sub-field type' ) + '">' +
 											[ 'text','email','url','tel','number','date','time','textarea','select','radio','checkbox' ].map( function (t) {
-												return '<option value="' + t + '"' + ( t === sfType ? ' selected' : '' ) + '>' + t + '</option>';
+												return '<option value="' + t + '"' + ( t === sfType ? ' selected' : '' ) + '>' + escapeHtml( getLibraryItem( t ).label || t ) + '</option>';
 											} ).join('') +
 										'</select>' +
 										'<input type="text" class="boldform-rep-field__label" data-rep-index="' + idx + '" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
@@ -5834,6 +5854,26 @@ jQuery(
 			'</div>';
 		}
 
+		// Checkbox & Radio → Style. A segmented Default/Button switch.
+		//
+		// The one control in this section that is NOT a style-layer var: it decides
+		// which element carries the treatment, which the renderer expresses as a
+		// class, so it is stored as a plain form setting (see normalizeFormSettings).
+		// That also keeps it out of the per-device layer, where "buttons on desktop,
+		// boxes on mobile" would be offered and could not be honoured.
+		function advChoiceStyle( label ) {
+			var cur = 'button' === state.formSettings.choice_style ? 'button' : 'default';
+			var opts = [ [ 'default', advLabel( 'choiceStyleDefault' ) ], [ 'button', advLabel( 'choiceStyleButton' ) ] ];
+			return '<div class="boldform-setting-group boldform-adv-field" data-type="choicestyle">' +
+				'<label>' + escapeHtml( label ) + '</label>' +
+				'<div class="bf-adv-choice-style" role="group">' + opts.map( function ( o ) {
+					return '<button type="button" class="bf-adv-choice-style-btn' + ( o[0] === cur ? ' is-active' : '' ) +
+						'" data-choice-style="' + escapeHtml( o[0] ) + '" aria-pressed="' + ( o[0] === cur ? 'true' : 'false' ) + '">' +
+						escapeHtml( o[1] ) + '</button>';
+				} ).join( '' ) + '</div>' +
+			'</div>';
+		}
+
 		function advSwitch( cssVar, label, onValue ) {
 			var on = '' !== advStyleGet( cssVar );
 			return '<div class="boldform-setting-group boldform-adv-field boldform-adv-switch" data-type="switch" data-var="' + cssVar + '" data-on="' + escapeHtml( onValue ) + '">' +
@@ -5906,6 +5946,7 @@ jQuery(
 				case 'select':     return advSelectCtl( c.var, advLabel( c.label ), c.options );
 				case 'switch':     return advSwitch( c.var, advLabel( c.label ), c.on );
 				case 'align':      return advAlign( c.var, advLabel( c.label ) );
+				case 'choiceStyle': return advChoiceStyle( advLabel( c.label ) );
 				case 'stateTabs':  return advStateTabs( c );
 				case 'heading':    return '<div class="boldform-adv-subhead">' + escapeHtml( advLabel( c.label ) ) + '</div>';
 			}
@@ -6004,10 +6045,40 @@ jQuery(
 					{ type: 'dimension', var: '--bf-btn-margin', label: 'buttonMargin' },
 					{ type: 'dimension', var: '--bf-actions-margin', label: 'containerMargin' }
 				] },
-				{ id: 'choice', title: advLabel( 'secChoice' ), controls: [
-					{ type: 'slider', var: '--bf-choice-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
+				// Checkbox & Radio. The Style control at the top decides which half of
+				// this section is shown: the box treatment (Default) or the pill
+				// treatment (Button). Only one is ever relevant, and showing both
+				// would offer controls that demonstrably do nothing in the active
+				// mode. `extraVars` still names BOTH sets so the section's reset
+				// clears whichever is currently hidden too — otherwise switching
+				// modes could resurrect values the user thought they had cleared.
+				{ id: 'choice', title: advLabel( 'secChoice' ), extraVars: bfChoiceAllVars(), controls: [
+					{ type: 'choiceStyle', label: 'choiceStyle' },
 					{ type: 'color', var: '--bf-choice-color', label: 'labelColor' },
-					{ type: 'typography', var: '--bf-choice', label: 'typography' },
+					{ type: 'typography', var: '--bf-choice', label: 'typography' }
+				].concat( 'button' === state.formSettings.choice_style ? [
+					{ type: 'dimension', var: '--bf-choice-btn-padding', label: 'padding' },
+					{ type: 'dimension', var: '--bf-choice-btn-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'slider', var: '--bf-choice-btn-gap', label: 'spacing', min: 0, max: 40, units: [ 'px' ] },
+					{ type: 'border', var: '--bf-choice-btn-border', label: 'border' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-choice-btn-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-text', label: 'textColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'background', var: '--bf-choice-btn-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-hover-text', label: 'textColor' },
+							{ type: 'color', var: '--bf-choice-btn-hover-border', label: 'borderColor' }
+						] },
+						{ key: 'selected', label: 'stateSelected', controls: [
+							{ type: 'background', var: '--bf-choice-btn-active-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-active-text', label: 'textColor' },
+							{ type: 'color', var: '--bf-choice-btn-active-border', label: 'borderColor' }
+						] }
+					] }
+				] : [
+					{ type: 'slider', var: '--bf-choice-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
 					{ type: 'slider', var: '--bf-choice-gap', label: 'spacing', min: 0, max: 32, units: [ 'px' ] },
 					{ type: 'stateTabs', label: 'states', states: [
 						{ key: 'normal', label: 'stateNormal', controls: [
@@ -6023,7 +6094,7 @@ jQuery(
 							{ type: 'color', var: '--bf-choice-icon', label: 'iconColor' }
 						] }
 					] }
-				] },
+				] ) },
 				{ id: 'terms', title: advLabel( 'secTerms' ), controls: [
 					{ type: 'color', var: '--bf-terms-color', label: 'textColor' },
 					{ type: 'stateTabs', label: 'linkColor', states: [
@@ -6166,6 +6237,29 @@ jQuery(
 
 		// Every --bf-* var a section's controls write, expanded across composite types
 		// (border → -width/-style/-color, typography → -ff/-fs/…, shadow → each state).
+		// Every var the Checkbox & Radio section can write, in EITHER style mode.
+		//
+		// The section only renders one mode's controls at a time, so bfSectionVars()
+		// walking the visible controls would miss the other half. Reset and the
+		// "has anything to reset?" check both need the full set: a user who styled
+		// the buttons, switched back to Default and hit reset expects the button
+		// values gone too, not lying in wait for the next switch.
+		function bfChoiceAllVars() {
+			return [
+				// Default (box) treatment.
+				'--bf-choice-size', '--bf-choice-gap',
+				'--bf-choice-border', '--bf-choice-bg',
+				'--bf-choice-hover-border', '--bf-choice-hover-bg',
+				'--bf-choice-accent', '--bf-choice-icon',
+				// Button (pill) treatment.
+				'--bf-choice-btn-padding', '--bf-choice-btn-radius', '--bf-choice-btn-gap',
+				'--bf-choice-btn-border-width', '--bf-choice-btn-border-style', '--bf-choice-btn-border-color',
+				'--bf-choice-btn-bg', '--bf-choice-btn-text',
+				'--bf-choice-btn-hover-bg', '--bf-choice-btn-hover-text', '--bf-choice-btn-hover-border',
+				'--bf-choice-btn-active-bg', '--bf-choice-btn-active-text', '--bf-choice-btn-active-border'
+			];
+		}
+
 		function bfSectionVars( sec ) {
 			var vars = [];
 			function expand( c ) {
@@ -6190,6 +6284,11 @@ jQuery(
 				}
 			}
 			( sec.controls || [] ).forEach( expand );
+			// Vars a section owns but does not currently render a control for (see
+			// bfChoiceAllVars). Deduped so a var named in both places is cleared once.
+			( sec.extraVars || [] ).forEach( function ( v ) {
+				if ( -1 === vars.indexOf( v ) ) { vars.push( v ); }
+			} );
 			return vars;
 		}
 
@@ -6270,6 +6369,12 @@ jQuery(
 		// True when the active device layer holds any non-empty value for this
 		// section's vars — i.e. there is something for its reset button to clear.
 		function bfSectionHasValues( sec ) {
+			// Style: Button is a section value like any other even though it lives
+			// outside the style layer — without this the reset button stays greyed
+			// on a section that visibly has something to reset.
+			if ( 'choice' === sec.id && 'button' === state.formSettings.choice_style ) {
+				return true;
+			}
 			var layer = ( state.formSettings.style && state.formSettings.style[ state.activeDevice ] ) || {};
 			return bfSectionVars( sec ).some( function ( v ) {
 				return typeof layer[ v ] === 'string' && '' !== layer[ v ];
@@ -6338,6 +6443,31 @@ jQuery(
 				'</div>';
 			} );
 			return html;
+		}
+
+		// Re-render ONE Style section's controls in place.
+		//
+		// Almost every control writes a CSS var and needs no re-render at all. The
+		// exception is a control that changes which OTHER controls the section offers —
+		// Checkbox & Radio's Style, whose Button mode swaps in a different set. Calling
+		// renderStylingSettings() for that would work, but the accordion's open/closed
+		// state lives only in the DOM as an `is-open` class: rebuilding the panel throws
+		// it away, collapsing the group being edited and springing the first one open.
+		// That reads as an unexplained page refresh. Replacing just the control grid
+		// keeps the section open, the panel scrolled where it was, and every other
+		// section untouched. The schema is re-read by id, so a caller that has already
+		// changed the setting gets the new control set.
+		function bfRerenderStyleSection( sectionId ) {
+			var sec = null;
+			bfStyleSchema().forEach( function ( s ) { if ( s.id === sectionId ) { sec = s; } } );
+			if ( ! sec ) { return; }
+
+			var $grid = $( '#boldform-form-styling-panel [data-adv-section="' + sectionId + '"] .boldform-adv-grid' ).first();
+			if ( ! $grid.length ) { return; }
+
+			var body = '';
+			bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
+			$grid.html( body );
 		}
 
 		// Render a live, read-only mirror of the form on the Style tab so styling
@@ -7492,6 +7622,20 @@ jQuery(
 			if ( ! sec ) { return; }
 			var layer = state.formSettings.style && state.formSettings.style[ state.activeDevice || 'desktop' ];
 			if ( layer ) { bfSectionVars( sec ).forEach( function ( v ) { delete layer[ v ]; } ); }
+			// Checkbox & Radio carries one non-var value. Resetting it changes which
+			// controls the section offers, so the grid is rebuilt from the schema rather
+			// than left showing the Button controls — bfRerenderStyleSection() re-reads
+			// the schema by id, since `sec` was captured before the reset. The canvas
+			// also re-renders here, as the field markup itself carries the modifier.
+			if ( 'choice' === sec.id && 'button' === state.formSettings.choice_style ) {
+				state.formSettings.choice_style = 'default';
+				markDirty();
+				bfRerenderStyleSection( 'choice' );
+				renderStylePreview();
+				renderCanvas();
+				bfRefreshResetStates();
+				return;
+			}
 			var body = '';
 			bfOrderControls( sec.controls ).forEach( function ( c ) { body += advControl( c ); } );
 			$btn.closest( '.boldform-style-section' ).find( '.boldform-adv-grid' ).html( body );
@@ -7602,6 +7746,23 @@ jQuery(
 
 			advStyleSetVars( out );
 		}
+
+		// Checkbox & Radio → Style. Swaps the treatment, then re-renders the Style
+		// panel because the section's other controls differ per mode, and the canvas
+		// because the modifier class is emitted by renderInputPreview().
+		$( document ).on( 'click', '.bf-adv-choice-style-btn', function () {
+			var next = $( this ).data( 'choice-style' ) === 'button' ? 'button' : 'default';
+			if ( next === state.formSettings.choice_style ) {
+				return;
+			}
+			state.formSettings.choice_style = next;
+			markDirty();
+			// Swap only this section's controls — see bfRerenderStyleSection().
+			bfRerenderStyleSection( 'choice' );
+			renderStylePreview();
+			renderCanvas();
+			bfRefreshResetStates();
+		} );
 
 		// Alignment segmented control → activate the clicked button, recompute.
 		$( document ).on( 'click', '.bf-adv-align-btn', function () {

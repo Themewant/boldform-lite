@@ -677,6 +677,11 @@ class BoldForm_Lite_Ajax_Save {
 			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
+			// Checkbox/radio presentation: 'default' (box + label) or 'button'
+			// (the label becomes a selectable pill). Strict two-value allowlist —
+			// anything else collapses to 'default', so an unexpected value can
+			// never reach the class the renderer emits.
+			'choice_style'        => isset( $settings_payload['choice_style'] ) && 'button' === $settings_payload['choice_style'] ? 'button' : 'default',
 			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
 			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
 			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',

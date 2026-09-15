@@ -901,6 +901,41 @@
 	color: #0f766e;
 }
 
+/* Checkbox & Radio → Style. Same segmented shape as the alignment control, but
+   labelled rather than iconic, so the buttons size to their text. */
+.bf-adv-choice-style {
+	display: flex;
+	gap: 6px;
+}
+
+.bf-adv-choice-style-btn {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 38px;
+	padding: 0 10px;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	color: #64748b;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.bf-adv-choice-style-btn:hover {
+	border-color: #cbd5e1;
+	color: #475569;
+}
+
+.bf-adv-choice-style-btn.is-active {
+	border-color: #0f766e;
+	background: #ecfdf5;
+	color: #0f766e;
+}
+
 /* Max Width is meaningless under "Full Width" alignment — dim + lock it. */
 .boldform-adv-field.is-disabled {
 	opacity: 0.5;
@@ -6264,7 +6299,7 @@
 /* Column headers (repeater sub-fields only) */
 .boldform-rep-fields-header {
 	display: grid;
-	grid-template-columns: 120px 1fr auto;
+	grid-template-columns: 132px 1fr auto;
 	gap: 6px;
 	padding: 0 8px 4px;
 	font-size: 10px;
@@ -6406,7 +6441,7 @@
 /* Top line of a sub-field row: [type] [label] [remove]. */
 .boldform-rep-field-row__main {
 	display: grid;
-	grid-template-columns: 120px 1fr auto;
+	grid-template-columns: 132px 1fr auto;
 	gap: 6px;
 	align-items: center;
 }
@@ -6446,39 +6481,76 @@
 	box-shadow: 0 0 0 2px rgba( 34, 113, 177, 0.12 );
 }
 
-.boldform-rep-field__type {
-	height: 32px;
+/* Scoped through .boldform-setting-group deliberately, to reach (0,2,0).
+   The generic `.boldform-setting-group select` rule above sits at (0,1,1) and
+   sets `background` as a SHORTHAND — which outranked the (0,1,0) this rule used
+   to be and reset background-image to none. The result was the worst of both:
+   `appearance: none` still applied from here, stripping the platform arrow,
+   while the caret meant to replace it was wiped. The control rendered as a
+   plain box that read as a text input, giving no sign it could be opened.
+   Background is set as longhands below so a future shorthand elsewhere cannot
+   silently take the arrow away again. */
+.boldform-setting-group .boldform-rep-field__type {
+	height: 38px;
+	/* wp-admin's forms.css floors controls here at min-height:40px, so `height`
+	   alone is silently ignored — the same trap documented for the canvas below. */
+	min-height: 38px;
 	box-sizing: border-box; /* match .boldform-rep-field__label so type + label align (the border was adding 2px) */
-	padding: 0 6px;
+	padding: 0 32px 0 10px;
 	font-size: 12px;
-	border: 1px solid #e2e8f0;
-	border-radius: 5px;
-	background: #fff;
+	font-weight: 500;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
 	color: #1e293b;
 	cursor: pointer;
 	appearance: none;
 	-webkit-appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+	-moz-appearance: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right 7px center;
-	padding-right: 22px;
+	background-size: 14px;
+	background-position: right 9px center;
 }
 
-.boldform-rep-field__type:focus {
+/* Same teal focus ring the Form Settings panes use, so a focused sub-field type
+   reads like every other control in the builder. */
+.boldform-setting-group .boldform-rep-field__type:hover {
+	border-color: #94a3b8;
+}
+
+.boldform-setting-group .boldform-rep-field__type:focus {
 	outline: none;
-	border-color: #2271b1;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
-.boldform-rep-field__label {
-	height: 32px;
-	padding: 0 8px;
+/* Scoped to (0,2,0) for the same reason as the type select above: at (0,1,0) the
+   generic settings rule dictated its padding, border and radius, so the two halves
+   of a sub-field row could not be kept in step from here. */
+.boldform-setting-group .boldform-rep-field__label {
+	height: 38px;
+	min-height: 38px;
+	padding: 0 10px;
 	font-size: 12px;
-	border: 1px solid #e2e8f0;
-	border-radius: 5px;
-	background: #fff;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
 	color: #1e293b;
 	width: 100%;
 	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-setting-group .boldform-rep-field__label:hover {
+	border-color: #94a3b8;
+}
+
+.boldform-setting-group .boldform-rep-field__label:focus {
+	outline: none;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
 .boldform-rep-field__label:focus {
@@ -6820,6 +6892,63 @@
 .boldform-canvas .boldform-canvas-field-choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
 .boldform-template-preview__canvas .boldform-canvas-field-choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	background: var(--bf-choice-accent-r);
+}
+
+/* ---- Form-level "Style: Button" variant ----
+   Mirrors frontend.css rule for rule so the builder canvas and the Style tab's
+   Live Preview (which carries .boldform-canvas) match the real form. Same
+   approach: hide the box, make the LABEL SPAN the pill, and drive every state
+   off the native input with a sibling combinator rather than :has(). */
+.boldform-canvas .boldform-canvas-field-choices.is-btn,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--bf-choice-btn-gap, 8px);
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice {
+	gap: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-control {
+	display: none;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-label {
+	--bf-choice-btn-accent: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--bf-choice-btn-padding, 10px 20px);
+	border-width: var(--bf-choice-btn-border-width, 1px);
+	border-style: var(--bf-choice-btn-border-style, solid);
+	border-color: var(--bf-choice-btn-border-color, var(--bf-choice-border, var(--bf-field-border, #d1d5db)));
+	border-radius: var(--bf-choice-btn-radius, 999px);
+	background: var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
+	color: var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827)));
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-hover-border, var(--bf-choice-hover-border, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-hover-bg, var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff))));
+	color: var(--bf-choice-btn-hover-text, var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827))));
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-active-border, var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent));
+	color: var(--bf-choice-btn-active-text, var(--bf-choice-icon, #fff));
 }
 
 /* ---- Terms & Conditions ---- */

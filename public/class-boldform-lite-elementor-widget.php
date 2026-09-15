@@ -78,7 +78,16 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	public function get_style_depends() {
 		$this->register_frontend_assets();
 
-		return array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' );
+		// Same contract as the block editor: Elementor re-renders a widget over AJAX,
+		// where an enqueue made during render() never reaches the page. Anything that
+		// styles a rendered field has to be declared as a dependency here instead.
+		/** This filter is documented in public/class-boldform-lite-block.php */
+		$handles = apply_filters(
+			'boldform_preview_style_handles',
+			array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' )
+		);
+
+		return array_values( array_unique( array_filter( array_map( 'strval', (array) $handles ) ) ) );
 	}
 
 	/**
@@ -89,7 +98,22 @@ class BoldForm_Lite_Elementor_Widget extends \Elementor\Widget_Base {
 	public function get_script_depends() {
 		$this->register_frontend_assets();
 
-		return array( 'boldform-lite-flatpickr', 'boldform-lite-frontend' );
+		/**
+		 * Filter the script handles loaded into an editor canvas that renders a real
+		 * form. Unlike the block editor (whose preview is static HTML), the Elementor
+		 * preview is live, so field types with their own behaviour — repeater rows,
+		 * signature pads — need their scripts declared here to work while editing.
+		 *
+		 * Callbacks must wp_register_script() what they add.
+		 *
+		 * @param array<int, string> $handles Registered script handles.
+		 */
+		$handles = apply_filters(
+			'boldform_preview_script_handles',
+			array( 'boldform-lite-flatpickr', 'boldform-lite-frontend' )
+		);
+
+		return array_values( array_unique( array_filter( array_map( 'strval', (array) $handles ) ) ) );
 	}
 
 	/**

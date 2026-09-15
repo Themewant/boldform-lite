@@ -671,8 +671,76 @@ input[data-boldform-picker] {
 	background: var(--bf-choice-switch-off, var(--bf-choice-border, #cbd5e1));
 }
 
-.boldform-lite-form__choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
-	background: var(--bf-choice-accent-r);
+/* ── Form-level "Style: Button" variant ──
+   Checkbox AND radio. The box is hidden and the LABEL SPAN becomes the pill, so
+   every state is reachable with a plain sibling combinator off the still-present
+   native input (input:checked ~ .__choice-label) — no :has(), which would be the
+   only way to style the wrapping <label> from its own descendant input.
+   The wrapper keeps the click target and contributes nothing visual. */
+/* The same treatment, driven by the form-level class instead of the per-group
+   modifier, so choice markup an extension renders (repeater sub-fields, product
+   options) follows the Checkbox & Radio "Style" option too. A per-field Switch
+   still opts out — its own variant and this one cannot compose. */
+.boldform-lite-form__choices.is-btn,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) {
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: var(--bf-choice-btn-gap, 8px);
+}
+
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice {
+	gap: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+/* No box in this mode. The native input stays in the DOM (hidden by the shared
+   rule above), so it still carries name/value/checked and required validation. */
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice-control,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice-control {
+	display: none;
+}
+
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice-label,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice-label {
+	--bf-choice-btn-accent: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--bf-choice-btn-padding, 10px 20px);
+	border-width: var(--bf-choice-btn-border-width, 1px);
+	border-style: var(--bf-choice-btn-border-style, solid);
+	border-color: var(--bf-choice-btn-border-color, var(--bf-choice-border, var(--bf-field-border, #d1d5db)));
+	border-radius: var(--bf-choice-btn-radius, 999px);
+	background: var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
+	color: var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827)));
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice:hover .boldform-lite-form__choice-label,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice:hover .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-hover-border, var(--bf-choice-hover-border, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-hover-bg, var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff))));
+	color: var(--bf-choice-btn-hover-text, var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827))));
+}
+
+/* Selected. Declared after hover at higher specificity (the extra `input:checked ~`
+   compound) so a hovered selected pill keeps its selected treatment. */
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-active-border, var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent));
+	color: var(--bf-choice-btn-active-text, var(--bf-choice-icon, #fff));
+}
+
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-label,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch) .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-label {
+	box-shadow: 0 0 0 3px var(--bf-choice-focus-ring, color-mix(in srgb, var(--bf-choice-btn-accent) 18%, transparent));
 }
 
 /* Terms & conditions */

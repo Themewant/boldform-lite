@@ -1163,6 +1163,10 @@ class BoldForm_Lite_Admin {
 						'stateFocus'      => __( 'Focus', 'boldform-lite' ),
 						'stateChecked'    => __( 'Checked', 'boldform-lite' ),
 						'stateSelected'   => __( 'Selected', 'boldform-lite' ),
+						// Checkbox & Radio → Style: box-and-label, or a selectable pill.
+						'choiceStyle'        => __( 'Style', 'boldform-lite' ),
+						'choiceStyleDefault' => __( 'Default', 'boldform-lite' ),
+						'choiceStyleButton'  => __( 'Button', 'boldform-lite' ),
 						'rowGap'          => __( 'Row Gap', 'boldform-lite' ),
 						'columnGap'       => __( 'Column Gap', 'boldform-lite' ),
 						'fieldMargin'     => __( 'Field Margin', 'boldform-lite' ),
@@ -6119,6 +6123,7 @@ class BoldForm_Lite_Admin {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'choice_style'        => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
 			'dup_enabled'         => ! empty( $decoded['dup_enabled'] ),
 			'dup_method'          => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
 			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
