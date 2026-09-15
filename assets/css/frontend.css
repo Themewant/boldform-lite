@@ -714,6 +714,9 @@ input[data-boldform-picker] {
 	flex: 0 0 auto;
 	display: inline-flex;
 	align-items: center;
+	/* Separates the per-option icon from its text. A pill with no icon has one
+	   item and nothing to separate, so this costs it nothing. */
+	gap: var(--bf-choice-btn-icon-gap, 8px);
 	justify-content: center;
 	padding: var(--bf-choice-btn-padding, 10px 20px);
 	border-width: var(--bf-choice-btn-border-width, 1px);
@@ -746,6 +749,41 @@ input[data-boldform-picker] {
 .boldform-lite-form__choices.is-btn .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-label,
 .boldform-choice-btn .boldform-lite-form__choices:not(.is-switch):not(.is-plain) .boldform-lite-form__choice input:focus-visible ~ .boldform-lite-form__choice-label {
 	box-shadow: 0 0 0 3px var(--bf-choice-focus-ring, color-mix(in srgb, var(--bf-choice-btn-accent) 18%, transparent));
+}
+
+/* ---- Per-option icon ----
+   Chosen per option in the builder and emitted by the renderer whatever the
+   treatment, because the treatment can arrive from the FORM element and the code
+   drawing one group cannot see it. Which treatment SHOWS the icon is settled
+   here instead: only the Button one has a pill to put an icon in, so everywhere
+   else it stays out of the box and the group renders exactly as it always has.
+   The element is aria-hidden, so this is purely visual either way. */
+.boldform-lite-form__choice-icon {
+	display: none;
+}
+
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice-icon,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch):not(.is-plain) .boldform-lite-form__choice-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: inherit;
+}
+
+/* Sized off a variable rather than the font, so an icon stays the same size when
+   the pill's type scale changes — a 13px label and an 18px one should not give
+   the same icon two different weights beside them. */
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice-icon svg,
+.boldform-lite-form__choices.is-btn .boldform-lite-form__choice-icon img,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch):not(.is-plain) .boldform-lite-form__choice-icon svg,
+.boldform-choice-btn .boldform-lite-form__choices:not(.is-switch):not(.is-plain) .boldform-lite-form__choice-icon img {
+	display: block;
+	width: var(--bf-choice-btn-icon-size, 16px);
+	height: var(--bf-choice-btn-icon-size, 16px);
+	/* An uploaded file is whatever shape it is; letterbox it into the square
+	   rather than squashing it to fit. */
+	object-fit: contain;
 }
 
 /* Terms & conditions */

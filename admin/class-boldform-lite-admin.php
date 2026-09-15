@@ -856,6 +856,10 @@ class BoldForm_Lite_Admin {
 					'formStructure'      => $form_data['structure'],
 					'formSettings'       => $form_data['settings'],
 					'fieldLibrary'       => $this->get_field_library(),
+					// The one icon registry, handed to the builder rather than repeated
+					// in JS: the picker offers exactly the keys the sanitizer accepts and
+					// draws exactly the glyph the front end will render.
+					'choiceIcons'        => boldform_lite_choice_icons(),
 					'columnPresets'      => array(
 						array(
 							'value'  => '1',
@@ -958,6 +962,26 @@ class BoldForm_Lite_Admin {
 						'choiceOverride'       => __( 'Options appearance', 'boldform-lite' ),
 						'choiceOverrideHint'   => __( 'Empty follows the form style', 'boldform-lite' ),
 						'choiceOverrideReset'  => __( 'Reset', 'boldform-lite' ),
+						// Per-option icons. Offered only while the options render as
+						// buttons, which is the treatment that has room for one.
+						'chooseIcon'           => __( 'Choose an icon', 'boldform-lite' ),
+						'iconTabIcons'         => __( 'Icons', 'boldform-lite' ),
+						'iconTabSvg'           => __( 'SVG', 'boldform-lite' ),
+						'iconTabImage'         => __( 'Image', 'boldform-lite' ),
+						'chooseSvg'            => __( 'Upload or choose an SVG', 'boldform-lite' ),
+						'chooseImage'          => __( 'Upload or choose an image', 'boldform-lite' ),
+						'useThisFile'          => __( 'Use this file', 'boldform-lite' ),
+						'svgHint'              => __( 'SVG files from your Media Library. Every upload is cleaned before it is stored.', 'boldform-lite' ),
+						'imageHint'            => __( 'PNG, JPG, GIF or WebP from your Media Library.', 'boldform-lite' ),
+						'changeFile'           => __( 'Click to choose a different file', 'boldform-lite' ),
+						'customImage'          => __( 'Custom image', 'boldform-lite' ),
+						// Both option editors use these; only the top-level one had them
+						// before, through a JS-side fallback string.
+						'optionPlaceholder'    => __( 'Option value', 'boldform-lite' ),
+						'addOption'            => __( 'Add Option', 'boldform-lite' ),
+						'noIcon'               => __( 'Remove icon', 'boldform-lite' ),
+						'searchIcons'          => __( 'Search icons', 'boldform-lite' ),
+						'noIconsFound'         => __( 'No icons match.', 'boldform-lite' ),
 						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
 						'layout'       => __( 'Layout', 'boldform-lite' ),
 						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),

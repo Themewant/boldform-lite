@@ -433,6 +433,243 @@ jQuery(
 			return ( v && 'object' === typeof v && ! Array.isArray( v ) ) ? v : {};
 		}
 
+		// ── Per-option icons ──
+		// The registry is the server's (boldform_lite_choice_icons()), handed over in
+		// the localize payload rather than restated here: the picker can then only
+		// offer keys the sanitizer accepts, and the glyph it draws is the glyph the
+		// front end will render. An absent registry simply means no picker.
+		function bfChoiceIconSet() {
+			var set = boldformLiteBuilder.choiceIcons;
+			return ( set && 'object' === typeof set && ! Array.isArray( set ) ) ? set : {};
+		}
+
+		// Positional: entry N is option N's icon. Absent and '' both mean "none",
+		// which is what nearly every option is.
+		function bfOptionIcons( holder ) {
+			return ( holder && Array.isArray( holder.option_icons ) ) ? holder.option_icons : [];
+		}
+
+		// One option's icon, in the shape it is stored in: a built-in glyph's KEY, an
+		// { type: 'image', id, url } descriptor for a media-library file, or '' for
+		// none. Mirrors boldform_lite_sanitize_option_icon().
+		function bfOptionIcon( holder, index ) {
+			return bfNormalizeIcon( bfOptionIcons( holder )[ index ] );
+		}
+
+		function bfNormalizeIcon( raw ) {
+			if ( 'string' === typeof raw ) {
+				return bfChoiceIconSet()[ raw ] ? raw : '';
+			}
+			if ( raw && 'object' === typeof raw && 'image' === raw.type && raw.url ) {
+				return { type: 'image', id: Number( raw.id ) || 0, url: String( raw.url ) };
+			}
+			return '';
+		}
+
+		function bfIconIsImage( icon ) {
+			return !! ( icon && 'object' === typeof icon && 'image' === icon.type );
+		}
+
+		// The value a trigger is currently carrying. Held as JSON on the element
+		// because the option rows ARE the model — both editors read their options
+		// back out of the DOM — and an uploaded file is more than a key.
+		function bfTriggerIcon( $btn ) {
+			var raw = $btn.attr( 'data-icon' );
+			if ( ! raw ) { return ''; }
+			try { return bfNormalizeIcon( JSON.parse( raw ) ); } catch ( e ) { return ''; }
+		}
+
+		// Pads up to the index being written, so option 3 keeps entry 3 even when the
+		// three options before it have no icon, then drops trailing empties so a field
+		// that has been cleared stores nothing at all.
+		function bfSetOptionIcon( holder, index, icon ) {
+			if ( ! holder ) { return; }
+			var icons = bfOptionIcons( holder ).slice();
+			while ( icons.length <= index ) { icons.push( '' ); }
+			icons[ index ] = icon || '';
+			while ( icons.length && '' === icons[ icons.length - 1 ] ) { icons.pop(); }
+			holder.option_icons = icons;
+		}
+
+		// Mirrors boldform_lite_choice_icon_svg(). The path data comes from the server
+		// registry, so it is written through as-is; only keys and labels are escaped.
+		function bfChoiceIconSvg( key, size ) {
+			var icon = bfChoiceIconSet()[ key ];
+			if ( ! icon || ! icon.svg ) { return ''; }
+			size = size || 16;
+			return '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" ' +
+				'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + icon.svg + '</svg>';
+		}
+
+		// The glyph or the file, at a given size. One definition, so the canvas, the
+		// trigger and the picker all draw an icon the same way.
+		function bfIconMarkup( icon, size ) {
+			if ( bfIconIsImage( icon ) ) {
+				return '<img src="' + escapeHtml( icon.url ) + '" alt="" width="' + ( size || 16 ) + '" height="' + ( size || 16 ) + '">';
+			}
+			return bfChoiceIconSvg( icon, size );
+		}
+
+		// Mirrors boldform_lite_choice_icon_html(): emitted whatever the treatment,
+		// hidden by CSS outside the Button one. The canvas draws what the page draws.
+		function bfChoiceIconHtml( holder, index ) {
+			var markup = bfIconMarkup( bfOptionIcon( holder, index ) );
+			return markup ? '<span class="boldform-lite-form__choice-icon" aria-hidden="true">' + markup + '</span>' : '';
+		}
+
+		// Only a checkbox or radio ever becomes a row of pills; a select's options
+		// stay list rows whatever the Style says, so there is nowhere to put an icon
+		// and the trigger is not offered.
+		function bfIconableChoice( holder ) {
+			var type = holder && holder.type;
+			return ( 'checkbox' === type || 'radio' === type ) && 'button' === bfFieldChoiceMode( holder );
+		}
+
+		function bfIconName( icon ) {
+			var l = boldformLiteBuilder.labels || {};
+			if ( bfIconIsImage( icon ) ) { return l.customImage || 'Custom image'; }
+			var def = bfChoiceIconSet()[ icon ];
+			return def ? ( def.label || icon ) : '';
+		}
+
+		// The picker trigger. One definition for both places a choice's options are
+		// edited — a top-level field's option rows and a repeater sub-field's icon
+		// strip — so both write the same key into the same positional slot.
+		// `inert` renders it present but unusable: the top-level rows keep the trigger
+		// in the DOM whatever the treatment, because the options are collected FROM
+		// the DOM and a trigger that came and went would take the icons with it.
+		function bfOpticonBtn( holder, index, optionText, inert ) {
+			var l    = boldformLiteBuilder.labels || {};
+			var icon = bfOptionIcon( holder, index );
+			var pick = l.chooseIcon || 'Choose an icon';
+
+			return '<button type="button" class="boldform-opticon' + ( icon ? ' is-set' : '' ) +
+				( bfIconIsImage( icon ) ? ' is-image' : '' ) + '"' +
+				' data-bf-opticon="1" data-opt-index="' + index + '"' +
+				' data-icon="' + escapeHtml( JSON.stringify( icon || '' ) ) + '"' +
+				( inert ? ' hidden tabindex="-1"' : '' ) +
+				' title="' + escapeHtml( icon ? pick + ' \u2014 ' + bfIconName( icon ) : pick ) + '"' +
+				' aria-label="' + escapeHtml( optionText ? pick + ': ' + optionText : pick ) + '">' +
+				( icon ? bfIconMarkup( icon, 16 ) : '<span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span>' ) +
+			'</button>';
+		}
+
+		// Repaints one trigger in place. The settings panel is where the user is
+		// working, so choosing an icon must not rebuild it and scroll them away from
+		// the option they were looking at.
+		function bfPaintOpticon( $btn, icon ) {
+			var pick = ( boldformLiteBuilder.labels || {} ).chooseIcon || 'Choose an icon';
+			icon = bfNormalizeIcon( icon );
+			$btn.attr( 'data-icon', JSON.stringify( icon || '' ) )
+				.attr( 'title', icon ? pick + ' \u2014 ' + bfIconName( icon ) : pick )
+				.toggleClass( 'is-set', !! icon )
+				.toggleClass( 'is-image', bfIconIsImage( icon ) )
+				.html( icon ? bfIconMarkup( icon, 16 ) : '<span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span>' );
+		}
+
+		// A choice sub-field edits its options as rows, the way a top-level choice
+		// field does: one row per option, each with its value, its icon and its own
+		// Remove. The textarea this replaces could not carry an icon at all — there
+		// was nothing to hang one on but the line itself — and made reordering or
+		// removing an option a text-editing exercise.
+		//
+		// The icon trigger stays in every row whatever the treatment, `hidden`
+		// outside the Button one, for the same reason the top-level rows keep it:
+		// these rows ARE the model, read back on every edit, and a control that came
+		// and went would take the icons with it.
+		// Which of a sub-field's options start out selected. A list rather than Lite's
+		// comma-joined string, because an option is free text and may contain a comma.
+		// A radio or a select can only hold one, so the list is capped on the way out
+		// as well as on the way in — switching a checkbox with three defaults to a
+		// radio must not render three checked radios.
+		function bfSubDefaults( holder ) {
+			var raw = holder && holder.default_value;
+
+			if ( 'string' === typeof raw ) { raw = '' === raw ? [] : [ raw ]; }
+			if ( ! Array.isArray( raw ) ) { return []; }
+
+			var opts = ( holder && Array.isArray( holder.options ) ) ? holder.options.map( function ( o ) {
+				return $.trim( ( o || '' ).toString() );
+			} ) : [];
+
+			var out = [];
+			raw.forEach( function ( v ) {
+				v = $.trim( ( v || '' ).toString() );
+				if ( v && opts.indexOf( v ) !== -1 && out.indexOf( v ) === -1 ) { out.push( v ); }
+			} );
+
+			return 'checkbox' === ( holder && holder.type ) ? out : out.slice( 0, 1 );
+		}
+
+		function bfSubOptionsMarkup( holder ) {
+			var l     = boldformLiteBuilder.labels || {};
+			var opts  = ( holder && Array.isArray( holder.options ) ) ? holder.options : [];
+			var inert = ! bfIconableChoice( holder );
+			var picked = bfSubDefaults( holder );
+			var multi  = 'checkbox' === ( holder && holder.type );
+			// Radios have to be a group, and the group is this sub-field — otherwise
+			// choosing a default in one sub-field would clear it in the next.
+			var group  = 'bf-rep-opt-default-' + ( ( holder && holder.id ) || 'x' );
+			var rows   = '';
+
+			opts.forEach( function ( opt, i ) {
+				var text = ( opt || '' ).toString();
+				var on   = picked.indexOf( $.trim( text ) ) !== -1;
+				rows += '<div class="boldform-rep-opt">' +
+					// The same control a top-level choice field has: which option a
+					// fresh row opens with already selected.
+					'<label class="boldform-rep-opt__default' + ( on ? ' is-checked' : '' ) + '" title="' + escapeHtml( l.setDefault || 'Set as default' ) + '">' +
+						'<input type="' + ( multi ? 'checkbox' : 'radio' ) + '" name="' + escapeHtml( group ) + '"' + ( on ? ' checked' : '' ) + '>' +
+						'<span class="boldform-rep-opt__mark' + ( multi ? ' is-box' : '' ) + '"></span>' +
+					'</label>' +
+					'<span class="boldform-rep-opt__drag dashicons dashicons-menu" draggable="true" title="' + escapeHtml( 'Drag to reorder' ) + '"></span>' +
+					bfOpticonBtn( holder, i, $.trim( text ), inert ) +
+					'<input type="text" class="boldform-rep-opt__value" value="' + escapeHtml( text ) + '" placeholder="' + escapeHtml( l.optionPlaceholder || 'Option value' ) + '">' +
+					'<button type="button" class="boldform-rep-opt__remove" title="' + escapeHtml( ( boldformLiteBuilder.actions || {} ).delete || 'Remove' ) + '"><span class="dashicons dashicons-no-alt"></span></button>' +
+				'</div>';
+			} );
+
+			return '<div class="boldform-rep-field-row__options">' +
+				'<label class="boldform-rep-field__options-label">' + escapeHtml( l.options || 'Options' ) + '</label>' +
+				'<div class="boldform-rep-opts">' + rows + '</div>' +
+				'<button type="button" class="boldform-rep-opt__add"><span class="dashicons dashicons-plus-alt2" aria-hidden="true"></span> ' + escapeHtml( l.addOption || 'Add Option' ) + '</button>' +
+			'</div>';
+		}
+
+		// Rebuilds a sub-field's options AND its icons from its rows, in one pass, in
+		// DOM order — the same rule the top-level editor follows, so the two lists
+		// cannot drift apart however the rows were changed.
+		//
+		// A blank value is KEPT here, unlike at the top level: a just-added option is
+		// blank, and dropping it would take the row out from under the caret. Blanks
+		// are dropped by the Pro sanitizer on save, which packs the icons onto the
+		// options that survive.
+		function collectSubOptions( $list ) {
+			var options  = [];
+			var icons    = [];
+			var defaults = [];
+
+			$list.find( '.boldform-rep-opt' ).each( function () {
+				var $row  = $( this );
+				var value = ( $row.find( '.boldform-rep-opt__value' ).val() || '' ).toString();
+
+				options.push( value );
+				icons.push( bfTriggerIcon( $row.find( '[data-bf-opticon]' ) ) );
+
+				// Stored by VALUE, not by index, so a reorder needs no remapping and a
+				// blank row simply cannot be the default.
+				if ( $row.find( '.boldform-rep-opt__default input' ).is( ':checked' ) && $.trim( value ) ) {
+					defaults.push( $.trim( value ) );
+				}
+			} );
+
+			while ( icons.length && '' === icons[ icons.length - 1 ] ) {
+				icons.pop();
+			}
+
+			return { options: options, icons: icons, defaults: defaults };
+		}
+
 		// Inline declarations for the canvas, so the preview shows what will render.
 		// Mirrors boldform_lite_choice_style_declarations() in boldform-lite.php.
 		function bfChoiceStyleAttr( field ) {
@@ -786,6 +1023,8 @@ jQuery(
 				choice_styles: {},
 				// 'inherit' follows the form's Checkbox & Radio Style option.
 				choice_style: optionFieldTypes.indexOf( type ) !== -1 ? 'inherit' : '',
+				// Positional per-option icons, empty until one is chosen.
+				option_icons: [],
 				content: 'terms_conditions' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.termsContent || 'I agree to the <a href="#">terms and conditions</a>.' ) : '',
 				description: 'section_break' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.sectionDesc || 'Add a short description for this section.' ) : '',
 				custom_error: '',
@@ -950,6 +1189,9 @@ jQuery(
 			normalized.repeater_add_align = 'repeater' === type ? repAddAlign( field ) : normalized.repeater_add_align;
 			normalized.repeater_remove_position = repRemovePos( field );
 			normalized.choice_styles = field && field.choice_styles && 'object' === typeof field.choice_styles && ! Array.isArray( field.choice_styles ) ? field.choice_styles : {};
+			// Positional, so it is carried as a whole: re-deriving it from anything
+			// else would have to guess which option each entry belonged to.
+			normalized.option_icons = field && Array.isArray( field.option_icons ) ? field.option_icons : [];
 			normalized.content = field && typeof field.content !== 'undefined' ? field.content : normalized.content;
 			normalized.description = field && typeof field.description !== 'undefined' ? field.description : normalized.description;
 			normalized.custom_error = field && typeof field.custom_error !== 'undefined' ? field.custom_error : '';
@@ -2356,9 +2598,10 @@ jQuery(
 				var isBtnStyle = 'button' === bfFieldChoiceMode( field ) && ! isSwitchStyle;
 				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + ( isBtnStyle ? ' is-btn' : '' ) + '"' + bfChoiceStyleAttr( field ) + '>';
 				field.options.forEach(
-					function ( option ) {
+					function ( option, optionIndex ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
-						html += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( option ) + '</span></label>';
+						var iconHtml  = bfChoiceIconHtml( field, optionIndex );
+						html += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( field.type ) + '"' + ( isChecked ? ' checked' : '' ) + '><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + iconHtml + ( iconHtml ? '<span class="boldform-lite-form__choice-text">' + escapeHtml( option ) + '</span>' : escapeHtml( option ) ) + '</span></label>';
 					}
 				);
 				html += '</div>';
@@ -2579,8 +2822,15 @@ jQuery(
 						// Default/Button Style option included — exactly what the front end
 						// renders (see BoldForm_Pro_Repeater::render_sub_field()).
 						var ch = '<div class="boldform-canvas-field-choices boldform-canvas-repeater__choices' + ( 'button' === bfFieldChoiceMode( sf ) ? ' is-btn' : '' ) + '">';
-						items.slice( 0, 6 ).forEach( function ( o ) {
-							ch += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( t ) + '" disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( ( o || '' ).toString() ) + '</span></label>';
+						// What a fresh row opens with, drawn as it will arrive.
+						var picked = opts.length ? bfSubDefaults( sf ) : [];
+						items.slice( 0, 6 ).forEach( function ( o, oi ) {
+							// Only the real options carry icons; the two placeholders a
+							// sub-field with no options shows are drawn without one.
+							var ic = opts.length ? bfChoiceIconHtml( sf, oi ) : '';
+							var tx = escapeHtml( ( o || '' ).toString() );
+							var on = picked.indexOf( $.trim( ( o || '' ).toString() ) ) !== -1;
+							ch += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( t ) + '"' + ( on ? ' checked' : '' ) + ' disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + ic + ( ic ? '<span class="boldform-lite-form__choice-text">' + tx + '</span>' : tx ) + '</span></label>';
 						} );
 						ch += '</div>';
 						return ch;
@@ -3722,6 +3972,13 @@ jQuery(
 				optionsMarkup += '<label>' + escapeHtml( boldformLiteBuilder.labels.options ) + '</label>';
 				optionsMarkup += '<div class="boldform-options-repeater" id="boldform-options-repeater" data-field-type="' + escapeHtml( selected.field.type ) + '">';
 
+				// The trigger stays in every row whatever the treatment, because the
+				// options are collected back FROM these rows — a trigger that appeared
+				// and disappeared with the treatment would take the icons with it on
+				// the next keystroke. Outside the Button treatment it is `hidden`, so
+				// it is neither seen nor reachable, only readable.
+				var iconsInert = ! bfIconableChoice( selected.field );
+
 				selected.field.options.forEach( function ( option, index ) {
 					var trimmed = $.trim( option );
 					var isDefault = trimmed.length > 0 && currentDefaults.indexOf( trimmed ) !== -1;
@@ -3731,6 +3988,7 @@ jQuery(
 					optionsMarkup += '<span class="boldform-options-repeater__' + ( isMultiDefault ? 'checkbox' : 'radio' ) + '"></span>';
 					optionsMarkup += '</label>';
 					optionsMarkup += '<span class="boldform-options-repeater__drag" draggable="true"><span class="dashicons dashicons-menu"></span></span>';
+					optionsMarkup += bfOpticonBtn( selected.field, index, trimmed, iconsInert );
 					optionsMarkup += '<input type="text" class="boldform-options-repeater__input" value="' + escapeHtml( option ) + '" placeholder="' + escapeHtml( boldformLiteBuilder.labels.optionPlaceholder || 'Option value' ) + '">';
 					optionsMarkup += '<button type="button" class="boldform-options-repeater__remove" title="' + escapeHtml( boldformLiteBuilder.actions.delete || 'Remove' ) + '"><span class="dashicons dashicons-no-alt"></span></button>';
 					optionsMarkup += '</div>';
@@ -4447,7 +4705,6 @@ jQuery(
 							grp.fields.forEach( function ( sf, idx ) {
 								var sfType    = sf.type || 'text';
 								var isChoice  = ( 'select' === sfType || 'radio' === sfType || 'checkbox' === sfType );
-								var sfOptions = Array.isArray( sf.options ) ? sf.options : [];
 								rowsHtml +=
 									'<div class="boldform-rep-field-row" data-rep-group="' + gi + '" data-rep-index="' + idx + '" data-rep-id="' + escapeHtml( sf.id || '' ) + '">' +
 										'<div class="boldform-rep-field-row__main">' +
@@ -4499,10 +4756,7 @@ jQuery(
 											'</div>' +
 										'</div>' +
 										( isChoice ?
-											'<div class="boldform-rep-field-row__options">' +
-												'<label class="boldform-rep-field__options-label">Options (one per line)</label>' +
-												'<textarea class="boldform-rep-field__options" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( sfOptions.join( '\n' ) ) + '</textarea>' +
-											'</div>' +
+											bfSubOptionsMarkup( sf ) +
 											// The same override block a top-level choice field gets. One
 											// definition, so a sub-field can never accept a value the
 											// field itself rejects.
@@ -7966,21 +8220,43 @@ jQuery(
 			$( '#boldform-row-modal' ).attr( 'hidden', true );
 		}
 
+		// Options and their icons in one pass over the rows. Both lists come out of
+		// the same DOM order under the same "an empty row is not an option" rule, so
+		// a rename, a drag or a blanked-out row can never leave entry N describing a
+		// different option than the one it is beside.
 		function collectRepeaterOptions() {
 			var options = [];
-			$( '#boldform-options-repeater .boldform-options-repeater__input' ).each( function () {
-				var val = $.trim( $( this ).val() );
-				if ( val.length ) {
-					options.push( val );
+			var icons   = [];
+
+			$( '#boldform-options-repeater .boldform-options-repeater__item' ).each( function () {
+				var $row = $( this );
+				var val  = $.trim( $row.find( '.boldform-options-repeater__input' ).val() || '' );
+				if ( ! val.length ) {
+					return;
 				}
+				options.push( val );
+				icons.push( bfTriggerIcon( $row.find( '[data-bf-opticon]' ) ) );
 			} );
-			return options;
+
+			while ( icons.length && '' === icons[ icons.length - 1 ] ) {
+				icons.pop();
+			}
+
+			return { options: options, icons: icons };
+		}
+
+		// Writes both lists onto a field in one step. Every caller that re-reads the
+		// option rows goes through this, so the two can never be written apart.
+		function applyCollectedOptions( field ) {
+			var collected = collectRepeaterOptions();
+			field.options      = collected.options;
+			field.option_icons = collected.icons;
 		}
 
 		function syncRepeaterToField() {
 			var selected = getSelectedFieldLocation();
 			if ( ! selected || optionFieldTypes.indexOf( selected.field.type ) === -1 ) return;
-			selected.field.options = collectRepeaterOptions();
+			applyCollectedOptions( selected.field );
 
 			var defaults = [];
 			$( '#boldform-options-repeater input[name="boldform-option-default"]:checked' ).each( function () {
@@ -8518,9 +8794,20 @@ jQuery(
 		$( document ).on( 'click', '.boldform-options-repeater__remove', function () {
 			var selected = getSelectedFieldLocation();
 			if ( ! selected ) return;
-			var index = $( this ).closest( '.boldform-options-repeater__item' ).data( 'option-index' );
-			if ( selected.field.options.length <= 1 ) return; // Keep at least one.
+			// The row's position now, not the index stamped into it when the panel was
+			// drawn: a drag reorders the rows without re-rendering, so the attribute
+			// can point at a different option than the button that was clicked.
+			var index = $( this ).closest( '.boldform-options-repeater__item' ).index();
+			if ( index < 0 || selected.field.options.length <= 1 ) return; // Keep at least one.
 			selected.field.options.splice( index, 1 );
+			// The icons are positional, so the removed option's icon goes with it
+			// rather than sliding onto whatever option takes its place.
+			if ( Array.isArray( selected.field.option_icons ) && index < selected.field.option_icons.length ) {
+				selected.field.option_icons.splice( index, 1 );
+				while ( selected.field.option_icons.length && '' === selected.field.option_icons[ selected.field.option_icons.length - 1 ] ) {
+					selected.field.option_icons.pop();
+				}
+			}
 			renderSettingsPanel();
 			setupOptionsSortable();
 			setupAddressSortable();
@@ -8850,15 +9137,442 @@ jQuery(
 			t.commit( true );
 		} );
 
-		// Sub-field options (one per line) for choice sub-types.
-		$( document ).on( 'input', '.boldform-rep-field__options', function () {
-			var t = repTarget( $( this ) );
-			if ( ! t || ! t.field ) { return; }
-			// Keep raw line splits while editing; the Pro sanitizer drops blanks on
-			// save and the array is re-joined with newlines on reload.
-			t.field.options = $( this ).val().split( '\n' );
-			t.commit( false );
+		// ── Sub-field options ──
+		// Every edit rebuilds the whole list from the rows rather than patching one
+		// entry, so the options and their icons are always written together and the
+		// stored order is always the order on screen.
+		function commitSubOptions( $el, rerender ) {
+			var t = repTarget( $el );
+			if ( ! t || ! t.field ) { return null; }
+
+			var $list = $el.closest( '.boldform-rep-field-row' ).find( '.boldform-rep-opts' );
+			if ( $list.length ) {
+				var collected = collectSubOptions( $list );
+				t.field.options       = collected.options;
+				t.field.option_icons  = collected.icons;
+				t.field.default_value = collected.defaults;
+			}
+
+			t.commit( !! rerender );
+			return t;
+		}
+
+		// Typing: no re-render, or the input would be taken out from under the caret.
+		$( document ).on( 'input', '.boldform-rep-opt__value', function () {
+			commitSubOptions( $( this ), false );
 		} );
+
+		// Which option a fresh row opens with selected.
+		$( document ).on( 'change', '.boldform-rep-opt__default input', function () {
+			var $list = $( this ).closest( '.boldform-rep-opts' );
+
+			if ( 'radio' === this.type ) {
+				$list.find( '.boldform-rep-opt__default' ).removeClass( 'is-checked' );
+			}
+			$( this ).closest( '.boldform-rep-opt__default' ).toggleClass( 'is-checked', this.checked );
+			commitSubOptions( $( this ), false );
+		} );
+
+		// A radio group cannot express "nothing selected" once something is, and
+		// "this field opens blank" is a legitimate choice — so clicking the chosen
+		// option again clears it. The state has to be read on mousedown: by click
+		// time the browser has already marked it checked, and no change event fires
+		// when the selected radio is re-selected.
+		//
+		// Bound to the LABEL, not the input. The input is visually hidden and takes
+		// no pointer events, so the press lands on the label; clicking a label
+		// synthesises a click on its input but never a mousedown, which is why a
+		// handler on the input would never see the press at all.
+		$( document ).on( 'mousedown', '.boldform-rep-opt__default', function () {
+			var input = this.querySelector( 'input[type="radio"]' );
+			if ( input ) { input.setAttribute( 'data-bf-was', input.checked ? '1' : '0' ); }
+		} );
+
+		$( document ).on( 'click', '.boldform-rep-opt__default input[type="radio"]', function () {
+			if ( '1' === this.getAttribute( 'data-bf-was' ) ) {
+				this.checked = false;
+				$( this ).closest( '.boldform-rep-opt__default' ).removeClass( 'is-checked' );
+				commitSubOptions( $( this ), false );
+			}
+			this.removeAttribute( 'data-bf-was' );
+		} );
+
+		$( document ).on( 'click', '.boldform-rep-opt__add', function () {
+			var $row = $( this ).closest( '.boldform-rep-field-row' );
+			var gi   = Number( $row.closest( '[data-rep-group]' ).data( 'rep-group' ) );
+			var fi   = Number( $row.data( 'rep-index' ) );
+			// Read the rows first: the new option is appended to what is on screen,
+			// not to a model that may be a keystroke behind it.
+			var t = commitSubOptions( $( this ), false );
+			if ( ! t || ! t.field ) { return; }
+
+			t.field.options = ( t.field.options || [] ).concat( '' );
+			t.commit( true );
+
+			// Re-rendered, so the row is a new element: find it again by position and
+			// put the caret in the option that was just added.
+			$( '#boldform-rep-groups .boldform-rep-group' ).eq( gi )
+				.find( '.boldform-rep-field-row' ).eq( fi )
+				.find( '.boldform-rep-opt:last-child .boldform-rep-opt__value' ).trigger( 'focus' );
+		} );
+
+		$( document ).on( 'click', '.boldform-rep-opt__remove', function () {
+			var $opt  = $( this ).closest( '.boldform-rep-opt' );
+			var index = $opt.index();
+			var t     = commitSubOptions( $( this ), false );
+			if ( ! t || ! t.field || index < 0 ) { return; }
+
+			// A choice field with no options renders nothing, so the last one stays.
+			if ( ( t.field.options || [] ).length <= 1 ) { return; }
+
+			t.field.options.splice( index, 1 );
+			// Positional, so the removed option's icon goes with it rather than
+			// sliding onto whatever option takes its place.
+			if ( Array.isArray( t.field.option_icons ) && index < t.field.option_icons.length ) {
+				t.field.option_icons.splice( index, 1 );
+				while ( t.field.option_icons.length && '' === t.field.option_icons[ t.field.option_icons.length - 1 ] ) {
+					t.field.option_icons.pop();
+				}
+			}
+			t.commit( true );
+		} );
+
+		// Which options list a trigger edits. Inside a repeater sub-field row it is
+		// that sub-field's; anywhere else it is the selected field's. One resolver, so
+		// a trigger behaves the same in both editors.
+		function bfOpticonTarget( $btn ) {
+			if ( $btn.closest( '.boldform-rep-field-row' ).length ) {
+				var t = repTarget( $btn );
+				if ( ! t || ! t.field ) { return null; }
+				return { holder: t.field, commit: function () { t.commit( false ); } };
+			}
+
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || ! selected.field ) { return null; }
+			return {
+				holder: selected.field,
+				commit: function () { markDirty(); renderCanvas(); }
+			};
+		}
+
+		// Built once, on first use, and reused: the grid holds every icon in the
+		// registry, so rebuilding it per click would be the most expensive thing the
+		// settings panel does. It lives on <body> rather than inside the panel so it
+		// can overhang the panel's edge and its own scroll container.
+		var $bfIconPop   = null;
+		var bfIconPopFor = null;
+		// Where the trigger was when the popover was placed, so a later scroll can
+		// tell "the panel moved under it" from "a scroll that was already queued".
+		var bfIconPopAt  = 0;
+
+		function bfIconPopover() {
+			if ( $bfIconPop ) { return $bfIconPop; }
+
+			var l    = boldformLiteBuilder.labels || {};
+			var set  = bfChoiceIconSet();
+			var pick = l.chooseIcon || 'Choose an icon';
+			var grid = '';
+
+			Object.keys( set ).forEach( function ( key ) {
+				var name = set[ key ].label || key;
+				grid += '<button type="button" class="boldform-iconpop__item" data-icon-key="' + escapeHtml( key ) + '"' +
+					// Searched against both the human name and the key, so "cart" finds
+					// it whether the translation matches or not.
+					' data-icon-name="' + escapeHtml( ( name + ' ' + key ).toLowerCase() ) + '"' +
+					' title="' + escapeHtml( name ) + '">' + bfChoiceIconSvg( key, 18 ) + '</button>';
+			} );
+
+			// Three sources, three tabs. The built-in set is a KEY — it survives a site
+			// move and takes the pill's colour — while the other two are a file in the
+			// media library, which does neither, so they are worth telling apart even
+			// though both end up stored the same way.
+			var tabs = [
+				[ 'icon',  l.iconTabIcons || 'Icons' ],
+				[ 'svg',   l.iconTabSvg   || 'SVG' ],
+				[ 'image', l.iconTabImage || 'Image' ]
+			].map( function ( t, i ) {
+				return '<button type="button" class="boldform-iconpop__tab' + ( 0 === i ? ' is-active' : '' ) +
+					'" data-icon-tab="' + t[0] + '" role="tab" aria-selected="' + ( 0 === i ? 'true' : 'false' ) + '">' +
+					escapeHtml( t[1] ) + '</button>';
+			} ).join( '' );
+
+			// One card, not a box with a button beneath it: the whole panel is the
+			// action, so the tab has something to say in its empty state instead of
+			// reading as a control that failed to load.
+			var mediaPanel = function ( kind, title, hint ) {
+				return '<div class="boldform-iconpop__panel" data-icon-panel="' + kind + '" hidden>' +
+					'<button type="button" class="boldform-iconpop__drop" data-icon-media="' + kind + '"' +
+						' data-drop-title="' + escapeHtml( title ) + '" data-drop-hint="' + escapeHtml( hint ) + '">' +
+						'<span class="boldform-iconpop__drop-figure" data-icon-preview="' + kind + '"></span>' +
+						'<span class="boldform-iconpop__drop-text">' +
+							'<span class="boldform-iconpop__drop-title"></span>' +
+							'<span class="boldform-iconpop__drop-hint"></span>' +
+						'</span>' +
+					'</button>' +
+				'</div>';
+			};
+
+			$bfIconPop = $(
+				'<div class="boldform-iconpop" role="dialog" aria-label="' + escapeHtml( pick ) + '" hidden>' +
+					'<div class="boldform-iconpop__tabs" role="tablist">' + tabs + '</div>' +
+
+					'<div class="boldform-iconpop__panel" data-icon-panel="icon">' +
+						'<input type="search" class="boldform-iconpop__search" placeholder="' + escapeHtml( l.searchIcons || 'Search icons' ) + '" aria-label="' + escapeHtml( l.searchIcons || 'Search icons' ) + '">' +
+						'<div class="boldform-iconpop__grid">' + grid + '</div>' +
+						'<p class="boldform-iconpop__empty" hidden>' + escapeHtml( l.noIconsFound || 'No icons match.' ) + '</p>' +
+					'</div>' +
+
+					mediaPanel( 'svg', l.chooseSvg || 'Upload or choose an SVG', l.svgHint || 'SVG files from your Media Library. Every upload is cleaned before it is stored.' ) +
+					mediaPanel( 'image', l.chooseImage || 'Upload or choose an image', l.imageHint || 'PNG, JPG, GIF or WebP from your Media Library.' ) +
+
+					// One clear action, on every tab: an option that already has an icon
+					// should never need the user to work out which tab it came from to
+					// take it off again.
+					'<div class="boldform-iconpop__foot">' +
+						'<button type="button" class="boldform-iconpop__none" disabled>' + escapeHtml( l.noIcon || 'Remove icon' ) + '</button>' +
+					'</div>' +
+				'</div>'
+			).appendTo( document.body );
+
+			return $bfIconPop;
+		}
+
+		function bfCloseIconPop() {
+			if ( $bfIconPop ) { $bfIconPop.attr( 'hidden', true ); }
+			bfIconPopFor = null;
+		}
+
+		// Paints one media card. Empty, it says what the tab accepts; filled, it shows
+		// the file and the name it will be recognised by, which is the only thing a
+		// thumbnail the size of a favicon cannot tell you on its own.
+		function bfPaintDropCard( $card, icon ) {
+			var l    = boldformLiteBuilder.labels || {};
+			var $fig = $card.find( '.boldform-iconpop__drop-figure' );
+
+			if ( bfIconIsImage( icon ) ) {
+				// Basename of the path, so a query string or a long upload folder does
+				// not push the actual name out of view.
+				var path = String( icon.url ).split( /[?#]/ )[ 0 ];
+				var name = decodeURIComponent( path.substring( path.lastIndexOf( '/' ) + 1 ) ) || icon.url;
+
+				$card.addClass( 'is-filled' );
+				$fig.html( '<img src="' + escapeHtml( icon.url ) + '" alt="">' );
+				$card.find( '.boldform-iconpop__drop-title' ).text( name );
+				$card.find( '.boldform-iconpop__drop-hint' ).text( l.changeFile || 'Click to choose a different file' );
+				return;
+			}
+
+			$card.removeClass( 'is-filled' );
+			$fig.html( bfChoiceIconSvg( 'upload', 20 ) );
+			$card.find( '.boldform-iconpop__drop-title' ).text( $card.attr( 'data-drop-title' ) || '' );
+			$card.find( '.boldform-iconpop__drop-hint' ).text( $card.attr( 'data-drop-hint' ) || '' );
+		}
+
+		// Shows one tab. Kept separate from opening so the tab buttons and the
+		// "open on the tab this option is already using" rule share it.
+		function bfIconPopTab( name ) {
+			var $pop = bfIconPopover();
+
+			$pop.find( '.boldform-iconpop__tab' ).each( function () {
+				var on = $( this ).attr( 'data-icon-tab' ) === name;
+				$( this ).toggleClass( 'is-active', on ).attr( 'aria-selected', on ? 'true' : 'false' );
+			} );
+			$pop.find( '.boldform-iconpop__panel' ).each( function () {
+				$( this ).attr( 'hidden', $( this ).attr( 'data-icon-panel' ) === name ? null : true );
+			} );
+		}
+
+		function bfOpenIconPop( $btn ) {
+			var $pop = bfIconPopover();
+			var cur  = bfTriggerIcon( $btn );
+
+			bfIconPopFor = $btn[ 0 ];
+
+			$pop.find( '.boldform-iconpop__search' ).val( '' );
+			$pop.find( '.boldform-iconpop__item' ).removeClass( 'is-hidden is-active' );
+			$pop.find( '.boldform-iconpop__empty' ).attr( 'hidden', true );
+			$pop.find( '.boldform-iconpop__none' ).prop( 'disabled', ! cur );
+
+			// Whatever this option already has is what the picker shows first: a
+			// built-in glyph marked in the grid, a file shown on the tab it came from.
+			var onSvgTab = bfIconIsImage( cur ) && /\.svg(\?|#|$)/i.test( cur.url );
+
+			$pop.find( '.boldform-iconpop__drop' ).each( function () {
+				var kind = $( this ).attr( 'data-icon-media' );
+				// The file is shown on its own tab only. The other card stays empty, so
+				// the two tabs never claim to hold the same thing.
+				bfPaintDropCard( $( this ), ( bfIconIsImage( cur ) && ( 'svg' === kind ) === onSvgTab ) ? cur : '' );
+			} );
+
+			if ( bfIconIsImage( cur ) ) {
+				bfIconPopTab( onSvgTab ? 'svg' : 'image' );
+			} else {
+				if ( cur ) {
+					$pop.find( '.boldform-iconpop__item[data-icon-key="' + cur.replace( /"/g, '' ) + '"]' ).addClass( 'is-active' );
+				}
+				bfIconPopTab( 'icon' );
+			}
+
+			$pop.removeAttr( 'hidden' );
+
+			// Anchored to the trigger in viewport coordinates, and flipped above it
+			// when there is no room below — the option rows near the bottom of a long
+			// settings panel are exactly where a picker would otherwise open offscreen.
+			var r = $btn[ 0 ].getBoundingClientRect();
+			var w = $pop.outerWidth();
+			var h = $pop.outerHeight();
+			var left = Math.min( Math.max( 8, r.left ), Math.max( 8, window.innerWidth - w - 8 ) );
+			var top  = r.bottom + 6;
+
+			if ( top + h > window.innerHeight - 8 ) {
+				top = Math.max( 8, r.top - h - 6 );
+			}
+
+			$pop.css( { left: Math.round( left ) + 'px', top: Math.round( top ) + 'px' } );
+			bfIconPopAt = r.top;
+
+			if ( ! $pop.find( '[data-icon-panel="icon"]' ).attr( 'hidden' ) ) {
+				$pop.find( '.boldform-iconpop__search' ).trigger( 'focus' );
+			}
+		}
+
+		// Writes one icon: model, trigger and canvas, in that order. Both the grid and
+		// the media frames end here, so a built-in glyph and an uploaded file are
+		// stored and drawn by exactly the same path.
+		function bfApplyIcon( $btn, icon ) {
+			var t = $btn.length ? bfOpticonTarget( $btn ) : null;
+			// The row's position NOW, not the index stamped into the trigger when the
+			// panel was drawn: both editors reorder by drag without re-rendering, so
+			// the attribute can point at a different option than the one clicked.
+			var $opt = $btn.closest( '.boldform-rep-opt, .boldform-options-repeater__item' );
+			var idx  = $opt.length ? $opt.index() : parseInt( $btn.attr( 'data-opt-index' ), 10 );
+
+			if ( ! t || isNaN( idx ) || idx < 0 ) { return false; }
+
+			bfSetOptionIcon( t.holder, idx, bfNormalizeIcon( icon ) );
+			// Repainted in place, not re-rendered: the settings panel is where the
+			// user is working, and rebuilding it would scroll them away from the
+			// option they just changed.
+			bfPaintOpticon( $btn, icon );
+			t.commit();
+			return true;
+		}
+
+		$( document ).on( 'click', '[data-bf-opticon]', function ( e ) {
+			e.preventDefault();
+			e.stopPropagation();
+			if ( bfIconPopFor === this ) { bfCloseIconPop(); return; }
+			bfOpenIconPop( $( this ) );
+		} );
+
+		$( document ).on( 'click', '.boldform-iconpop__tab', function ( e ) {
+			e.preventDefault();
+			bfIconPopTab( $( this ).attr( 'data-icon-tab' ) );
+			if ( 'icon' === $( this ).attr( 'data-icon-tab' ) ) {
+				bfIconPopover().find( '.boldform-iconpop__search' ).trigger( 'focus' );
+			}
+		} );
+
+		$( document ).on( 'input', '.boldform-iconpop__search', function () {
+			var q     = $.trim( ( $( this ).val() || '' ).toString().toLowerCase() );
+			var $pop  = bfIconPopover();
+			var shown = 0;
+
+			$pop.find( '.boldform-iconpop__item' ).each( function () {
+				var hit = ! q || ( $( this ).attr( 'data-icon-name' ) || '' ).indexOf( q ) !== -1;
+				$( this ).toggleClass( 'is-hidden', ! hit );
+				if ( hit ) { shown++; }
+			} );
+
+			$pop.find( '.boldform-iconpop__empty' ).attr( 'hidden', shown > 0 ? true : null );
+		} );
+
+		$( document ).on( 'click', '.boldform-iconpop__item', function ( e ) {
+			e.preventDefault();
+			var $btn = bfIconPopFor ? $( bfIconPopFor ) : $();
+			bfApplyIcon( $btn, $( this ).attr( 'data-icon-key' ) || '' );
+			bfCloseIconPop();
+			$btn.trigger( 'focus' );
+		} );
+
+		$( document ).on( 'click', '.boldform-iconpop__none', function ( e ) {
+			e.preventDefault();
+			var $btn = bfIconPopFor ? $( bfIconPopFor ) : $();
+			bfApplyIcon( $btn, '' );
+			bfCloseIconPop();
+			$btn.trigger( 'focus' );
+		} );
+
+		// The media library. The frame takes over the screen, so the trigger is
+		// captured BEFORE the popover closes — by the time 'select' fires there is no
+		// open popover left to ask which option this was for.
+		$( document ).on( 'click', '[data-icon-media]', function ( e ) {
+			e.preventDefault();
+
+			var $btn = bfIconPopFor ? $( bfIconPopFor ) : $();
+			var kind = $( this ).attr( 'data-icon-media' );
+			var l    = boldformLiteBuilder.labels || {};
+
+			if ( ! $btn.length || typeof wp === 'undefined' || ! wp.media ) { return; }
+
+			bfCloseIconPop();
+
+			var frame = wp.media( {
+				title: 'svg' === kind ? ( l.chooseSvg || 'Upload or choose an SVG' ) : ( l.chooseImage || 'Upload or choose an image' ),
+				button: { text: l.useThisFile || 'Use this file' },
+				multiple: false,
+				// An SVG is an image as far as the library is concerned, so the SVG tab
+				// narrows to that one mime rather than to a different kind of thing.
+				library: { type: 'svg' === kind ? 'image/svg+xml' : 'image' }
+			} );
+
+			frame.on( 'select', function () {
+				var a = frame.state().get( 'selection' ).first();
+				if ( ! a ) { return; }
+				a = a.toJSON();
+				if ( ! a.url ) { return; }
+
+				bfApplyIcon( $btn, { type: 'image', id: Number( a.id ) || 0, url: String( a.url ) } );
+				$btn.trigger( 'focus' );
+			} );
+
+			frame.open();
+		} );
+
+		// Anything that moves the trigger out from under the popover closes it, since
+		// it is positioned once rather than tracked.
+		$( document ).on( 'mousedown', function ( e ) {
+			if ( ! bfIconPopFor ) { return; }
+			if ( $( e.target ).closest( '.boldform-iconpop, [data-bf-opticon]' ).length ) { return; }
+			bfCloseIconPop();
+		} );
+
+		$( document ).on( 'keydown', function ( e ) {
+			if ( bfIconPopFor && 27 === e.keyCode ) {
+				var $btn = $( bfIconPopFor );
+				bfCloseIconPop();
+				$btn.trigger( 'focus' );
+			}
+		} );
+
+		$( window ).on( 'resize', function () {
+			if ( bfIconPopFor ) { bfCloseIconPop(); }
+		} );
+
+		// Scroll does not bubble, so a delegated handler would never see the settings
+		// panel scrolling under the popover. A capture-phase listener does, whichever
+		// element is doing the scrolling.
+		//
+		// It closes on the trigger having MOVED, not on the event: bringing a trigger
+		// into view and clicking it is one gesture, and the scroll it queues arrives
+		// after the click — closing on the event alone would shut the popover the
+		// instant it opened.
+		document.addEventListener( 'scroll', function () {
+			if ( ! bfIconPopFor ) { return; }
+			if ( Math.abs( bfIconPopFor.getBoundingClientRect().top - bfIconPopAt ) > 1 ) {
+				bfCloseIconPop();
+			}
+		}, true );
 
 		// Group collapsible, and its default state.
 		$( document ).on( 'change', '.boldform-rep-group__collapsible', function () {
@@ -8934,6 +9648,23 @@ jQuery(
 					draggable: '.boldform-rep-field-row',
 					handle: '.boldform-rep-field__drag',
 					onEnd: syncRepeaterFromDom
+				} );
+			} );
+
+			// One sortable per sub-field's option list, each with a name of its own.
+			// Options belong to the sub-field they are under, and a shared name would
+			// put every list in one pool — an option could then be dragged out of one
+			// choice field and into another, which is not a thing a form can express.
+			$( '#boldform-rep-groups .boldform-rep-opts' ).each( function ( i ) {
+				Sortable.create( this, {
+					group: { name: 'boldform-rep-opts-' + i, put: true },
+					draggable: '.boldform-rep-opt',
+					handle: '.boldform-rep-opt__drag',
+					onEnd: function ( evt ) {
+						// Re-read the rows: the collector takes DOM order, so the move
+						// and the icons that travelled with it are both already right.
+						commitSubOptions( $( evt.item ), false );
+					}
 				} );
 			} );
 		}
@@ -9475,7 +10206,7 @@ jQuery(
 				}
 
 				if ( optionFieldTypes.indexOf( selected.field.type ) !== -1 ) {
-					selected.field.options = collectRepeaterOptions();
+					applyCollectedOptions( selected.field );
 				}
 
 				renderCanvas();

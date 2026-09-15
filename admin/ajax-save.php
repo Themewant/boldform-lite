@@ -353,6 +353,14 @@ class BoldForm_Lite_Ajax_Save {
 							'default_value'  => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
 							'required'       => ! empty( $field['required'] ),
 							'options'        => $options,
+							// Positional: entry N is option N's icon. Sanitized against the
+							// option count so a removed option cannot leave an icon behind
+							// on whatever option takes its place. Only a checkbox or radio
+							// has anywhere to put one — a select's options stay list rows
+							// whatever the Style says — so nothing else stores any.
+							'option_icons'   => in_array( $field_type, array( 'checkbox', 'radio' ), true )
+								? boldform_lite_sanitize_option_icons( isset( $field['option_icons'] ) ? $field['option_icons'] : array(), count( $options ) )
+								: array(),
 							'options_layout' => $options_layout,
 							'checkbox_style' => $checkbox_style,
 							// Per-field Checkbox & Radio treatment. 'inherit' follows the

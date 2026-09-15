@@ -2144,20 +2144,35 @@ class BoldForm_Lite_Shortcode {
 			$html           = '<div class="' . esc_attr( $choices_class ) . '" role="group"' . $group_labelledby . '>';
 			$default_values = 'checkbox' === $type ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
 
+			// Positional: entry N is option N's icon. Read once rather than per
+			// option, because each lookup rebuilds the registry.
+			$option_icons = isset( $field['option_icons'] ) && is_array( $field['option_icons'] ) ? array_values( $field['option_icons'] ) : array();
+
 			foreach ( $this->normalize_options( $options ) as $option_index => $option ) {
 				$choice_id = $field_id_attr . '_' . $option_index;
 				$name_attr = 'checkbox' === $type ? $field_name . '[]' : $field_name;
 				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
+				// Decoration, so it is aria-hidden and the label text still carries the
+				// whole accessible name. Always emitted when set; the stylesheet shows
+				// it only in the Button treatment, which is the one with a pill to put
+				// an icon in.
+				$icon_html = boldform_lite_choice_icon_html( isset( $option_icons[ $option_index ] ) ? $option_icons[ $option_index ] : '' );
+				// The text is wrapped only when there is an icon beside it, so an
+				// option without one renders exactly the markup it always has.
+				$text_html = '' === $icon_html
+					? esc_html( $option )
+					: '<span class="boldform-lite-form__choice-text">' . esc_html( $option ) . '</span>';
 
 				$html .= sprintf(
-					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s</span></label>',
+					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s%8$s</span></label>',
 					esc_attr( $choice_id ),
 					esc_attr( $type ),
 					esc_attr( $name_attr ),
 					esc_attr( $option ),
 					$checked,
 					$required_attr,
-					esc_html( $option )
+					$icon_html,
+					$text_html
 				);
 			}
 
