@@ -947,6 +947,17 @@ class BoldForm_Lite_Admin {
 						'checkboxStyle'        => __( 'Style', 'boldform-lite' ),
 						'checkboxStyleDefault' => __( 'Checkbox', 'boldform-lite' ),
 						'checkboxStyleSwitch'  => __( 'Switch', 'boldform-lite' ),
+						'repAddAlign'          => __( 'Add button alignment', 'boldform-lite' ),
+						'choiceStyleInherit'   => __( 'Form default', 'boldform-lite' ),
+						'repHideLabel'         => __( 'Hide label', 'boldform-lite' ),
+						'repRemovePos'         => __( 'Remove button position', 'boldform-lite' ),
+						'repRemoveTop'         => __( 'Top of the row', 'boldform-lite' ),
+						'repRemoveBottom'      => __( 'Bottom of the row', 'boldform-lite' ),
+						// Per-field Checkbox & Radio overrides. The controls themselves are
+						// the Style tab's, so they carry their own labels.
+						'choiceOverride'       => __( 'Options appearance', 'boldform-lite' ),
+						'choiceOverrideHint'   => __( 'Empty follows the form style', 'boldform-lite' ),
+						'choiceOverrideReset'  => __( 'Reset', 'boldform-lite' ),
 						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
 						'layout'       => __( 'Layout', 'boldform-lite' ),
 						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),

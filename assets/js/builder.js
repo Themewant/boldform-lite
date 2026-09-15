@@ -415,6 +415,168 @@ jQuery(
 			} );
 		}
 
+		// ── Per-field Checkbox & Radio overrides ──
+		// A field stores finished CSS custom properties, keyed by property name — the
+		// same shape the form-level Style tab stores, which is what lets both surfaces
+		// run on the same controls. Emitted on the field wrapper, where a nearer
+		// declaration beats the form's without a single !important.
+		// A field may follow the form or pin itself to one treatment. 'inherit' is the
+		// default, and is what every form saved before the option existed does.
+		function bfFieldChoiceMode( field ) {
+			var own = field && field.choice_style;
+			return ( 'default' === own || 'button' === own ) ? own
+				: ( 'button' === state.formSettings.choice_style ? 'button' : 'default' );
+		}
+
+		function bfChoiceStyles( field ) {
+			var v = field && field.choice_styles;
+			return ( v && 'object' === typeof v && ! Array.isArray( v ) ) ? v : {};
+		}
+
+		// Inline declarations for the canvas, so the preview shows what will render.
+		// Mirrors boldform_lite_choice_style_declarations() in boldform-lite.php.
+		function bfChoiceStyleAttr( field ) {
+			var styles = bfChoiceStyles( field );
+			var allow  = bfChoiceAllVars().concat( bfChoiceTypographyVars() );
+			var parts  = [];
+
+			allow.forEach( function ( cssVar ) {
+				if ( styles[ cssVar ] ) { parts.push( cssVar + ':' + styles[ cssVar ] ); }
+			} );
+
+			return parts.length ? ' style="' + escapeHtml( parts.join( ';' ) ) + '"' : '';
+		}
+
+		// The typography control writes a family of derived properties off one base
+		// name, so they are not in bfChoiceAllVars() and have to be spelled out.
+		function bfChoiceTypographyVars() {
+			return [ '--bf-choice-color' ].concat(
+				[ '-ff', '-fs', '-fw', '-lh', '-ls', '-tt' ].map( function ( sfx ) { return '--bf-choice' + sfx; } )
+			);
+		}
+
+		// The override block: the Style tab's own Checkbox & Radio controls, pointed at
+		// this field. Rendered inline rather than behind a disclosure, because the
+		// settings panel is rebuilt on every change and a collapsed section would
+		// reopen itself on each edit.
+		function bfChoiceStyleMarkup( field ) {
+			var l = boldformLiteBuilder.labels || {};
+
+			// Read-only scope for the render pass; writes arrive later through
+			// recomputeAdvField(), which resolves its own scope from the DOM.
+			var prev = bfStyleScope;
+			bfStyleScope = bfFieldStyleScope( { field: field, commit: function () {} } );
+
+			var mode = bfFieldChoiceMode( field );
+			var body;
+			try {
+				body = bfOrderControls( bfChoiceControls( false, mode ) ).map( advControl ).join( '' );
+			} finally {
+				bfStyleScope = prev;
+			}
+
+			// The treatment this field renders in. Three options, not two: a field has
+			// to be able to say "follow the form", which is what it does today.
+			var own  = ( 'default' === ( field && field.choice_style ) || 'button' === ( field && field.choice_style ) ) ? field.choice_style : 'inherit';
+			var modeCtl = '<div class="boldform-setting-group boldform-choice-style__mode">' +
+				'<label>' + escapeHtml( advLabel( 'choiceStyle' ) ) + '</label>' +
+				'<div class="boldform-btn-group boldform-choice-style__modegroup">' +
+					[ [ 'inherit', boldformLiteBuilder.labels.choiceStyleInherit || 'Form default' ],
+					  [ 'default', advLabel( 'choiceStyleDefault' ) ],
+					  [ 'button',  advLabel( 'choiceStyleButton' ) ] ].map( function ( o ) {
+						return '<button type="button" class="boldform-btn-group__btn' + ( o[0] === own ? ' is-active' : '' ) +
+							'" data-choice-mode="' + o[0] + '">' + escapeHtml( o[1] ) + '</button>';
+					} ).join( '' ) +
+				'</div>' +
+			'</div>';
+
+			var count = Object.keys( bfChoiceStyles( field ) ).length;
+			var open  = !! bfChoiceOpen[ field && field.id ];
+
+			// Collapsed by default: this is a long section and most fields never
+			// override anything, so it should not push the controls a user actually
+			// came for off the bottom of the panel.
+			return '<div class="boldform-choice-style' + ( open ? ' is-open' : '' ) + '" data-bf-choice-scope="1">' +
+				'<div class="boldform-choice-style__head">' +
+					'<button type="button" class="boldform-choice-style__toggle" aria-expanded="' + ( open ? 'true' : 'false' ) + '">' +
+						'<span class="boldform-choice-style__caret" aria-hidden="true"></span>' +
+						'<span class="boldform-choice-style__title">' + escapeHtml( l.choiceOverride || 'Options appearance' ) + '</span>' +
+						// A count, so a collapsed block still says whether this field
+						// has been customised at all.
+						( count ? '<span class="boldform-choice-style__badge">' + count + '</span>' : '' ) +
+					'</button>' +
+					'<button type="button" class="boldform-choice-style__reset"' + ( count ? '' : ' disabled' ) + '>' +
+						escapeHtml( l.choiceOverrideReset || 'Reset' ) +
+					'</button>' +
+				'</div>' +
+				'<div class="boldform-choice-style__body">' +
+					modeCtl +
+					'<div class="boldform-adv-grid">' + body + '</div>' +
+					'<p class="boldform-choice-style__hint">' + escapeHtml( l.choiceOverrideHint || 'Empty follows the form style' ) + '</p>' +
+				'</div>' +
+			'</div>';
+		}
+
+		// Open/closed per field id, not per element: the settings panel is rebuilt on
+		// every edit, so without this the section would slam shut mid-change — the
+		// same "feels like it refreshed" problem the Style tab had.
+		var bfChoiceOpen = {};
+
+		// Only this block's Reset — the Style tab's section resets are refreshed by
+		// bfRefreshResetStates(), which reads the form map and must not see a field.
+		function bfRefreshChoiceReset() {
+			$( '.boldform-choice-style' ).each( function () {
+				var t = bfChoiceStyleTarget( $( this ) );
+				var n = ( t && t.field ) ? Object.keys( bfChoiceStyles( t.field ) ).length : 0;
+				$( this ).find( '.boldform-choice-style__reset' ).prop( 'disabled', ! n );
+
+				// Keep the collapsed-state count honest without re-rendering.
+				var $toggle = $( this ).find( '.boldform-choice-style__toggle' );
+				var $badge  = $toggle.find( '.boldform-choice-style__badge' );
+				if ( ! n ) {
+					$badge.remove();
+				} else if ( $badge.length ) {
+					$badge.text( n );
+				} else {
+					$toggle.append( '<span class="boldform-choice-style__badge">' + n + '</span>' );
+				}
+			} );
+		}
+
+		// Only 'center', 'right' and 'full' are stored as a deviation; anything else —
+		// including an absent key on a form saved before the option existed — is 'left'.
+		function repAddAlign( field ) {
+			var v = field && field.repeater_add_align;
+			return ( 'center' === v || 'right' === v || 'full' === v ) ? v : 'left';
+		}
+
+		// A row is removable only when the repeater can hold more rows than its
+		// minimum: it opens at min_rows and Remove appears once the count exceeds it.
+		// With max <= min the button can never be reached, so its two settings are
+		// controls for something that cannot happen and the panel leaves them out.
+		function repRemovable( field ) {
+			var min = Math.max( 1, Math.min( 10, parseInt( field && field.repeater_min_rows, 10 ) || 1 ) );
+			var max = Math.max( 1, Math.min( 20, parseInt( field && field.repeater_max_rows, 10 ) || 5 ) );
+			return max > min;
+		}
+
+		// '' means "follow the row title" — the behaviour every repeater had before the
+		// option existed. Only 'top' and 'bottom' are stored as a deviation.
+		function repRemovePos( field ) {
+			var v = field && field.repeater_remove_position;
+			return ( 'top' === v || 'bottom' === v ) ? v : '';
+		}
+
+		// What '' actually resolves to, which is what the control shows. A form saved
+		// before the setting existed has no stored value, and offering the user a
+		// third "whatever it was" choice explains nothing — the panel shows the real
+		// position instead, and clicking either segment writes it down explicitly.
+		function repRemoveEffective( field ) {
+			var v = repRemovePos( field );
+			if ( v ) { return v; }
+			return '' !== ( ( field && field.repeater_row_label ) || '' ) ? 'top' : 'bottom';
+		}
+
 		// Total sub-fields across every group — the cap counts the repeater, not a group.
 		function repeaterFieldCount( groups ) {
 			return groups.reduce( function ( n, g ) { return n + g.fields.length; }, 0 );
@@ -619,6 +781,11 @@ jQuery(
 				options: optionFieldTypes.indexOf( type ) !== -1 ? [ boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option1 || 'Option 1', boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.option2 || 'Option 2' ] : [],
 				options_layout: optionFieldTypes.indexOf( type ) !== -1 ? 'block' : '',
 				checkbox_style: 'checkbox' === type ? 'default' : '',
+				// Per-field Checkbox & Radio overrides. Empty means "inherit the form",
+				// so a new field adds nothing to fields_json until something is set.
+				choice_styles: {},
+				// 'inherit' follows the form's Checkbox & Radio Style option.
+				choice_style: optionFieldTypes.indexOf( type ) !== -1 ? 'inherit' : '',
 				content: 'terms_conditions' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.termsContent || 'I agree to the <a href="#">terms and conditions</a>.' ) : '',
 				description: 'section_break' === type ? ( boldformLiteBuilder.defaults && boldformLiteBuilder.defaults.sectionDesc || 'Add a short description for this section.' ) : '',
 				custom_error: '',
@@ -676,6 +843,8 @@ jQuery(
 				// Seed a new repeater with two text sub-fields so the settings list, the
 				// canvas preview AND the front end all show real, editable sub-fields from
 				// the start (a repeater with zero sub-fields renders an empty, unusable row).
+				repeater_add_align: 'repeater' === type ? 'left' : '',
+				repeater_remove_position: '',
 				repeater_fields: 'repeater' === type ? [ {
 					id: 'g_' + Math.random().toString( 36 ).slice( 2, 8 ),
 					label: '', columns: 0, collapsible: false, open: true,
@@ -772,6 +941,15 @@ jQuery(
 			normalized.options = field && Array.isArray( field.options ) ? field.options : normalized.options;
 			normalized.options_layout = field && field.options_layout ? field.options_layout : normalized.options_layout;
 			normalized.checkbox_style = field && 'switch' === field.checkbox_style ? 'switch' : normalized.checkbox_style;
+			// normalizeField() rebuilds from createField(), so an unlisted key is
+			// dropped on reload — the overrides have to be carried explicitly.
+			normalized.choice_style = ( field && ( 'default' === field.choice_style || 'button' === field.choice_style ) ) ? field.choice_style : normalized.choice_style;
+			// Delegated to repAddAlign(), which is the single definition of what the
+			// key may hold. Repeating the allowlist here is how 'full' came back from
+			// the database and was silently rewritten to 'left' on reload.
+			normalized.repeater_add_align = 'repeater' === type ? repAddAlign( field ) : normalized.repeater_add_align;
+			normalized.repeater_remove_position = repRemovePos( field );
+			normalized.choice_styles = field && field.choice_styles && 'object' === typeof field.choice_styles && ! Array.isArray( field.choice_styles ) ? field.choice_styles : {};
 			normalized.content = field && typeof field.content !== 'undefined' ? field.content : normalized.content;
 			normalized.description = field && typeof field.description !== 'undefined' ? field.description : normalized.description;
 			normalized.custom_error = field && typeof field.custom_error !== 'undefined' ? field.custom_error : '';
@@ -2175,8 +2353,8 @@ jQuery(
 				// Mirrors the front end exactly (see render_field_control): the
 				// form-level Style: Button applies unless this field is already a
 				// Switch, which is a deliberate per-field choice that wins.
-				var isBtnStyle = 'button' === state.formSettings.choice_style && ! isSwitchStyle;
-				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + ( isBtnStyle ? ' is-btn' : '' ) + '">';
+				var isBtnStyle = 'button' === bfFieldChoiceMode( field ) && ! isSwitchStyle;
+				html = '<div class="boldform-canvas-field-choices' + ( 'inline' === field.options_layout ? ' is-inline' : '' ) + ( isSwitchStyle ? ' is-switch' : '' ) + ( isBtnStyle ? ' is-btn' : '' ) + '"' + bfChoiceStyleAttr( field ) + '>';
 				field.options.forEach(
 					function ( option ) {
 						var isChecked = choiceDefaults.indexOf( $.trim( option ) ) !== -1;
@@ -2400,7 +2578,7 @@ jQuery(
 						// and they answer to the Checkbox & Radio style group, the
 						// Default/Button Style option included — exactly what the front end
 						// renders (see BoldForm_Pro_Repeater::render_sub_field()).
-						var ch = '<div class="boldform-canvas-field-choices boldform-canvas-repeater__choices' + ( 'button' === state.formSettings.choice_style ? ' is-btn' : '' ) + '">';
+						var ch = '<div class="boldform-canvas-field-choices boldform-canvas-repeater__choices' + ( 'button' === bfFieldChoiceMode( sf ) ? ' is-btn' : '' ) + '">';
 						items.slice( 0, 6 ).forEach( function ( o ) {
 							ch += '<label class="boldform-lite-form__choice"><input type="' + escapeHtml( t ) + '" disabled><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">' + escapeHtml( ( o || '' ).toString() ) + '</span></label>';
 						} );
@@ -2436,8 +2614,15 @@ jQuery(
 						}
 						html += '<div class="boldform-canvas-repeater__group-body" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">';
 						grp.fields.forEach( function ( sf ) {
-							html += '<div class="boldform-canvas-repeater__field' + ( sf.full_width ? ' is-full' : '' ) + '">';
-							html += '<span class="boldform-canvas-repeater__label">' + escapeHtml( repSubLabel( sf ) ) + ( sf.required ? ' <span class="boldform-required">*</span>' : '' ) + '</span>';
+							// Overrides ride the sub-field wrapper, matching where
+							// BoldForm_Pro_Repeater::render_sub_field() puts them.
+							html += '<div class="boldform-canvas-repeater__field' + ( sf.full_width ? ' is-full' : '' ) + '"' + bfChoiceStyleAttr( sf ) + '>';
+							// The front end keeps a hidden label in the DOM for screen
+							// readers, but it is out of flow — so the canvas, which is only a
+							// picture, simply omits the line.
+							if ( ! sf.hide_label ) {
+								html += '<span class="boldform-canvas-repeater__label">' + escapeHtml( repSubLabel( sf ) ) + ( sf.required ? ' <span class="boldform-required">*</span>' : '' ) + '</span>';
+							}
 							html += repControl( sf );
 							html += '</div>';
 						} );
@@ -2445,7 +2630,7 @@ jQuery(
 					} );
 					html += '</div>';
 				}
-				html += '<div class="boldform-canvas-repeater__add"><span class="dashicons dashicons-plus-alt2"></span> ' + escapeHtml( field.repeater_add_label || 'Add Row' ) + '</div>';
+				html += '<div class="boldform-canvas-repeater__add' + ( 'left' !== repAddAlign( field ) ? ' is-align-' + repAddAlign( field ) : '' ) + '"><span class="dashicons dashicons-plus-alt2"></span> ' + escapeHtml( field.repeater_add_label || 'Add Row' ) + '</div>';
 				html += '</div>';
 
 			} else if ( field.type === 'password_field' ) {
@@ -3565,6 +3750,11 @@ jQuery(
 							'<option value="inline"' + ( 'inline' === selected.field.options_layout ? ' selected' : '' ) + '>' + escapeHtml( boldformLiteBuilder.labels.optionsLayoutInline || 'Inline' ) + '</option>' +
 						'</select>' +
 					'</div>';
+
+				// Per-field appearance. Sits under Layout because it is the same kind
+				// of decision — how this particular option set looks — while the Style
+				// tab keeps owning the form-wide defaults these fall back to.
+				optionsMarkup += bfChoiceStyleMarkup( selected.field );
 			}
 
 			// Checkbox-only: render as a toggle switch instead of a square box.
@@ -4261,7 +4451,10 @@ jQuery(
 								rowsHtml +=
 									'<div class="boldform-rep-field-row" data-rep-group="' + gi + '" data-rep-index="' + idx + '" data-rep-id="' + escapeHtml( sf.id || '' ) + '">' +
 										'<div class="boldform-rep-field-row__main">' +
-											'<span class="boldform-rep-field__drag dashicons dashicons-menu" title="' + escapeHtml( 'Drag to reorder or move between groups' ) + '"></span>' +
+											// draggable="true" is what starts a native drag; the handle
+											// carried a grab cursor but no drag, so nothing moved. Every
+											// other handle in the builder sets it the same way.
+											'<span class="boldform-rep-field__drag dashicons dashicons-menu" draggable="true" title="' + escapeHtml( 'Drag to reorder or move between groups' ) + '"></span>' +
 											// Named with the SAME label the field palette uses for that
 											// type — "Textarea", "Select", "Date Picker" — instead of the
 											// raw slug. getLibraryItem() is already localised, so this
@@ -4279,23 +4472,41 @@ jQuery(
 										// always been in the sub-field schema and rendered on the front
 										// end; there was simply no control to set them.
 										'<div class="boldform-rep-field-row__meta">' +
-											( 'radio' === sfType || 'checkbox' === sfType ? '<span></span>' :
+											// Choice types have no placeholder to set, so the row simply
+											// starts with the flags. An empty spacer in its place left a
+											// gap that stranded the first flag on a line of its own.
+											( 'radio' === sfType || 'checkbox' === sfType ? '' :
 												'<input type="text" class="boldform-rep-field__placeholder" value="' + escapeHtml( sf.placeholder || '' ) + '" placeholder="' + escapeHtml( advLabel( 'placeholder' ) || 'Placeholder' ) + '">'
 											) +
-											'<label class="boldform-rep-field__flag">' +
-												'<input type="checkbox" class="boldform-rep-field__full"' + ( sf.full_width ? ' checked' : '' ) + '> ' +
-												escapeHtml( 'Full width' ) +
-											'</label>' +
-											'<label class="boldform-rep-field__flag">' +
-												'<input type="checkbox" class="boldform-rep-field__required"' + ( sf.required ? ' checked' : '' ) + '> ' +
-												escapeHtml( advLabel( 'required' ) || 'Required' ) +
-											'</label>' +
+											// The three flags are one group on one line, so they read as a
+											// set and land in the same place whatever the sub-field type.
+											'<div class="boldform-rep-field__flags">' +
+												'<label class="boldform-rep-field__flag">' +
+													'<input type="checkbox" class="boldform-rep-field__full"' + ( sf.full_width ? ' checked' : '' ) + '> ' +
+													escapeHtml( 'Full width' ) +
+												'</label>' +
+												'<label class="boldform-rep-field__flag">' +
+													'<input type="checkbox" class="boldform-rep-field__required"' + ( sf.required ? ' checked' : '' ) + '> ' +
+													escapeHtml( advLabel( 'required' ) || 'Required' ) +
+												'</label>' +
+												// A sub-field has no Label Placement control, so this is its
+												// equivalent of "Hide". The label stays in the DOM for screen
+												// readers; only its line disappears.
+												'<label class="boldform-rep-field__flag">' +
+													'<input type="checkbox" class="boldform-rep-field__hidelabel"' + ( sf.hide_label ? ' checked' : '' ) + '> ' +
+													escapeHtml( boldformLiteBuilder.labels.repHideLabel || 'Hide label' ) +
+												'</label>' +
+											'</div>' +
 										'</div>' +
 										( isChoice ?
 											'<div class="boldform-rep-field-row__options">' +
 												'<label class="boldform-rep-field__options-label">Options (one per line)</label>' +
 												'<textarea class="boldform-rep-field__options" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( sfOptions.join( '\n' ) ) + '</textarea>' +
-											'</div>'
+											'</div>' +
+											// The same override block a top-level choice field gets. One
+											// definition, so a sub-field can never accept a value the
+											// field itself rejects.
+											bfChoiceStyleMarkup( sf )
 										: '' ) +
 									'</div>';
 							} );
@@ -4307,7 +4518,7 @@ jQuery(
 							groupsHtml +=
 								'<div class="boldform-rep-group" data-rep-group="' + gi + '">' +
 									'<div class="boldform-rep-group__head">' +
-										'<span class="boldform-rep-group__drag dashicons dashicons-menu" title="' + escapeHtml( 'Drag to reorder group' ) + '"></span>' +
+										'<span class="boldform-rep-group__drag dashicons dashicons-menu" draggable="true" title="' + escapeHtml( 'Drag to reorder group' ) + '"></span>' +
 										'<input type="text" class="boldform-rep-group__label" value="' + escapeHtml( grp.label || '' ) + '" placeholder="' + escapeHtml( 'Group name (optional)' ) + '">' +
 										'<select class="boldform-rep-group__cols" aria-label="' + escapeHtml( 'Columns in this group' ) + '">' + colOpts + '</select>' +
 										( repGroups.length > 1 ? '<button type="button" class="boldform-rep-group__remove" title="' + escapeHtml( 'Remove group' ) + '"><span class="dashicons dashicons-trash"></span></button>' : '<span></span>' ) +
@@ -4357,22 +4568,70 @@ jQuery(
 								'<input type="number" id="boldform-setting-rep-max" min="1" max="20" value="' + escapeHtml( String( selected.field.repeater_max_rows || 5 ) ) + '">' +
 							'</div>' +
 						'</div>' +
-						'<div class="boldform-setting-row">' +
-							'<div class="boldform-setting-group">' +
-								'<label for="boldform-setting-rep-row-label">Row title</label>' +
-								'<input type="text" id="boldform-setting-rep-row-label" value="' + escapeHtml( selected.field.repeater_row_label || '' ) + '" placeholder="' + escapeHtml( 'e.g. Product {n} — leave empty for none' ) + '">' +
-							'</div>' +
+						// Full width, not half: the placeholder explaining the {n} token is
+						// longer than a half-width input can show.
+						'<div class="boldform-setting-group">' +
+							'<label for="boldform-setting-rep-row-label">Row title</label>' +
+							'<input type="text" id="boldform-setting-rep-row-label" value="' + escapeHtml( selected.field.repeater_row_label || '' ) + '" placeholder="' + escapeHtml( 'e.g. Product {n} — leave empty for none' ) + '">' +
 						'</div>' +
+						// The Add button's two settings — its text and where it sits — share a
+						// row, so they read as one control's worth of decisions. Remove
+						// button text is about a different button, so it gets its own line.
 						'<div class="boldform-setting-row">' +
 							'<div class="boldform-setting-group">' +
 								'<label for="boldform-setting-rep-add-label">Add button text</label>' +
 								'<input type="text" id="boldform-setting-rep-add-label" value="' + escapeHtml( selected.field.repeater_add_label || 'Add Row' ) + '">' +
 							'</div>' +
+							// Same segmented control as Label Placement, so the panel keeps
+							// one idiom for "pick one of a few".
+							'<div class="boldform-setting-group">' +
+								'<label>' + escapeHtml( boldformLiteBuilder.labels.repAddAlign || 'Add button alignment' ) + '</label>' +
+								'<div class="boldform-btn-group is-icons" id="boldform-setting-rep-add-align">' +
+								// Icons, not words: a fourth option does not fit beside the Add
+								// button text at panel width, and this is the same left/centre/
+								// right/full set the block toolbar draws.
+								// advLabel(), not labels.*: Left/Center/Right/Full Width already
+								// live in the Style-tab label set and are already translated there.
+								[ [ 'left', advLabel( 'alignLeft' ), 'align-left' ],
+								  [ 'center', advLabel( 'alignCenter' ), 'align-center' ],
+								  [ 'right', advLabel( 'alignRight' ), 'align-right' ],
+								  [ 'full', advLabel( 'fullWidth' ), 'align-full-width' ] ].map( function ( o ) {
+									return '<button type="button" class="boldform-btn-group__btn' +
+										( o[0] === repAddAlign( selected.field ) ? ' is-active' : '' ) +
+										'" data-value="' + o[0] + '" title="' + escapeHtml( o[1] ) + '" aria-label="' + escapeHtml( o[1] ) + '">' +
+										'<span class="dashicons dashicons-' + o[2] + '" aria-hidden="true"></span>' +
+									'</button>';
+								} ).join( '' ) +
+								'</div>' +
+							'</div>' +
+						'</div>' +
+						// The Remove button gets the same pair the Add button gets: its text
+						// and where it sits, side by side — but only when a row can actually
+						// be removed. At max <= min the button never appears, so its two
+						// settings would be controls for something that cannot happen.
+						( repRemovable( selected.field ) ?
+						'<div class="boldform-setting-row">' +
 							'<div class="boldform-setting-group">' +
 								'<label for="boldform-setting-rep-remove-label">Remove button text</label>' +
 								'<input type="text" id="boldform-setting-rep-remove-label" value="' + escapeHtml( selected.field.repeater_remove_label || 'Remove' ) + '">' +
 							'</div>' +
-						'</div>';
+							'<div class="boldform-setting-group">' +
+								'<label>' + escapeHtml( boldformLiteBuilder.labels.repRemovePos || 'Remove button position' ) + '</label>' +
+								'<div class="boldform-btn-group is-icons" id="boldform-setting-rep-remove-pos">' +
+								// 'Auto' is the default and is what every existing repeater does:
+								// the button follows the row title. The other two decide outright.
+								[ [ 'top', boldformLiteBuilder.labels.repRemoveTop || 'Top', 'arrow-up-alt2' ],
+								  [ 'bottom', boldformLiteBuilder.labels.repRemoveBottom || 'Bottom', 'arrow-down-alt2' ] ].map( function ( o ) {
+									return '<button type="button" class="boldform-btn-group__btn' +
+										( o[0] === repRemoveEffective( selected.field ) ? ' is-active' : '' ) +
+										'" data-value="' + o[0] + '" title="' + escapeHtml( o[1] ) + '" aria-label="' + escapeHtml( o[1] ) + '">' +
+										'<span class="dashicons dashicons-' + o[2] + '" aria-hidden="true"></span>' +
+									'</button>';
+								} ).join( '' ) +
+								'</div>' +
+							'</div>' +
+						'</div>'
+						: '' );
 					}() ) : '' ) +
 
 					// --- Password field settings ---
@@ -5613,7 +5872,46 @@ jQuery(
 			return b[ key ] || key;
 		}
 
+		// ── Where the Style controls read and write ──
+		// The Style tab edits the form's own style map. A field's "Options appearance"
+		// block reuses the SAME controls pointed at that field instead, so the two can
+		// never drift in look or behaviour. Every control reads through advStyleGet()
+		// and every write funnels through recomputeAdvField(), so this one indirection
+		// is the whole of it — no control and no handler knows which scope it is in.
+		var bfStyleScope = null;
+
+		// A field-backed store with the same two methods the form map exposes.
+		function bfFieldStyleScope( target ) {
+			return {
+				get: function ( cssVar ) {
+					var m = bfChoiceStyles( target.field );
+					return typeof m[ cssVar ] === 'string' ? m[ cssVar ] : '';
+				},
+				set: function ( map ) {
+					var m = $.extend( {}, bfChoiceStyles( target.field ) );
+					Object.keys( map ).forEach( function ( k ) {
+						var v = map[ k ];
+						// Absent, not empty: "inherit the form" is the absence of a value.
+						if ( '' === v || null == v ) { delete m[ k ]; } else { m[ k ] = String( v ); }
+					} );
+					target.field.choice_styles = m;
+					// Never re-render the panel from a write — the user may be mid-keystroke.
+					target.commit( false );
+					bfRefreshChoiceReset();
+				}
+			};
+		}
+
+		// Handlers fire long after the markup was built, so the scope cannot be held in
+		// a closure — it has to be recoverable from the element alone.
+		function bfScopeForEl( $el ) {
+			if ( ! $el || ! $el.length || ! $el.closest( '[data-bf-choice-scope]' ).length ) { return null; }
+			var t = bfChoiceStyleTarget( $el );
+			return ( t && t.field ) ? bfFieldStyleScope( t ) : null;
+		}
+
 		function advStyleGet( cssVar ) {
+			if ( bfStyleScope ) { return bfStyleScope.get( cssVar ); }
 			var layer = ( state.formSettings.style && state.formSettings.style[ state.activeDevice ] ) || {};
 			return typeof layer[ cssVar ] === 'string' ? layer[ cssVar ] : '';
 		}
@@ -5622,6 +5920,7 @@ jQuery(
 		// empty), then refreshes the preview only — never re-renders the controls,
 		// so input focus is preserved while typing.
 		function advStyleSetVars( map ) {
+			if ( bfStyleScope ) { return bfStyleScope.set( map ); }
 			if ( ! state.formSettings.style ) {
 				state.formSettings.style = { desktop: {}, tablet: {}, mobile: {} };
 			}
@@ -6175,49 +6474,7 @@ jQuery(
 				// mode. `extraVars` still names BOTH sets so the section's reset
 				// clears whichever is currently hidden too — otherwise switching
 				// modes could resurrect values the user thought they had cleared.
-				{ id: 'choice', title: advLabel( 'secChoice' ), extraVars: bfChoiceAllVars(), controls: [
-					{ type: 'choiceStyle', label: 'choiceStyle' },
-					{ type: 'color', var: '--bf-choice-color', label: 'labelColor' },
-					{ type: 'typography', var: '--bf-choice', label: 'typography' }
-				].concat( 'button' === state.formSettings.choice_style ? [
-					{ type: 'dimension', var: '--bf-choice-btn-padding', label: 'padding' },
-					{ type: 'dimension', var: '--bf-choice-btn-radius', label: 'borderRadius', units: [ 'px', '%' ] },
-					{ type: 'slider', var: '--bf-choice-btn-gap', label: 'spacing', min: 0, max: 40, units: [ 'px' ] },
-					{ type: 'border', var: '--bf-choice-btn-border', label: 'border' },
-					{ type: 'stateTabs', label: 'states', states: [
-						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'background', var: '--bf-choice-btn-bg', label: 'background' },
-							{ type: 'color', var: '--bf-choice-btn-text', label: 'textColor' }
-						] },
-						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'background', var: '--bf-choice-btn-hover-bg', label: 'background' },
-							{ type: 'color', var: '--bf-choice-btn-hover-text', label: 'textColor' },
-							{ type: 'color', var: '--bf-choice-btn-hover-border', label: 'borderColor' }
-						] },
-						{ key: 'selected', label: 'stateSelected', controls: [
-							{ type: 'background', var: '--bf-choice-btn-active-bg', label: 'background' },
-							{ type: 'color', var: '--bf-choice-btn-active-text', label: 'textColor' },
-							{ type: 'color', var: '--bf-choice-btn-active-border', label: 'borderColor' }
-						] }
-					] }
-				] : [
-					{ type: 'slider', var: '--bf-choice-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
-					{ type: 'slider', var: '--bf-choice-gap', label: 'spacing', min: 0, max: 32, units: [ 'px' ] },
-					{ type: 'stateTabs', label: 'states', states: [
-						{ key: 'normal', label: 'stateNormal', controls: [
-							{ type: 'color', var: '--bf-choice-border', label: 'borderColor' },
-							{ type: 'background', var: '--bf-choice-bg', label: 'background' }
-						] },
-						{ key: 'hover', label: 'stateHover', controls: [
-							{ type: 'color', var: '--bf-choice-hover-border', label: 'borderColor' },
-							{ type: 'background', var: '--bf-choice-hover-bg', label: 'background' }
-						] },
-						{ key: 'checked', label: 'stateChecked', controls: [
-							{ type: 'color', var: '--bf-choice-accent', label: 'accentColor' },
-							{ type: 'color', var: '--bf-choice-icon', label: 'iconColor' }
-						] }
-					] }
-				] ) },
+				{ id: 'choice', title: advLabel( 'secChoice' ), extraVars: bfChoiceAllVars(), controls: bfChoiceControls( true ) },
 				{ id: 'terms', title: advLabel( 'secTerms' ), controls: [
 					{ type: 'color', var: '--bf-terms-color', label: 'textColor' },
 					{ type: 'stateTabs', label: 'linkColor', states: [
@@ -6367,6 +6624,60 @@ jQuery(
 		// "has anything to reset?" check both need the full set: a user who styled
 		// the buttons, switched back to Default and hit reset expects the button
 		// values gone too, not lying in wait for the next switch.
+		// The Checkbox & Radio control list, shared by the Style tab (which owns the
+		// form-wide defaults) and by a single field's "Options appearance" block. One
+		// definition is the point: the two surfaces stay identical because there is
+		// only one list, and a control added here appears in both.
+		//
+		// `withModeSwitch` is the Default/Button chooser, which is a form-level
+		// decision — a field overrides colours within the chosen treatment, it does
+		// not pick a different treatment of its own.
+		function bfChoiceControls( withModeSwitch, mode ) {
+			mode = mode || ( 'button' === state.formSettings.choice_style ? 'button' : 'default' );
+			return ( withModeSwitch ? [ { type: 'choiceStyle', label: 'choiceStyle' } ] : [] ).concat( [
+					{ type: 'color', var: '--bf-choice-color', label: 'labelColor' },
+					{ type: 'typography', var: '--bf-choice', label: 'typography' }
+				].concat( 'button' === mode ? [
+					{ type: 'dimension', var: '--bf-choice-btn-padding', label: 'padding' },
+					{ type: 'dimension', var: '--bf-choice-btn-radius', label: 'borderRadius', units: [ 'px', '%' ] },
+					{ type: 'slider', var: '--bf-choice-btn-gap', label: 'spacing', min: 0, max: 40, units: [ 'px' ] },
+					{ type: 'border', var: '--bf-choice-btn-border', label: 'border' },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'background', var: '--bf-choice-btn-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-text', label: 'textColor' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'background', var: '--bf-choice-btn-hover-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-hover-text', label: 'textColor' },
+							{ type: 'color', var: '--bf-choice-btn-hover-border', label: 'borderColor' }
+						] },
+						{ key: 'selected', label: 'stateSelected', controls: [
+							{ type: 'background', var: '--bf-choice-btn-active-bg', label: 'background' },
+							{ type: 'color', var: '--bf-choice-btn-active-text', label: 'textColor' },
+							{ type: 'color', var: '--bf-choice-btn-active-border', label: 'borderColor' }
+						] }
+					] }
+				] : [
+					{ type: 'slider', var: '--bf-choice-size', label: 'size', min: 12, max: 32, units: [ 'px' ] },
+					{ type: 'slider', var: '--bf-choice-gap', label: 'spacing', min: 0, max: 32, units: [ 'px' ] },
+					{ type: 'stateTabs', label: 'states', states: [
+						{ key: 'normal', label: 'stateNormal', controls: [
+							{ type: 'color', var: '--bf-choice-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-bg', label: 'background' }
+						] },
+						{ key: 'hover', label: 'stateHover', controls: [
+							{ type: 'color', var: '--bf-choice-hover-border', label: 'borderColor' },
+							{ type: 'background', var: '--bf-choice-hover-bg', label: 'background' }
+						] },
+						{ key: 'checked', label: 'stateChecked', controls: [
+							{ type: 'color', var: '--bf-choice-accent', label: 'accentColor' },
+							{ type: 'color', var: '--bf-choice-icon', label: 'iconColor' }
+						] }
+					] }
+				] ) );
+		}
+
 		function bfChoiceAllVars() {
 			return [
 				// Default (box) treatment.
@@ -7790,6 +8101,16 @@ jQuery(
 
 		// ---- Advanced style controls: recompute a field's CSS var(s) from its inputs ----
 		function recomputeAdvField( $field ) {
+			var bfPrevScope = bfStyleScope;
+			bfStyleScope = bfScopeForEl( $field );
+			try {
+				recomputeAdvFieldInner( $field );
+			} finally {
+				bfStyleScope = bfPrevScope;
+			}
+		}
+
+		function recomputeAdvFieldInner( $field ) {
 			if ( ! $field || ! $field.length ) { return; }
 			var type = $field.data( 'type' );
 			var cssVar = $field.data( 'var' );
@@ -8130,6 +8451,20 @@ jQuery(
 			} else if ( $group.attr( 'id' ) === 'boldform-setting-button-alignment' ) {
 				state.formSettings.button_alignment = val;
 				renderAll();
+			} else if ( $group.attr( 'id' ) === 'boldform-setting-rep-add-align' ) {
+				var repSel = getSelectedFieldLocation();
+				if ( repSel ) {
+					repSel.field.repeater_add_align = val;
+					markDirty();
+					renderCanvas();
+				}
+			} else if ( $group.attr( 'id' ) === 'boldform-setting-rep-remove-pos' ) {
+				var repSelR = getSelectedFieldLocation();
+				if ( repSelR ) {
+					repSelR.field.repeater_remove_position = val;
+					markDirty();
+					renderCanvas();
+				}
 			}
 		} );
 
@@ -8344,12 +8679,38 @@ jQuery(
 			t.commit( true );
 		} );
 
-		// Group name.
+		// Group name. A group can only collapse behind a name, so gaining or losing
+		// one adds or removes the Collapsible controls — that transition is the only
+		// time this re-renders, because a rebuild mid-word would steal the caret.
 		$( document ).on( 'input', '.boldform-rep-group__label', function () {
 			var t = repTarget( $( this ) );
 			if ( ! t ) { return; }
-			t.group.label = $( this ).val();
-			t.commit( false );
+
+			var had = '' !== ( t.group.label || '' );
+			var val = $( this ).val();
+			var has = '' !== val;
+
+			t.group.label = val;
+
+			if ( had === has ) {
+				t.commit( false );
+				return;
+			}
+
+			// Clearing the name also clears the state those controls held: a nameless
+			// group is not collapsible, and leaving the flag set would silently
+			// resurrect it if the user typed a name again later.
+			if ( ! has ) {
+				t.group.collapsible = false;
+			}
+
+			t.commit( true );
+
+			// Put the caret back where it was — the panel was just rebuilt.
+			var $again = $( '#boldform-rep-groups .boldform-rep-group' ).eq( t.gi ).find( '.boldform-rep-group__label' );
+			$again.focus();
+			var el = $again.get( 0 );
+			if ( el && el.setSelectionRange ) { el.setSelectionRange( val.length, val.length ); }
 		} );
 
 		// Group column count. 0 inherits the repeater's own column count.
@@ -8406,12 +8767,78 @@ jQuery(
 			t.commit( false );
 		} );
 
+		// Hide the sub-field's label.
+		$( document ).on( 'change', '.boldform-rep-field__hidelabel', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.hide_label = $( this ).is( ':checked' );
+			t.commit( false );
+		} );
+
 		// Sub-field spans every column of its group.
 		$( document ).on( 'change', '.boldform-rep-field__full', function () {
 			var t = repTarget( $( this ) );
 			if ( ! t || ! t.field ) { return; }
 			t.field.full_width = $( this ).is( ':checked' );
 			t.commit( false );
+		} );
+
+		// ── Per-field Checkbox & Radio overrides ──
+		// A control either sits in a repeater sub-field row, where the sub-field owns
+		// the value, or in the field panel, where the selected field does. Everything
+		// else — every control, every handler — is the Style tab's, unchanged.
+		function bfChoiceStyleTarget( $el ) {
+			if ( $el.closest( '.boldform-rep-field-row' ).length ) {
+				var t = repTarget( $el );
+				return t && t.field ? t : null;
+			}
+
+			var selected = getSelectedFieldLocation();
+			if ( ! selected ) { return null; }
+
+			return {
+				field:  selected.field,
+				commit: function ( rerender ) {
+					markDirty();
+					if ( rerender ) { renderSettingsPanel(); }
+					renderCanvas();
+				}
+			};
+		}
+
+		// Toggled in place rather than by re-rendering: nothing else in the panel
+		// should move, and the controls keep whatever the user was part-way through.
+		$( document ).on( 'click', '.boldform-choice-style__toggle', function () {
+			var t = bfChoiceStyleTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+
+			var open = ! bfChoiceOpen[ t.field.id ];
+			bfChoiceOpen[ t.field.id ] = open;
+
+			$( this ).attr( 'aria-expanded', open ? 'true' : 'false' )
+				.closest( '.boldform-choice-style' ).toggleClass( 'is-open', open );
+		} );
+
+		// Switching the treatment changes which controls are relevant, so this one
+		// does re-render the panel. The disclosure stays open across it.
+		$( document ).on( 'click', '.boldform-choice-style__modegroup .boldform-btn-group__btn', function () {
+			var t = bfChoiceStyleTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+
+			var next = $( this ).data( 'choice-mode' );
+			if ( next === ( t.field.choice_style || 'inherit' ) ) { return; }
+
+			t.field.choice_style = next;
+			t.commit( true );
+		} );
+
+		// Clears every override on the field, which is what "follows the form style"
+		// means. Re-renders, because every control's displayed value has changed.
+		$( document ).on( 'click', '.boldform-choice-style__reset', function () {
+			var t = bfChoiceStyleTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.choice_styles = {};
+			t.commit( true );
 		} );
 
 		// Sub-field type. Re-renders so the options editor and the placeholder control
@@ -8458,6 +8885,31 @@ jQuery(
 			renderCanvas();
 		} );
 
+		// Min/Max decide whether a Remove button can ever exist, and the panel carries
+		// its two settings only when it can. The bounds are read from the inputs, not
+		// from the field: jQuery runs delegated handlers in REGISTRATION order and the
+		// generic settings handler that stores them is registered further down this
+		// file, so reading the field here would always be one keystroke behind.
+		// Re-renders only on the transition — a rebuild per keystroke would take the
+		// input out from under the caret.
+		$( document ).on( 'input', '#boldform-setting-rep-min, #boldform-setting-rep-max', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || 'repeater' !== selected.field.type ) { return; }
+			var id   = this.id;
+			var min  = Math.max( 1, Math.min( 10, parseInt( $( '#boldform-setting-rep-min' ).val(), 10 ) || 1 ) );
+			var max  = Math.max( 1, Math.min( 20, parseInt( $( '#boldform-setting-rep-max' ).val(), 10 ) || 5 ) );
+			var was  = $( '#boldform-setting-rep-remove-label' ).length > 0;
+			if ( was === ( max > min ) ) { return; }
+			// The generic handler has not stored these yet; do it here so the rebuilt
+			// panel renders the bounds just typed rather than the previous pair.
+			selected.field.repeater_min_rows = min;
+			selected.field.repeater_max_rows = max;
+			markDirty();
+			renderSettingsPanel();
+			renderCanvas();
+			$( '#' + id ).focus();
+		} );
+
 		// Drag to reorder groups, and to move a sub-field within or BETWEEN groups.
 		// The model is rebuilt from the DOM afterwards rather than tracked during the
 		// drag, so a cross-group move needs no special case.
@@ -8465,7 +8917,12 @@ jQuery(
 			var list = document.getElementById( 'boldform-rep-groups' );
 			if ( ! list || typeof Sortable === 'undefined' ) { return; }
 
+			// Both lists are NAMED. canAccept() only compares names when both sides
+			// have one, so a nameless list accepts anything the pointer reaches —
+			// which put the canvas (name 'boldform-fields') and these panel lists in
+			// the same pool, and a sub-field could be dropped into the form itself.
 			Sortable.create( list, {
+				group: { name: 'boldform-rep-groups', put: true },
 				draggable: '.boldform-rep-group',
 				handle: '.boldform-rep-group__drag',
 				onEnd: syncRepeaterFromDom
@@ -8473,7 +8930,7 @@ jQuery(
 
 			$( '#boldform-rep-groups .boldform-rep-group__fields' ).each( function () {
 				Sortable.create( this, {
-					group: 'boldform-rep-fields',
+					group: { name: 'boldform-rep-fields', put: true },
 					draggable: '.boldform-rep-field-row',
 					handle: '.boldform-rep-field__drag',
 					onEnd: syncRepeaterFromDom

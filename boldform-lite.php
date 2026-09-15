@@ -123,6 +123,128 @@ function boldform_lite_maybe_create_tables() {
 add_action( 'plugins_loaded', 'boldform_lite_maybe_create_tables' );
 
 /**
+ * Resolves the Checkbox & Radio treatment a single field renders in.
+ *
+ * A field may follow the form (the default, and what every form saved before this
+ * option existed does), or pin itself to Default or Button regardless. The pinned
+ * values are the only two the form-level setting has, so a field can never ask for
+ * a treatment the stylesheet does not implement.
+ *
+ * @since 1.1.9
+ *
+ * @param mixed  $field      Field array.
+ * @param string $form_style The form-level choice_style.
+ * @return string 'default' or 'button'.
+ */
+function boldform_lite_field_choice_style( $field, $form_style ) {
+	$own = is_array( $field ) && isset( $field['choice_style'] ) ? (string) $field['choice_style'] : 'inherit';
+
+	if ( in_array( $own, array( 'default', 'button' ), true ) ) {
+		return $own;
+	}
+
+	return 'button' === $form_style ? 'button' : 'default';
+}
+
+/**
+ * Every CSS custom property a single Checkbox & Radio field may override.
+ *
+ * Mirrors bfChoiceAllVars() plus the typography family in assets/js/builder.js.
+ * A field stores finished property values keyed by property name — the same shape
+ * the form-level Style tab stores — which is what lets one set of controls edit
+ * either scope. A property missing from this list is dropped on save, so the
+ * builder and the sanitizer cannot disagree about what a field may set.
+ *
+ * @since 1.1.9
+ *
+ * @return array<int, string> Allowed custom-property names.
+ */
+function boldform_lite_choice_style_vars() {
+	return array(
+		// Label.
+		'--bf-choice-color',
+		'--bf-choice-ff', '--bf-choice-fs', '--bf-choice-fw',
+		'--bf-choice-lh', '--bf-choice-ls', '--bf-choice-tt',
+		// Default (box) treatment.
+		'--bf-choice-size', '--bf-choice-gap',
+		'--bf-choice-border', '--bf-choice-bg',
+		'--bf-choice-hover-border', '--bf-choice-hover-bg',
+		'--bf-choice-accent', '--bf-choice-icon',
+		// Button (pill) treatment.
+		'--bf-choice-btn-padding', '--bf-choice-btn-radius', '--bf-choice-btn-gap',
+		'--bf-choice-btn-border-width', '--bf-choice-btn-border-style', '--bf-choice-btn-border-color',
+		'--bf-choice-btn-bg', '--bf-choice-btn-text',
+		'--bf-choice-btn-hover-bg', '--bf-choice-btn-hover-text', '--bf-choice-btn-hover-border',
+		'--bf-choice-btn-active-bg', '--bf-choice-btn-active-text', '--bf-choice-btn-active-border',
+	);
+}
+
+/**
+ * Sanitizes a per-field Checkbox & Radio override map.
+ *
+ * Values run through the same strict grammar the form-level Style tab uses
+ * (BoldForm_Lite_Ajax_Save::sanitize_css_value), which accepts finished tokens —
+ * lengths, hex/rgba colours, 1-4 length lists, gradients — and rejects anything
+ * carrying a colon, semicolon, brace, angle bracket, quote or CSS escape. A value
+ * that fails is dropped rather than stored empty, so "inherit the form" stays the
+ * absence of a value on both sides of the save.
+ *
+ * @since 1.1.9
+ *
+ * @param mixed $source Raw map of property => value.
+ * @return array<string, string> Sanitized map.
+ */
+function boldform_lite_sanitize_choice_style( $source ) {
+	$out = array();
+
+	if ( ! is_array( $source ) ) {
+		return $out;
+	}
+
+	$allowed = array_flip( boldform_lite_choice_style_vars() );
+
+	foreach ( $source as $css_var => $value ) {
+		if ( ! is_string( $css_var ) || ! isset( $allowed[ $css_var ] ) ) {
+			continue;
+		}
+
+		$clean = BoldForm_Lite_Ajax_Save::sanitize_css_value( $value );
+
+		if ( '' !== $clean ) {
+			$out[ $css_var ] = $clean;
+		}
+	}
+
+	return $out;
+}
+
+/**
+ * Builds the inline custom-property declarations for a field's choice overrides.
+ *
+ * Re-sanitized here rather than trusted from storage: only a value that passes the
+ * grammar can reach a style attribute, whatever route it took into the row (a
+ * hand-edited export and an import both re-enter through here).
+ *
+ * @since 1.1.9
+ *
+ * @param mixed $source Field array, or a bare override map.
+ * @return string Declarations without the surrounding attribute.
+ */
+function boldform_lite_choice_style_declarations( $source ) {
+	if ( is_array( $source ) && isset( $source['choice_styles'] ) ) {
+		$source = $source['choice_styles'];
+	}
+
+	$parts = array();
+
+	foreach ( boldform_lite_sanitize_choice_style( $source ) as $css_var => $value ) {
+		$parts[] = $css_var . ':' . $value;
+	}
+
+	return implode( ';', $parts );
+}
+
+/**
  * Returns the BoldForm brand mark as inline SVG markup.
  *
  * Single source of truth for the logo across the whole admin UI (menu icon,

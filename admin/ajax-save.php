@@ -355,6 +355,12 @@ class BoldForm_Lite_Ajax_Save {
 							'options'        => $options,
 							'options_layout' => $options_layout,
 							'checkbox_style' => $checkbox_style,
+							// Per-field Checkbox & Radio treatment. 'inherit' follows the
+							// form, which is what every existing form does.
+							'choice_style'   => in_array( ( $field['choice_style'] ?? '' ), array( 'default', 'button' ), true ) ? (string) $field['choice_style'] : 'inherit',
+							// Per-field Checkbox & Radio overrides. Absent keys mean
+							// "inherit the form", so only what was actually set is stored.
+							'choice_styles'  => boldform_lite_sanitize_choice_style( isset( $field['choice_styles'] ) ? $field['choice_styles'] : array() ),
 							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
 							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
 							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
@@ -799,7 +805,7 @@ class BoldForm_Lite_Ajax_Save {
 	 * @param mixed $value Raw value.
 	 * @return string The value if it passes, otherwise ''.
 	 */
-	private static function sanitize_css_value( $value ) {
+	public static function sanitize_css_value( $value ) {
 		if ( ! is_scalar( $value ) ) {
 			return '';
 		}

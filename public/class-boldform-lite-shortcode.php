@@ -1348,7 +1348,7 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php $choice_style = boldform_lite_choice_style_declarations( $field ); echo '' !== $choice_style ? ' style="' . esc_attr( $choice_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -2124,12 +2124,20 @@ class BoldForm_Lite_Shortcode {
 			// surfaces (front end, builder canvas, Style-tab live preview) share one
 			// selector. A field already rendering as a Switch keeps it: that is an
 			// explicit per-field choice, and the two treatments cannot compose.
-			$is_button      = 'button' === ( $this->current_form_settings['choice_style'] ?? 'default' )
-				&& ! ( 'checkbox' === $type && 'switch' === $checkbox_style );
+			$is_switch      = ( 'checkbox' === $type && 'switch' === $checkbox_style );
+			$field_style    = boldform_lite_field_choice_style( $field, $this->current_form_settings['choice_style'] ?? 'default' );
+			$is_button      = 'button' === $field_style && ! $is_switch;
+			// The Button treatment also reaches a group through the FORM-level class,
+			// so a field pinned to Default inside a Button form needs an explicit
+			// opt-out modifier — the absence of `is-btn` is not enough.
+			$is_plain       = 'default' === $field_style
+				&& 'button' === ( $this->current_form_settings['choice_style'] ?? 'default' )
+				&& ! $is_switch;
 			$choices_class  = 'boldform-lite-form__choices'
 				. ( 'inline' === $options_layout ? ' is-inline' : '' )
-				. ( 'checkbox' === $type && 'switch' === $checkbox_style ? ' is-switch' : '' )
-				. ( $is_button ? ' is-btn' : '' );
+				. ( $is_switch ? ' is-switch' : '' )
+				. ( $is_button ? ' is-btn' : '' )
+				. ( $is_plain ? ' is-plain' : '' );
 			// Group semantics so SRs announce the option set as one labelled group
 			// (no <fieldset>/<legend>, which would restyle the form). Points at the
 			// field's visible <label> via aria-labelledby when one is rendered.
