@@ -6299,7 +6299,7 @@
 /* Column headers (repeater sub-fields only) */
 .boldform-rep-fields-header {
 	display: grid;
-	grid-template-columns: 132px 1fr auto;
+	grid-template-columns: 18px 128px 1fr auto;
 	gap: 6px;
 	padding: 0 8px 4px;
 	font-size: 10px;
@@ -6441,9 +6441,221 @@
 /* Top line of a sub-field row: [type] [label] [remove]. */
 .boldform-rep-field-row__main {
 	display: grid;
-	grid-template-columns: 132px 1fr auto;
+	grid-template-columns: 18px 128px 1fr auto;
 	gap: 6px;
 	align-items: center;
+}
+
+/* ── Repeater layout groups ──
+   A repeater's sub-fields live in groups, each carrying its own column count, so
+   one row can be two columns, then one, then three. Groups are layout only: their
+   names and ids never reach an input name or a saved entry. */
+.boldform-rep-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.boldform-rep-group {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+	padding: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.boldform-rep-group__head {
+	display: grid;
+	grid-template-columns: 18px 1fr 118px 26px;
+	gap: 6px;
+	align-items: center;
+}
+
+.boldform-rep-group__drag,
+.boldform-rep-field__drag {
+	cursor: grab;
+	color: #94a3b8;
+	font-size: 16px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	text-align: center;
+}
+
+.boldform-rep-group__drag:active,
+.boldform-rep-field__drag:active {
+	cursor: grabbing;
+}
+
+.boldform-setting-group .boldform-rep-group__label,
+.boldform-setting-group .boldform-rep-group__cols {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 8px;
+	font-size: 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background-color: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.boldform-setting-group .boldform-rep-group__label {
+	font-weight: 600;
+}
+
+.boldform-setting-group .boldform-rep-group__cols {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 26px;
+	cursor: pointer;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-size: 13px;
+	background-position: right 7px center;
+}
+
+.boldform-rep-group__remove {
+	width: 26px;
+	height: 26px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.boldform-rep-group__remove:hover {
+	color: #dc2626;
+	border-color: #fecaca;
+	background: #fef2f2;
+}
+
+.boldform-rep-group__remove .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+}
+
+.boldform-rep-group__opts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	padding-left: 24px;
+}
+
+.boldform-rep-group__fields {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	/* Keeps an empty group a valid drop target when dragging a field into it. */
+	min-height: 12px;
+}
+
+/* "Add Sub-field" sits inside a group card, so it is the quieter sibling of
+   "Add Group": full width of its card, dashed like the group's own outline, and
+   never a native <button>, which is what it fell back to. */
+.boldform-rep-field-add {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 32px;
+	padding: 0 12px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.boldform-rep-field-add:hover:not( :disabled ) {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: rgba( 34, 113, 177, 0.04 );
+}
+
+.boldform-rep-field-add:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.boldform-rep-field-add:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.boldform-rep-field-add .dashicons {
+	width: 15px;
+	height: 15px;
+	font-size: 14px;
+	line-height: 15px;
+}
+
+.boldform-rep-cap-note {
+	margin: 6px 0 0;
+	font-size: 11px;
+	color: #b45309;
+}
+
+/* Placeholder + Required, on their own line under the type/label row so the main
+   row stays readable at panel width. The empty grid cell keeps Required in the
+   same place for radio and checkbox, which have no placeholder to set. */
+.boldform-rep-field-row__meta {
+	display: grid;
+	grid-template-columns: 1fr auto auto;
+	gap: 6px 10px;
+	align-items: center;
+	margin-top: 6px;
+}
+
+.boldform-setting-group .boldform-rep-field__placeholder {
+	height: 34px;
+	min-height: 34px;
+	padding: 0 10px;
+	font-size: 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-setting-group .boldform-rep-field__placeholder:focus {
+	outline: none;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+.boldform-rep-field__flag {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	color: #475569;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.boldform-rep-field__flag input {
+	margin: 0;
 }
 
 /* Per-sub-field options editor (only shown for select/radio/checkbox). */

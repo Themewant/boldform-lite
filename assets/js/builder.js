@@ -379,6 +379,52 @@ jQuery(
 			}
 		}
 
+		// Normalise a repeater's `repeater_fields` into layout groups, mirroring
+		// BoldForm_Pro_Repeater::sanitize_groups(). A repeater saved before groups is a
+		// flat list of sub-fields; it is wrapped in one implicit group here, on read,
+		// so the builder only ever deals with the grouped shape. Group ids are layout
+		// only — they never reach an input name or a saved entry.
+		function repeaterGroups( field ) {
+			var raw = field ? field.repeater_fields : null;
+
+			if ( typeof raw === 'string' ) {
+				try { raw = JSON.parse( raw || '[]' ); } catch ( e ) { raw = []; }
+			}
+			if ( ! Array.isArray( raw ) ) { raw = []; }
+
+			var hasGroups = raw.some( function ( e ) { return e && Array.isArray( e.fields ); } );
+
+			if ( ! hasGroups ) {
+				raw = raw.length ? [ { fields: raw } ] : [];
+			} else {
+				var loose = raw.filter( function ( e ) { return e && ! Array.isArray( e.fields ); } );
+				var real  = raw.filter( function ( e ) { return e && Array.isArray( e.fields ); } );
+				raw = loose.length ? [ { fields: loose } ].concat( real ) : real;
+			}
+
+			return raw.map( function ( g, i ) {
+				var cols = parseInt( g.columns, 10 );
+				return {
+					id:          g.id || 'g' + i,
+					label:       g.label || '',
+					columns:     ( cols >= 1 && cols <= 4 ) ? cols : 0,
+					collapsible: !! g.collapsible,
+					open:        typeof g.open === 'undefined' ? true : !! g.open,
+					fields:      Array.isArray( g.fields ) ? g.fields.filter( Boolean ) : []
+				};
+			} );
+		}
+
+		// Total sub-fields across every group — the cap counts the repeater, not a group.
+		function repeaterFieldCount( groups ) {
+			return groups.reduce( function ( n, g ) { return n + g.fields.length; }, 0 );
+		}
+
+		// Write groups back, and keep state.structure the canonical owner of the shape.
+		function setRepeaterGroups( field, groups ) {
+			field.repeater_fields = groups;
+		}
+
 		function getLibraryItem( type ) {
 			return boldformLiteBuilder.fieldLibrary[ type ] || { label: type, icon: 'dashicons-editor-textcolor', group: 'basic' };
 		}
@@ -630,10 +676,14 @@ jQuery(
 				// Seed a new repeater with two text sub-fields so the settings list, the
 				// canvas preview AND the front end all show real, editable sub-fields from
 				// the start (a repeater with zero sub-fields renders an empty, unusable row).
-				repeater_fields: 'repeater' === type ? [
-					{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false },
-					{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false }
-				] : []
+				repeater_fields: 'repeater' === type ? [ {
+					id: 'g_' + Math.random().toString( 36 ).slice( 2, 8 ),
+					label: '', columns: 0, collapsible: false, open: true,
+					fields: [
+						{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false, full_width: false },
+						{ id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ), type: 'text', label: '', placeholder: '', required: false, full_width: false }
+					]
+				} ] : []
 			};
 		}
 
@@ -855,16 +905,17 @@ jQuery(
 			// NOTE: do NOT re-seed an empty array here — a new repeater gets its starter
 			// sub-fields from createField(); once the user deletes them all, an empty
 			// repeater must STAY empty (respect the deletion) rather than reappearing.
-			normalized.repeater_fields       = ( function () {
-				var v = field ? field.repeater_fields : undefined;
-				if ( Array.isArray( v ) ) { return v; }
-				try { var arr = JSON.parse( v || '[]' ); return Array.isArray( arr ) ? arr : []; } catch ( e ) { return []; }
-			}() );
+			// Parsed AND migrated on load: a pre-groups flat list becomes one implicit
+			// group here, so every later read — panel, canvas, save — sees one shape.
+			// Do NOT re-seed when empty: a new repeater gets its starter group from
+			// createField(), and a repeater the user emptied must stay empty.
+			normalized.repeater_fields       = repeaterGroups( field );
 			normalized.repeater_min_rows     = field && field.repeater_min_rows ? Number( field.repeater_min_rows ) : 1;
 			normalized.repeater_max_rows     = field && field.repeater_max_rows ? Number( field.repeater_max_rows ) : 5;
 			normalized.repeater_add_label    = field && typeof field.repeater_add_label    !== 'undefined' ? field.repeater_add_label    : '';
 			normalized.repeater_columns      = field && field.repeater_columns ? Number( field.repeater_columns ) : 2;
 			normalized.repeater_remove_label = field && typeof field.repeater_remove_label !== 'undefined' ? field.repeater_remove_label : '';
+			normalized.repeater_row_label    = field && typeof field.repeater_row_label    !== 'undefined' ? field.repeater_row_label    : '';
 
 			// Advanced Pro field defaults.
 			normalized.confirm_password     = !! ( field && field.confirm_password );
@@ -2318,15 +2369,7 @@ jQuery(
 				html += '</div>';
 
 			} else if ( field.type === 'repeater' ) {
-				var repFields = [];
-				if ( field.repeater_fields ) {
-					try {
-						repFields = typeof field.repeater_fields === 'string'
-							? JSON.parse( field.repeater_fields )
-							: field.repeater_fields;
-					} catch (e) { repFields = []; }
-				}
-				if ( ! Array.isArray( repFields ) ) { repFields = []; }
+				var repGroupsP = repeaterGroups( field );
 				var repColsP = Math.max( 1, Math.min( 4, Number( field.repeater_columns ) || 2 ) );
 				// Default sub-field labels mirror render_sub_field() in the Pro module so
 				// the canvas preview matches the front end when a sub-field has no label.
@@ -2369,17 +2412,36 @@ jQuery(
 				// Show ONLY the configured sub-fields — no fake fallback. A repeater with no
 				// sub-fields shows a guidance hint (it starts with two via createField; once
 				// the user deletes them all, the canvas reflects that empty state).
-				var repCells = repFields.slice( 0, 8 );
 				html  = '<div class="boldform-canvas-repeater">';
-				if ( ! repCells.length ) {
+				if ( ! repeaterFieldCount( repGroupsP ) ) {
 					html += '<div class="boldform-canvas-repeater__empty" style="padding:10px 12px;color:#9ca3af;font-size:13px;font-style:italic">' + escapeHtml( 'No sub-fields yet — add one in Field Settings.' ) + '</div>';
 				} else {
-					html += '<div class="boldform-canvas-repeater__row" style="display:grid;grid-template-columns:repeat(' + repColsP + ',minmax(0,1fr));gap:10px 12px;align-items:start">';
-					repCells.forEach( function ( sf ) {
-						html += '<div class="boldform-canvas-repeater__field">';
-						html += '<span class="boldform-canvas-repeater__label">' + escapeHtml( repSubLabel( sf ) ) + ( sf.required ? ' <span class="boldform-required">*</span>' : '' ) + '</span>';
-						html += repControl( sf );
-						html += '</div>';
+					// One row, drawn the way the front end draws it: a stack of groups,
+					// each its own grid at its own column count (0 inherits the
+					// repeater's). See BoldForm_Pro_Repeater::render_row().
+					html += '<div class="boldform-canvas-repeater__row">';
+					repGroupsP.forEach( function ( grp ) {
+						if ( ! grp.fields.length ) { return; }
+						var cols = grp.columns > 0 ? grp.columns : repColsP;
+						// A collapsible group is drawn as the panel the front end draws
+						// (see BoldForm_Pro_Repeater::render_row) — the canvas never
+						// toggles, so it always shows the open state.
+						var grpCollapsible = grp.collapsible && grp.label;
+						html += '<div class="boldform-canvas-repeater__group' + ( grpCollapsible ? ' is-collapsible' : '' ) + '">';
+						if ( grp.label ) {
+							html += '<span class="boldform-canvas-repeater__group-head">' +
+								escapeHtml( grp.label ) +
+								( grpCollapsible ? '<span class="boldform-canvas-repeater__group-caret" aria-hidden="true"></span>' : '' ) +
+								'</span>';
+						}
+						html += '<div class="boldform-canvas-repeater__group-body" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">';
+						grp.fields.forEach( function ( sf ) {
+							html += '<div class="boldform-canvas-repeater__field' + ( sf.full_width ? ' is-full' : '' ) + '">';
+							html += '<span class="boldform-canvas-repeater__label">' + escapeHtml( repSubLabel( sf ) ) + ( sf.required ? ' <span class="boldform-required">*</span>' : '' ) + '</span>';
+							html += repControl( sf );
+							html += '</div>';
+						} );
+						html += '</div></div>';
 					} );
 					html += '</div>';
 				}
@@ -4180,51 +4242,102 @@ jQuery(
 
 					// --- Repeater field settings ---
 					( 'repeater' === selected.field.type ? ( function () {
-						var repFields = [];
-						if ( selected.field.repeater_fields ) {
-							try {
-								repFields = typeof selected.field.repeater_fields === 'string'
-									? JSON.parse( selected.field.repeater_fields )
-									: ( Array.isArray( selected.field.repeater_fields ) ? selected.field.repeater_fields : [] );
-							} catch (e) { repFields = []; }
-						}
-						var repRowsHtml = '';
-						repFields.forEach( function ( sf, idx ) {
-							var sfType    = sf.type || 'text';
-							// Choice sub-types carry an options list (one per line).
-							var isChoice  = ( 'select' === sfType || 'radio' === sfType || 'checkbox' === sfType );
-							var sfOptions = Array.isArray( sf.options ) ? sf.options : [];
-							repRowsHtml +=
-								'<div class="boldform-rep-field-row" data-rep-index="' + idx + '">' +
-									'<div class="boldform-rep-field-row__main">' +
-										// Named with the SAME label the field palette uses for that
-										// type — "Textarea", "Select", "Date Picker" — instead of the
-										// raw slug. getLibraryItem() is already localised, so this
-										// introduces no new strings to translate and cannot drift from
-										// what the palette calls the field the sub-field will become.
-										'<select class="boldform-rep-field__type" data-rep-index="' + idx + '" aria-label="' + escapeHtml( 'Sub-field type' ) + '">' +
-											[ 'text','email','url','tel','number','date','time','textarea','select','radio','checkbox' ].map( function (t) {
-												return '<option value="' + t + '"' + ( t === sfType ? ' selected' : '' ) + '>' + escapeHtml( getLibraryItem( t ).label || t ) + '</option>';
-											} ).join('') +
-										'</select>' +
-										'<input type="text" class="boldform-rep-field__label" data-rep-index="' + idx + '" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
-										'<button type="button" class="boldform-rep-field__remove" data-rep-index="' + idx + '" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+						var repGroups = repeaterGroups( selected.field );
+						var atCap     = repeaterFieldCount( repGroups ) >= repeaterMaxSubFields();
+
+						// One editable block per layout group: its name, its column count,
+						// and the sub-fields inside it. Fields drag between groups; groups
+						// drag among themselves. A group is layout only — its name and id
+						// never reach an input name or a saved entry.
+						var groupsHtml = '';
+
+						repGroups.forEach( function ( grp, gi ) {
+							var rowsHtml = '';
+
+							grp.fields.forEach( function ( sf, idx ) {
+								var sfType    = sf.type || 'text';
+								var isChoice  = ( 'select' === sfType || 'radio' === sfType || 'checkbox' === sfType );
+								var sfOptions = Array.isArray( sf.options ) ? sf.options : [];
+								rowsHtml +=
+									'<div class="boldform-rep-field-row" data-rep-group="' + gi + '" data-rep-index="' + idx + '" data-rep-id="' + escapeHtml( sf.id || '' ) + '">' +
+										'<div class="boldform-rep-field-row__main">' +
+											'<span class="boldform-rep-field__drag dashicons dashicons-menu" title="' + escapeHtml( 'Drag to reorder or move between groups' ) + '"></span>' +
+											// Named with the SAME label the field palette uses for that
+											// type — "Textarea", "Select", "Date Picker" — instead of the
+											// raw slug. getLibraryItem() is already localised, so this
+											// introduces no new strings to translate and cannot drift from
+											// what the palette calls the field the sub-field will become.
+											'<select class="boldform-rep-field__type" aria-label="' + escapeHtml( 'Sub-field type' ) + '">' +
+												[ 'text','email','url','tel','number','date','time','textarea','select','radio','checkbox' ].map( function (t) {
+													return '<option value="' + t + '"' + ( t === sfType ? ' selected' : '' ) + '>' + escapeHtml( getLibraryItem( t ).label || t ) + '</option>';
+												} ).join('') +
+											'</select>' +
+											'<input type="text" class="boldform-rep-field__label" value="' + escapeHtml( sf.label || '' ) + '" placeholder="Label">' +
+											'<button type="button" class="boldform-rep-field__remove" title="Remove"><span class="dashicons dashicons-no-alt"></span></button>' +
+										'</div>' +
+										// Placeholder, Full width and Required. The first two keys have
+										// always been in the sub-field schema and rendered on the front
+										// end; there was simply no control to set them.
+										'<div class="boldform-rep-field-row__meta">' +
+											( 'radio' === sfType || 'checkbox' === sfType ? '<span></span>' :
+												'<input type="text" class="boldform-rep-field__placeholder" value="' + escapeHtml( sf.placeholder || '' ) + '" placeholder="' + escapeHtml( advLabel( 'placeholder' ) || 'Placeholder' ) + '">'
+											) +
+											'<label class="boldform-rep-field__flag">' +
+												'<input type="checkbox" class="boldform-rep-field__full"' + ( sf.full_width ? ' checked' : '' ) + '> ' +
+												escapeHtml( 'Full width' ) +
+											'</label>' +
+											'<label class="boldform-rep-field__flag">' +
+												'<input type="checkbox" class="boldform-rep-field__required"' + ( sf.required ? ' checked' : '' ) + '> ' +
+												escapeHtml( advLabel( 'required' ) || 'Required' ) +
+											'</label>' +
+										'</div>' +
+										( isChoice ?
+											'<div class="boldform-rep-field-row__options">' +
+												'<label class="boldform-rep-field__options-label">Options (one per line)</label>' +
+												'<textarea class="boldform-rep-field__options" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( sfOptions.join( '\n' ) ) + '</textarea>' +
+											'</div>'
+										: '' ) +
+									'</div>';
+							} );
+
+							var colOpts = [ [ 0, 'Inherit (' + ( Number( selected.field.repeater_columns ) || 2 ) + ')' ], [ 1, '1 column' ], [ 2, '2 columns' ], [ 3, '3 columns' ], [ 4, '4 columns' ] ].map( function ( o ) {
+								return '<option value="' + o[0] + '"' + ( o[0] === grp.columns ? ' selected' : '' ) + '>' + escapeHtml( o[1] ) + '</option>';
+							} ).join( '' );
+
+							groupsHtml +=
+								'<div class="boldform-rep-group" data-rep-group="' + gi + '">' +
+									'<div class="boldform-rep-group__head">' +
+										'<span class="boldform-rep-group__drag dashicons dashicons-menu" title="' + escapeHtml( 'Drag to reorder group' ) + '"></span>' +
+										'<input type="text" class="boldform-rep-group__label" value="' + escapeHtml( grp.label || '' ) + '" placeholder="' + escapeHtml( 'Group name (optional)' ) + '">' +
+										'<select class="boldform-rep-group__cols" aria-label="' + escapeHtml( 'Columns in this group' ) + '">' + colOpts + '</select>' +
+										( repGroups.length > 1 ? '<button type="button" class="boldform-rep-group__remove" title="' + escapeHtml( 'Remove group' ) + '"><span class="dashicons dashicons-trash"></span></button>' : '<span></span>' ) +
 									'</div>' +
-									( isChoice ?
-										'<div class="boldform-rep-field-row__options">' +
-											'<label class="boldform-rep-field__options-label">Options (one per line)</label>' +
-											'<textarea class="boldform-rep-field__options" data-rep-index="' + idx + '" rows="3" placeholder="Option 1&#10;Option 2&#10;Option 3">' + escapeHtml( sfOptions.join( '\n' ) ) + '</textarea>' +
+									// A group can only collapse behind its own name, so the
+									// control is offered only once the group has one.
+									( grp.label ?
+										'<div class="boldform-rep-group__opts">' +
+											'<label class="boldform-rep-field__flag">' +
+												'<input type="checkbox" class="boldform-rep-group__collapsible"' + ( grp.collapsible ? ' checked' : '' ) + '> ' +
+												escapeHtml( 'Collapsible' ) +
+											'</label>' +
+											( grp.collapsible ?
+												'<label class="boldform-rep-field__flag">' +
+													'<input type="checkbox" class="boldform-rep-group__open"' + ( grp.open ? ' checked' : '' ) + '> ' +
+													escapeHtml( 'Open by default' ) +
+												'</label>'
+											: '' ) +
 										'</div>'
 									: '' ) +
+									'<div class="boldform-rep-group__fields" data-rep-group="' + gi + '">' + rowsHtml + '</div>' +
+									'<button type="button" class="boldform-rep-field-add"' + ( atCap ? ' disabled' : '' ) + '><span class="dashicons dashicons-plus-alt2"></span> Add Sub-field</button>' +
 								'</div>';
 						} );
+
 						return '<div class="boldform-setting-group">' +
 							'<label>Sub-fields</label>' +
-							'<div class="boldform-rep-fields-header">' +
-								'<span>Type</span><span>Label</span><span></span>' +
-							'</div>' +
-							'<div class="boldform-rep-fields-list" id="boldform-rep-fields-list">' + repRowsHtml + '</div>' +
-							'<button type="button" class="boldform-options-repeater__add" id="boldform-rep-field-add"><span class="dashicons dashicons-plus-alt2"></span> Add Sub-field</button>' +
+							'<div class="boldform-rep-groups" id="boldform-rep-groups">' + groupsHtml + '</div>' +
+							'<button type="button" class="boldform-options-repeater__add" id="boldform-rep-group-add"><span class="dashicons dashicons-plus-alt2"></span> Add Group</button>' +
+							( atCap ? '<p class="boldform-rep-cap-note">' + escapeHtml( 'Sub-field limit reached (' + repeaterMaxSubFields() + ' per repeater).' ) + '</p>' : '' ) +
 						'</div>' +
 						'<div class="boldform-setting-group">' +
 							'<label for="boldform-setting-rep-columns">Columns</label>' +
@@ -4242,6 +4355,12 @@ jQuery(
 							'<div class="boldform-setting-group">' +
 								'<label for="boldform-setting-rep-max">Max rows</label>' +
 								'<input type="number" id="boldform-setting-rep-max" min="1" max="20" value="' + escapeHtml( String( selected.field.repeater_max_rows || 5 ) ) + '">' +
+							'</div>' +
+						'</div>' +
+						'<div class="boldform-setting-row">' +
+							'<div class="boldform-setting-group">' +
+								'<label for="boldform-setting-rep-row-label">Row title</label>' +
+								'<input type="text" id="boldform-setting-rep-row-label" value="' + escapeHtml( selected.field.repeater_row_label || '' ) + '" placeholder="' + escapeHtml( 'e.g. Product {n} — leave empty for none' ) + '">' +
 							'</div>' +
 						'</div>' +
 						'<div class="boldform-setting-row">' +
@@ -4511,6 +4630,10 @@ jQuery(
 
 			setupOptionsSortable();
 			setupAddressSortable();
+			// Every path that re-renders the panel comes through here, so the repeater's
+			// group and field sortables are wired in one place rather than at each of
+			// the caller sites.
+			setupRepeaterSortables();
 		}
 
 		// Remembers which settings tab is active across re-renders.
@@ -8150,79 +8273,250 @@ jQuery(
 			renderCanvas();
 		} );
 
-		// ---- Repeater sub-field management ----
+		// ---- Repeater group + sub-field management ----
 
-		// Add repeater sub-field row.
-		$( document ).on( 'click', '#boldform-rep-field-add', function () {
+		// The cap belongs to the module that enforces it on save; the builder reads
+		// the published value so the two can never disagree. The fallback matches the
+		// historical limit, for the case where the add-on is older than this builder.
+		function repeaterMaxSubFields() {
+			var n = parseInt( boldformLiteBuilder.repeaterMaxSubFields, 10 );
+			return n > 0 ? n : 8;
+		}
+
+		// Resolve the group (and optionally the sub-field) an element belongs to.
+		// Every control in the panel sits inside a [data-rep-group], and every
+		// sub-field control inside a .boldform-rep-field-row carrying its index.
+		function repTarget( $el ) {
 			var selected = getSelectedFieldLocation();
-			if ( ! selected ) return;
-			if ( ! Array.isArray( selected.field.repeater_fields ) ) {
-				selected.field.repeater_fields = [];
-			}
-			if ( selected.field.repeater_fields.length >= 8 ) return; // MAX_SUB_FIELDS
-			var newId = 'sf_' + Math.random().toString( 36 ).slice( 2, 8 );
-			selected.field.repeater_fields.push( { id: newId, type: 'text', label: '', placeholder: '', required: false } );
+			if ( ! selected || 'repeater' !== selected.field.type ) { return null; }
+
+			var groups = repeaterGroups( selected.field );
+			var gi     = Number( $el.closest( '[data-rep-group]' ).data( 'rep-group' ) );
+			if ( isNaN( gi ) || ! groups[ gi ] ) { return null; }
+
+			var $row = $el.closest( '.boldform-rep-field-row' );
+			var fi   = $row.length ? Number( $row.data( 'rep-index' ) ) : -1;
+
+			return {
+				selected: selected,
+				groups:   groups,
+				group:    groups[ gi ],
+				gi:       gi,
+				field:    fi >= 0 ? groups[ gi ].fields[ fi ] : null,
+				fi:       fi,
+				commit:   function ( rerender ) {
+					setRepeaterGroups( selected.field, groups );
+					markDirty();
+					if ( rerender ) {
+						renderSettingsPanel();
+						setupOptionsSortable();
+						setupAddressSortable();
+					}
+					renderCanvas();
+				}
+			};
+		}
+
+		// Add a group.
+		$( document ).on( 'click', '#boldform-rep-group-add', function () {
+			var selected = getSelectedFieldLocation();
+			if ( ! selected || 'repeater' !== selected.field.type ) { return; }
+			var groups = repeaterGroups( selected.field );
+			if ( groups.length >= 10 ) { return; } // MAX_GROUPS
+			groups.push( {
+				id: 'g_' + Math.random().toString( 36 ).slice( 2, 8 ),
+				label: '', columns: 0, collapsible: false, open: true, fields: []
+			} );
+			setRepeaterGroups( selected.field, groups );
+			markDirty();
 			renderSettingsPanel();
 			setupOptionsSortable();
 			setupAddressSortable();
 			renderCanvas();
-			$( '#boldform-rep-fields-list .boldform-rep-field-row:last-child .boldform-rep-field__label' ).focus();
+			$( '#boldform-rep-groups .boldform-rep-group:last-child .boldform-rep-group__label' ).focus();
 		} );
 
-		// Remove repeater sub-field row.
+		// Remove a group, and every sub-field in it.
+		$( document ).on( 'click', '.boldform-rep-group__remove', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || t.groups.length < 2 ) { return; }
+			t.groups.splice( t.gi, 1 );
+			t.commit( true );
+		} );
+
+		// Group name.
+		$( document ).on( 'input', '.boldform-rep-group__label', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t ) { return; }
+			t.group.label = $( this ).val();
+			t.commit( false );
+		} );
+
+		// Group column count. 0 inherits the repeater's own column count.
+		$( document ).on( 'change', '.boldform-rep-group__cols', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t ) { return; }
+			t.group.columns = parseInt( $( this ).val(), 10 ) || 0;
+			t.commit( false );
+		} );
+
+		// Add a sub-field to this group.
+		$( document ).on( 'click', '.boldform-rep-field-add', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t ) { return; }
+			if ( repeaterFieldCount( t.groups ) >= repeaterMaxSubFields() ) { return; }
+			t.group.fields.push( {
+				id: 'sf_' + Math.random().toString( 36 ).slice( 2, 8 ),
+				type: 'text', label: '', placeholder: '', required: false, full_width: false
+			} );
+			t.commit( true );
+			$( '#boldform-rep-groups .boldform-rep-group' ).eq( t.gi )
+				.find( '.boldform-rep-field-row:last-child .boldform-rep-field__label' ).focus();
+		} );
+
+		// Remove a sub-field.
 		$( document ).on( 'click', '.boldform-rep-field__remove', function () {
-			var selected = getSelectedFieldLocation();
-			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
-			var idx = Number( $( this ).data( 'rep-index' ) );
-			selected.field.repeater_fields.splice( idx, 1 );
-			renderSettingsPanel();
-			setupOptionsSortable();
-			setupAddressSortable();
-			renderCanvas();
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.group.fields.splice( t.fi, 1 );
+			t.commit( true );
 		} );
 
-		// Edit repeater sub-field label inline.
+		// Sub-field label.
 		$( document ).on( 'input', '.boldform-rep-field__label', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.label = $( this ).val();
+			t.commit( false );
+		} );
+
+		// Sub-field placeholder.
+		$( document ).on( 'input', '.boldform-rep-field__placeholder', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.placeholder = $( this ).val();
+			t.commit( false );
+		} );
+
+		// Sub-field required.
+		$( document ).on( 'change', '.boldform-rep-field__required', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.required = $( this ).is( ':checked' );
+			t.commit( false );
+		} );
+
+		// Sub-field spans every column of its group.
+		$( document ).on( 'change', '.boldform-rep-field__full', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.full_width = $( this ).is( ':checked' );
+			t.commit( false );
+		} );
+
+		// Sub-field type. Re-renders so the options editor and the placeholder control
+		// appear or disappear for the new type.
+		$( document ).on( 'change', '.boldform-rep-field__type', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			t.field.type = $( this ).val();
+			t.commit( true );
+		} );
+
+		// Sub-field options (one per line) for choice sub-types.
+		$( document ).on( 'input', '.boldform-rep-field__options', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t || ! t.field ) { return; }
+			// Keep raw line splits while editing; the Pro sanitizer drops blanks on
+			// save and the array is re-joined with newlines on reload.
+			t.field.options = $( this ).val().split( '\n' );
+			t.commit( false );
+		} );
+
+		// Group collapsible, and its default state.
+		$( document ).on( 'change', '.boldform-rep-group__collapsible', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t ) { return; }
+			t.group.collapsible = $( this ).is( ':checked' );
+			t.commit( true );
+		} );
+
+		$( document ).on( 'change', '.boldform-rep-group__open', function () {
+			var t = repTarget( $( this ) );
+			if ( ! t ) { return; }
+			t.group.open = $( this ).is( ':checked' );
+			t.commit( false );
+		} );
+
+		// Row card title. Empty means the row renders without a header, which is what
+		// every repeater built before this did.
+		$( document ).on( 'input', '#boldform-setting-rep-row-label', function () {
 			var selected = getSelectedFieldLocation();
-			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
-			var $row = $( this ).closest( '.boldform-rep-field-row' );
-			var idx = Number( $row.data( 'rep-index' ) );
-			if ( selected.field.repeater_fields[ idx ] ) {
-				selected.field.repeater_fields[ idx ].label = $( this ).val();
-			}
+			if ( ! selected ) { return; }
+			selected.field.repeater_row_label = $( this ).val();
+			markDirty();
 			renderCanvas();
 		} );
 
-		// Edit repeater sub-field type via change.
-		$( document ).on( 'change', '.boldform-rep-field__type', function () {
+		// Drag to reorder groups, and to move a sub-field within or BETWEEN groups.
+		// The model is rebuilt from the DOM afterwards rather than tracked during the
+		// drag, so a cross-group move needs no special case.
+		function setupRepeaterSortables() {
+			var list = document.getElementById( 'boldform-rep-groups' );
+			if ( ! list || typeof Sortable === 'undefined' ) { return; }
+
+			Sortable.create( list, {
+				draggable: '.boldform-rep-group',
+				handle: '.boldform-rep-group__drag',
+				onEnd: syncRepeaterFromDom
+			} );
+
+			$( '#boldform-rep-groups .boldform-rep-group__fields' ).each( function () {
+				Sortable.create( this, {
+					group: 'boldform-rep-fields',
+					draggable: '.boldform-rep-field-row',
+					handle: '.boldform-rep-field__drag',
+					onEnd: syncRepeaterFromDom
+				} );
+			} );
+		}
+
+		function syncRepeaterFromDom() {
 			var selected = getSelectedFieldLocation();
-			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
-			var $row = $( this ).closest( '.boldform-rep-field-row' );
-			var idx = Number( $row.data( 'rep-index' ) );
-			if ( selected.field.repeater_fields[ idx ] ) {
-				selected.field.repeater_fields[ idx ].type = $( this ).val();
-			}
-			// Re-render so the per-sub-field options editor appears/disappears when
-			// switching to/from a choice sub-type (select/radio/checkbox).
+			if ( ! selected || 'repeater' !== selected.field.type ) { return; }
+
+			var before = repeaterGroups( selected.field );
+			var byId   = {};
+			before.forEach( function ( g ) {
+				g.fields.forEach( function ( f ) { byId[ f.id ] = f; } );
+			} );
+
+			var groups = [];
+			$( '#boldform-rep-groups .boldform-rep-group' ).each( function () {
+				var old    = before[ Number( $( this ).data( 'rep-group' ) ) ] || {};
+				var fields = [];
+				$( this ).find( '.boldform-rep-field-row' ).each( function () {
+					var f = byId[ $( this ).data( 'rep-id' ) ];
+					if ( f ) { fields.push( f ); }
+				} );
+				groups.push( {
+					id:          old.id || 'g_' + Math.random().toString( 36 ).slice( 2, 8 ),
+					label:       old.label || '',
+					columns:     old.columns || 0,
+					collapsible: !! old.collapsible,
+					open:        false !== old.open,
+					fields:      fields
+				} );
+			} );
+
+			setRepeaterGroups( selected.field, groups );
+			markDirty();
 			renderSettingsPanel();
 			setupOptionsSortable();
 			setupAddressSortable();
 			renderCanvas();
-		} );
+		}
 
-		// Edit repeater sub-field options (one per line) for choice sub-types.
-		$( document ).on( 'input', '.boldform-rep-field__options', function () {
-			var selected = getSelectedFieldLocation();
-			if ( ! selected || ! Array.isArray( selected.field.repeater_fields ) ) return;
-			var $row = $( this ).closest( '.boldform-rep-field-row' );
-			var idx = Number( $row.data( 'rep-index' ) );
-			if ( selected.field.repeater_fields[ idx ] ) {
-				// Keep raw line splits while editing; the Pro sanitizer drops blanks on
-				// save and the array is re-joined with newlines on reload.
-				selected.field.repeater_fields[ idx ].options = $( this ).val().split( '\n' );
-				renderCanvas();
-			}
-		} );
 
 		$( '#boldform-field-library' ).on(
 			'click',
