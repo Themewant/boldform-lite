@@ -270,7 +270,7 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 												 *
 												 * @param string $title Headline text.
 												 */
-												echo esc_html( apply_filters( 'boldform_library_lock_title', __( 'Unlock premium fields', 'boldform-lite' ) ) );
+												echo esc_html( apply_filters( 'boldform_library_lock_title', __( 'Premium fields', 'boldform-lite' ) ) );
 											?></strong>
 											<p class="boldform-library-lock__text"><?php
 												/**
@@ -453,7 +453,7 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-shortcode-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-shortcode-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock shortcodes', 'boldform-lite' ); ?></h2>
+			<h2 id="boldform-shortcode-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Shortcodes in the premium add-on', 'boldform-lite' ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite shows the same thank-you message to everyone. Upgrade to write the submitted data straight into it — greet people by name, repeat their answers back, and show their entry details.', 'boldform-lite' ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Insert any field from this form by name', 'boldform-lite' ); ?></li>
@@ -472,7 +472,7 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-email-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-email-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock the email editor', 'boldform-lite' ); ?></h2>
+			<h2 id="boldform-email-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Email editor in the premium add-on', 'boldform-lite' ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends these notifications using its standard layout. Upgrade to switch on a custom email per form and write your own subject and message in a visual editor.', 'boldform-lite' ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Turn a custom email on per notification, per form', 'boldform-lite' ); ?></li>
@@ -491,7 +491,7 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-integration-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-integration-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock this integration', 'boldform-lite' ); ?></h2>
+			<h2 id="boldform-integration-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'More integrations in the premium add-on', 'boldform-lite' ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends submissions to Mailchimp and Brevo. Upgrade to connect your forms to CRMs, spreadsheets, messaging apps and automation tools, and send each submission wherever you work.', 'boldform-lite' ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'CRMs and newsletters — HubSpot, ActiveCampaign, MailerLite, Zoho and more', 'boldform-lite' ); ?></li>
@@ -510,7 +510,7 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-attachment-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-attachment-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock PDF attachments', 'boldform-lite' ); ?></h2>
+			<h2 id="boldform-attachment-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'PDF attachments in the premium add-on', 'boldform-lite' ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite puts the submitted answers in the body of the notification. Upgrade to attach a formatted PDF of each submission as well — something you can file, print or forward without retyping anything.', 'boldform-lite' ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Attach a PDF to the admin notification, the confirmation, or both', 'boldform-lite' ); ?></li>
@@ -529,7 +529,7 @@ if ( apply_filters( 'boldform_show_upgrade_cta', true ) ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-routing-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-routing-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Unlock conditional routing', 'boldform-lite' ); ?></h2>
+			<h2 id="boldform-routing-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php esc_html_e( 'Conditional routing in the premium add-on', 'boldform-lite' ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php esc_html_e( 'BoldForm Lite sends every admin notification to the same address. Upgrade to route each submission to different people based on what the visitor answered — sales enquiries to one inbox, support to another.', 'boldform-lite' ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Send to different people based on the answers, with rules checked in order', 'boldform-lite' ); ?></li>
@@ -557,7 +557,7 @@ if ( apply_filters( 'boldform_show_locked_fields_teaser', apply_filters( 'boldfo
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-fields-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-fields-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock premium fields', 'boldform-lite' ), 'fields' ) ); ?></h2>
+			<h2 id="boldform-fields-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Premium fields', 'boldform-lite' ), 'fields' ) ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_text', __( 'BoldForm Lite ships all the everyday fields you need. Upgrade to add payment and advanced fields to the same drag-and-drop palette — take payments, split long forms across pages, collect signatures, and more.', 'boldform-lite' ), 'fields' ) ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Payment Item, Quantity, Custom Amount and Order Summary', 'boldform-lite' ); ?></li>
@@ -585,7 +585,7 @@ if ( $this->show_locked_templates_teaser() ) :
 		<div class="boldform-upgrade-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="boldform-templates-upgrade-modal-title">
 			<button type="button" class="boldform-upgrade-modal__close" data-boldform-upgrade-close aria-label="<?php esc_attr_e( 'Close', 'boldform-lite' ); ?>"><span class="dashicons dashicons-no-alt"></span></button>
 			<div class="boldform-upgrade-modal__icon" aria-hidden="true"><span class="dashicons dashicons-lock"></span></div>
-			<h2 id="boldform-templates-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock the full template library', 'boldform-lite' ), 'templates' ) ); ?></h2>
+			<h2 id="boldform-templates-upgrade-modal-title" class="boldform-upgrade-modal__title"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'The full template library', 'boldform-lite' ), 'templates' ) ); ?></h2>
 			<p class="boldform-upgrade-modal__text"><?php echo esc_html( apply_filters( 'boldform_upgrade_modal_text', __( 'BoldForm Lite includes ready-made forms for everyday jobs. Upgrade to add twenty-eight more across every category — take payments, book appointments, take patients through an intake, and split long forms across steps, all in one click.', 'boldform-lite' ), 'templates' ) ); ?></p>
 			<ul class="boldform-upgrade-modal__list">
 				<li><span class="dashicons dashicons-yes" aria-hidden="true"></span><?php esc_html_e( 'Payment & Calculation: orders, donations, subscriptions and live calculators', 'boldform-lite' ); ?></li>
