@@ -269,8 +269,19 @@ jQuery(
 		} );
 
 		// ── Flatpickr date/time pickers ──
-		if ( typeof flatpickr !== 'undefined' ) {
-			$( 'input[data-boldform-picker="date"]' ).each( function () {
+		// Scoped and re-runnable, and exposed as window.boldformInitPickers, so markup
+		// added after load — a repeater row, a step revealed by the multi-page module —
+		// gets real pickers instead of a dead readonly box. Already-upgraded inputs are
+		// skipped: flatpickr stores its instance on the element as _flatpickr.
+		function initBoldformPickers( $scope ) {
+			if ( typeof flatpickr === 'undefined' ) {
+				return;
+			}
+
+			var $container = $scope && $scope.length ? $scope : $( document );
+
+			$container.find( 'input[data-boldform-picker="date"]' ).addBack( 'input[data-boldform-picker="date"]' ).each( function () {
+				if ( this._flatpickr ) { return; }
 				flatpickr( this, {
 					dateFormat: 'Y-m-d',
 					altInput: true,
@@ -280,7 +291,8 @@ jQuery(
 				} );
 			} );
 
-			$( 'input[data-boldform-picker="time"]' ).each( function () {
+			$container.find( 'input[data-boldform-picker="time"]' ).addBack( 'input[data-boldform-picker="time"]' ).each( function () {
+				if ( this._flatpickr ) { return; }
 				flatpickr( this, {
 					enableTime: true,
 					noCalendar: true,
@@ -293,6 +305,10 @@ jQuery(
 				} );
 			} );
 		}
+
+		window.boldformInitPickers = initBoldformPickers;
+
+		initBoldformPickers( $( document ) );
 
 		/**
 		 * Finishes a successful submission: redirect or confirmation message,

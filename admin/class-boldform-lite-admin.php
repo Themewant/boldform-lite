@@ -856,6 +856,10 @@ class BoldForm_Lite_Admin {
 					'formStructure'      => $form_data['structure'],
 					'formSettings'       => $form_data['settings'],
 					'fieldLibrary'       => $this->get_field_library(),
+					// The one icon registry, handed to the builder rather than repeated
+					// in JS: the picker offers exactly the keys the sanitizer accepts and
+					// draws exactly the glyph the front end will render.
+					'choiceIcons'        => boldform_lite_choice_icons(),
 					'columnPresets'      => array(
 						array(
 							'value'  => '1',
@@ -947,6 +951,37 @@ class BoldForm_Lite_Admin {
 						'checkboxStyle'        => __( 'Style', 'boldform-lite' ),
 						'checkboxStyleDefault' => __( 'Checkbox', 'boldform-lite' ),
 						'checkboxStyleSwitch'  => __( 'Switch', 'boldform-lite' ),
+						'repAddAlign'          => __( 'Add button alignment', 'boldform-lite' ),
+						'choiceStyleInherit'   => __( 'Form default', 'boldform-lite' ),
+						'repHideLabel'         => __( 'Hide label', 'boldform-lite' ),
+						'repRemovePos'         => __( 'Remove button position', 'boldform-lite' ),
+						'repRemoveTop'         => __( 'Top of the row', 'boldform-lite' ),
+						'repRemoveBottom'      => __( 'Bottom of the row', 'boldform-lite' ),
+						// Per-field Checkbox & Radio overrides. The controls themselves are
+						// the Style tab's, so they carry their own labels.
+						'choiceOverride'       => __( 'Options appearance', 'boldform-lite' ),
+						'choiceOverrideHint'   => __( 'Empty follows the form style', 'boldform-lite' ),
+						'choiceOverrideReset'  => __( 'Reset', 'boldform-lite' ),
+						// Per-option icons. Offered only while the options render as
+						// buttons, which is the treatment that has room for one.
+						'chooseIcon'           => __( 'Choose an icon', 'boldform-lite' ),
+						'iconTabIcons'         => __( 'Icons', 'boldform-lite' ),
+						'iconTabSvg'           => __( 'SVG', 'boldform-lite' ),
+						'iconTabImage'         => __( 'Image', 'boldform-lite' ),
+						'chooseSvg'            => __( 'Upload or choose an SVG', 'boldform-lite' ),
+						'chooseImage'          => __( 'Upload or choose an image', 'boldform-lite' ),
+						'useThisFile'          => __( 'Use this file', 'boldform-lite' ),
+						'svgHint'              => __( 'SVG files from your Media Library. Every upload is cleaned before it is stored.', 'boldform-lite' ),
+						'imageHint'            => __( 'PNG, JPG, GIF or WebP from your Media Library.', 'boldform-lite' ),
+						'changeFile'           => __( 'Click to choose a different file', 'boldform-lite' ),
+						'customImage'          => __( 'Custom image', 'boldform-lite' ),
+						// Both option editors use these; only the top-level one had them
+						// before, through a JS-side fallback string.
+						'optionPlaceholder'    => __( 'Option value', 'boldform-lite' ),
+						'addOption'            => __( 'Add Option', 'boldform-lite' ),
+						'noIcon'               => __( 'Remove icon', 'boldform-lite' ),
+						'searchIcons'          => __( 'Search icons', 'boldform-lite' ),
+						'noIconsFound'         => __( 'No icons match.', 'boldform-lite' ),
 						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
 						'layout'       => __( 'Layout', 'boldform-lite' ),
 						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),
@@ -1163,6 +1198,10 @@ class BoldForm_Lite_Admin {
 						'stateFocus'      => __( 'Focus', 'boldform-lite' ),
 						'stateChecked'    => __( 'Checked', 'boldform-lite' ),
 						'stateSelected'   => __( 'Selected', 'boldform-lite' ),
+						// Checkbox & Radio → Style: box-and-label, or a selectable pill.
+						'choiceStyle'        => __( 'Style', 'boldform-lite' ),
+						'choiceStyleDefault' => __( 'Default', 'boldform-lite' ),
+						'choiceStyleButton'  => __( 'Button', 'boldform-lite' ),
 						'rowGap'          => __( 'Row Gap', 'boldform-lite' ),
 						'columnGap'       => __( 'Column Gap', 'boldform-lite' ),
 						'fieldMargin'     => __( 'Field Margin', 'boldform-lite' ),
@@ -3984,7 +4023,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); /* phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- instructional copy naming the dashboard page where the admin finds their own keys; nothing is loaded from it. */ ?></p>
 										</div>
 									</div>
 								</div>
@@ -6119,6 +6158,7 @@ class BoldForm_Lite_Admin {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'choice_style'        => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
 			'dup_enabled'         => ! empty( $decoded['dup_enabled'] ),
 			'dup_method'          => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
 			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',

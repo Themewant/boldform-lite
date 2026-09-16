@@ -825,8 +825,13 @@
 }
 
 /* Narrow px/em/% unit dropdown: higher specificity than the generic select rule so
-   it can carry its own small chevron without the 36px right-padding that clipped "px". */
-.boldform-style-section .boldform-adv-dim .bf-adv-dim-unit {
+   it can carry its own small chevron without the 36px right-padding that clipped "px".
+   Scoped to both places these controls render — the Style tab and a field's own
+   "Options appearance" block. Without the second scope the select falls back to the
+   full-width generic rule, which squeezes the four side inputs to zero width and
+   collapses their Top/Right/Bottom/Left captions on top of each other. */
+.boldform-style-section .boldform-adv-dim .bf-adv-dim-unit,
+.boldform-choice-style .boldform-adv-dim .bf-adv-dim-unit {
 	flex: 0 0 auto;
 	width: 45px;
 	min-width: 45px;
@@ -896,6 +901,41 @@
 }
 
 .bf-adv-align-btn.is-active {
+	border-color: #0f766e;
+	background: #ecfdf5;
+	color: #0f766e;
+}
+
+/* Checkbox & Radio → Style. Same segmented shape as the alignment control, but
+   labelled rather than iconic, so the buttons size to their text. */
+.bf-adv-choice-style {
+	display: flex;
+	gap: 6px;
+}
+
+.bf-adv-choice-style-btn {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 38px;
+	padding: 0 10px;
+	border: 1px solid #e3e8ef;
+	border-radius: 9px;
+	background: #fff;
+	color: #64748b;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.bf-adv-choice-style-btn:hover {
+	border-color: #cbd5e1;
+	color: #475569;
+}
+
+.bf-adv-choice-style-btn.is-active {
 	border-color: #0f766e;
 	background: #ecfdf5;
 	color: #0f766e;
@@ -3128,6 +3168,30 @@
 	line-height: 16px;
 }
 
+/* Icon variant: four segments have to fit a half-width column, which four words
+   cannot. The group fills its column and the segments share it equally, so the
+   control keeps its width whatever the interface language. */
+.boldform-btn-group.is-icons {
+	display: flex;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.boldform-btn-group.is-icons .boldform-btn-group__btn {
+	flex: 1 1 0;
+	min-width: 0;
+	padding: 7px 0;
+	color: #94a3b8;
+}
+
+.boldform-btn-group.is-icons .boldform-btn-group__btn:hover {
+	color: #334155;
+}
+
+.boldform-btn-group.is-icons .boldform-btn-group__btn.is-active {
+	color: #fff;
+}
+
 /* Toggle switch */
 .boldform-switch-item {
 	padding: 6px 0;
@@ -3791,7 +3855,8 @@
 }
 
 /* Unit dropdown next to a slider value (px / em / %) — small chevron, no clipping. */
-.boldform-style-section .boldform-style-input-wrap .bf-adv-unit {
+.boldform-style-section .boldform-style-input-wrap .bf-adv-unit,
+.boldform-choice-style .boldform-style-input-wrap .bf-adv-unit {
 	flex: 0 0 auto;
 	width: 45px;
 	min-width: 45px;
@@ -6264,7 +6329,7 @@
 /* Column headers (repeater sub-fields only) */
 .boldform-rep-fields-header {
 	display: grid;
-	grid-template-columns: 120px 1fr auto;
+	grid-template-columns: 18px 128px 1fr auto;
 	gap: 6px;
 	padding: 0 8px 4px;
 	font-size: 10px;
@@ -6406,9 +6471,290 @@
 /* Top line of a sub-field row: [type] [label] [remove]. */
 .boldform-rep-field-row__main {
 	display: grid;
-	grid-template-columns: 120px 1fr auto;
+	grid-template-columns: 18px 128px 1fr auto;
 	gap: 6px;
 	align-items: center;
+}
+
+/* ── Repeater layout groups ──
+   A repeater's sub-fields live in groups, each carrying its own column count, so
+   one row can be two columns, then one, then three. Groups are layout only: their
+   names and ids never reach an input name or a saved entry. */
+.boldform-rep-groups {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.boldform-rep-group {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+	padding: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.boldform-rep-group__head {
+	display: grid;
+	grid-template-columns: 18px 1fr 118px 26px;
+	gap: 6px;
+	align-items: center;
+}
+
+.boldform-rep-group__drag,
+.boldform-rep-field__drag {
+	cursor: grab;
+	color: #94a3b8;
+	font-size: 16px;
+	width: 18px;
+	height: 18px;
+	line-height: 18px;
+	text-align: center;
+}
+
+.boldform-rep-group__drag:active,
+.boldform-rep-field__drag:active {
+	cursor: grabbing;
+}
+
+.boldform-setting-group .boldform-rep-group__label,
+.boldform-setting-group .boldform-rep-group__cols {
+	height: 32px;
+	min-height: 32px;
+	padding: 0 8px;
+	font-size: 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 6px;
+	background-color: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.boldform-setting-group .boldform-rep-group__label {
+	font-weight: 600;
+}
+
+.boldform-setting-group .boldform-rep-group__cols {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 26px;
+	cursor: pointer;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-size: 13px;
+	background-position: right 7px center;
+}
+
+.boldform-rep-group__remove {
+	width: 26px;
+	height: 26px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.boldform-rep-group__remove:hover {
+	color: #dc2626;
+	border-color: #fecaca;
+	background: #fef2f2;
+}
+
+.boldform-rep-group__remove .dashicons {
+	font-size: 15px;
+	width: 15px;
+	height: 15px;
+}
+
+.boldform-rep-group__opts {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 14px;
+	padding-left: 24px;
+}
+
+.boldform-rep-group__fields {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	/* Keeps an empty group a valid drop target when dragging a field into it. */
+	min-height: 12px;
+}
+
+/* An empty group is a drop target with nothing in it to aim at. A 12px sliver is
+   not something anyone can hit, so it draws itself as a landing area instead. */
+.boldform-rep-group__fields:empty {
+	min-height: 44px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #f8fafc;
+}
+
+/* The repeater's rows are small and tightly stacked; the canvas placeholder's
+   14px radius and heavy fill read as a card of their own at this scale. */
+.boldform-rep-groups .boldform-sortable-placeholder {
+	border-width: 1px;
+	border-radius: 8px;
+	background: rgba( 15, 118, 110, 0.06 );
+}
+
+/* The whole handle is the drag surface — the dashicon glyph inside it must not
+   become the drag source on its own, or the grab starts from a 16px target. */
+.boldform-rep-group__drag,
+.boldform-rep-field__drag {
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+/* "Add Sub-field" sits inside a group card, so it is the quieter sibling of
+   "Add Group": full width of its card, dashed like the group's own outline, and
+   never a native <button>, which is what it fell back to. */
+.boldform-rep-field-add {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 32px;
+	padding: 0 12px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+
+.boldform-rep-field-add:hover:not( :disabled ) {
+	border-color: #2271b1;
+	color: #2271b1;
+	background: rgba( 34, 113, 177, 0.04 );
+}
+
+.boldform-rep-field-add:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: 1px;
+}
+
+.boldform-rep-field-add:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.boldform-rep-field-add .dashicons {
+	width: 15px;
+	height: 15px;
+	font-size: 14px;
+	line-height: 15px;
+}
+
+.boldform-rep-cap-note {
+	margin: 6px 0 0;
+	font-size: 11px;
+	color: #b45309;
+}
+
+/* Placeholder and flags stack under the type/label row so the main row stays
+   readable at panel width. Two stacked bands, never one wrapping line: the
+   placeholder owns the full width it needs, and the flags stay a set. Sharing a
+   line stranded whichever flag fitted beside the input on a line of its own. */
+.boldform-rep-field-row__meta {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+/* Three equal columns, so all three flags stay on one line at panel width and
+   their checkboxes line up down the sub-field list. Flex wrapped the third onto
+   a line of its own as soon as the panel narrowed. */
+.boldform-rep-field__flags {
+	display: grid;
+	grid-template-columns: repeat( 3, minmax( 0, 1fr ) );
+	align-items: center;
+	gap: 4px 8px;
+}
+
+.boldform-setting-group .boldform-rep-field__placeholder {
+	height: 34px;
+	min-height: 34px;
+	padding: 0 10px;
+	font-size: 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
+	color: #1e293b;
+	width: 100%;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-setting-group .boldform-rep-field__placeholder:focus {
+	outline: none;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+}
+
+/* No frame: the checkbox is the control and the text is its name. A border and a
+   fill around each one made three of them read as three buttons. */
+.boldform-rep-field__flag {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 500;
+	color: #475569;
+	cursor: pointer;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.boldform-rep-field__flag:hover {
+	color: #0f172a;
+}
+
+.boldform-rep-field__flag input {
+	margin: 0;
+	flex: 0 0 auto;
+}
+
+/* wp-admin paints a 4px halo on ANY focus of a checkbox — mouse clicks included
+   (box-shadow: 0 0 0 2px #fff, 0 0 0 4px <admin theme colour>). That is the ring
+   that sat around a flag after clicking it, in a colour belonging to neither this
+   panel nor the checkbox. Clicking a control is not a request to mark where the
+   keyboard is, so the halo goes and :focus-visible carries the indicator instead. */
+.boldform-rep-field__flag input[type="checkbox"]:focus {
+	box-shadow: none;
+	outline: none;
+}
+
+/* Keyboard focus keeps a real ring — the one the Style tab's toggles already use. */
+.boldform-rep-field__flag input[type="checkbox"]:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 2px;
+}
+
+/* Checked in the panel's accent rather than the admin colour scheme, so the three
+   flags match the teal used by every other control here. wp-admin draws the tick
+   as a white SVG, so only the box is re-tinted. */
+.boldform-rep-field__flag input[type="checkbox"]:checked {
+	background: #0f766e;
+	border-color: #0f766e;
 }
 
 /* Per-sub-field options editor (only shown for select/radio/checkbox). */
@@ -6426,59 +6772,76 @@
 	letter-spacing: 0.04em;
 }
 
-.boldform-rep-field__options {
-	width: 100%;
-	box-sizing: border-box;
-	font-size: 12px;
-	line-height: 1.5;
-	padding: 6px 8px;
-	border: 1px solid #e2e8f0;
-	border-radius: 5px;
-	background: #fff;
-	color: #1e293b;
-	resize: vertical;
-	font-family: inherit;
-}
-
-.boldform-rep-field__options:focus {
-	outline: none;
-	border-color: #2271b1;
-	box-shadow: 0 0 0 2px rgba( 34, 113, 177, 0.12 );
-}
-
-.boldform-rep-field__type {
-	height: 32px;
+/* Scoped through .boldform-setting-group deliberately, to reach (0,2,0).
+   The generic `.boldform-setting-group select` rule above sits at (0,1,1) and
+   sets `background` as a SHORTHAND — which outranked the (0,1,0) this rule used
+   to be and reset background-image to none. The result was the worst of both:
+   `appearance: none` still applied from here, stripping the platform arrow,
+   while the caret meant to replace it was wiped. The control rendered as a
+   plain box that read as a text input, giving no sign it could be opened.
+   Background is set as longhands below so a future shorthand elsewhere cannot
+   silently take the arrow away again. */
+.boldform-setting-group .boldform-rep-field__type {
+	height: 38px;
+	/* wp-admin's forms.css floors controls here at min-height:40px, so `height`
+	   alone is silently ignored — the same trap documented for the canvas below. */
+	min-height: 38px;
 	box-sizing: border-box; /* match .boldform-rep-field__label so type + label align (the border was adding 2px) */
-	padding: 0 6px;
+	padding: 0 32px 0 10px;
 	font-size: 12px;
-	border: 1px solid #e2e8f0;
-	border-radius: 5px;
-	background: #fff;
+	font-weight: 500;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
 	color: #1e293b;
 	cursor: pointer;
 	appearance: none;
 	-webkit-appearance: none;
-	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+	-moz-appearance: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6 9l6 6 6-6' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 	background-repeat: no-repeat;
-	background-position: right 7px center;
-	padding-right: 22px;
+	background-size: 14px;
+	background-position: right 9px center;
 }
 
-.boldform-rep-field__type:focus {
+/* Same teal focus ring the Form Settings panes use, so a focused sub-field type
+   reads like every other control in the builder. */
+.boldform-setting-group .boldform-rep-field__type:hover {
+	border-color: #94a3b8;
+}
+
+.boldform-setting-group .boldform-rep-field__type:focus {
 	outline: none;
-	border-color: #2271b1;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
-.boldform-rep-field__label {
-	height: 32px;
-	padding: 0 8px;
+/* Scoped to (0,2,0) for the same reason as the type select above: at (0,1,0) the
+   generic settings rule dictated its padding, border and radius, so the two halves
+   of a sub-field row could not be kept in step from here. */
+.boldform-setting-group .boldform-rep-field__label {
+	height: 38px;
+	min-height: 38px;
+	padding: 0 10px;
 	font-size: 12px;
-	border: 1px solid #e2e8f0;
-	border-radius: 5px;
-	background: #fff;
+	border: 1px solid #cbd5e1;
+	border-radius: 7px;
+	background-color: #fff;
 	color: #1e293b;
 	width: 100%;
 	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-setting-group .boldform-rep-field__label:hover {
+	border-color: #94a3b8;
+}
+
+.boldform-setting-group .boldform-rep-field__label:focus {
+	outline: none;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
 }
 
 .boldform-rep-field__label:focus {
@@ -6820,6 +7183,90 @@
 .boldform-canvas .boldform-canvas-field-choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control,
 .boldform-template-preview__canvas .boldform-canvas-field-choices.is-switch .boldform-lite-form__choice:hover input[type="checkbox"]:checked ~ .boldform-lite-form__choice-control {
 	background: var(--bf-choice-accent-r);
+}
+
+/* ---- Form-level "Style: Button" variant ----
+   Mirrors frontend.css rule for rule so the builder canvas and the Style tab's
+   Live Preview (which carries .boldform-canvas) match the real form. Same
+   approach: hide the box, make the LABEL SPAN the pill, and drive every state
+   off the native input with a sibling combinator rather than :has(). */
+.boldform-canvas .boldform-canvas-field-choices.is-btn,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--bf-choice-btn-gap, 8px);
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice {
+	gap: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-control,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-control {
+	display: none;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-label {
+	--bf-choice-btn-accent: var(--bf-choice-accent, var(--bf-button-bg, var(--bf-focus-color, #0f766e)));
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: var(--bf-choice-btn-icon-gap, 8px);
+	justify-content: center;
+	padding: var(--bf-choice-btn-padding, 10px 20px);
+	border-width: var(--bf-choice-btn-border-width, 1px);
+	border-style: var(--bf-choice-btn-border-style, solid);
+	border-color: var(--bf-choice-btn-border-color, var(--bf-choice-border, var(--bf-field-border, #d1d5db)));
+	border-radius: var(--bf-choice-btn-radius, 999px);
+	background: var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff)));
+	color: var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827)));
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-hover-border, var(--bf-choice-hover-border, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-hover-bg, var(--bf-choice-btn-bg, var(--bf-choice-bg, var(--bf-field-bg, #fff))));
+	color: var(--bf-choice-btn-hover-text, var(--bf-choice-btn-text, var(--bf-choice-color, var(--bf-field-text, #111827))));
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice input:checked ~ .boldform-lite-form__choice-label,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice:hover input:checked ~ .boldform-lite-form__choice-label {
+	border-color: var(--bf-choice-btn-active-border, var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent)));
+	background: var(--bf-choice-btn-active-bg, var(--bf-choice-btn-accent));
+	color: var(--bf-choice-btn-active-text, var(--bf-choice-icon, #fff));
+}
+
+/* Per-option icon, mirroring frontend.css: hidden outside the Button treatment,
+   because that is the only one with a pill to put an icon in. */
+.boldform-canvas .boldform-canvas-field-choices .boldform-lite-form__choice-icon,
+.boldform-template-preview__canvas .boldform-canvas-field-choices .boldform-lite-form__choice-icon {
+	display: none;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: inherit;
+}
+
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon svg,
+.boldform-canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon img,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon svg,
+.boldform-template-preview__canvas .boldform-canvas-field-choices.is-btn .boldform-lite-form__choice-icon img {
+	display: block;
+	width: var(--bf-choice-btn-icon-size, 16px);
+	height: var(--bf-choice-btn-icon-size, 16px);
+	object-fit: contain;
 }
 
 /* ---- Terms & Conditions ---- */
@@ -8224,4 +8671,742 @@
 	letter-spacing: .02em;
 	text-transform: uppercase;
 	color: #64748b;
+}
+
+/* ── Per-field Checkbox & Radio overrides ──
+   A disclosure, closed by default: it holds the Style tab's full control set, and
+   most fields override nothing, so it must not push the controls a user actually
+   came for off the bottom of the panel. The controls bring their own styling —
+   only the frame is defined here. */
+.boldform-choice-style {
+	margin-top: 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #fff;
+	/* Clips the head's fill to the rounded corners. */
+	overflow: hidden;
+}
+
+.boldform-choice-style__head {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding-right: 8px;
+	border-bottom: 1px solid transparent;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.boldform-choice-style.is-open > .boldform-choice-style__head {
+	border-bottom-color: #e2e8f0;
+	background: #f8fafc;
+}
+
+.boldform-choice-style .boldform-choice-style__toggle {
+	flex: 1 1 auto;
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	min-width: 0;
+	margin: 0;
+	padding: 10px 4px 10px 11px;
+	border: 0;
+	background: none;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+}
+
+.boldform-choice-style .boldform-choice-style__toggle:hover {
+	background: rgba( 34, 113, 177, 0.04 );
+}
+
+.boldform-choice-style .boldform-choice-style__toggle:focus-visible {
+	outline: 2px solid #2271b1;
+	outline-offset: -2px;
+}
+
+/* Chevron: an open corner, rotated — the shape a disclosure is expected to use,
+   and it turns rather than swapping glyph. */
+.boldform-choice-style__caret {
+	flex: none;
+	width: 6px;
+	height: 6px;
+	border-right: 2px solid #94a3b8;
+	border-bottom: 2px solid #94a3b8;
+	border-radius: 1px;
+	transform: rotate( -45deg );
+	transition: transform 0.18s ease;
+}
+
+.boldform-choice-style.is-open .boldform-choice-style__caret {
+	transform: rotate( 45deg );
+}
+
+.boldform-choice-style__title {
+	flex: 0 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #64748b;
+}
+
+/* How many properties this field overrides, so a closed block still says whether
+   it has been customised. */
+.boldform-choice-style__badge {
+	flex: none;
+	min-width: 16px;
+	height: 16px;
+	padding: 0 5px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	background: #2271b1;
+	color: #fff;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.boldform-choice-style .boldform-choice-style__reset {
+	flex: none;
+	padding: 3px 7px;
+	border: 0;
+	border-radius: 5px;
+	background: transparent;
+	color: #2271b1;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.boldform-choice-style .boldform-choice-style__reset:hover:not( :disabled ) {
+	background: rgba( 34, 113, 177, 0.1 );
+}
+
+.boldform-choice-style .boldform-choice-style__reset:disabled {
+	color: #cbd5e1;
+	cursor: default;
+}
+
+/* Class-driven, not [hidden]: nothing in this stylesheet styles the attribute
+   globally, and the state class is what the toggle flips. */
+.boldform-choice-style:not( .is-open ) > .boldform-choice-style__body {
+	display: none;
+}
+
+.boldform-choice-style__body {
+	padding: 11px;
+}
+
+/* The treatment chooser leads the block: it decides which of the controls under
+   it are even relevant, so it is ruled off from them. */
+.boldform-choice-style__mode {
+	margin-bottom: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.boldform-choice-style__hint {
+	margin: 10px 0 0;
+	font-size: 10px;
+	color: #94a3b8;
+}
+
+/* Inside a repeater sub-field row the block is one level deeper and the column is
+   narrower, so the two-up controls stack rather than squeezing. */
+.boldform-rep-field-row .boldform-choice-style {
+	margin-top: 8px;
+}
+
+.boldform-rep-field-row .boldform-choice-style .boldform-adv-grid {
+	grid-template-columns: 1fr;
+}
+
+/* ==========================================================================
+   Per-option icons
+   A checkbox or radio option can carry an icon, which the Button treatment
+   draws inside its pill. Two places edit them — a top-level field's option
+   rows and a repeater sub-field's icon strip — and both use the same trigger
+   and the same picker, so an icon means the same thing wherever it was set.
+   ========================================================================== */
+
+/* The trigger. Sized to the option row's other controls so the row keeps one
+   baseline, and dashed while empty: an icon is optional, and an empty slot
+   should read as an invitation rather than as a control that failed to load. */
+.boldform-opticon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 1px dashed #cbd5e1;
+	border-radius: 8px;
+	background: #fff;
+	color: #94a3b8;
+	cursor: pointer;
+	transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+/* `hidden` has to beat the display above by specificity, not by source order:
+   outside the Button treatment the trigger stays in the DOM so the options can be
+   collected from it, and it must be neither seen nor reachable while it is there. */
+.boldform-opticon[hidden] {
+	display: none;
+}
+
+.boldform-rep-opt .boldform-opticon {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+}
+
+.boldform-opticon:hover {
+	border-color: #0f766e;
+	color: #0f766e;
+	background: #f0fdfa;
+}
+
+.boldform-opticon:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.boldform-opticon:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 2px;
+}
+
+/* Once an icon is set the slot is no longer an invitation, so it takes a solid
+   edge and the accent colour — the row can then be read at a glance for which
+   options have one. */
+.boldform-opticon.is-set {
+	border-style: solid;
+	border-color: #99f6e4;
+	background: #f0fdfa;
+	color: #0f766e;
+}
+
+.boldform-opticon .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+}
+
+.boldform-opticon svg,
+.boldform-opticon img {
+	display: block;
+	width: 16px;
+	height: 16px;
+	object-fit: contain;
+}
+
+/* A file keeps its own colours, so the trigger drops the accent tint it gives a
+   built-in glyph — tinting the frame around a picture reads as a colour the
+   picture does not have. */
+.boldform-opticon.is-image {
+	border-color: #cbd5e1;
+	background: #fff;
+	color: inherit;
+}
+
+/* ---- A sub-field's option rows ----
+   The same shape as a top-level field's option editor, at the smaller scale the
+   repeater panel is drawn at: handle, icon, value, remove. */
+.boldform-rep-opts {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.boldform-rep-opt {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	/* The row is the drop target for its own reorder, so it needs somewhere for
+	   the placeholder to sit without the list jumping. */
+	min-height: 30px;
+}
+
+/* Which option a fresh row opens with selected — the same control a top-level
+   choice field has, at the repeater panel's smaller scale. The native input is
+   hidden rather than removed: it still owns the radio grouping and the keyboard
+   behaviour, and the span beside it is what gets drawn. */
+.boldform-rep-opt__default {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+}
+
+.boldform-rep-opt__default input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.boldform-rep-opt__mark {
+	display: block;
+	width: 14px;
+	height: 14px;
+	border: 1.5px solid #cbd5e1;
+	border-radius: 50%;
+	background: #fff;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* A checkbox sub-field can open with several selected, so its marks are squares —
+   the same shape distinction the control will have on the page. */
+.boldform-rep-opt__mark.is-box {
+	border-radius: 4px;
+}
+
+.boldform-rep-opt__default:hover .boldform-rep-opt__mark {
+	border-color: #0f766e;
+}
+
+.boldform-rep-opt__default.is-checked .boldform-rep-opt__mark {
+	border-color: #0f766e;
+	background: #0f766e;
+	box-shadow: inset 0 0 0 2.5px #fff;
+}
+
+.boldform-rep-opt__default.is-checked .boldform-rep-opt__mark.is-box {
+	/* A tick rather than a dot, drawn with two borders so it needs no glyph. */
+	box-shadow: none;
+	position: relative;
+}
+
+.boldform-rep-opt__default.is-checked .boldform-rep-opt__mark.is-box::after {
+	content: "";
+	position: absolute;
+	top: 1px;
+	left: 4px;
+	width: 3px;
+	height: 7px;
+	border: solid #fff;
+	border-width: 0 1.5px 1.5px 0;
+	transform: rotate( 45deg );
+}
+
+/* Keyboard focus has to show on the span, since the input it belongs to is
+   visually hidden. */
+.boldform-rep-opt__default input:focus-visible + .boldform-rep-opt__mark {
+	outline: 2px solid #5eead4;
+	outline-offset: 2px;
+}
+
+.boldform-rep-opt__drag {
+	flex: 0 0 auto;
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	line-height: 16px;
+	color: #cbd5e1;
+	cursor: grab;
+	/* A handle that selects its own glyph mid-drag reads as a broken control. */
+	user-select: none;
+}
+
+.boldform-rep-opt__drag:hover {
+	color: #94a3b8;
+}
+
+/* The value is the only part that should grow; everything else is fixed, so the
+   rows line up down the list however long the options are. */
+.boldform-rep-opt__value {
+	flex: 1 1 auto;
+	min-width: 0;
+	height: 30px;
+	padding: 0 8px;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	background: #fff;
+	font-size: 12px;
+	line-height: 28px;
+	box-sizing: border-box;
+}
+
+.boldform-rep-opt__value:focus {
+	border-color: #0f766e;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba( 15, 118, 110, 0.12 );
+}
+
+.boldform-rep-opt__remove {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #cbd5e1;
+	cursor: pointer;
+}
+
+.boldform-rep-opt__remove:hover {
+	background: #fef2f2;
+	color: #dc2626;
+}
+
+.boldform-rep-opt__remove:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 1px;
+}
+
+.boldform-rep-opt__remove .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 14px;
+}
+
+/* The quieter sibling of "Add Sub-field": this adds one line to one field, not a
+   field to the repeater, so it must not compete with the buttons around it. */
+.boldform-rep-opt__add {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	align-self: flex-start;
+	margin-top: 2px;
+	padding: 4px 8px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 6px;
+	background: transparent;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.boldform-rep-opt__add:hover {
+	border-color: #0f766e;
+	color: #0f766e;
+	background: #f0fdfa;
+}
+
+.boldform-rep-opt__add:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 1px;
+}
+
+.boldform-rep-opt__add .dashicons {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	line-height: 14px;
+}
+
+/* The drop marker, matching the one the group and sub-field lists use. */
+.boldform-rep-opts .boldform-sortable-placeholder {
+	height: 30px;
+	margin: 0;
+	border: 1px dashed #5eead4;
+	border-radius: 6px;
+	background: #f0fdfa;
+}
+
+/* ---- The picker ----
+   On <body>, so it can overhang the settings panel and its scroll container.
+   Positioned in viewport coordinates by bfOpenIconPop(). */
+.boldform-iconpop {
+	position: fixed;
+	z-index: 100100;
+	width: 288px;
+	padding: 10px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #fff;
+	box-shadow: 0 12px 32px rgba( 15, 23, 42, 0.16 );
+}
+
+/* Three sources, three tabs. The row sits above everything so switching source
+   never moves the control the user is aiming at. */
+.boldform-iconpop__tabs {
+	display: flex;
+	gap: 2px;
+	margin: 0 0 10px;
+	padding: 2px;
+	border-radius: 8px;
+	background: #f1f5f9;
+}
+
+.boldform-iconpop__tab {
+	flex: 1 1 0;
+	padding: 5px 0;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #64748b;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.boldform-iconpop__tab:hover {
+	color: #0f766e;
+}
+
+.boldform-iconpop__tab.is-active {
+	background: #fff;
+	color: #0f172a;
+	box-shadow: 0 1px 2px rgba( 15, 23, 42, 0.08 );
+}
+
+.boldform-iconpop__tab:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: -2px;
+}
+
+/* `hidden` has to out-specify the panel's own display below, which is a class +
+   attribute selector and would otherwise win on source order alone. */
+.boldform-iconpop .boldform-iconpop__panel[hidden] {
+	display: none;
+}
+
+/* The media tabs have no grid to fill, so the card sets the height. Padded to
+   roughly the icon grid's block so switching tabs does not resize the popover
+   under the pointer. */
+.boldform-iconpop__panel[data-icon-panel="svg"],
+.boldform-iconpop__panel[data-icon-panel="image"] {
+	display: flex;
+	align-items: stretch;
+	min-height: 188px;
+	padding: 6px 0;
+}
+
+/* The whole card is the action. Splitting it into an inert preview box and a
+   button below left the tab looking like a control that had failed to load. */
+.boldform-iconpop__drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	/* Fills the panel rather than floating in it: a drop area reads as an area. */
+	width: 100%;
+	padding: 16px;
+	border: 1px dashed #cbd5e1;
+	border-radius: 12px;
+	background: #f8fafc;
+	color: inherit;
+	text-align: center;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.boldform-iconpop__drop:hover {
+	border-color: #0f766e;
+	background: #f0fdfa;
+}
+
+.boldform-iconpop__drop:focus-visible {
+	outline: none;
+	border-color: #0f766e;
+	box-shadow: 0 0 0 3px rgba( 15, 118, 110, 0.14 );
+}
+
+/* Fixed size in both states, so the card does not reflow when a file replaces
+   the upload mark. */
+.boldform-iconpop__drop-figure {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 60px;
+	height: 60px;
+	border-radius: 10px;
+	background: #fff;
+	border: 1px solid #e2e8f0;
+	color: #0f766e;
+}
+
+.boldform-iconpop__drop-figure img {
+	max-width: 42px;
+	max-height: 42px;
+	object-fit: contain;
+}
+
+.boldform-iconpop__drop-figure svg {
+	display: block;
+}
+
+.boldform-iconpop__drop-text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	/* Without this the filename, which can be long and has no spaces to break at,
+	   pushes the card wider than the popover. */
+	min-width: 0;
+	max-width: 100%;
+}
+
+.boldform-iconpop__drop-title {
+	overflow: hidden;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1.35;
+	color: #0f172a;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.boldform-iconpop__drop-hint {
+	/* The hint can run to two lines; the title above it never does. */
+	max-width: 30ch;
+	margin: 0 auto;
+	font-size: 11px;
+	line-height: 1.45;
+	color: #94a3b8;
+}
+
+/* Once it holds a file the card is showing something rather than asking for it,
+   so the dashed "drop here" edge becomes a solid one. */
+.boldform-iconpop__drop.is-filled {
+	border-style: solid;
+	border-color: #99f6e4;
+	background: #f0fdfa;
+}
+
+.boldform-iconpop__foot {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid #f1f5f9;
+	text-align: center;
+}
+
+.boldform-iconpop__search {
+	width: 100%;
+	margin: 0 0 8px;
+	padding: 6px 10px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	font-size: 13px;
+	line-height: 1.4;
+	box-sizing: border-box;
+}
+
+.boldform-iconpop__search:focus {
+	border-color: #0f766e;
+	outline: none;
+	box-shadow: 0 0 0 3px rgba( 15, 118, 110, 0.12 );
+}
+
+/* Fixed column count with its own scroll, so the popover is the same size
+   whatever an extension has added to the registry. */
+.boldform-iconpop__grid {
+	display: grid;
+	grid-template-columns: repeat( 7, 1fr );
+	gap: 4px;
+	max-height: 232px;
+	overflow-y: auto;
+}
+
+.boldform-iconpop__item {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	aspect-ratio: 1;
+	padding: 0;
+	border: 1px solid transparent;
+	border-radius: 8px;
+	background: transparent;
+	color: #475569;
+	cursor: pointer;
+}
+
+.boldform-iconpop__item:hover {
+	border-color: #99f6e4;
+	background: #f0fdfa;
+	color: #0f766e;
+}
+
+.boldform-iconpop__item:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+.boldform-iconpop__item:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 1px;
+}
+
+/* The icon this option already has, so reopening the picker says what is set
+   rather than making the user remember. */
+.boldform-iconpop__item.is-active {
+	border-color: #0f766e;
+	background: #ccfbf1;
+	color: #0f766e;
+}
+
+.boldform-iconpop__item.is-hidden {
+	display: none;
+}
+
+/* Clearing is offered on every tab, because an option that already has an icon
+   should not need the user to work out which tab it came from to take it off. */
+.boldform-iconpop__none {
+	padding: 4px 10px;
+	border: 0;
+	border-radius: 6px;
+	background: transparent;
+	color: #dc2626;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.boldform-iconpop__none:hover:not( [disabled] ) {
+	background: #fef2f2;
+}
+
+.boldform-iconpop__none[disabled] {
+	color: #cbd5e1;
+	cursor: default;
+}
+
+.boldform-iconpop__none:focus-visible {
+	outline: 2px solid #5eead4;
+	outline-offset: 1px;
+}
+
+.boldform-iconpop__item svg {
+	display: block;
+	width: 18px;
+	height: 18px;
+}
+
+.boldform-iconpop__item .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	line-height: 18px;
+}
+
+.boldform-iconpop__empty {
+	margin: 8px 0 2px;
+	font-size: 12px;
+	color: #94a3b8;
+	text-align: center;
 }

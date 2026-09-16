@@ -927,7 +927,7 @@ class BoldForm_Lite_Form_Handler {
 		} elseif ( 'turnstile' === $captcha['provider'] ) {
 			$secret = $captcha['turnstile_secret_key'];
 			$token  = isset( $request['cf-turnstile-response'] ) ? sanitize_text_field( wp_unslash( $request['cf-turnstile-response'] ) ) : '';
-			$api    = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+			$api    = 'https://challenges.cloudflare.com/turnstile/v0/siteverify'; // phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- server-side captcha verification, documented under == External Services ==; no asset reaches the page.
 		} else {
 			$secret = $captcha['hcaptcha_secret_key'];
 			$token  = isset( $request['h-captcha-response'] ) ? sanitize_text_field( wp_unslash( $request['h-captcha-response'] ) ) : '';

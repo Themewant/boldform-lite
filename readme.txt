@@ -2,7 +2,7 @@
 Contributors: themewant, maha25
 Tags: contact form, form builder, forms, drag and drop, gutenberg
 Requires at least: 6.3
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 7.4
 Stable tag: 1.1.8
 License: GPLv2 or later
@@ -341,12 +341,20 @@ New features:
 * New: Choose your AI provider — Anthropic, OpenAI, Google Gemini or OpenRouter — under Settings > AI, using your own API key. Gemini has a free tier.
 * New: Pick any OpenRouter model that supports strict JSON schema output; the list is fetched live and grouped by vendor.
 * New: The generator only offers field types your site actually has, so add-ons that register more field types extend it automatically.
+* New: A Button style for checkboxes and radios turns a choice group into selectable pills, with its own padding, radius, spacing, border and Normal/Hover/Selected states.
+* New: Per-option icons for checkboxes and radios in Button style — pick a built-in glyph, or upload your own SVG or image.
+* New: A checkbox or radio field can pin its own style and colours instead of always following the form.
 
 Improvements:
 * Improved: Settings dropdowns support option groups and type-ahead, so long lists are usable from the keyboard.
 * Improved: The new-form and empty-canvas screens centre a row that is not full, instead of leaving the last card stranded on the left.
 * Improved: Upgrade prompts name the feature or the add-on instead of saying "Unlock", so nothing reads as being withheld from you.
 * Improved: The Tools export format list offers only the formats you have. Excel and PDF are described in a note instead of shown as options you cannot pick.
+* Improved: Date and time fields added to a page after it loads now get a real picker instead of a dead read-only box.
+* Improved: Fields drawn by an add-on follow the form's choice style, and keep their styling inside the block and Elementor editors.
+
+Fixes:
+* Fix: Changing the checkbox and radio Style no longer collapses the group you were editing.
 
 = 1.1.7 =
 New features:
@@ -501,7 +509,7 @@ Entries for 1.1.0 and earlier have been trimmed to keep this changelog within th
 == Upgrade Notice ==
 
 = 1.1.8 =
-Adds the AI Form Builder: describe a form in plain language and have it built on the canvas, using your own key with Anthropic, OpenAI, Gemini or OpenRouter. Also rewords the upgrade prompts and tidies the Tools export format list. Recommended for all users.
+Adds the AI Form Builder: describe a form in plain language and have it built on the canvas, using your own key with Anthropic, OpenAI, Gemini or OpenRouter. Also adds a Button style for checkboxes and radios, with per-option icons and per-field colours. Recommended for all users.
 
 = 1.1.7 =
 Adds extension points so an add-on can show its own admin notices and word the locked field, template and export prompts for license activation rather than purchase. Fixes the Tools export format selector disappearing when an add-on was installed but not yet active. Recommended for all users.

@@ -353,8 +353,22 @@ class BoldForm_Lite_Ajax_Save {
 							'default_value'  => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
 							'required'       => ! empty( $field['required'] ),
 							'options'        => $options,
+							// Positional: entry N is option N's icon. Sanitized against the
+							// option count so a removed option cannot leave an icon behind
+							// on whatever option takes its place. Only a checkbox or radio
+							// has anywhere to put one — a select's options stay list rows
+							// whatever the Style says — so nothing else stores any.
+							'option_icons'   => in_array( $field_type, array( 'checkbox', 'radio' ), true )
+								? boldform_lite_sanitize_option_icons( isset( $field['option_icons'] ) ? $field['option_icons'] : array(), count( $options ) )
+								: array(),
 							'options_layout' => $options_layout,
 							'checkbox_style' => $checkbox_style,
+							// Per-field Checkbox & Radio treatment. 'inherit' follows the
+							// form, which is what every existing form does.
+							'choice_style'   => in_array( ( $field['choice_style'] ?? '' ), array( 'default', 'button' ), true ) ? (string) $field['choice_style'] : 'inherit',
+							// Per-field Checkbox & Radio overrides. Absent keys mean
+							// "inherit the form", so only what was actually set is stored.
+							'choice_styles'  => boldform_lite_sanitize_choice_style( isset( $field['choice_styles'] ) ? $field['choice_styles'] : array() ),
 							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
 							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
 							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
@@ -677,6 +691,11 @@ class BoldForm_Lite_Ajax_Save {
 			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
+			// Checkbox/radio presentation: 'default' (box + label) or 'button'
+			// (the label becomes a selectable pill). Strict two-value allowlist —
+			// anything else collapses to 'default', so an unexpected value can
+			// never reach the class the renderer emits.
+			'choice_style'        => isset( $settings_payload['choice_style'] ) && 'button' === $settings_payload['choice_style'] ? 'button' : 'default',
 			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
 			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
 			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
@@ -794,7 +813,7 @@ class BoldForm_Lite_Ajax_Save {
 	 * @param mixed $value Raw value.
 	 * @return string The value if it passes, otherwise ''.
 	 */
-	private static function sanitize_css_value( $value ) {
+	public static function sanitize_css_value( $value ) {
 		if ( ! is_scalar( $value ) ) {
 			return '';
 		}
