@@ -1971,13 +1971,80 @@ class BoldForm_Lite_Admin {
 	 * admin_head — and immediately before the notice actions fire, then re-registers
 	 * BoldForm's own notice so it survives the purge.
 	 *
+	 * WordPress core's own notices (update nags, PHP-version and security warnings)
+	 * are deliberately preserved — hiding those from a site owner is not ours to do.
+	 *
 	 * @return void
 	 */
 	public function suppress_foreign_notices() {
-		remove_all_actions( 'admin_notices' );
-		remove_all_actions( 'all_admin_notices' );
-		remove_all_actions( 'user_admin_notices' );
+		self::remove_third_party_notices( 'admin_notices' );
+		self::remove_third_party_notices( 'all_admin_notices' );
+		self::remove_third_party_notices( 'user_admin_notices' );
 		add_action( 'admin_notices', array( $this, 'render_own_notices' ) );
+	}
+
+	/**
+	 * Removes third-party callbacks from a notice hook while keeping WordPress
+	 * core's own (update nags, PHP-version warnings, security notices, etc).
+	 *
+	 * A blanket remove_all_actions() also strips core's own notices, which can
+	 * hide an update-required or security warning the site owner needs to see.
+	 * This keeps any callback whose declaring file lives under wp-admin/ or
+	 * wp-includes/ and removes everything else (plugins, themes, mu-plugins).
+	 *
+	 * @param string $hook Notice hook name.
+	 * @return void
+	 */
+	private static function remove_third_party_notices( $hook ) {
+		global $wp_filter;
+
+		if ( empty( $wp_filter[ $hook ] ) ) {
+			return;
+		}
+
+		// Snapshot first: remove_action() mutates the same structure being walked.
+		$registered = $wp_filter[ $hook ]->callbacks;
+
+		foreach ( $registered as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( ! self::is_core_notice_callback( $callback['function'] ) ) {
+					remove_action( $hook, $callback['function'], $priority );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Determines whether a hooked callback is declared by WordPress core.
+	 *
+	 * @param callable $function The hooked callback.
+	 * @return bool
+	 */
+	private static function is_core_notice_callback( $function ) {
+		try {
+			if ( is_array( $function ) ) {
+				$reflection = new ReflectionMethod( $function[0], $function[1] );
+			} elseif ( is_string( $function ) && false !== strpos( $function, '::' ) ) {
+				$reflection = new ReflectionMethod( $function );
+			} elseif ( $function instanceof Closure || is_string( $function ) ) {
+				$reflection = new ReflectionFunction( $function );
+			} else {
+				return false;
+			}
+		} catch ( ReflectionException $e ) {
+			return false;
+		}
+
+		$file = $reflection->getFileName();
+
+		if ( ! $file ) {
+			return false;
+		}
+
+		$file = wp_normalize_path( $file );
+
+		return ( false !== strpos( $file, '/wp-admin/' ) || false !== strpos( $file, '/wp-includes/' ) )
+			&& false === strpos( $file, '/wp-content/' );
 	}
 
 	/**
@@ -2001,7 +2068,7 @@ class BoldForm_Lite_Admin {
 		/**
 		 * Fires where an add-on can render an admin notice on BoldForm's screens.
 		 *
-		 * The purge above removes every third-party 'admin_notices' callback and
+		 * The purge above removes third-party 'admin_notices' callbacks and
 		 * re-adds only this method, so an add-on registering on 'admin_notices'
 		 * directly is silently stripped on exactly the screens it wants to reach.
 		 * This action is the supported seam: it runs inside the one callback that
@@ -2741,7 +2808,7 @@ class BoldForm_Lite_Admin {
 		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
 		// or a string (a short qualifier shown as text).
 		$features = array(
-			array( 'label' => __( 'Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Drag & Drop Form Builder, Contact Form & Survey', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
 			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
 			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),

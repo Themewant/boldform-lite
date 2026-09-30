@@ -93,7 +93,7 @@ Every submission is saved to a custom database table, independent of email deliv
 
 = Email Marketing Integrations =
 
-* **Email Notifications** — an admin notification per submission, with a custom "From" name, reply-to, subject and body. Test delivery from the settings panel.
+* **Email Notifications** — an admin notification per submission, sent with BoldForm's standard layout. Set a custom "From" name and reply-to, and test delivery, from the settings panel.
 * **SMTP** — route outgoing mail through your own SMTP server.
 * **Mailchimp** and **Brevo (formerly Sendinblue)** — add contacts to any list with field mapping.
 
@@ -114,7 +114,7 @@ Configure these under **BoldForm → Settings → Integrations**, then assign on
 
 = Meet BoldForm Pro =
 
-**[BoldForm Pro](https://wpboldform.com/)** adds multi-page forms, advanced fields (Rich Text, Signature, Repeater, Calculation and more), form scheduling, conversion analytics, webhooks, Stripe and PayPal payments, and 30+ integrations — inside the same builder.
+**[BoldForm Pro](https://wpboldform.com/)** adds multi-page forms, advanced fields (Rich Text, Signature, Repeater, Calculation and more), a custom email subject and body per form, form scheduling, conversion analytics, webhooks, Stripe and PayPal payments, and 30+ integrations — inside the same builder.
 
 [See everything in BoldForm Pro →](https://wpboldform.com/)
 
