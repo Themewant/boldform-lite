@@ -358,11 +358,11 @@ class BoldForm_Lite_Migrator {
 
 			<?php foreach ( $forms as $form ) : ?>
 				<?php
-				$title       = isset( $form['title'] ) ? (string) $form['title'] : '';
-				$edit_url    = ! empty( $form['form_id'] ) ? admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . (int) $form['form_id'] ) : '';
-				$skipped     = isset( $form['skipped'] ) && is_array( $form['skipped'] ) ? $form['skipped'] : array();
-				$warnings    = isset( $form['warnings'] ) && is_array( $form['warnings'] ) ? $form['warnings'] : array();
-				$row_error   = isset( $form['error'] ) ? (string) $form['error'] : '';
+				$title     = isset( $form['title'] ) ? (string) $form['title'] : '';
+				$edit_url  = ! empty( $form['form_id'] ) ? admin_url( 'admin.php?page=boldform-lite-builder&form_id=' . (int) $form['form_id'] ) : '';
+				$skipped   = isset( $form['skipped'] ) && is_array( $form['skipped'] ) ? $form['skipped'] : array();
+				$warnings  = isset( $form['warnings'] ) && is_array( $form['warnings'] ) ? $form['warnings'] : array();
+				$row_error = isset( $form['error'] ) ? (string) $form['error'] : '';
 				?>
 				<div class="boldform-migrator-result__form">
 					<strong><?php echo esc_html( $title ); ?></strong>
@@ -454,9 +454,14 @@ class BoldForm_Lite_Migrator {
 
 		if ( isset( $_POST['boldform_migrate_ids'] ) && is_array( $_POST['boldform_migrate_ids'] ) ) {
 			$raw = array_map( 'sanitize_text_field', wp_unslash( $_POST['boldform_migrate_ids'] ) );
-			return array_values( array_filter( $raw, static function ( $id ) {
-				return '' !== $id;
-			} ) );
+			return array_values(
+				array_filter(
+					$raw,
+					static function ( $id ) {
+						return '' !== $id;
+					}
+				)
+			);
 		}
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
 
@@ -540,8 +545,8 @@ class BoldForm_Lite_Migrator {
 		$result->warnings = isset( $data['warnings'] ) && is_array( $data['warnings'] ) ? $data['warnings'] : array();
 
 		// Re-sanitize through the builder's own save path — never hand-write fields_json.
-		$rows_payload   = array( 'rows' => isset( $data['rows'] ) && is_array( $data['rows'] ) ? $data['rows'] : array() );
-		$prepared_rows  = BoldForm_Lite_Ajax_Save::prepare_rows( $rows_payload );
+		$rows_payload  = array( 'rows' => isset( $data['rows'] ) && is_array( $data['rows'] ) ? $data['rows'] : array() );
+		$prepared_rows = BoldForm_Lite_Ajax_Save::prepare_rows( $rows_payload );
 
 		// Guard against a form with nothing importable — never create an empty form.
 		// The skipped notes are kept so the admin sees why (all fields unsupported).
@@ -563,8 +568,8 @@ class BoldForm_Lite_Migrator {
 			return $result;
 		}
 
-		$forms_table  = $this->plugin->get_forms_table_name();
-		$existing_id  = $this->get_mapped_form_id( $slug, $source_id );
+		$forms_table = $this->plugin->get_forms_table_name();
+		$existing_id = $this->get_mapped_form_id( $slug, $source_id );
 
 		if ( $existing_id > 0 ) {
 			$updated = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -672,7 +677,7 @@ class BoldForm_Lite_Migrator {
 	 * them all with one `IN (...)` SELECT, and self-heals the map by pruning
 	 * mappings whose target form no longer exists (or is trashed).
 	 *
-	 * @param string                          $slug  Source slug.
+	 * @param string                           $slug  Source slug.
 	 * @param array<int, array<string, mixed>> $forms Source forms ({id,title,...}).
 	 * @return array<int|string, true> Set of source IDs that are imported.
 	 */
@@ -738,7 +743,7 @@ class BoldForm_Lite_Migrator {
 	 * @return void
 	 */
 	private function mark_imported( $slug, $source_id, $form_id ) {
-		$map = $this->get_migration_map();
+		$map                                        = $this->get_migration_map();
 		$map[ $this->map_key( $slug, $source_id ) ] = (int) $form_id;
 
 		update_option( self::MAP_OPTION, $map, false );

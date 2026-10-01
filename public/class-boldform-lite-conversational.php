@@ -252,7 +252,7 @@ class BoldForm_Lite_Conversational {
 		wp_enqueue_style( 'boldform-lite-conversational' );
 		wp_enqueue_script( 'boldform-lite-conversational' );
 
-		$chrome = $this->build_chrome( $settings, $form_id );
+		$chrome = $this->build_chrome( $settings );
 
 		// Anchored to a literal opening tag: a single replacement, no parsing.
 		// Limited to the first occurrence so a nested form (which Lite never
@@ -296,14 +296,13 @@ class BoldForm_Lite_Conversational {
 	 * with no configuration and no error.
 	 *
 	 * @param array<string, mixed> $settings Resolved form settings.
-	 * @param int                  $form_id  Form ID.
 	 * @return string
 	 */
-	private function build_chrome( $settings, $form_id ) {
+	private function build_chrome( $settings ) {
 		$config = array(
-			'progress'  => isset( $settings['cv_progress'] ) ? (string) $settings['cv_progress'] : 'bar',
+			'progress'   => isset( $settings['cv_progress'] ) ? (string) $settings['cv_progress'] : 'bar',
 			'transition' => isset( $settings['cv_transition'] ) ? (string) $settings['cv_transition'] : 'slide',
-			'keyHint'   => ! empty( $settings['cv_key_hint'] ),
+			'keyHint'    => ! empty( $settings['cv_key_hint'] ),
 			'tailTypes'  => $this->get_tail_types(),
 			'stackTypes' => $this->get_stacking_types(),
 			'i18n'       => array(
@@ -515,10 +514,17 @@ class BoldForm_Lite_Conversational {
 		 *
 		 * @param string[] $types Field type slugs.
 		 */
-		return array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
-			'boldform_conversational_tail_types',
-			array( 'captcha', 'terms_conditions' )
-		) ) ) );
+		return array_values(
+			array_filter(
+				array_map(
+					'sanitize_key',
+					(array) apply_filters(
+						'boldform_conversational_tail_types',
+						array( 'captcha', 'terms_conditions' )
+					)
+				)
+			)
+		);
 	}
 
 	/**
@@ -532,10 +538,17 @@ class BoldForm_Lite_Conversational {
 		 *
 		 * @param string[] $types Field type slugs.
 		 */
-		return array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
-			'boldform_conversational_stacking_types',
-			array( 'name', 'address', 'file' )
-		) ) ) );
+		return array_values(
+			array_filter(
+				array_map(
+					'sanitize_key',
+					(array) apply_filters(
+						'boldform_conversational_stacking_types',
+						array( 'name', 'address', 'file' )
+					)
+				)
+			)
+		);
 	}
 
 	/**
@@ -567,8 +580,8 @@ class BoldForm_Lite_Conversational {
 			'cv_hint_color'     => '--bfc-hint',
 		);
 
-		$parts     = array();
-		$hint_set  = false;
+		$parts    = array();
+		$hint_set = false;
 
 		foreach ( $map as $key => $property ) {
 			if ( empty( $settings[ $key ] ) ) {

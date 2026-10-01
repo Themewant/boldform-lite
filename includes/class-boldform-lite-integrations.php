@@ -91,7 +91,7 @@ class BoldForm_Lite_Integrations {
 			array_filter( array_map( 'sanitize_key', $raw_ids ) )
 		);
 
-		// Field mapping per connection: { conn_id: { email, fname, lname } }
+		// Field mapping per connection: { conn_id: { email, fname, lname } }.
 		$raw_map = isset( $settings_payload['connection_field_map'] ) && is_array( $settings_payload['connection_field_map'] )
 			? $settings_payload['connection_field_map']
 			: array();
@@ -308,7 +308,11 @@ class BoldForm_Lite_Integrations {
 			return;
 		}
 
-		$body = array( 'email' => $email, 'listIds' => array( $list_id ), 'updateEnabled' => true );
+		$body = array(
+			'email'         => $email,
+			'listIds'       => array( $list_id ),
+			'updateEnabled' => true,
+		);
 
 		$attrs = array();
 		$fname = $this->get_field_value( $entry_data, $field_map['fname'] ?? '' );
@@ -345,10 +349,10 @@ class BoldForm_Lite_Integrations {
 	 * The dispatch itself stays fire-and-forget; this seam lets logging/monitoring
 	 * (and Pro) observe whether a subscribe call succeeded or failed.
 	 *
-	 * @param string                  $type     Connection type ('mailchimp', 'brevo', …).
-	 * @param array<string, mixed>    $conn     Connection config.
+	 * @param string                        $type     Connection type ('mailchimp', 'brevo', …).
+	 * @param array<string, mixed>          $conn     Connection config.
 	 * @param array<string, mixed>|WP_Error $response wp_remote_* response array or WP_Error.
-	 * @param int                     $entry_id Entry ID that triggered the dispatch.
+	 * @param int                           $entry_id Entry ID that triggered the dispatch.
 	 * @return void
 	 */
 	private function record_dispatch_result( string $type, array $conn, $response, int $entry_id ): void {
@@ -390,9 +394,9 @@ class BoldForm_Lite_Integrations {
 			);
 		}
 
-		$data['globalConnections']      = $safe;
-		$data['integrationsNonce']      = wp_create_nonce( 'boldform_integration_nonce' );
-		$data['integrationsAdminUrl']   = admin_url( 'admin.php?page=boldform-lite-integrations' );
+		$data['globalConnections']    = $safe;
+		$data['integrationsNonce']    = wp_create_nonce( 'boldform_integration_nonce' );
+		$data['integrationsAdminUrl'] = admin_url( 'admin.php?page=boldform-lite-integrations' );
 
 		// The connection types the free plugin can actually dispatch. Any assigned
 		// connection of another type is a leftover from when an add-on was active

@@ -46,7 +46,7 @@ class BoldForm_Lite_Export_Import {
 	 * @param array<string, mixed> $settings Global plugin settings.
 	 * @return void
 	 */
-	public function render_tools_tab( $settings ) {
+	public function render_tools_tab( $settings ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- kept for a consistent signature across all render_*_tab() callbacks.
 		global $wpdb;
 
 		$tools_sub = isset( $_GET['tools_tab'] ) ? sanitize_key( wp_unslash( $_GET['tools_tab'] ) ) : 'forms'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -382,7 +382,6 @@ class BoldForm_Lite_Export_Import {
 			} else {
 				$data['entries'] = $wpdb->get_results( "SELECT * FROM `{$entries_table}` ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			}
-
 		} else {
 			$data['forms'] = $wpdb->get_results( "SELECT * FROM `{$forms_table}` WHERE status != 'trash' ORDER BY id ASC", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 
@@ -434,7 +433,7 @@ class BoldForm_Lite_Export_Import {
 			if (
 				'uninstall_data' === $setting_key
 				|| 0 === strpos( $setting_key, 'smtp_' )
-				// Substring matches for credential-like names anywhere in the key…
+				// Substring matches for credential-like names anywhere in the key….
 				|| preg_match( '/(password|secret|token|credential|oauth|client_id|client_secret|api[_-]?key|apikey)/i', $setting_key )
 				// …plus common credential suffixes (e.g. *_key, *_secret, *_token, *_auth).
 				|| preg_match( '/_(key|secret|token|auth)$/i', $setting_key )
@@ -578,6 +577,8 @@ class BoldForm_Lite_Export_Import {
 			return '';
 		}
 
+		// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- native DOMDocument/DOMNode properties, cannot be renamed.
+
 		$dom = new \DOMDocument();
 		libxml_use_internal_errors( true );
 		// LIBXML_NONET blocks network access; entities are not expanded (no NOENT).
@@ -620,6 +621,7 @@ class BoldForm_Lite_Export_Import {
 		}
 
 		$out = $dom->saveXML( $dom->documentElement );
+		// phpcs:enable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
 
 		return is_string( $out ) ? $out : '';
 	}
@@ -772,10 +774,10 @@ class BoldForm_Lite_Export_Import {
 					$settings_decoded['button_icon_svg'] = $media_map[ (string) $settings_decoded['button_icon_svg'] ];
 				}
 
-				$fields_json       = wp_json_encode( array( 'rows' => BoldForm_Lite_Ajax_Save::prepare_rows( is_array( $structure_decoded ) ? $structure_decoded : array() ) ) );
-				$settings_json     = wp_json_encode( BoldForm_Lite_Ajax_Save::normalize_form_settings( is_array( $settings_decoded ) ? $settings_decoded : array() ) );
-				$status            = isset( $form['status'] ) ? sanitize_key( (string) $form['status'] ) : 'draft';
-				$status            = in_array( $status, array( 'draft', 'publish', 'trash' ), true ) ? $status : 'draft';
+				$fields_json   = wp_json_encode( array( 'rows' => BoldForm_Lite_Ajax_Save::prepare_rows( is_array( $structure_decoded ) ? $structure_decoded : array() ) ) );
+				$settings_json = wp_json_encode( BoldForm_Lite_Ajax_Save::normalize_form_settings( is_array( $settings_decoded ) ? $settings_decoded : array() ) );
+				$status        = isset( $form['status'] ) ? sanitize_key( (string) $form['status'] ) : 'draft';
+				$status        = in_array( $status, array( 'draft', 'publish', 'trash' ), true ) ? $status : 'draft';
 
 				$inserted = $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
 					$forms_table,
