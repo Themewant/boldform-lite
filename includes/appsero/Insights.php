@@ -858,6 +858,14 @@ class Insights {
             wp_send_json_error( 'You are not allowed for this task' );
         }
 
+        // BoldForm modification: honour the opt-in before transmitting anything.
+        // get_tracking_data() below includes the admin's name, email address, site
+        // URL and IP. Upstream sends it regardless of consent, which contradicts
+        // this plugin's documented opt-in-only telemetry. Re-apply on SDK updates.
+        if ( ! $this->tracking_allowed() ) {
+            wp_send_json_success();
+        }
+
         $data                = $this->get_tracking_data();
         $data['reason_id']   = sanitize_text_field( wp_unslash( $_POST['reason_id'] ) );
         $data['reason_info'] = isset( $_REQUEST['reason_info'] ) ? trim( sanitize_text_field( wp_unslash( $_REQUEST['reason_info'] ) ) ) : '';
@@ -1048,19 +1056,12 @@ class Insights {
      * Get user IP Address
      */
     private function get_user_ip_address() {
-        $response = wp_remote_get( 'https://icanhazip.com/' );
-
-        if ( is_wp_error( $response ) ) {
-            return '';
-        }
-
-        $ip = trim( wp_remote_retrieve_body( $response ) );
-
-        if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
-            return '';
-        }
-
-        return $ip;
+        // BoldForm modification: upstream calls https://icanhazip.com/ here. That is
+        // an undisclosed third-party request made on every tracking payload build,
+        // which WordPress.org requires be documented under External Services. The
+        // receiving endpoint already observes the request's source address, so the
+        // lookup adds nothing. Re-apply on SDK updates.
+        return '';
     }
 
     /**

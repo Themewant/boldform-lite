@@ -296,6 +296,14 @@ class BoldForm_Lite_Shortcode {
 		if ( ! empty( $form_settings['hide_placeholders'] ) ) {
 			$form_class .= ' boldform-hide-ph-yes';
 		}
+		// Publish the Checkbox & Radio "Style" option on the form itself. The per-group
+		// `is-btn` modifier is added by render_field_control(), which only sees Lite's
+		// own checkbox/radio fields — choice markup rendered by an extension (repeater
+		// sub-fields, product options) never passes through it. A form-level class is
+		// the one signal such markup can follow with CSS alone, no new plumbing.
+		if ( 'button' === ( $form_settings['choice_style'] ?? 'default' ) ) {
+			$form_class .= ' boldform-choice-btn';
+		}
 
 		// In a builder editor preview the form is shown live for styling but must
 		// not submit (that would create real entries); flag it for the frontend JS.
@@ -820,6 +828,7 @@ class BoldForm_Lite_Shortcode {
 			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
 			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
 			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'choice_style'        => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
 			// ── Pro: Multi-step (data passthrough for Pro's multi-page module) ───
 			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
 			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
@@ -1029,7 +1038,24 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 
-		return false;
+		/**
+		 * Filter whether the rendered form contains a field of the given type.
+		 *
+		 * The loop above only sees the top level of the layout, which is all Lite's
+		 * own fields ever occupy. A field type that NESTS other fields — a repeater's
+		 * sub-fields — is invisible to it, so a form whose only date field lives
+		 * inside a repeater looked to Lite like a form with no date field at all and
+		 * never got the date picker's assets. Any extension that nests fields should
+		 * answer here for the types it contains.
+		 *
+		 * Only consulted when the type was not found at the top level, so a callback
+		 * cannot take a type away — only report one Lite could not see.
+		 *
+		 * @param bool                 $contains  Whether the type was found. Always false here.
+		 * @param string               $field_type Field type being looked for.
+		 * @param array<string, mixed> $structure  Full form structure.
+		 */
+		return (bool) apply_filters( 'boldform_structure_contains_field_type', false, $field_type, $structure );
 	}
 
 	/**
@@ -1322,7 +1348,7 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php $choice_style = boldform_lite_choice_style_declarations( $field ); echo '' !== $choice_style ? ' style="' . esc_attr( $choice_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -2093,27 +2119,60 @@ class BoldForm_Lite_Shortcode {
 
 		if ( 'checkbox' === $type || 'radio' === $type ) {
 			$checkbox_style = isset( $field['checkbox_style'] ) ? (string) $field['checkbox_style'] : 'default';
-			$choices_class  = 'boldform-lite-form__choices' . ( 'inline' === $options_layout ? ' is-inline' : '' ) . ( 'checkbox' === $type && 'switch' === $checkbox_style ? ' is-switch' : '' );
+			// Form-level Style: Button turns every checkbox/radio group into pills.
+			// It rides the same modifier slot as the per-field Switch so all three
+			// surfaces (front end, builder canvas, Style-tab live preview) share one
+			// selector. A field already rendering as a Switch keeps it: that is an
+			// explicit per-field choice, and the two treatments cannot compose.
+			$is_switch      = ( 'checkbox' === $type && 'switch' === $checkbox_style );
+			$field_style    = boldform_lite_field_choice_style( $field, $this->current_form_settings['choice_style'] ?? 'default' );
+			$is_button      = 'button' === $field_style && ! $is_switch;
+			// The Button treatment also reaches a group through the FORM-level class,
+			// so a field pinned to Default inside a Button form needs an explicit
+			// opt-out modifier — the absence of `is-btn` is not enough.
+			$is_plain       = 'default' === $field_style
+				&& 'button' === ( $this->current_form_settings['choice_style'] ?? 'default' )
+				&& ! $is_switch;
+			$choices_class  = 'boldform-lite-form__choices'
+				. ( 'inline' === $options_layout ? ' is-inline' : '' )
+				. ( $is_switch ? ' is-switch' : '' )
+				. ( $is_button ? ' is-btn' : '' )
+				. ( $is_plain ? ' is-plain' : '' );
 			// Group semantics so SRs announce the option set as one labelled group
 			// (no <fieldset>/<legend>, which would restyle the form). Points at the
 			// field's visible <label> via aria-labelledby when one is rendered.
 			$html           = '<div class="' . esc_attr( $choices_class ) . '" role="group"' . $group_labelledby . '>';
 			$default_values = 'checkbox' === $type ? array_map( 'trim', explode( ',', $default ) ) : array( $default );
 
+			// Positional: entry N is option N's icon. Read once rather than per
+			// option, because each lookup rebuilds the registry.
+			$option_icons = isset( $field['option_icons'] ) && is_array( $field['option_icons'] ) ? array_values( $field['option_icons'] ) : array();
+
 			foreach ( $this->normalize_options( $options ) as $option_index => $option ) {
 				$choice_id = $field_id_attr . '_' . $option_index;
 				$name_attr = 'checkbox' === $type ? $field_name . '[]' : $field_name;
 				$checked   = in_array( $option, $default_values, true ) ? ' checked' : '';
+				// Decoration, so it is aria-hidden and the label text still carries the
+				// whole accessible name. Always emitted when set; the stylesheet shows
+				// it only in the Button treatment, which is the one with a pill to put
+				// an icon in.
+				$icon_html = boldform_lite_choice_icon_html( isset( $option_icons[ $option_index ] ) ? $option_icons[ $option_index ] : '' );
+				// The text is wrapped only when there is an icon beside it, so an
+				// option without one renders exactly the markup it always has.
+				$text_html = '' === $icon_html
+					? esc_html( $option )
+					: '<span class="boldform-lite-form__choice-text">' . esc_html( $option ) . '</span>';
 
 				$html .= sprintf(
-					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s</span></label>',
+					'<label class="boldform-lite-form__choice" for="%1$s"><input id="%1$s" type="%2$s" name="%3$s" value="%4$s"%5$s%6$s><span class="boldform-lite-form__choice-control" aria-hidden="true"></span><span class="boldform-lite-form__choice-label">%7$s%8$s</span></label>',
 					esc_attr( $choice_id ),
 					esc_attr( $type ),
 					esc_attr( $name_attr ),
 					esc_attr( $option ),
 					$checked,
 					$required_attr,
-					esc_html( $option )
+					$icon_html,
+					$text_html
 				);
 			}
 

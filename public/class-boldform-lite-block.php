@@ -112,12 +112,28 @@ class BoldForm_Lite_Block {
 		 */
 		$block_attributes = apply_filters( 'boldform_block_attributes', $block_attributes );
 
+		/**
+		 * Filter the stylesheet handles loaded inside an editor canvas that renders a
+		 * real form (the iframed block editor, the Elementor preview).
+		 *
+		 * The iframe loads ONLY these handles: assets enqueued while the block's
+		 * render_callback runs are discarded with the ServerSideRender response, so a
+		 * field type whose markup is styled by an extension renders raw unless its
+		 * handle is added here. Callbacks must wp_register_style() what they add.
+		 *
+		 * @param array<int, string> $handles Registered stylesheet handles.
+		 */
+		$editor_style_handles = apply_filters(
+			'boldform_preview_style_handles',
+			array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' )
+		);
+
 		register_block_type(
 			'boldform/form',
 			array(
 				'api_version'          => 3,
 				'editor_script'        => 'boldform-lite-block-editor',
-				'editor_style_handles' => array( 'boldform-lite-frontend', 'boldform-lite-flatpickr' ),
+				'editor_style_handles' => array_values( array_unique( array_filter( array_map( 'strval', (array) $editor_style_handles ) ) ) ),
 				'render_callback'      => array( $this, 'render_block' ),
 				'attributes'           => $block_attributes,
 				'supports'             => array(
