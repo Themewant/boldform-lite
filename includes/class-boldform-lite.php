@@ -120,6 +120,13 @@ final class BoldForm_Lite {
 	private $cache;
 
 	/**
+	 * AI form builder instance.
+	 *
+	 * @var BoldForm_Lite_AI_Builder
+	 */
+	private $ai_builder;
+
+	/**
 	 * Returns the single instance of the plugin.
 	 *
 	 * @return BoldForm_Lite
@@ -177,6 +184,7 @@ final class BoldForm_Lite {
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-integrations.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-privacy.php';
 		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-cache.php';
+		require_once BOLDFORM_LITE_PATH . 'includes/class-boldform-lite-ai-builder.php';
 
 		$this->loader            = new BoldForm_Lite_Loader();
 		$this->admin             = new BoldForm_Lite_Admin( $this );
@@ -192,6 +200,7 @@ final class BoldForm_Lite {
 		$this->integrations      = new BoldForm_Lite_Integrations( $this, $this->integrations_page );
 		$this->privacy           = new BoldForm_Lite_Privacy( $this );
 		$this->cache             = new BoldForm_Lite_Cache( $this );
+		$this->ai_builder        = new BoldForm_Lite_AI_Builder();
 	}
 
 	/**
@@ -275,6 +284,12 @@ final class BoldForm_Lite {
 		$this->loader->add_filter( 'wp_privacy_personal_data_exporters', $this->privacy, 'register_exporter' );
 		$this->loader->add_filter( 'wp_privacy_personal_data_erasers', $this->privacy, 'register_eraser' );
 		$this->loader->add_action( 'boldform_form_saved', $this->cache, 'purge_on_form_saved', 10, 3 );
+
+		// The AI builder owns its own hook set, so it registers them itself rather
+		// than listing them here — it is the only collaborator with a REST route,
+		// and keeping the route beside the code that serves it means one place to
+		// look when it misbehaves.
+		$this->ai_builder->register_hooks( $this->loader );
 
 		$this->export_import->init();
 		$this->migrator->init();

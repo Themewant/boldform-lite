@@ -123,18 +123,13 @@ class BoldForm_Lite_Integrations_Page {
 		// Strip third-party admin notices so only BoldForm's own show. Defer to
 		// in_admin_header (the last hook before notices render) because some plugins
 		// register their notices as late as admin_head — after this enqueue pass.
-		// Re-add BoldForm's own notices afterwards (settings errors + Pro promo)
-		// so they survive the purge here too. Re-adding the SAME callback the main
-		// purge uses (BoldForm_Lite_Admin::render_own_notices) keeps both screens
-		// consistent — see BoldForm_Lite_Admin::suppress_foreign_notices().
+		// Delegates to the main purge so both screens behave identically: core's
+		// own notices survive, third-party ones do not.
 		$admin = $this->plugin->get_admin();
 		add_action(
 			'in_admin_header',
 			static function () use ( $admin ) {
-				remove_all_actions( 'admin_notices' );
-				remove_all_actions( 'all_admin_notices' );
-				remove_all_actions( 'user_admin_notices' );
-				add_action( 'admin_notices', array( $admin, 'render_own_notices' ) );
+				$admin->suppress_foreign_notices();
 			},
 			1000
 		);
@@ -280,7 +275,7 @@ class BoldForm_Lite_Integrations_Page {
 						 */
 						$lock_title = (string) apply_filters(
 							'boldform_integration_lock_title',
-							__( 'Unlock this integration', 'boldform-lite' ),
+							__( 'Available in the premium add-on', 'boldform-lite' ),
 							$type
 						);
 					}

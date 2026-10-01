@@ -362,6 +362,21 @@
 	opacity: 0.65;
 }
 
+/*
+ * The sparkle marking the AI tab. Sized to match the dashicons beside it but a
+ * touch larger, because a star's thin arms carry less ink than a solid glyph
+ * and matching by number leaves it looking smaller than its neighbours.
+ *
+ * It keeps its own colour rather than taking the nav's, so it stays legible as
+ * the mark for this feature whether the tab is active or not — which is also
+ * why it is exempt from the 0.65 dimming above.
+ */
+.boldform-settings-sidebar .boldform-nav-item .boldform-ai-spark {
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+}
+
 .boldform-settings-sidebar .boldform-nav-item.is-active .dashicons {
 	opacity: 1;
 }
@@ -431,6 +446,18 @@
 	gap: 16px;
 	padding: 14px 0;
 	border-bottom: 1px solid #f0f0f1;
+}
+
+/*
+ * An author `display` beats the user-agent `[hidden] { display: none }` rule
+ * whatever the specificity, so a row marked hidden stays on screen unless the
+ * rule is restated here. The AI settings shipped every provider's key field at
+ * once because of this. Written against the row rather than any one feature, so
+ * the next row to use the attribute does not have to rediscover it — the same
+ * guard the captcha panels and the select menu already carry.
+ */
+.boldform-field-row[hidden] {
+	display: none;
 }
 
 .boldform-field-row:first-child {
@@ -1301,6 +1328,42 @@
 
 .boldform-select__menu:focus {
 	outline: none;
+}
+
+/* <optgroup>. The wrapper is what bounds the sticky label: scoped to its own
+   group, each label is pushed out by the next one instead of every label in the
+   list piling up at the same offset. */
+.boldform-select__groupwrap {
+	display: block;
+	margin: 0;
+}
+
+.boldform-select__grouplist {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+/* The label is a caption, not a row — it is deliberately not styled like
+   something you could click, because it is not an option and cannot be chosen.
+   Sticky so the group you have scrolled into stays named. */
+.boldform-select__group {
+	position: sticky;
+	top: -6px;
+	z-index: 1;
+	display: block;
+	margin: 6px 0 2px;
+	padding: 4px 10px;
+	background: #fff;
+	color: #667085;
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.boldform-select__groupwrap:first-child .boldform-select__group {
+	margin-top: 0;
 }
 
 .boldform-select__option {

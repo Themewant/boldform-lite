@@ -1014,276 +1014,488 @@ class BoldForm_Lite_Admin {
 					 *
 					 * @param string $text Body copy.
 					 */
-					'templateLockText'                => apply_filters( 'boldform_template_lock_text', __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ) ),
-					'upgradeNow'                      => apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ), 'button' ),
-					'enableAjax'                      => __( 'Enable AJAX submit', 'boldform-lite' ),
-					'enableRedirect'                  => __( 'Enable redirect after submit', 'boldform-lite' ),
-					'redirectUrl'                     => __( 'Redirect URL', 'boldform-lite' ),
-					'thankYouMessage'                 => __( 'Thank you message', 'boldform-lite' ),
-					// WordPress labels the editor's second tab "Text". This holds a
-					// message template rather than a post, so "Code" describes it better.
-					'editorVisual'                    => __( 'Visual', 'boldform-lite' ),
-					'editorCode'                      => __( 'Code', 'boldform-lite' ),
-					'addShortcodes'                   => __( 'Add Shortcodes', 'boldform-lite' ),
-					'shortcodeHint'                   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
-					'customizeEmail'                  => __( 'Customize this email', 'boldform-lite' ),
-					'emailTeaserHint'                 => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
-					// Labelled with the real control's wording, so the block reads the
-					// same before and after the paid feature replaces the teaser.
-					'attachDocument'                  => __( 'Attach a PDF of the submission', 'boldform-lite' ),
-					'attachmentTeaserHint'            => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
-					'routeRecipients'                 => __( 'Send to different people based on the answers', 'boldform-lite' ),
-					'routingTeaserHint'               => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
-					'integrationUpgrade'              => __( 'Upgrade', 'boldform-lite' ),
-					'integrationLocked'               => __( 'Available with an upgrade', 'boldform-lite' ),
-					'submitBehavior'                  => __( 'Submission Settings', 'boldform-lite' ),
-					'submissionType'                  => __( 'After Submit', 'boldform-lite' ),
-					'ajaxSubmit'                      => __( 'AJAX submit', 'boldform-lite' ),
-					'ajaxSubmitHelp'                  => __( 'Submit without page reload and show a success message.', 'boldform-lite' ),
-					'customPageRedirect'              => __( 'Custom page redirect', 'boldform-lite' ),
-					'customPageRedirectHelp'          => __( 'Send the user to a custom URL after submit.', 'boldform-lite' ),
-					'enableAdminEmail'                => __( 'Enable admin email', 'boldform-lite' ),
-					'enableUserEmail'                 => __( 'Enable user confirmation email', 'boldform-lite' ),
-					'adminEmailAddress'               => __( 'Admin email address', 'boldform-lite' ),
-					'emailRecipient'                  => __( 'Admin Email Recipient', 'boldform-lite' ),
-					'siteAdminEmail'                  => __( 'Site admin email', 'boldform-lite' ),
-					'siteAdminEmailHelp'              => __( 'Use the email address from WordPress settings.', 'boldform-lite' ),
-					'customEmail'                     => __( 'Custom email', 'boldform-lite' ),
-					'customEmailHelp'                 => __( 'Send notifications to a custom email address.', 'boldform-lite' ),
-					'adminNotifications'              => __( 'Admin Notifications', 'boldform-lite' ),
-					'userNotifications'               => __( 'User Confirmation Email', 'boldform-lite' ),
-					'termsContent'                    => __( 'Terms text', 'boldform-lite' ),
-					'captchaNotice'                   => __( 'This field will use the captcha provider selected in global settings.', 'boldform-lite' ),
-					'npsColors'                       => __( 'Zone Colors', 'boldform-lite' ),
-					'npsDetractor'                    => __( 'Detractors (0–6)', 'boldform-lite' ),
-					'npsPassive'                      => __( 'Passives (7–8)', 'boldform-lite' ),
-					'npsPromoter'                     => __( 'Promoters (9–10)', 'boldform-lite' ),
-					'resetColor'                      => __( 'Reset to default', 'boldform-lite' ),
-					'starSizeField'                   => __( 'Icon Size (px)', 'boldform-lite' ),
-					'starColorField'                  => __( 'Star Color', 'boldform-lite' ),
-					'starActiveColorField'            => __( 'Active Color', 'boldform-lite' ),
-					'fileUploadHint'                  => __( 'Choose file or drag & drop', 'boldform-lite' ),
-					'allowedTypes'                    => __( 'Allowed file types', 'boldform-lite' ),
-					'maxFileSize'                     => __( 'Max file size (MB)', 'boldform-lite' ),
-					'sectionDescription'              => __( 'Description', 'boldform-lite' ),
-					'submitButton'                    => __( 'Submit Button', 'boldform-lite' ),
-					'buttonText'                      => __( 'Button text', 'boldform-lite' ),
-					'buttonAlignment'                 => __( 'Button alignment', 'boldform-lite' ),
-					'buttonLayout'                    => __( 'Button layout', 'boldform-lite' ),
-					'buttonIconType'                  => __( 'Icon', 'boldform-lite' ),
-					'dashicon'                        => __( 'Dashicon', 'boldform-lite' ),
-					'customSvg'                       => __( 'Custom SVG', 'boldform-lite' ),
-					'dashiconClass'                   => __( 'Dashicon', 'boldform-lite' ),
-					'uploadSvg'                       => __( 'Upload SVG', 'boldform-lite' ),
-					'changeSvg'                       => __( 'Change SVG', 'boldform-lite' ),
-					'useSvg'                          => __( 'Use this SVG', 'boldform-lite' ),
-					'svgCode'                         => __( 'SVG Icon', 'boldform-lite' ),
-					'iconPosition'                    => __( 'Icon position', 'boldform-lite' ),
-					'iconGap'                         => __( 'Icon gap (px)', 'boldform-lite' ),
-					'cssClass'                        => __( 'CSS Class', 'boldform-lite' ),
-					'autoPopulateKey'                 => __( 'Auto Populate Key', 'boldform-lite' ),
-					'autoPopulateDesc'                => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
-					'rowSettings'                     => __( 'Row settings', 'boldform-lite' ),
-					'moveUp'                          => __( 'Move up', 'boldform-lite' ),
-					'moveDown'                        => __( 'Move down', 'boldform-lite' ),
-					'column'                          => __( 'Column', 'boldform-lite' ),
-					'width'                           => __( 'Width', 'boldform-lite' ),
-					'belowFields'                     => __( 'Below fields', 'boldform-lite' ),
-					'inlineLastRow'                   => __( 'Inline with last row', 'boldform-lite' ),
-					'buttonColor'                     => __( 'Button color', 'boldform-lite' ),
-					'fieldAppearance'                 => __( 'Field Appearance', 'boldform-lite' ),
-					'fieldStyle'                      => __( 'Field style', 'boldform-lite' ),
-					'fieldSize'                       => __( 'Field size', 'boldform-lite' ),
-					'fieldFocusColor'                 => __( 'Focus color', 'boldform-lite' ),
-					'fieldStyles'                     => __( 'Field Styles', 'boldform-lite' ),
-					'labelStyles'                     => __( 'Label Styles', 'boldform-lite' ),
-					'buttonStyles'                    => __( 'Button Styles', 'boldform-lite' ),
-					'stylePreviewEmpty'               => __( 'Add fields in the Builder tab to preview your styling here.', 'boldform-lite' ),
-					'size'                            => __( 'Size', 'boldform-lite' ),
-					'border'                          => __( 'Border', 'boldform-lite' ),
-					'borderSize'                      => __( 'Border Size', 'boldform-lite' ),
-					'borderRadius'                    => __( 'Border Radius', 'boldform-lite' ),
-					'background'                      => __( 'Background', 'boldform-lite' ),
-					'text'                            => __( 'Text', 'boldform-lite' ),
-					'defaultStyle'                    => __( 'Default', 'boldform-lite' ),
-					'subLabel'                        => __( 'Sublabel', 'boldform-lite' ),
-					'error'                           => __( 'Error', 'boldform-lite' ),
-					'solid'                           => __( 'Solid', 'boldform-lite' ),
-					'dashed'                          => __( 'Dashed', 'boldform-lite' ),
-					'none'                            => __( 'None', 'boldform-lite' ),
-					'small'                           => __( 'Small', 'boldform-lite' ),
-					'medium'                          => __( 'Medium', 'boldform-lite' ),
-					'large'                           => __( 'Large', 'boldform-lite' ),
-					'left'                            => __( 'Left', 'boldform-lite' ),
-					'center'                          => __( 'Center', 'boldform-lite' ),
-					'right'                           => __( 'Right', 'boldform-lite' ),
-					'teal'                            => __( 'Teal', 'boldform-lite' ),
-					'blue'                            => __( 'Blue', 'boldform-lite' ),
-					'green'                           => __( 'Green', 'boldform-lite' ),
-					'red'                             => __( 'Red', 'boldform-lite' ),
-					'dark'                            => __( 'Dark', 'boldform-lite' ),
-				),
-				// Labels for the advanced (full-parity) Style-tab controls.
-				'advStyle'            => array(
-					'secContainer'     => __( 'Form Container', 'boldform-lite' ),
-					'secLayout'        => __( 'Layout & Spacing', 'boldform-lite' ),
-					'secLabels'        => __( 'Labels', 'boldform-lite' ),
-					'secInputs'        => __( 'Input Fields', 'boldform-lite' ),
-					'secPlaceholder'   => __( 'Placeholder', 'boldform-lite' ),
-					'secChoice'        => __( 'Checkbox & Radio', 'boldform-lite' ),
-					'secSelect'        => __( 'Select Dropdown', 'boldform-lite' ),
-					'secTerms'         => __( 'Terms & Conditions', 'boldform-lite' ),
-					'secFile'          => __( 'File Upload', 'boldform-lite' ),
-					'secSection'       => __( 'Section Break', 'boldform-lite' ),
-					'secButton'        => __( 'Submit Button', 'boldform-lite' ),
-					'secError'         => __( 'Error Messages', 'boldform-lite' ),
-					'secSuccess'       => __( 'Success Message', 'boldform-lite' ),
-					'maxWidth'         => __( 'Max Width', 'boldform-lite' ),
-					'alignment'        => __( 'Alignment', 'boldform-lite' ),
-					'alignLeft'        => __( 'Left', 'boldform-lite' ),
-					'alignCenter'      => __( 'Center', 'boldform-lite' ),
-					'alignRight'       => __( 'Right', 'boldform-lite' ),
-					'alignJustify'     => __( 'Full Width', 'boldform-lite' ),
-					'padding'          => __( 'Padding', 'boldform-lite' ),
-					'margin'           => __( 'Margin', 'boldform-lite' ),
-					'borderColor'      => __( 'Border Color', 'boldform-lite' ),
-					'colorLabel'       => __( 'Color', 'boldform-lite' ),
-					'boxShadow'        => __( 'Box Shadow', 'boldform-lite' ),
-					'hoverShadow'      => __( 'Box Shadow (Hover)', 'boldform-lite' ),
-					'focusShadow'      => __( 'Box Shadow (Focus)', 'boldform-lite' ),
-					'stateNormal'      => __( 'Normal', 'boldform-lite' ),
-					'stateHover'       => __( 'Hover', 'boldform-lite' ),
-					'stateFocus'       => __( 'Focus', 'boldform-lite' ),
-					'stateChecked'     => __( 'Checked', 'boldform-lite' ),
-					'stateSelected'    => __( 'Selected', 'boldform-lite' ),
-					'rowGap'           => __( 'Row Gap', 'boldform-lite' ),
-					'columnGap'        => __( 'Column Gap', 'boldform-lite' ),
-					'fieldMargin'      => __( 'Field Margin', 'boldform-lite' ),
-					'inputMargin'      => __( 'Input Margin', 'boldform-lite' ),
-					'typography'       => __( 'Typography', 'boldform-lite' ),
-					'requiredColor'    => __( 'Required Mark Color', 'boldform-lite' ),
-					'height'           => __( 'Height', 'boldform-lite' ),
-					'textareaHeight'   => __( 'Textarea Height', 'boldform-lite' ),
-					'textColor'        => __( 'Text Color', 'boldform-lite' ),
-					'placeholderColor' => __( 'Placeholder Color', 'boldform-lite' ),
-					'focusBorderColor' => __( 'Focus Border Color', 'boldform-lite' ),
-					'focusBgColor'     => __( 'Focus Background', 'boldform-lite' ),
-					'accentColor'      => __( 'Accent Color', 'boldform-lite' ),
-					'labelColor'       => __( 'Label Color', 'boldform-lite' ),
-					'linkColor'        => __( 'Link Color', 'boldform-lite' ),
-					'spacing'          => __( 'Spacing', 'boldform-lite' ),
-					'gap'              => __( 'Gap', 'boldform-lite' ),
-					'checkedColor'     => __( 'Checked Color', 'boldform-lite' ),
-					'arrowColor'       => __( 'Arrow Color', 'boldform-lite' ),
-					'panelBg'          => __( 'Panel Background', 'boldform-lite' ),
-					'panelBorder'      => __( 'Panel Border Color', 'boldform-lite' ),
-					'optionBg'         => __( 'Option Background', 'boldform-lite' ),
-					'optionText'       => __( 'Option Text', 'boldform-lite' ),
-					'optionHoverBg'    => __( 'Option Hover Background', 'boldform-lite' ),
-					'optionHoverText'  => __( 'Option Hover Text Color', 'boldform-lite' ),
-					'optionActiveBg'   => __( 'Selected Option Background', 'boldform-lite' ),
-					'searchBox'        => __( 'Search Box', 'boldform-lite' ),
-					'searchBg'         => __( 'Search Background', 'boldform-lite' ),
-					'searchText'       => __( 'Search Text Color', 'boldform-lite' ),
-					'searchPh'         => __( 'Search Placeholder Color', 'boldform-lite' ),
-					'copyText'         => __( 'Copy Text', 'boldform-lite' ),
-					'borderWidth'      => __( 'Border Width', 'boldform-lite' ),
-					'borderStyle'      => __( 'Border Style', 'boldform-lite' ),
-					'btnBg'            => __( 'Button Background', 'boldform-lite' ),
-					'btnText'          => __( 'Button Text Color', 'boldform-lite' ),
-					'titleColor'       => __( 'Title Color', 'boldform-lite' ),
-					'descColor'        => __( 'Description Color', 'boldform-lite' ),
-					'noticeBg'         => __( 'Notice Background', 'boldform-lite' ),
-					'noticeText'       => __( 'Notice Text Color', 'boldform-lite' ),
-					'fullWidth'        => __( 'Full Width', 'boldform-lite' ),
-					'iconColor'        => __( 'Icon Color', 'boldform-lite' ),
-					'hoverTextColor'   => __( 'Hover Text Color', 'boldform-lite' ),
-					'hoverBg'          => __( 'Hover Background', 'boldform-lite' ),
-					'hoverBorderColor' => __( 'Hover Border Color', 'boldform-lite' ),
-					'hover'            => __( 'Hover', 'boldform-lite' ),
-					'focus'            => __( 'Focus', 'boldform-lite' ),
-					'focusRing'        => __( 'Focus Ring Color', 'boldform-lite' ),
-					'ringColor'        => __( 'Ring Color', 'boldform-lite' ),
-					'hoverColor'       => __( 'Hover Color', 'boldform-lite' ),
-					'linkHoverColor'   => __( 'Link Hover Color', 'boldform-lite' ),
-					'focusLabelColor'  => __( 'Focused Label Color', 'boldform-lite' ),
-					'states'           => __( 'States', 'boldform-lite' ),
-					'subLabel'         => __( 'Sub-field Label', 'boldform-lite' ),
-					'subLabelColor'    => __( 'Sub-label Color', 'boldform-lite' ),
-					'subfieldGap'      => __( 'Sub-field Gap', 'boldform-lite' ),
-					'buttonMargin'     => __( 'Button Margin', 'boldform-lite' ),
-					'containerMargin'  => __( 'Container Margin', 'boldform-lite' ),
-					'fontFamily'       => __( 'Font Family', 'boldform-lite' ),
-					'fontSize'         => __( 'Font Size', 'boldform-lite' ),
-					'fontWeight'       => __( 'Weight', 'boldform-lite' ),
-					'lineHeight'       => __( 'Line Height', 'boldform-lite' ),
-					'letterSpacing'    => __( 'Letter Spacing', 'boldform-lite' ),
-					'textTransform'    => __( 'Transform', 'boldform-lite' ),
-					'shadowX'          => __( 'X Offset', 'boldform-lite' ),
-					'shadowY'          => __( 'Y Offset', 'boldform-lite' ),
-					'shadowBlur'       => __( 'Blur', 'boldform-lite' ),
-					'shadowSpread'     => __( 'Spread', 'boldform-lite' ),
-					'shadowColor'      => __( 'Shadow Color', 'boldform-lite' ),
-					'inset'            => __( 'Inset', 'boldform-lite' ),
-					'gradient'         => __( 'Gradient', 'boldform-lite' ),
-					'solidFill'        => __( 'Solid', 'boldform-lite' ),
-					'angle'            => __( 'Angle', 'boldform-lite' ),
-					'colorStop1'       => __( 'Color 1', 'boldform-lite' ),
-					'colorStop2'       => __( 'Color 2', 'boldform-lite' ),
-					'styleLabel'       => __( 'Style', 'boldform-lite' ),
-					'widthLabel'       => __( 'Width', 'boldform-lite' ),
-					'radiusLabel'      => __( 'Radius', 'boldform-lite' ),
-					'linkSides'        => __( 'Link sides', 'boldform-lite' ),
-					'sideTop'          => __( 'Top', 'boldform-lite' ),
-					'sideRight'        => __( 'Right', 'boldform-lite' ),
-					'sideBottom'       => __( 'Bottom', 'boldform-lite' ),
-					'sideLeft'         => __( 'Left', 'boldform-lite' ),
-					'inheritDefault'   => __( 'Default', 'boldform-lite' ),
-					'opacity'          => __( 'Opacity (%)', 'boldform-lite' ),
-					'reset'            => __( 'Reset color', 'boldform-lite' ),
-					'resetSection'     => __( 'Reset this section', 'boldform-lite' ),
-					'previewStates'    => __( 'Preview states — messages & open dropdown', 'boldform-lite' ),
-					'sampleSuccess'    => __( 'Your form has been submitted successfully.', 'boldform-lite' ),
-					'sampleError'      => __( 'Please correct the highlighted fields below.', 'boldform-lite' ),
-					'sampleFieldLabel' => __( 'Field with an error', 'boldform-lite' ),
-					'sampleValue'      => __( 'Invalid value', 'boldform-lite' ),
-					'sampleRequired'   => __( 'This field is required.', 'boldform-lite' ),
-					'sampleDropdown'   => __( 'Dropdown (open)', 'boldform-lite' ),
-					'sampleSearch'     => __( 'Search…', 'boldform-lite' ),
-					'optionSelected'   => __( 'Selected option', 'boldform-lite' ),
-					'optionAnother'    => __( 'Another option', 'boldform-lite' ),
-					'themeFont'        => __( 'Theme Default', 'boldform-lite' ),
-					'uppercase'        => __( 'UPPERCASE', 'boldform-lite' ),
-					'lowercase'        => __( 'lowercase', 'boldform-lite' ),
-					'capitalize'       => __( 'Capitalize', 'boldform-lite' ),
-					'dotted'           => __( 'Dotted', 'boldform-lite' ),
-				),
-				'messages'            => array(
-					'emptyFields' => __( 'Add at least one field before saving.', 'boldform-lite' ),
-					'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
-					'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
-				),
-				// Thank-you message shortcode picker. The builder always renders the
-				// slot; this flag only decides whether the free teaser goes inside it.
-				// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
-				// off, so the slot is left empty for it to fill on the
-				// boldform:form_settings_rendered event.
-				//
-				// Must stay a bool: wp_localize_script casts top-level scalars with
-				// (string), so this reaches JS as '1' or '' and the empty string is
-				// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
-				// as the string '0', which is truthy, and the teaser would then show
-				// even with an add-on active.
-				'showUpgradeCta'      => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
-				// Same bool rule as showUpgradeCta above. Gates ONLY the template
-				// library's locked rows, so an add-on that suppresses the shared CTAs
-				// can still advertise templates it has not unlocked yet.
-				'showLockedTemplates' => $this->show_locked_templates_teaser(),
-				// Locked entries advertised in the "Choose a Template" library. Empty
-				// once the teaser above is off, at which point an add-on supplies the
-				// real templates through proTemplates instead — the two never show
-				// together. See premium_template_teasers().
-				'premiumTemplates'    => $this->premium_template_teasers(),
+					'cvSilentTypes'      => array_values( array_filter( array_map( 'sanitize_key', (array) apply_filters(
+						'boldform_conversational_silent_types',
+						array( 'hidden_field', 'page_break' )
+					) ) ) ),
+					'formTitle'          => $form_data['title'],
+					'formStructure'      => $form_data['structure'],
+					'formSettings'       => $form_data['settings'],
+					'fieldLibrary'       => $this->get_field_library(),
+					// The one icon registry, handed to the builder rather than repeated
+					// in JS: the picker offers exactly the keys the sanitizer accepts and
+					// draws exactly the glyph the front end will render.
+					'choiceIcons'        => boldform_lite_choice_icons(),
+					'columnPresets'      => array(
+						array(
+							'value'  => '1',
+							'label'  => __( '1 Column', 'boldform-lite' ),
+							'widths' => array( '100%' ),
+						),
+						array(
+							'value'  => '2',
+							'label'  => __( '2 Columns', 'boldform-lite' ),
+							'widths' => array( '50%', '50%' ),
+						),
+						array(
+							'value'  => '3',
+							'label'  => __( '3 Columns', 'boldform-lite' ),
+							'widths' => array( '33.33%', '33.33%', '33.33%' ),
+						),
+						array(
+							'value'  => '4',
+							'label'  => __( '4 Columns', 'boldform-lite' ),
+							'widths' => array( '25%', '25%', '25%', '25%' ),
+						),
+					),
+					'saveText'           => __( 'Save Form', 'boldform-lite' ),
+						'savingText'         => __( 'Saving...', 'boldform-lite' ),
+					'emptyCanvasText'    => __( 'Start building your form by adding a row, then drag or click fields into a column.', 'boldform-lite' ),
+					'selectFieldText'    => __( 'Select a field to edit its settings.', 'boldform-lite' ),
+					'defaultFormTitle'   => __( 'Untitled Form', 'boldform-lite' ),
+					'exampleOptionsText' => __( 'Option 1, Option 2', 'boldform-lite' ),
+					'pages'              => $this->get_pages_for_redirect(),
+					'defaults'           => array(
+						'thankYouMessage'  => __( 'Thanks! Your form was submitted successfully.', 'boldform-lite' ),
+						'submitText'       => __( 'Submit', 'boldform-lite' ),
+						'option1'          => __( 'Option 1', 'boldform-lite' ),
+						'option2'          => __( 'Option 2', 'boldform-lite' ),
+						'termsContent'     => __( 'I agree to the <a href="#">terms and conditions</a>.', 'boldform-lite' ),
+						'sectionDesc'      => __( 'Add a short description for this section.', 'boldform-lite' ),
+						// Default placeholder text, keyed by field type. Pre-filled into a new
+						// field's Placeholder setting so it shows in settings, canvas, preview
+						// and on the front end consistently (the builder bakes it into the
+						// saved value, so it stays editable / clearable per field).
+						'placeholders'     => array(
+							'text'           => __( 'Enter text', 'boldform-lite' ),
+							'email'          => __( 'you@example.com', 'boldform-lite' ),
+							'url'            => __( 'https://example.com', 'boldform-lite' ),
+							'tel'            => __( '+1 (555) 000-0000', 'boldform-lite' ),
+							'number'         => __( 'Enter a number', 'boldform-lite' ),
+							'numeric'        => __( 'Enter a number', 'boldform-lite' ),
+							'textarea'       => __( 'Enter your message', 'boldform-lite' ),
+							'select'         => __( 'Select…', 'boldform-lite' ),
+							'multiselect'    => __( 'Select options…', 'boldform-lite' ),
+							'date'           => __( 'Select a date', 'boldform-lite' ),
+							'time'           => __( 'Select a time', 'boldform-lite' ),
+							'password_field' => __( 'Password', 'boldform-lite' ),
+							'date_range'     => __( 'Select date range', 'boldform-lite' ),
+							'lookup'         => __( 'Type to search…', 'boldform-lite' ),
+						),
+					),
+					'actions'            => array(
+						'duplicate' => __( 'Duplicate', 'boldform-lite' ),
+						'delete'    => __( 'Delete', 'boldform-lite' ),
+						'addRow'    => __( 'Add Row', 'boldform-lite' ),
+					),
+					// Screen-reader announcements (wp.a11y.speak) for builder mutations.
+					'a11y'               => array(
+						'rowAdded'        => __( 'Row added.', 'boldform-lite' ),
+						'rowDeleted'      => __( 'Row deleted.', 'boldform-lite' ),
+						'rowDuplicated'   => __( 'Row duplicated.', 'boldform-lite' ),
+						'fieldAdded'      => __( 'Field added.', 'boldform-lite' ),
+						'fieldDeleted'    => __( 'Field deleted.', 'boldform-lite' ),
+						'fieldDuplicated' => __( 'Field duplicated.', 'boldform-lite' ),
+					),
+					'labels'             => array(
+						'label'        => __( 'Label', 'boldform-lite' ),
+						'selectedField'=> __( 'Selected Field', 'boldform-lite' ),
+						'placeholder'  => __( 'Placeholder', 'boldform-lite' ),
+						'defaultValue' => __( 'Default Value', 'boldform-lite' ),
+						'required'     => __( 'Required', 'boldform-lite' ),
+						'customError'  => __( 'Custom error message', 'boldform-lite' ),
+						'options'      => __( 'Options', 'boldform-lite' ),
+						'optionsHelp'  => __( 'Separate options with commas.', 'boldform-lite' ),
+						'optionsLayout'      => __( 'Options Layout', 'boldform-lite' ),
+						'optionsLayoutBlock'  => __( 'Stacked (default)', 'boldform-lite' ),
+						'optionsLayoutInline' => __( 'Inline', 'boldform-lite' ),
+						'cancel'               => __( 'Cancel', 'boldform-lite' ),
+						/* translators: %s: design theme name, e.g. "Royal Purple". */
+						'themeConflictTitle'   => __( 'Apply %s?', 'boldform-lite' ),
+						'themeConflictBody'    => __( 'These custom colors are overriding the theme. Applying it will replace them:', 'boldform-lite' ),
+						'themeConflictApply'   => __( 'Apply theme', 'boldform-lite' ),
+						'checkboxStyle'        => __( 'Style', 'boldform-lite' ),
+						'checkboxStyleDefault' => __( 'Checkbox', 'boldform-lite' ),
+						'checkboxStyleSwitch'  => __( 'Switch', 'boldform-lite' ),
+						'repAddAlign'          => __( 'Add button alignment', 'boldform-lite' ),
+						'choiceStyleInherit'   => __( 'Form default', 'boldform-lite' ),
+						'repHideLabel'         => __( 'Hide label', 'boldform-lite' ),
+						'repRemovePos'         => __( 'Remove button position', 'boldform-lite' ),
+						'repRemoveTop'         => __( 'Top of the row', 'boldform-lite' ),
+						'repRemoveBottom'      => __( 'Bottom of the row', 'boldform-lite' ),
+						// Per-field Checkbox & Radio overrides. The controls themselves are
+						// the Style tab's, so they carry their own labels.
+						'choiceOverride'       => __( 'Options appearance', 'boldform-lite' ),
+						'choiceOverrideHint'   => __( 'Empty follows the form style', 'boldform-lite' ),
+						'choiceOverrideReset'  => __( 'Reset', 'boldform-lite' ),
+						// Per-option icons. Offered only while the options render as
+						// buttons, which is the treatment that has room for one.
+						'chooseIcon'           => __( 'Choose an icon', 'boldform-lite' ),
+						'iconTabIcons'         => __( 'Icons', 'boldform-lite' ),
+						'iconTabSvg'           => __( 'SVG', 'boldform-lite' ),
+						'iconTabImage'         => __( 'Image', 'boldform-lite' ),
+						'chooseSvg'            => __( 'Upload or choose an SVG', 'boldform-lite' ),
+						'chooseImage'          => __( 'Upload or choose an image', 'boldform-lite' ),
+						'useThisFile'          => __( 'Use this file', 'boldform-lite' ),
+						'svgHint'              => __( 'SVG files from your Media Library. Every upload is cleaned before it is stored.', 'boldform-lite' ),
+						'imageHint'            => __( 'PNG, JPG, GIF or WebP from your Media Library.', 'boldform-lite' ),
+						'changeFile'           => __( 'Click to choose a different file', 'boldform-lite' ),
+						'customImage'          => __( 'Custom image', 'boldform-lite' ),
+						// Both option editors use these; only the top-level one had them
+						// before, through a JS-side fallback string.
+						'optionPlaceholder'    => __( 'Option value', 'boldform-lite' ),
+						'addOption'            => __( 'Add Option', 'boldform-lite' ),
+						'noIcon'               => __( 'Remove icon', 'boldform-lite' ),
+						'searchIcons'          => __( 'Search icons', 'boldform-lite' ),
+						'noIconsFound'         => __( 'No icons match.', 'boldform-lite' ),
+						'columnWidth'  => __( 'Column Width', 'boldform-lite' ),
+						'layout'       => __( 'Layout', 'boldform-lite' ),
+						'basicFields'  => __( 'Basic Fields', 'boldform-lite' ),
+						'advancedFields' => __( 'Advanced Fields', 'boldform-lite' ),
+						'row'          => __( 'Row', 'boldform-lite' ),
+						'columns'      => __( 'columns', 'boldform-lite' ),
+						/* translators: 1: this screen's number, 2: total number of screens. Shown on each question card in the builder when conversational mode is on. */
+						'cvScreenOf'   => __( 'Screen %1$s of %2$s', 'boldform-lite' ),
+						'cvSilent'     => __( 'Not a screen — this field renders nothing for the visitor.', 'boldform-lite' ),
+						'cvStyleTitle' => __( 'Default Screen Colours', 'boldform-lite' ),
+						'cvStyleHelp'  => __( 'The starting point for every screen. Any screen can override these from its own settings, and a colour you leave untouched here inherits your form\'s existing style.', 'boldform-lite' ),
+						'cvStyleOff'   => __( 'Conversational mode is off for this form. Turn it on under Settings → Conversational to style it.', 'boldform-lite' ),
+						'fields'       => __( 'fields', 'boldform-lite' ),
+						'dropHere'     => __( 'Drop a field here', 'boldform-lite' ),
+						'dropHereHint' => __( 'or click one in the Field Library', 'boldform-lite' ),
+						'blankTemplateTitle' => __( 'Blank Form', 'boldform-lite' ),
+						'contactTemplateTitle' => __( 'Contact Form', 'boldform-lite' ),
+						'leadTemplateTitle' => __( 'Lead Capture Form', 'boldform-lite' ),
+						'contactTemplateDescription' => __( 'A simple contact form with name, email, subject, and message.', 'boldform-lite' ),
+						'leadTemplateDescription' => __( 'A lead form for collecting contact details, budget, and project needs.', 'boldform-lite' ),
+						'feedbackTemplateTitle' => __( 'Feedback Form', 'boldform-lite' ),
+						'feedbackTemplateDescription' => __( 'Collect user feedback with rating and comments.', 'boldform-lite' ),
+						'newsletterTemplateTitle' => __( 'Newsletter Signup', 'boldform-lite' ),
+						'newsletterTemplateDescription' => __( 'Simple email signup with name for newsletters.', 'boldform-lite' ),
+						'registrationTemplateTitle' => __( 'Registration Form', 'boldform-lite' ),
+						'registrationTemplateDescription' => __( 'Event or account registration with full details.', 'boldform-lite' ),
+						'importTemplate' => __( 'Import Template', 'boldform-lite' ),
+						/* translators: %s: comma-separated list of feature names that must be enabled. */
+						'templateNeedsModule' => __( 'This template uses %s, which is currently disabled. Enable it in Settings for the form to work fully.', 'boldform-lite' ),
+						/**
+						 * Filters the headline shown in the template preview pane when a
+						 * locked template row is selected.
+						 *
+						 * An add-on that is installed but not yet entitled says "activate"
+						 * rather than "upgrade" here — the visitor already owns the product,
+						 * and buying it again is not the action they need.
+						 *
+						 * @since 1.1.7
+						 *
+						 * @param string $title Headline text.
+						 */
+						'templateLockTitle' => apply_filters( 'boldform_template_lock_title', __( 'Available with an upgrade', 'boldform-lite' ) ),
+
+						/**
+						 * Filters the body copy shown in the template preview pane when a
+						 * locked template row is selected.
+						 *
+						 * @since 1.1.7
+						 *
+						 * @param string $text Body copy.
+						 */
+						'templateLockText'  => apply_filters( 'boldform_template_lock_text', __( 'This ready-made form is not included here. Upgrade to import it in one click, along with every other template in the library.', 'boldform-lite' ) ),
+						'upgradeNow'        => apply_filters( 'boldform_upgrade_label', __( 'Upgrade Now', 'boldform-lite' ), 'button' ),
+						'enableAjax'   => __( 'Enable AJAX submit', 'boldform-lite' ),
+						'enableRedirect' => __( 'Enable redirect after submit', 'boldform-lite' ),
+						'redirectUrl'  => __( 'Redirect URL', 'boldform-lite' ),
+						'thankYouMessage' => __( 'Thank you message', 'boldform-lite' ),
+						// WordPress labels the editor's second tab "Text". This holds a
+						// message template rather than a post, so "Code" describes it better.
+						'editorVisual'    => __( 'Visual', 'boldform-lite' ),
+						'editorCode'      => __( 'Code', 'boldform-lite' ),
+						/*
+						 * Teaser buttons name the FEATURE, not the action, and route their call to
+						 * action through boldform_upgrade_label — so an add-on that is installed but
+						 * not yet entitled reads "Activate" rather than selling what is already
+						 * bought. A capability verb here ("Attach a PDF of the submission") sits in
+						 * the real control's slot and reads as though this plugin withholds the
+						 * feature; the button only opens an explanatory dialog, so a noun phrase
+						 * naming a separate add-on describes it honestly.
+						 */
+						'addShortcodes'   => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Submitted-data shortcodes — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
+						'shortcodeHint'   => __( 'Insert submitted data into the message with an upgrade.', 'boldform-lite' ),
+						'customizeEmail'  => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Custom email editor — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
+						'emailTeaserHint' => __( 'Write your own subject and message for this email with an upgrade.', 'boldform-lite' ),
+						'attachDocument'  => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'PDF attachments — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
+						'attachmentTeaserHint' => __( 'Attach a PDF of each submission to this email with an upgrade.', 'boldform-lite' ),
+						'routeRecipients'   => sprintf(
+							/* translators: %s: call-to-action label, e.g. "Upgrade". */
+							__( 'Conditional recipients — %s', 'boldform-lite' ),
+							apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' )
+						),
+						'routingTeaserHint' => __( 'Route this notification to different people based on what was answered, with an upgrade.', 'boldform-lite' ),
+						'integrationUpgrade' => __( 'Upgrade', 'boldform-lite' ),
+						'integrationLocked'  => __( 'Available with an upgrade', 'boldform-lite' ),
+						'submitBehavior' => __( 'Submission Settings', 'boldform-lite' ),
+						'submissionType' => __( 'After Submit', 'boldform-lite' ),
+						'ajaxSubmit' => __( 'AJAX submit', 'boldform-lite' ),
+						'ajaxSubmitHelp' => __( 'Submit without page reload and show a success message.', 'boldform-lite' ),
+						'customPageRedirect' => __( 'Custom page redirect', 'boldform-lite' ),
+						'customPageRedirectHelp' => __( 'Send the user to a custom URL after submit.', 'boldform-lite' ),
+						'enableAdminEmail' => __( 'Enable admin email', 'boldform-lite' ),
+						'enableUserEmail' => __( 'Enable user confirmation email', 'boldform-lite' ),
+						'adminEmailAddress' => __( 'Admin email address', 'boldform-lite' ),
+						'emailRecipient' => __( 'Admin Email Recipient', 'boldform-lite' ),
+						'siteAdminEmail' => __( 'Site admin email', 'boldform-lite' ),
+						'siteAdminEmailHelp' => __( 'Use the email address from WordPress settings.', 'boldform-lite' ),
+						'customEmail' => __( 'Custom email', 'boldform-lite' ),
+						'customEmailHelp' => __( 'Send notifications to a custom email address.', 'boldform-lite' ),
+						'adminNotifications' => __( 'Admin Notifications', 'boldform-lite' ),
+						'userNotifications' => __( 'User Confirmation Email', 'boldform-lite' ),
+						'termsContent' => __( 'Terms text', 'boldform-lite' ),
+						'captchaNotice' => __( 'This field will use the captcha provider selected in global settings.', 'boldform-lite' ),
+						'npsColors'      => __( 'Zone Colors', 'boldform-lite' ),
+						'npsDetractor'   => __( 'Detractors (0–6)', 'boldform-lite' ),
+						'npsPassive'     => __( 'Passives (7–8)', 'boldform-lite' ),
+						'npsPromoter'    => __( 'Promoters (9–10)', 'boldform-lite' ),
+						'resetColor'     => __( 'Reset to default', 'boldform-lite' ),
+						'starSizeField'        => __( 'Icon Size (px)', 'boldform-lite' ),
+						'starColorField'       => __( 'Star Color', 'boldform-lite' ),
+						'starActiveColorField' => __( 'Active Color', 'boldform-lite' ),
+						'fileUploadHint' => __( 'Choose file or drag & drop', 'boldform-lite' ),
+						'allowedTypes'   => __( 'Allowed file types', 'boldform-lite' ),
+						'maxFileSize'    => __( 'Max file size (MB)', 'boldform-lite' ),
+						'sectionDescription' => __( 'Description', 'boldform-lite' ),
+						'submitButton' => __( 'Submit Button', 'boldform-lite' ),
+						'buttonText' => __( 'Button text', 'boldform-lite' ),
+						'buttonAlignment' => __( 'Button alignment', 'boldform-lite' ),
+						'buttonLayout' => __( 'Button layout', 'boldform-lite' ),
+						'buttonIconType'  => __( 'Icon', 'boldform-lite' ),
+						'dashicon'        => __( 'Dashicon', 'boldform-lite' ),
+						'customSvg'       => __( 'Custom SVG', 'boldform-lite' ),
+						'dashiconClass'   => __( 'Dashicon', 'boldform-lite' ),
+						'uploadSvg'       => __( 'Upload SVG', 'boldform-lite' ),
+						'changeSvg'       => __( 'Change SVG', 'boldform-lite' ),
+						'useSvg'          => __( 'Use this SVG', 'boldform-lite' ),
+						'svgCode'         => __( 'SVG Icon', 'boldform-lite' ),
+						'iconPosition'    => __( 'Icon position', 'boldform-lite' ),
+						'iconGap'         => __( 'Icon gap (px)', 'boldform-lite' ),
+						'cssClass'          => __( 'CSS Class', 'boldform-lite' ),
+						'autoPopulateKey'   => __( 'Auto Populate Key', 'boldform-lite' ),
+						'autoPopulateDesc'  => __( 'Pre-fill from URL parameter (?key=value) or logged-in user data (email, first_name, last_name, display_name). Pro: also meta_*, post_meta_*, query_*.', 'boldform-lite' ),
+						'rowSettings'     => __( 'Row settings', 'boldform-lite' ),
+						'moveUp'          => __( 'Move up', 'boldform-lite' ),
+						'moveDown'        => __( 'Move down', 'boldform-lite' ),
+						'column'          => __( 'Column', 'boldform-lite' ),
+						'width'           => __( 'Width', 'boldform-lite' ),
+						'belowFields' => __( 'Below fields', 'boldform-lite' ),
+						'inlineLastRow' => __( 'Inline with last row', 'boldform-lite' ),
+						'buttonColor' => __( 'Button color', 'boldform-lite' ),
+						'fieldAppearance' => __( 'Field Appearance', 'boldform-lite' ),
+						'fieldStyle' => __( 'Field style', 'boldform-lite' ),
+						'fieldSize' => __( 'Field size', 'boldform-lite' ),
+						'fieldFocusColor' => __( 'Focus color', 'boldform-lite' ),
+						'fieldStyles' => __( 'Field Styles', 'boldform-lite' ),
+						'labelStyles' => __( 'Label Styles', 'boldform-lite' ),
+						'buttonStyles' => __( 'Button Styles', 'boldform-lite' ),
+						'stylePreviewEmpty' => __( 'Add fields in the Builder tab to preview your styling here.', 'boldform-lite' ),
+						'size' => __( 'Size', 'boldform-lite' ),
+						'border' => __( 'Border', 'boldform-lite' ),
+						'borderSize' => __( 'Border Size', 'boldform-lite' ),
+						'borderRadius' => __( 'Border Radius', 'boldform-lite' ),
+						'background' => __( 'Background', 'boldform-lite' ),
+						'text' => __( 'Text', 'boldform-lite' ),
+						'defaultStyle' => __( 'Default', 'boldform-lite' ),
+						'subLabel' => __( 'Sublabel', 'boldform-lite' ),
+						'error' => __( 'Error', 'boldform-lite' ),
+						'solid' => __( 'Solid', 'boldform-lite' ),
+						'dashed' => __( 'Dashed', 'boldform-lite' ),
+						'none' => __( 'None', 'boldform-lite' ),
+						'small' => __( 'Small', 'boldform-lite' ),
+						'medium' => __( 'Medium', 'boldform-lite' ),
+						'large' => __( 'Large', 'boldform-lite' ),
+						'left' => __( 'Left', 'boldform-lite' ),
+						'center' => __( 'Center', 'boldform-lite' ),
+						'right' => __( 'Right', 'boldform-lite' ),
+						'teal' => __( 'Teal', 'boldform-lite' ),
+						'blue' => __( 'Blue', 'boldform-lite' ),
+						'green' => __( 'Green', 'boldform-lite' ),
+						'red' => __( 'Red', 'boldform-lite' ),
+						'dark' => __( 'Dark', 'boldform-lite' ),
+					),
+					// Labels for the advanced (full-parity) Style-tab controls.
+					'advStyle'           => array(
+						'secContainer'    => __( 'Form Container', 'boldform-lite' ),
+						'secLayout'       => __( 'Layout & Spacing', 'boldform-lite' ),
+						'secLabels'       => __( 'Labels', 'boldform-lite' ),
+						'secInputs'       => __( 'Input Fields', 'boldform-lite' ),
+						'secPlaceholder'  => __( 'Placeholder', 'boldform-lite' ),
+						'secChoice'       => __( 'Checkbox & Radio', 'boldform-lite' ),
+						'secSelect'       => __( 'Select Dropdown', 'boldform-lite' ),
+						'secTerms'        => __( 'Terms & Conditions', 'boldform-lite' ),
+						'secFile'         => __( 'File Upload', 'boldform-lite' ),
+						'secSection'      => __( 'Section Break', 'boldform-lite' ),
+						'secButton'       => __( 'Submit Button', 'boldform-lite' ),
+						'secError'        => __( 'Error Messages', 'boldform-lite' ),
+						'secSuccess'      => __( 'Success Message', 'boldform-lite' ),
+						'maxWidth'        => __( 'Max Width', 'boldform-lite' ),
+						'alignment'       => __( 'Alignment', 'boldform-lite' ),
+						'alignLeft'       => __( 'Left', 'boldform-lite' ),
+						'alignCenter'     => __( 'Center', 'boldform-lite' ),
+						'alignRight'      => __( 'Right', 'boldform-lite' ),
+						'alignJustify'    => __( 'Full Width', 'boldform-lite' ),
+						'padding'         => __( 'Padding', 'boldform-lite' ),
+						'margin'          => __( 'Margin', 'boldform-lite' ),
+						'borderColor'     => __( 'Border Color', 'boldform-lite' ),
+						'colorLabel'      => __( 'Color', 'boldform-lite' ),
+						'boxShadow'       => __( 'Box Shadow', 'boldform-lite' ),
+						'hoverShadow'     => __( 'Box Shadow (Hover)', 'boldform-lite' ),
+						'focusShadow'     => __( 'Box Shadow (Focus)', 'boldform-lite' ),
+						'stateNormal'     => __( 'Normal', 'boldform-lite' ),
+						'stateHover'      => __( 'Hover', 'boldform-lite' ),
+						'stateFocus'      => __( 'Focus', 'boldform-lite' ),
+						'stateChecked'    => __( 'Checked', 'boldform-lite' ),
+						'stateSelected'   => __( 'Selected', 'boldform-lite' ),
+						// Checkbox & Radio → Style: box-and-label, or a selectable pill.
+						'choiceStyle'        => __( 'Style', 'boldform-lite' ),
+						'choiceStyleDefault' => __( 'Default', 'boldform-lite' ),
+						'choiceStyleButton'  => __( 'Button', 'boldform-lite' ),
+						'rowGap'          => __( 'Row Gap', 'boldform-lite' ),
+						'columnGap'       => __( 'Column Gap', 'boldform-lite' ),
+						'fieldMargin'     => __( 'Field Margin', 'boldform-lite' ),
+						'inputMargin'     => __( 'Input Margin', 'boldform-lite' ),
+						'typography'      => __( 'Typography', 'boldform-lite' ),
+						'requiredColor'   => __( 'Required Mark Color', 'boldform-lite' ),
+						'height'          => __( 'Height', 'boldform-lite' ),
+						'textareaHeight'  => __( 'Textarea Height', 'boldform-lite' ),
+						'textColor'       => __( 'Text Color', 'boldform-lite' ),
+						'placeholderColor'=> __( 'Placeholder Color', 'boldform-lite' ),
+						'focusBorderColor'=> __( 'Focus Border Color', 'boldform-lite' ),
+						'focusBgColor'    => __( 'Focus Background', 'boldform-lite' ),
+						'accentColor'     => __( 'Accent Color', 'boldform-lite' ),
+						'labelColor'      => __( 'Label Color', 'boldform-lite' ),
+						'linkColor'       => __( 'Link Color', 'boldform-lite' ),
+						'spacing'         => __( 'Spacing', 'boldform-lite' ),
+						'gap'             => __( 'Gap', 'boldform-lite' ),
+						'checkedColor'    => __( 'Checked Color', 'boldform-lite' ),
+						'arrowColor'      => __( 'Arrow Color', 'boldform-lite' ),
+						'panelBg'         => __( 'Panel Background', 'boldform-lite' ),
+						'panelBorder'     => __( 'Panel Border Color', 'boldform-lite' ),
+						'optionBg'        => __( 'Option Background', 'boldform-lite' ),
+						'optionText'      => __( 'Option Text', 'boldform-lite' ),
+						'optionHoverBg'   => __( 'Option Hover Background', 'boldform-lite' ),
+						'optionHoverText' => __( 'Option Hover Text Color', 'boldform-lite' ),
+						'optionActiveBg'  => __( 'Selected Option Background', 'boldform-lite' ),
+						'searchBox'       => __( 'Search Box', 'boldform-lite' ),
+						'searchBg'        => __( 'Search Background', 'boldform-lite' ),
+						'searchText'      => __( 'Search Text Color', 'boldform-lite' ),
+						'searchPh'        => __( 'Search Placeholder Color', 'boldform-lite' ),
+						'copyText'        => __( 'Copy Text', 'boldform-lite' ),
+						'borderWidth'     => __( 'Border Width', 'boldform-lite' ),
+						'borderStyle'     => __( 'Border Style', 'boldform-lite' ),
+						'btnBg'           => __( 'Button Background', 'boldform-lite' ),
+						'btnText'         => __( 'Button Text Color', 'boldform-lite' ),
+						'titleColor'      => __( 'Title Color', 'boldform-lite' ),
+						'descColor'       => __( 'Description Color', 'boldform-lite' ),
+						'noticeBg'        => __( 'Notice Background', 'boldform-lite' ),
+						'noticeText'      => __( 'Notice Text Color', 'boldform-lite' ),
+						'fullWidth'       => __( 'Full Width', 'boldform-lite' ),
+						'iconColor'       => __( 'Icon Color', 'boldform-lite' ),
+						'hoverTextColor'  => __( 'Hover Text Color', 'boldform-lite' ),
+						'hoverBg'         => __( 'Hover Background', 'boldform-lite' ),
+						'hoverBorderColor'=> __( 'Hover Border Color', 'boldform-lite' ),
+						'hover'           => __( 'Hover', 'boldform-lite' ),
+						'focus'           => __( 'Focus', 'boldform-lite' ),
+						'focusRing'       => __( 'Focus Ring Color', 'boldform-lite' ),
+						'ringColor'       => __( 'Ring Color', 'boldform-lite' ),
+						'hoverColor'      => __( 'Hover Color', 'boldform-lite' ),
+						'linkHoverColor'  => __( 'Link Hover Color', 'boldform-lite' ),
+						'focusLabelColor' => __( 'Focused Label Color', 'boldform-lite' ),
+						'states'          => __( 'States', 'boldform-lite' ),
+						'subLabel'        => __( 'Sub-field Label', 'boldform-lite' ),
+						'subLabelColor'   => __( 'Sub-label Color', 'boldform-lite' ),
+						'subfieldGap'     => __( 'Sub-field Gap', 'boldform-lite' ),
+						'buttonMargin'    => __( 'Button Margin', 'boldform-lite' ),
+						'containerMargin' => __( 'Container Margin', 'boldform-lite' ),
+						'fontFamily'      => __( 'Font Family', 'boldform-lite' ),
+						'fontSize'        => __( 'Font Size', 'boldform-lite' ),
+						'fontWeight'      => __( 'Weight', 'boldform-lite' ),
+						'lineHeight'      => __( 'Line Height', 'boldform-lite' ),
+						'letterSpacing'   => __( 'Letter Spacing', 'boldform-lite' ),
+						'textTransform'   => __( 'Transform', 'boldform-lite' ),
+						'shadowX'         => __( 'X Offset', 'boldform-lite' ),
+						'shadowY'         => __( 'Y Offset', 'boldform-lite' ),
+						'shadowBlur'      => __( 'Blur', 'boldform-lite' ),
+						'shadowSpread'    => __( 'Spread', 'boldform-lite' ),
+						'shadowColor'     => __( 'Shadow Color', 'boldform-lite' ),
+						'inset'           => __( 'Inset', 'boldform-lite' ),
+						'gradient'        => __( 'Gradient', 'boldform-lite' ),
+						'solidFill'       => __( 'Solid', 'boldform-lite' ),
+						'angle'           => __( 'Angle', 'boldform-lite' ),
+						'colorStop1'      => __( 'Color 1', 'boldform-lite' ),
+						'colorStop2'      => __( 'Color 2', 'boldform-lite' ),
+						'styleLabel'      => __( 'Style', 'boldform-lite' ),
+						'widthLabel'      => __( 'Width', 'boldform-lite' ),
+						'radiusLabel'     => __( 'Radius', 'boldform-lite' ),
+						'linkSides'       => __( 'Link sides', 'boldform-lite' ),
+						'sideTop'         => __( 'Top', 'boldform-lite' ),
+						'sideRight'       => __( 'Right', 'boldform-lite' ),
+						'sideBottom'      => __( 'Bottom', 'boldform-lite' ),
+						'sideLeft'        => __( 'Left', 'boldform-lite' ),
+						'inheritDefault'  => __( 'Default', 'boldform-lite' ),
+						'opacity'         => __( 'Opacity (%)', 'boldform-lite' ),
+						'reset'           => __( 'Reset color', 'boldform-lite' ),
+						'resetSection'    => __( 'Reset this section', 'boldform-lite' ),
+						'previewStates'   => __( 'Preview states — messages & open dropdown', 'boldform-lite' ),
+						'sampleSuccess'   => __( 'Your form has been submitted successfully.', 'boldform-lite' ),
+						'sampleError'     => __( 'Please correct the highlighted fields below.', 'boldform-lite' ),
+						'sampleFieldLabel' => __( 'Field with an error', 'boldform-lite' ),
+						'sampleValue'     => __( 'Invalid value', 'boldform-lite' ),
+						'sampleRequired'  => __( 'This field is required.', 'boldform-lite' ),
+						'sampleDropdown'  => __( 'Dropdown (open)', 'boldform-lite' ),
+						'sampleSearch'    => __( 'Search…', 'boldform-lite' ),
+						'optionSelected'  => __( 'Selected option', 'boldform-lite' ),
+						'optionAnother'   => __( 'Another option', 'boldform-lite' ),
+						'themeFont'       => __( 'Theme Default', 'boldform-lite' ),
+						'uppercase'       => __( 'UPPERCASE', 'boldform-lite' ),
+						'lowercase'       => __( 'lowercase', 'boldform-lite' ),
+						'capitalize'      => __( 'Capitalize', 'boldform-lite' ),
+						'dotted'          => __( 'Dotted', 'boldform-lite' ),
+					),
+					'messages'           => array(
+						'emptyFields' => __( 'Add at least one field before saving.', 'boldform-lite' ),
+						'saveSuccess' => __( 'Form saved successfully.', 'boldform-lite' ),
+						'saveError'   => __( 'Unable to save the form.', 'boldform-lite' ),
+					),
+					// Thank-you message shortcode picker. The builder always renders the
+					// slot; this flag only decides whether the free teaser goes inside it.
+					// An add-on that ships real shortcodes turns boldform_show_upgrade_cta
+					// off, so the slot is left empty for it to fill on the
+					// boldform:form_settings_rendered event.
+					//
+					// Must stay a bool: wp_localize_script casts top-level scalars with
+					// (string), so this reaches JS as '1' or '' and the empty string is
+					// correctly falsy. Do NOT "simplify" it to `? 1 : 0` -- that arrives
+					// as the string '0', which is truthy, and the teaser would then show
+					// even with an add-on active.
+					'showUpgradeCta'     => (bool) apply_filters( 'boldform_show_upgrade_cta', true ),
+					// Same bool rule as showUpgradeCta above. Gates ONLY the template
+					// library's locked rows, so an add-on that suppresses the shared CTAs
+					// can still advertise templates it has not unlocked yet.
+					'showLockedTemplates' => $this->show_locked_templates_teaser(),
+					// Locked entries advertised in the "Choose a Template" library. Empty
+					// once the teaser above is off, at which point an add-on supplies the
+					// real templates through proTemplates instead — the two never show
+					// together. See premium_template_teasers().
+					'premiumTemplates'   => $this->premium_template_teasers(),
 					// Integrations — globalConnections + integrationsNonce injected via boldform_builder_localize_data filter by BoldForm_Lite_Integrations.
 			);
 
@@ -1722,6 +1934,25 @@ class BoldForm_Lite_Admin {
 							authYes.addEventListener("change",toggleAuth);
 							authNo.addEventListener("change",toggleAuth);
 						}
+						/* AI tab: show the key and model belonging to the selected
+						   provider and hide the rest. All of them stay in the form, so
+						   the values entered for the others are still posted and survive
+						   the save. The whole row is hidden, not the control: the styled
+						   dropdown clips the native select off-screen, so hiding that
+						   would hide something already invisible and leave the visible
+						   one on the page. */
+						var aiProvider=document.querySelector("[data-bf-ai-provider]");
+						if(aiProvider){
+							var aiRows=document.querySelectorAll("[data-bf-ai-key-for],[data-bf-ai-model-for]");
+							function syncAiRows(){
+								for(var i=0;i<aiRows.length;i++){
+									var owner=aiRows[i].getAttribute("data-bf-ai-key-for")||aiRows[i].getAttribute("data-bf-ai-model-for");
+									aiRows[i].hidden=owner!==aiProvider.value;
+								}
+							}
+							aiProvider.addEventListener("change",syncAiRows);
+							syncAiRows();
+						}
 					})();'
 				);
 				if ( 'smtp' === $active_tab ) {
@@ -2045,13 +2276,80 @@ class BoldForm_Lite_Admin {
 	 * admin_head — and immediately before the notice actions fire, then re-registers
 	 * BoldForm's own notice so it survives the purge.
 	 *
+	 * WordPress core's own notices (update nags, PHP-version and security warnings)
+	 * are deliberately preserved — hiding those from a site owner is not ours to do.
+	 *
 	 * @return void
 	 */
 	public function suppress_foreign_notices() {
-		remove_all_actions( 'admin_notices' );
-		remove_all_actions( 'all_admin_notices' );
-		remove_all_actions( 'user_admin_notices' );
+		self::remove_third_party_notices( 'admin_notices' );
+		self::remove_third_party_notices( 'all_admin_notices' );
+		self::remove_third_party_notices( 'user_admin_notices' );
 		add_action( 'admin_notices', array( $this, 'render_own_notices' ) );
+	}
+
+	/**
+	 * Removes third-party callbacks from a notice hook while keeping WordPress
+	 * core's own (update nags, PHP-version warnings, security notices, etc).
+	 *
+	 * A blanket remove_all_actions() also strips core's own notices, which can
+	 * hide an update-required or security warning the site owner needs to see.
+	 * This keeps any callback whose declaring file lives under wp-admin/ or
+	 * wp-includes/ and removes everything else (plugins, themes, mu-plugins).
+	 *
+	 * @param string $hook Notice hook name.
+	 * @return void
+	 */
+	private static function remove_third_party_notices( $hook ) {
+		global $wp_filter;
+
+		if ( empty( $wp_filter[ $hook ] ) ) {
+			return;
+		}
+
+		// Snapshot first: remove_action() mutates the same structure being walked.
+		$registered = $wp_filter[ $hook ]->callbacks;
+
+		foreach ( $registered as $priority => $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( ! self::is_core_notice_callback( $callback['function'] ) ) {
+					remove_action( $hook, $callback['function'], $priority );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Determines whether a hooked callback is declared by WordPress core.
+	 *
+	 * @param callable $function The hooked callback.
+	 * @return bool
+	 */
+	private static function is_core_notice_callback( $function ) {
+		try {
+			if ( is_array( $function ) ) {
+				$reflection = new ReflectionMethod( $function[0], $function[1] );
+			} elseif ( is_string( $function ) && false !== strpos( $function, '::' ) ) {
+				$reflection = new ReflectionMethod( $function );
+			} elseif ( $function instanceof Closure || is_string( $function ) ) {
+				$reflection = new ReflectionFunction( $function );
+			} else {
+				return false;
+			}
+		} catch ( ReflectionException $e ) {
+			return false;
+		}
+
+		$file = $reflection->getFileName();
+
+		if ( ! $file ) {
+			return false;
+		}
+
+		$file = wp_normalize_path( $file );
+
+		return ( false !== strpos( $file, '/wp-admin/' ) || false !== strpos( $file, '/wp-includes/' ) )
+			&& false === strpos( $file, '/wp-content/' );
 	}
 
 	/**
@@ -2075,7 +2373,7 @@ class BoldForm_Lite_Admin {
 		/**
 		 * Fires where an add-on can render an admin notice on BoldForm's screens.
 		 *
-		 * The purge above removes every third-party 'admin_notices' callback and
+		 * The purge above removes third-party 'admin_notices' callbacks and
 		 * re-adds only this method, so an add-on registering on 'admin_notices'
 		 * directly is silently stripped on exactly the screens it wants to reach.
 		 * This action is the supported seam: it runs inside the one callback that
@@ -2135,7 +2433,7 @@ class BoldForm_Lite_Admin {
 
 					<div class="boldform-admin-notice__title"><?php esc_html_e( 'BoldForm Pro is here — get 70% off!', 'boldform-lite' ); ?></div>
 
-					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Unlock payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
+					<p class="boldform-admin-notice__text"><?php esc_html_e( 'Payments, multi-page forms, advanced fields, and much more.', 'boldform-lite' ); ?></p>
 
 					<div class="boldform-admin-notice__actions">
 						<a href="<?php echo esc_url( $sale_url ); ?>" class="boldform-admin-notice__btn" target="_blank" rel="noopener noreferrer">
@@ -2595,11 +2893,9 @@ class BoldForm_Lite_Admin {
 					 * @param string $context Which dialog. One of 'fields', 'templates',
 					 *                        'export', 'export_excel', 'export_pdf'.
 					 */
-					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' ) );
-				?>
-				</h2>
-				<p class="boldform-upgrade-modal__text">
-				<?php
+					echo esc_html( apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' ) );
+				?></h2>
+				<p class="boldform-upgrade-modal__text"><?php
 					/**
 					 * Filters the body copy of a locked-content upgrade dialog.
 					 *
@@ -2627,8 +2923,10 @@ class BoldForm_Lite_Admin {
 
 	/**
 	 * Renders the Tools -> Entries export format selector for the free plugin:
-	 * JSON (the available free format) plus locked Excel/PDF options that open the
-	 * shared upgrade modal when chosen. Hooked to boldform_tools_entries_export_fields.
+	 * JSON, the one format this plugin produces. The add-on's Excel and PDF
+	 * formats are described beneath the control rather than listed inside it, so
+	 * the select never offers something this plugin cannot deliver. Hooked to
+	 * boldform_tools_entries_export_fields.
 	 * Like the Entries teaser it is gated by show_locked_export_teaser(), NOT by
 	 * boldform_show_upgrade_cta directly: an add-on that ships real multi-format export
 	 * turns the shared switch off, and this teaser has to survive that until the add-on
@@ -2641,13 +2939,8 @@ class BoldForm_Lite_Admin {
 			return;
 		}
 
-		// Suffix on each locked option, and the hint beneath. Both route through the
-		// shared CTA label so an add-on that is installed but not yet entitled says
-		// "Activate License" here too, instead of selling what is already bought.
-		$lock_label = apply_filters( 'boldform_upgrade_label', __( 'Upgrade', 'boldform-lite' ), 'suffix' );
-
 		/**
-		 * Filters the hint under the locked export-format select.
+		 * Filters the hint under the export-format control.
 		 *
 		 * @since 1.1.7
 		 *
@@ -2655,28 +2948,19 @@ class BoldForm_Lite_Admin {
 		 */
 		$hint = apply_filters(
 			'boldform_export_lock_hint',
-			__( 'Excel and PDF export are available with an upgrade.', 'boldform-lite' )
+			__( 'Excel and PDF export are available in the BoldForm premium add-on.', 'boldform-lite' )
 		);
 		?>
 		<div class="boldform-field-row">
 			<div class="boldform-field-label"><label for="boldform-export-format"><?php esc_html_e( 'Export format', 'boldform-lite' ); ?></label></div>
 			<div class="boldform-field-control">
-				<select id="boldform-export-format" name="boldform_export_format" class="boldform-upgrade-select" data-free-default="json" style="max-width:100%;">
+				<select id="boldform-export-format" name="boldform_export_format" style="max-width:100%;">
 					<option value="json"><?php esc_html_e( 'JSON', 'boldform-lite' ); ?></option>
-					<option value="xlsx" data-locked="1">
-					<?php
-						/* translators: %s: call-to-action label, e.g. "Upgrade". */
-						printf( esc_html__( 'Excel (.xlsx) — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?>
-					</option>
-					<option value="pdf" data-locked="1">
-					<?php
-						/* translators: %s: call-to-action label, e.g. "Upgrade". */
-						printf( esc_html__( 'PDF — %s', 'boldform-lite' ), esc_html( $lock_label ) );
-					?>
-					</option>
 				</select>
-				<p class="boldform-upgrade-hint"><span class="dashicons dashicons-lock" aria-hidden="true"></span><?php echo esc_html( $hint ); ?></p>
+				<p class="boldform-upgrade-hint">
+					<?php echo esc_html( $hint ); ?>
+					<button type="button" class="button-link boldform-export-teaser" data-boldform-export-feature="both"><?php esc_html_e( 'Learn more', 'boldform-lite' ); ?></button>
+				</p>
 			</div>
 		</div>
 		<?php
@@ -2771,13 +3055,13 @@ class BoldForm_Lite_Admin {
 	 */
 	private function upgrade_modal_inline_js() {
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel export', 'boldform-lite' ), 'export_excel' );
+		$excel = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel export', 'boldform-lite' ), 'export_excel' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock PDF export', 'boldform-lite' ), 'export_pdf' );
+		$pdf = apply_filters( 'boldform_upgrade_modal_title', __( 'PDF export', 'boldform-lite' ), 'export_pdf' );
 
 		/** This filter is documented in admin/class-boldform-lite-admin.php */
-		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Unlock Excel & PDF export', 'boldform-lite' ), 'export' );
+		$both = apply_filters( 'boldform_upgrade_modal_title', __( 'Excel & PDF export', 'boldform-lite' ), 'export' );
 
 		// Keys are the two vocabularies the openers use: data-boldform-export-feature
 		// on the Entries teaser buttons ('excel'/'pdf') and the option values in the
@@ -2795,7 +3079,6 @@ class BoldForm_Lite_Admin {
 			'function openModal(f){$m.find(".boldform-upgrade-modal__title").text(titles[f]||fallback);$m.removeAttr("hidden");$("body").addClass("boldform-upgrade-modal-open");}' .
 			'function closeModal(){$m.attr("hidden","hidden");$("body").removeClass("boldform-upgrade-modal-open");}' .
 			'$(document).on("click",".boldform-export-teaser",function(e){e.preventDefault();openModal($(this).data("boldform-export-feature"));});' .
-			'$(document).on("change",".boldform-upgrade-select",function(){var o=this.options[this.selectedIndex];if(o&&o.getAttribute("data-locked")){openModal(o.value);this.value=$(this).data("free-default")||this.options[0].value;}});' .
 			'$m.on("click","[data-boldform-upgrade-close]",function(){closeModal();});' .
 			'$(document).on("keydown",function(e){if(e.key==="Escape"){closeModal();}});' .
 		'});';
@@ -2842,86 +3125,22 @@ class BoldForm_Lite_Admin {
 		// Free-vs-Pro feature matrix. A cell is true (included), false (not included),
 		// or a string (a short qualifier shown as text).
 		$features = array(
-			array(
-				'label' => __( 'Drag & Drop Form Builder, Contact Form, Survey & Multi-Step Forms', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Conditional logic', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),
-				'lite'  => true,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Integrations', 'boldform-lite' ),
-				'lite'  => __( 'Mailchimp & Brevo', 'boldform-lite' ),
-				'pro'   => __( '35+ apps', 'boldform-lite' ),
-			),
-			array(
-				'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Payments — Stripe & PayPal', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Webhooks', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Form scheduling (open / close dates)', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Auto-populate & hidden data', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Advanced analytics (views & conversions)', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
-			array(
-				'label' => __( 'Priority support & automatic updates', 'boldform-lite' ),
-				'lite'  => false,
-				'pro'   => true,
-			),
+			array( 'label' => __( 'Drag & Drop Form Builder, Contact Form & Survey', 'boldform-lite' ),                         'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Unlimited forms & entries', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Core fields (text, email, select, date, file upload…)', 'boldform-lite' ), 'lite' => true,                             'pro' => true ),
+			array( 'label' => __( 'Email notifications + SMTP', 'boldform-lite' ),                        'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Conditional logic', 'boldform-lite' ),                                 'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Anti-spam: reCAPTCHA, hCaptcha & Turnstile', 'boldform-lite' ),        'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Entries, CSV export & reports', 'boldform-lite' ),                     'lite' => true,                                  'pro' => true ),
+			array( 'label' => __( 'Integrations', 'boldform-lite' ),                                      'lite' => __( 'Mailchimp & Brevo', 'boldform-lite' ), 'pro' => __( '35+ apps', 'boldform-lite' ) ),
+			array( 'label' => __( 'Multi-page (step) forms', 'boldform-lite' ),                           'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Payments — Stripe & PayPal', 'boldform-lite' ),                        'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Advanced fields (Rich Text, Signature, Repeater, Calculation, Geolocation, NPS…)', 'boldform-lite' ), 'lite' => false,    'pro' => true ),
+			array( 'label' => __( 'Webhooks', 'boldform-lite' ),                                          'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Form scheduling (open / close dates)', 'boldform-lite' ),              'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Auto-populate & hidden data', 'boldform-lite' ),                       'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Advanced analytics (views & conversions)', 'boldform-lite' ),          'lite' => false,                                 'pro' => true ),
+			array( 'label' => __( 'Priority support & automatic updates', 'boldform-lite' ),             'lite' => false,                                 'pro' => true ),
 		);
 
 		$render_cell = static function ( $value ) {
@@ -4004,29 +4223,20 @@ class BoldForm_Lite_Admin {
 	 */
 	public function render_settings_page() {
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$active_tab = in_array( $active_tab, array( 'general', 'captcha', 'smtp', 'tools' ), true ) ? $active_tab : 'general';
+		$active_tab = in_array( $active_tab, array( 'general', 'captcha', 'ai', 'smtp', 'tools' ), true ) ? $active_tab : 'general';
 
 		$this->handle_settings_save();
 
 		$settings = $this->get_global_settings();
 
 		$tabs = array(
-			'general' => array(
-				'label' => __( 'General', 'boldform-lite' ),
-				'icon'  => 'dashicons-admin-generic',
-			),
-			'captcha' => array(
-				'label' => __( 'Captcha', 'boldform-lite' ),
-				'icon'  => 'dashicons-shield',
-			),
-			'smtp'    => array(
-				'label' => __( 'SMTP', 'boldform-lite' ),
-				'icon'  => 'dashicons-email-alt',
-			),
-			'tools'   => array(
-				'label' => __( 'Tools', 'boldform-lite' ),
-				'icon'  => 'dashicons-migrate',
-			),
+			'general' => array( 'label' => __( 'General', 'boldform-lite' ), 'icon' => 'dashicons-admin-generic' ),
+			'captcha' => array( 'label' => __( 'Captcha', 'boldform-lite' ), 'icon' => 'dashicons-shield' ),
+			// `mark` opts a tab out of Dashicons. Dashicons has no sparkle, and this
+			// is the only tab that needs one; `icon` stays as the fallback.
+			'ai'      => array( 'label' => __( 'AI', 'boldform-lite' ), 'icon' => 'dashicons-superhero-alt', 'mark' => 'sparkle' ),
+			'smtp'    => array( 'label' => __( 'SMTP', 'boldform-lite' ), 'icon' => 'dashicons-email-alt' ),
+			'tools'   => array( 'label' => __( 'Tools', 'boldform-lite' ), 'icon' => 'dashicons-migrate' ),
 		);
 		?>
 		<?php
@@ -4050,7 +4260,16 @@ class BoldForm_Lite_Admin {
 				<nav class="boldform-settings-sidebar">
 					<?php foreach ( $tabs as $tab_key => $tab ) : ?>
 						<a href="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=' . $tab_key ) ); ?>" class="boldform-nav-item<?php echo $tab_key === $active_tab ? ' is-active' : ''; ?>">
-							<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php if ( 'sparkle' === ( $tab['mark'] ?? '' ) && class_exists( 'BoldForm_Lite_AI_Builder' ) ) : ?>
+								<?php
+								// Static markup built from literals inside the helper — there is
+								// nothing here for an escaper to act on, and running wp_kses over
+								// it would only strip the gradient it depends on.
+								echo BoldForm_Lite_AI_Builder::sparkle_svg( 'tab' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								?>
+							<?php else : ?>
+								<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php endif; ?>
 							<?php echo esc_html( $tab['label'] ); ?>
 						</a>
 					<?php endforeach; ?>
@@ -4225,7 +4444,7 @@ class BoldForm_Lite_Admin {
 										<div class="boldform-field-label"><label for="boldform-turnstile-secret-key"><?php esc_html_e( 'Secret key', 'boldform-lite' ); ?></label></div>
 										<div class="boldform-field-control">
 											<input type="password" id="boldform-turnstile-secret-key" name="boldform_turnstile_secret_key" value="" placeholder="<?php echo '' !== $settings['turnstile_secret_key'] ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : ''; ?>" autocomplete="off">
-											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); ?></p>
+											<p class="description"><?php echo wp_kses( sprintf( /* translators: %s: the captcha provider's URL */ __( 'Get your keys from %s.', 'boldform-lite' ), '<code>dash.cloudflare.com &rarr; Turnstile</code>' ), array( 'code' => array() ) ); /* phpcs:ignore PluginCheck.CodeAnalysis.Offloading.OffloadedContent -- instructional copy naming the dashboard page where the admin finds their own keys; nothing is loaded from it. */ ?></p>
 										</div>
 									</div>
 								</div>
@@ -4238,6 +4457,135 @@ class BoldForm_Lite_Admin {
 										<?php esc_html_e( 'No keys required. Visitors solve a small math question before submitting.', 'boldform-lite' ); ?>
 									</p>
 								</div>
+							</div>
+
+							<div class="boldform-submit-area">
+								<?php submit_button( __( 'Save Changes', 'boldform-lite' ), 'primary', 'submit', false ); ?>
+							</div>
+						</form>
+
+					<?php elseif ( 'ai' === $active_tab ) : ?>
+						<?php
+						$ai_providers = BoldForm_Lite_AI_Builder::providers();
+						$ai_provider  = BoldForm_Lite_AI_Builder::selected_provider();
+						$ai_keys      = BoldForm_Lite_AI_Builder::api_keys();
+						$ai_models    = BoldForm_Lite_AI_Builder::models();
+						?>
+						<h2><?php esc_html_e( 'AI Form Builder', 'boldform-lite' ); ?></h2>
+						<p class="boldform-tab-description"><?php esc_html_e( 'Describe a form in plain language and have it built for you. Choose a provider and add your own API key — prompts are sent from this site straight to that provider, and usage is billed to your own account.', 'boldform-lite' ); ?></p>
+
+						<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=boldform-lite-settings&tab=ai' ) ); ?>">
+							<?php wp_nonce_field( 'boldform_lite_save_settings', 'boldform_settings_nonce' ); ?>
+							<input type="hidden" name="boldform_settings_tab" value="ai">
+
+							<div class="boldform-card">
+								<h3><?php esc_html_e( 'Provider', 'boldform-lite' ); ?></h3>
+								<div class="boldform-field-row">
+									<div class="boldform-field-label"><label for="boldform-ai-provider"><?php esc_html_e( 'Service', 'boldform-lite' ); ?></label></div>
+									<div class="boldform-field-control">
+										<select id="boldform-ai-provider" name="boldform_ai_provider" data-boldform-select data-bf-ai-provider>
+											<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+												<option value="<?php echo esc_attr( $bf_slug ); ?>" data-key-url="<?php echo esc_url( $bf_provider['key_url'] ); ?>" <?php selected( $ai_provider, $bf_slug ); ?>>
+													<?php echo esc_html( $bf_provider['label'] ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</div>
+								</div>
+
+								<?php
+								/*
+								 * One key field per provider, all rendered, only the selected one
+								 * shown. Hidden rather than omitted so every field still posts —
+								 * switching provider and saving cannot wipe the key stored for
+								 * another. Values are never printed back: each renders empty with a
+								 * "leave blank to keep" placeholder, exactly as the captcha secrets
+								 * and the SMTP password do.
+								 */
+								?>
+								<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+									<div class="boldform-field-row boldform-ai-key-field" data-bf-ai-key-for="<?php echo esc_attr( $bf_slug ); ?>"<?php echo $bf_slug === $ai_provider ? '' : ' hidden'; ?>>
+										<div class="boldform-field-label">
+											<label for="boldform-ai-key-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"><?php esc_html_e( 'API key', 'boldform-lite' ); ?></label>
+										</div>
+										<div class="boldform-field-control">
+											<input
+												type="password"
+												id="boldform-ai-key-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"
+												name="boldform_ai_api_key[<?php echo esc_attr( $bf_slug ); ?>]"
+												value=""
+												class="regular-text"
+												autocomplete="new-password"
+												spellcheck="false"
+												placeholder="<?php echo ! empty( $ai_keys[ $bf_slug ] ) ? esc_attr__( 'Saved — leave blank to keep current key', 'boldform-lite' ) : esc_attr( $bf_provider['key_hint'] ); ?>"
+											>
+											<p class="description">
+												<a href="<?php echo esc_url( $bf_provider['key_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+													<?php
+													/* translators: %s: AI provider name, e.g. "OpenRouter". */
+													printf( esc_html__( 'Get a key from %s', 'boldform-lite' ), esc_html( $bf_provider['label'] ) );
+													?>
+												</a>
+											</p>
+										</div>
+									</div>
+								<?php endforeach; ?>
+
+								<?php
+								/*
+								 * Model picker, only for providers that publish a catalogue — today
+								 * that means aggregators. A direct provider hosts a handful of models
+								 * and the plugin already picks the right one, so a chooser there is
+								 * mostly a way to pick a worse one.
+								 */
+								?>
+								<?php foreach ( $ai_providers as $bf_slug => $bf_provider ) : ?>
+									<?php
+									if ( ! BoldForm_Lite_AI_Builder::has_model_picker( $bf_slug ) ) {
+										continue;
+									}
+									$bf_choices = BoldForm_Lite_AI_Builder::model_choices( $bf_slug );
+									$bf_current = isset( $ai_models[ $bf_slug ] ) ? $ai_models[ $bf_slug ] : '';
+									$bf_default = $bf_provider['model'];
+
+									// A stored model absent from the catalogue — newly retired, or the
+									// list failed to load — is put back at the top, so that merely
+									// opening Settings and pressing Save cannot silently reset it.
+									$bf_known = array();
+									foreach ( $bf_choices as $bf_group ) {
+										$bf_known = array_merge( $bf_known, array_keys( $bf_group ) );
+									}
+									if ( '' !== $bf_current && ! in_array( $bf_current, $bf_known, true ) ) {
+										$bf_choices = array_merge( array( __( 'Currently set', 'boldform-lite' ) => array( $bf_current => $bf_current ) ), $bf_choices );
+									}
+									?>
+									<div class="boldform-field-row boldform-ai-model-field" data-bf-ai-model-for="<?php echo esc_attr( $bf_slug ); ?>"<?php echo $bf_slug === $ai_provider ? '' : ' hidden'; ?>>
+										<div class="boldform-field-label">
+											<label for="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>"><?php esc_html_e( 'Model', 'boldform-lite' ); ?></label>
+										</div>
+										<div class="boldform-field-control">
+											<?php if ( empty( $bf_choices ) ) : ?>
+												<?php // Catalogue unreachable — degrade to free text rather than to no way of setting a model at all. ?>
+												<input type="text" id="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>" name="boldform_ai_model[<?php echo esc_attr( $bf_slug ); ?>]" value="<?php echo esc_attr( $bf_current ); ?>" class="regular-text" placeholder="<?php echo esc_attr( $bf_default ); ?>" autocomplete="off" spellcheck="false">
+											<?php else : ?>
+												<select id="boldform-ai-model-<?php echo esc_attr( sanitize_html_class( $bf_slug ) ); ?>" name="boldform_ai_model[<?php echo esc_attr( $bf_slug ); ?>]" data-boldform-select>
+													<option value=""><?php
+														/* translators: %s: the provider's built-in default model id. */
+														printf( esc_html__( 'Default — %s', 'boldform-lite' ), esc_html( $bf_default ) );
+													?></option>
+													<?php foreach ( $bf_choices as $bf_vendor => $bf_group ) : ?>
+														<optgroup label="<?php echo esc_attr( $bf_vendor ); ?>">
+															<?php foreach ( $bf_group as $bf_value => $bf_label ) : ?>
+																<option value="<?php echo esc_attr( $bf_value ); ?>" <?php selected( $bf_current, $bf_value ); ?>><?php echo esc_html( $bf_label ); ?></option>
+															<?php endforeach; ?>
+														</optgroup>
+													<?php endforeach; ?>
+												</select>
+											<?php endif; ?>
+											<p class="description"><?php esc_html_e( 'Optional. Leave on Default unless you have a reason to change it. Only models that support strict JSON schema output are listed — anything else cannot build a form.', 'boldform-lite' ); ?></p>
+										</div>
+									</div>
+								<?php endforeach; ?>
 							</div>
 
 							<div class="boldform-submit-area">
@@ -4517,6 +4865,73 @@ class BoldForm_Lite_Admin {
 			}
 		}
 
+		if ( 'ai' === $active_tab ) {
+			/*
+			 * AI settings live in their own options, NOT in $settings. The export
+			 * tool writes boldform_lite_settings into a downloadable file and
+			 * scrubs it with a flat key scan — a nested credential would slip
+			 * straight past that and ship inside an export someone might share.
+			 * Keeping them out of the array keeps them out of the export.
+			 */
+			$bf_ai_providers = BoldForm_Lite_AI_Builder::providers();
+
+			$bf_ai_provider = isset( $_POST['boldform_ai_provider'] ) ? sanitize_key( wp_unslash( $_POST['boldform_ai_provider'] ) ) : '';
+			if ( '' !== $bf_ai_provider && array_key_exists( $bf_ai_provider, $bf_ai_providers ) ) {
+				update_option( 'boldform_lite_ai_provider', $bf_ai_provider, false );
+			}
+
+			/*
+			 * Keys render empty and only overwrite when something was typed — the
+			 * same contract as the captcha secrets above. A provider missing from
+			 * the POST is left alone rather than cleared: absent means unknown (the
+			 * page may predate that provider), not "delete this". Getting this
+			 * wrong once silently wiped a stored key on an ordinary save.
+			 */
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value is sanitized in the loop below.
+			$bf_posted_keys = isset( $_POST['boldform_ai_api_key'] ) && is_array( $_POST['boldform_ai_api_key'] ) ? wp_unslash( $_POST['boldform_ai_api_key'] ) : array();
+			$bf_stored_keys = BoldForm_Lite_AI_Builder::api_keys();
+
+			foreach ( $bf_posted_keys as $bf_slug => $bf_value ) {
+				$bf_slug  = sanitize_key( (string) $bf_slug );
+				$bf_value = trim( sanitize_text_field( (string) $bf_value ) );
+
+				if ( '' === $bf_value || ! array_key_exists( $bf_slug, $bf_ai_providers ) ) {
+					continue;
+				}
+
+				$bf_stored_keys[ $bf_slug ] = $bf_value;
+			}
+
+			update_option( 'boldform_lite_ai_api_keys', $bf_stored_keys, false );
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each value is sanitized in the loop below.
+			$bf_posted_models = isset( $_POST['boldform_ai_model'] ) && is_array( $_POST['boldform_ai_model'] ) ? wp_unslash( $_POST['boldform_ai_model'] ) : array();
+			$bf_stored_models = BoldForm_Lite_AI_Builder::models();
+
+			foreach ( $bf_posted_models as $bf_slug => $bf_value ) {
+				$bf_slug  = sanitize_key( (string) $bf_slug );
+				$bf_value = trim( sanitize_text_field( (string) $bf_value ) );
+
+				if ( ! array_key_exists( $bf_slug, $bf_ai_providers ) ) {
+					continue;
+				}
+
+				// An empty value here IS a deliberate choice — it is the "Default"
+				// entry in the picker — so unlike a key it clears the override.
+				if ( '' === $bf_value ) {
+					unset( $bf_stored_models[ $bf_slug ] );
+					continue;
+				}
+
+				// The character class the provider catalogues actually use; rolling
+				// aliases carry a tilde.
+				if ( preg_match( '#^[A-Za-z0-9._:/~-]{1,128}$#', $bf_value ) ) {
+					$bf_stored_models[ $bf_slug ] = $bf_value;
+				}
+			}
+
+			update_option( 'boldform_lite_ai_models', $bf_stored_models, false );
+		}
 		if ( 'smtp' === $active_tab ) {
 			$settings['smtp_enabled']    = ! empty( $_POST['boldform_smtp_enabled'] );
 			$settings['smtp_from_email'] = isset( $_POST['boldform_smtp_from_email'] ) ? sanitize_email( wp_unslash( $_POST['boldform_smtp_from_email'] ) ) : '';
@@ -6178,23 +6593,24 @@ class BoldForm_Lite_Admin {
 			'enable_user_email'       => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'             => $admin_email,
 			// Multi-step settings (data passthrough for Pro's multi-page module).
-			'step_progress_style'     => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
-			'step_progress_color'     => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
-			'step_progress_bg_color'  => isset( $decoded['step_progress_bg_color'] ) && sanitize_hex_color( $decoded['step_progress_bg_color'] ) ? sanitize_hex_color( $decoded['step_progress_bg_color'] ) : '',
-			'step_btn_color'          => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
-			'step_btn_text_color'     => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
-			'step_btn_size'           => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
-			'step_btn_radius'         => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
-			'step_next_text'          => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
-			'step_prev_text'          => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
-			'design_theme'            => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
-			'hide_labels'             => ! empty( $decoded['hide_labels'] ),
-			'hide_placeholders'       => ! empty( $decoded['hide_placeholders'] ),
-			'dup_enabled'             => ! empty( $decoded['dup_enabled'] ),
-			'dup_method'              => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
-			'dup_field_id'            => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
-			'dup_message'             => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
-			'style'                   => $this->extract_style_from_record_settings( $decoded ),
+			'step_progress_style' => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
+			'step_progress_color' => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
+			'step_progress_bg_color' => isset( $decoded['step_progress_bg_color'] ) && sanitize_hex_color( $decoded['step_progress_bg_color'] ) ? sanitize_hex_color( $decoded['step_progress_bg_color'] ) : '',
+			'step_btn_color'      => isset( $decoded['step_btn_color'] ) && sanitize_hex_color( $decoded['step_btn_color'] ) ? sanitize_hex_color( $decoded['step_btn_color'] ) : '',
+			'step_btn_text_color' => isset( $decoded['step_btn_text_color'] ) && sanitize_hex_color( $decoded['step_btn_text_color'] ) ? sanitize_hex_color( $decoded['step_btn_text_color'] ) : '',
+			'step_btn_size'       => isset( $decoded['step_btn_size'] ) && in_array( $decoded['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $decoded['step_btn_size'] : 'medium',
+			'step_btn_radius'     => isset( $decoded['step_btn_radius'] ) && '' !== $decoded['step_btn_radius'] ? max( 0, min( 50, absint( $decoded['step_btn_radius'] ) ) ) : '',
+			'step_next_text'      => isset( $decoded['step_next_text'] ) ? sanitize_text_field( (string) $decoded['step_next_text'] ) : 'Next',
+			'step_prev_text'      => isset( $decoded['step_prev_text'] ) ? sanitize_text_field( (string) $decoded['step_prev_text'] ) : 'Previous',
+			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
+			'choice_style'        => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
+			'dup_enabled'         => ! empty( $decoded['dup_enabled'] ),
+			'dup_method'          => isset( $decoded['dup_method'] ) && in_array( $decoded['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $decoded['dup_method'] : 'email',
+			'dup_field_id'        => isset( $decoded['dup_field_id'] ) ? sanitize_key( (string) $decoded['dup_field_id'] ) : '',
+			'dup_message'         => isset( $decoded['dup_message'] ) && '' !== trim( (string) $decoded['dup_message'] ) ? sanitize_textarea_field( (string) $decoded['dup_message'] ) : '',
+			'style'               => $this->extract_style_from_record_settings( $decoded ),
 			// Conversational mode. This list is a hard gate, not a convenience: a
 			// key absent here never reaches the builder, so the pane would reopen
 			// showing its defaults and the next save would write those defaults

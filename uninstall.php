@@ -31,6 +31,22 @@ $boldform_lite_uninstall_site = static function () use ( $wpdb ) {
 	delete_option( 'boldform_lite_settings' );
 	delete_option( 'boldform_lite_autoload_migrated' );
 	delete_option( 'boldform_connections' ); // Integration connections (may hold API keys).
+	delete_option( 'boldform_lite_ai_api_keys' ); // AI provider keys, one per provider.
+	delete_option( 'boldform_lite_ai_provider' ); // Which AI provider is selected.
+	delete_option( 'boldform_lite_ai_models' );   // Optional per-provider model overrides.
+
+	/*
+	 * The AI model catalogue is cached per provider, and generations are rate
+	 * limited per user; both are transients keyed by a suffix, so they need a
+	 * pattern sweep rather than named deletes. They expire on their own within
+	 * twelve hours, but leaving rows behind after an uninstall is exactly the
+	 * kind of residue this file exists to prevent.
+	 */
+	$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		"DELETE FROM `{$wpdb->options}`
+		 WHERE option_name LIKE '\\_transient\\_boldform_ai\\_%'
+			OR option_name LIKE '\\_transient\\_timeout\\_boldform_ai\\_%'"
+	);
 
 	// Clear any pending integration-dispatch cron events for this site.
 	wp_clear_scheduled_hook( 'boldform_integration_dispatch' );

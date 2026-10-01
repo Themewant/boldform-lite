@@ -348,19 +348,33 @@ class BoldForm_Lite_Ajax_Save {
 
 						// Normalize each field before saving so the frontend only has to render trusted values.
 						$core_field = array(
-							'id'                  => $field_id,
-							'type'                => $field_type,
-							'label'               => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
-							'placeholder'         => isset( $field['placeholder'] ) ? sanitize_text_field( (string) $field['placeholder'] ) : '',
-							'default_value'       => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
-							'required'            => ! empty( $field['required'] ),
-							'options'             => $options,
-							'options_layout'      => $options_layout,
-							'checkbox_style'      => $checkbox_style,
-							'content'             => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
-							'description'         => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
-							'custom_error'        => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
-							'allowed_types'       => isset( $field['allowed_types'] ) ? sanitize_text_field( (string) $field['allowed_types'] ) : '',
+							'id'             => $field_id,
+							'type'           => $field_type,
+							'label'          => isset( $field['label'] ) ? sanitize_text_field( (string) $field['label'] ) : '',
+							'placeholder'    => isset( $field['placeholder'] ) ? sanitize_text_field( (string) $field['placeholder'] ) : '',
+							'default_value'  => isset( $field['default_value'] ) ? sanitize_text_field( (string) $field['default_value'] ) : '',
+							'required'       => ! empty( $field['required'] ),
+							'options'        => $options,
+							// Positional: entry N is option N's icon. Sanitized against the
+							// option count so a removed option cannot leave an icon behind
+							// on whatever option takes its place. Only a checkbox or radio
+							// has anywhere to put one — a select's options stay list rows
+							// whatever the Style says — so nothing else stores any.
+							'option_icons'   => in_array( $field_type, array( 'checkbox', 'radio' ), true )
+								? boldform_lite_sanitize_option_icons( isset( $field['option_icons'] ) ? $field['option_icons'] : array(), count( $options ) )
+								: array(),
+							'options_layout' => $options_layout,
+							'checkbox_style' => $checkbox_style,
+							// Per-field Checkbox & Radio treatment. 'inherit' follows the
+							// form, which is what every existing form does.
+							'choice_style'   => in_array( ( $field['choice_style'] ?? '' ), array( 'default', 'button' ), true ) ? (string) $field['choice_style'] : 'inherit',
+							// Per-field Checkbox & Radio overrides. Absent keys mean
+							// "inherit the form", so only what was actually set is stored.
+							'choice_styles'  => boldform_lite_sanitize_choice_style( isset( $field['choice_styles'] ) ? $field['choice_styles'] : array() ),
+							'content'        => isset( $field['content'] ) ? wp_kses_post( (string) $field['content'] ) : '',
+							'description'    => isset( $field['description'] ) ? sanitize_textarea_field( (string) $field['description'] ) : '',
+							'custom_error'   => isset( $field['custom_error'] ) ? sanitize_text_field( (string) $field['custom_error'] ) : '',
+							'allowed_types'  => isset( $field['allowed_types'] ) ? sanitize_text_field( (string) $field['allowed_types'] ) : '',
 							// '' means "not set — use the site default"; keep it as '' rather than
 							// letting absint() flatten it to 0. Both take the same branch in the
 							// upload handler, but preserving '' keeps a re-save (and an import,
@@ -679,22 +693,27 @@ class BoldForm_Lite_Ajax_Save {
 			'enable_user_email'       => isset( $settings_payload['enable_user_email'] ) ? (bool) $settings_payload['enable_user_email'] : $defaults['enable_user_email'],
 			'admin_email'             => 'custom' === $admin_email_type ? $admin_email : '',
 			// Multi-step settings (saved by Pro's builder UI, passed through for Pro's rendering).
-			'step_progress_style'     => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
-			'step_progress_color'     => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
-			'step_progress_bg_color'  => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
-			'step_btn_color'          => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
-			'step_btn_text_color'     => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
-			'step_btn_size'           => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
-			'step_btn_radius'         => isset( $settings_payload['step_btn_radius'] ) && '' !== $settings_payload['step_btn_radius'] ? max( 0, min( 50, absint( $settings_payload['step_btn_radius'] ) ) ) : '',
-			'step_next_text'          => isset( $settings_payload['step_next_text'] ) ? sanitize_text_field( (string) $settings_payload['step_next_text'] ) : 'Next',
-			'step_prev_text'          => isset( $settings_payload['step_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['step_prev_text'] ) : 'Previous',
-			'design_theme'            => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
-			'hide_labels'             => ! empty( $settings_payload['hide_labels'] ),
-			'hide_placeholders'       => ! empty( $settings_payload['hide_placeholders'] ),
-			'dup_enabled'             => ! empty( $settings_payload['dup_enabled'] ),
-			'dup_method'              => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
-			'dup_field_id'            => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
-			'dup_message'             => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
+			'step_progress_style' => isset( $settings_payload['step_progress_style'] ) && in_array( $settings_payload['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $settings_payload['step_progress_style'] : 'bar',
+			'step_progress_color' => isset( $settings_payload['step_progress_color'] ) && sanitize_hex_color( $settings_payload['step_progress_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_color'] ) : '',
+			'step_progress_bg_color' => isset( $settings_payload['step_progress_bg_color'] ) && sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) ? sanitize_hex_color( $settings_payload['step_progress_bg_color'] ) : '',
+			'step_btn_color'      => isset( $settings_payload['step_btn_color'] ) && sanitize_hex_color( $settings_payload['step_btn_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_color'] ) : '',
+			'step_btn_text_color' => isset( $settings_payload['step_btn_text_color'] ) && sanitize_hex_color( $settings_payload['step_btn_text_color'] ) ? sanitize_hex_color( $settings_payload['step_btn_text_color'] ) : '',
+			'step_btn_size'       => isset( $settings_payload['step_btn_size'] ) && in_array( $settings_payload['step_btn_size'], array( 'small', 'medium', 'large' ), true ) ? $settings_payload['step_btn_size'] : 'medium',
+			'step_btn_radius'     => isset( $settings_payload['step_btn_radius'] ) && '' !== $settings_payload['step_btn_radius'] ? max( 0, min( 50, absint( $settings_payload['step_btn_radius'] ) ) ) : '',
+			'step_next_text'      => isset( $settings_payload['step_next_text'] ) ? sanitize_text_field( (string) $settings_payload['step_next_text'] ) : 'Next',
+			'step_prev_text'      => isset( $settings_payload['step_prev_text'] ) ? sanitize_text_field( (string) $settings_payload['step_prev_text'] ) : 'Previous',
+			'design_theme'        => isset( $settings_payload['design_theme'] ) ? sanitize_key( (string) $settings_payload['design_theme'] ) : '',
+			'hide_labels'         => ! empty( $settings_payload['hide_labels'] ),
+			'hide_placeholders'   => ! empty( $settings_payload['hide_placeholders'] ),
+			// Checkbox/radio presentation: 'default' (box + label) or 'button'
+			// (the label becomes a selectable pill). Strict two-value allowlist —
+			// anything else collapses to 'default', so an unexpected value can
+			// never reach the class the renderer emits.
+			'choice_style'        => isset( $settings_payload['choice_style'] ) && 'button' === $settings_payload['choice_style'] ? 'button' : 'default',
+			'dup_enabled'         => ! empty( $settings_payload['dup_enabled'] ),
+			'dup_method'          => isset( $settings_payload['dup_method'] ) && in_array( $settings_payload['dup_method'], array( 'email', 'ip', 'field' ), true ) ? $settings_payload['dup_method'] : 'email',
+			'dup_field_id'        => isset( $settings_payload['dup_field_id'] ) ? sanitize_key( (string) $settings_payload['dup_field_id'] ) : '',
+			'dup_message'         => isset( $settings_payload['dup_message'] ) && '' !== trim( (string) $settings_payload['dup_message'] ) ? sanitize_textarea_field( (string) $settings_payload['dup_message'] ) : '',
 			// ── Conversational mode ────────────────────────────────────────────
 			// Presentation only: these never alter the stored form structure, so
 			// toggling cv_enabled off restores the ordinary render exactly. Keys
@@ -808,7 +827,7 @@ class BoldForm_Lite_Ajax_Save {
 	 * @param mixed $value Raw value.
 	 * @return string The value if it passes, otherwise ''.
 	 */
-	private static function sanitize_css_value( $value ) {
+	public static function sanitize_css_value( $value ) {
 		if ( ! is_scalar( $value ) ) {
 			return '';
 		}
