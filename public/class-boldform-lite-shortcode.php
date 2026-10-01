@@ -834,23 +834,23 @@ class BoldForm_Lite_Shortcode {
 			'button_border_width'     => isset( $decoded['button_border_width'] ) && '' !== $decoded['button_border_width'] ? max( 0, min( 10, absint( $decoded['button_border_width'] ) ) ) : '',
 			'button_border_radius'    => isset( $decoded['button_border_radius'] ) && '' !== $decoded['button_border_radius'] ? max( 0, min( 50, absint( $decoded['button_border_radius'] ) ) ) : '',
 			'button_background_color' => isset( $decoded['button_background_color'] ) && sanitize_hex_color( $decoded['button_background_color'] ) ? sanitize_hex_color( $decoded['button_background_color'] ) : '',
-			'button_border_color' => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
-			'button_text_color' => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
-			'button_icon_type'     => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
-			'button_icon_dashicon' => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
-			'button_icon_svg'      => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
-			'button_icon_position' => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
-			'button_icon_gap'      => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
-			'button_icon_size'     => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
-			'button_icon_color'    => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
-			'admin_email_type'  => $admin_email_type,
-			'enable_admin_email'=> isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
-			'enable_user_email' => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
-			'admin_email'       => $admin_email,
-			'design_theme'        => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
-			'hide_labels'         => ! empty( $decoded['hide_labels'] ),
-			'hide_placeholders'   => ! empty( $decoded['hide_placeholders'] ),
-			'choice_style'        => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
+			'button_border_color'     => isset( $decoded['button_border_color'] ) && sanitize_hex_color( $decoded['button_border_color'] ) ? sanitize_hex_color( $decoded['button_border_color'] ) : '',
+			'button_text_color'       => isset( $decoded['button_text_color'] ) && sanitize_hex_color( $decoded['button_text_color'] ) ? sanitize_hex_color( $decoded['button_text_color'] ) : '',
+			'button_icon_type'        => isset( $decoded['button_icon_type'] ) && in_array( $decoded['button_icon_type'], array( 'none', 'dashicon', 'svg' ), true ) ? $decoded['button_icon_type'] : 'none',
+			'button_icon_dashicon'    => isset( $decoded['button_icon_dashicon'] ) ? sanitize_text_field( (string) $decoded['button_icon_dashicon'] ) : '',
+			'button_icon_svg'         => isset( $decoded['button_icon_svg'] ) ? esc_url_raw( (string) $decoded['button_icon_svg'] ) : '',
+			'button_icon_position'    => isset( $decoded['button_icon_position'] ) && in_array( $decoded['button_icon_position'], array( 'left', 'right' ), true ) ? $decoded['button_icon_position'] : 'right',
+			'button_icon_gap'         => isset( $decoded['button_icon_gap'] ) ? absint( $decoded['button_icon_gap'] ) : 8,
+			'button_icon_size'        => isset( $decoded['button_icon_size'] ) ? absint( $decoded['button_icon_size'] ) : 18,
+			'button_icon_color'       => isset( $decoded['button_icon_color'] ) && sanitize_hex_color( $decoded['button_icon_color'] ) ? sanitize_hex_color( $decoded['button_icon_color'] ) : '',
+			'admin_email_type'        => $admin_email_type,
+			'enable_admin_email'      => isset( $decoded['enable_admin_email'] ) ? (bool) $decoded['enable_admin_email'] : $defaults['enable_admin_email'],
+			'enable_user_email'       => isset( $decoded['enable_user_email'] ) ? (bool) $decoded['enable_user_email'] : $defaults['enable_user_email'],
+			'admin_email'             => $admin_email,
+			'design_theme'            => isset( $decoded['design_theme'] ) ? sanitize_key( (string) $decoded['design_theme'] ) : '',
+			'hide_labels'             => ! empty( $decoded['hide_labels'] ),
+			'hide_placeholders'       => ! empty( $decoded['hide_placeholders'] ),
+			'choice_style'            => isset( $decoded['choice_style'] ) && 'button' === $decoded['choice_style'] ? 'button' : 'default',
 			// ── Pro: Multi-step (data passthrough for Pro's multi-page module) ───
 			'step_progress_style'     => isset( $decoded['step_progress_style'] ) && in_array( $decoded['step_progress_style'], array( 'bar', 'steps', 'headings' ), true ) ? $decoded['step_progress_style'] : 'bar',
 			'step_progress_color'     => isset( $decoded['step_progress_color'] ) && sanitize_hex_color( $decoded['step_progress_color'] ) ? sanitize_hex_color( $decoded['step_progress_color'] ) : '',
@@ -1372,7 +1372,16 @@ class BoldForm_Lite_Shortcode {
 			}
 		}
 		?>
-		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"<?php $cv_screen_style = $this->build_cv_colour_style( $field ); echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : ''; ?><?php $choice_style = boldform_lite_choice_style_declarations( $field ); echo '' !== $choice_style ? ' style="' . esc_attr( $choice_style ) . '"' : ''; ?><?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
+		<div class="boldform-lite-form__field boldform-lite-form__field--<?php echo esc_attr( $type ); ?> boldform-lite-label-<?php echo esc_attr( $label_pos ); ?><?php echo esc_attr( $field_css ); ?>" data-bf-field-id="<?php echo esc_attr( $field_name ); ?>"
+		<?php
+		$cv_screen_style = $this->build_cv_colour_style( $field );
+		echo '' !== $cv_screen_style ? ' data-bf-screen-style="' . esc_attr( $cv_screen_style ) . '"' : '';
+		?>
+		<?php
+		$choice_style = boldform_lite_choice_style_declarations( $field );
+		echo '' !== $choice_style ? ' style="' . esc_attr( $choice_style ) . '"' : '';
+		?>
+		<?php echo $error_msg ? ' data-error="' . esc_attr( $error_msg ) . '"' : ''; ?><?php echo $cond_attrs; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- attribute string; values pre-escaped with esc_attr(), tags stripped with wp_strip_all_tags(). ?>>
 			<?php if ( '' !== $label && 'hidden' !== $label_pos ) : ?>
 				<label id="<?php echo esc_attr( $field_name . $this->current_instance . '-label' ); ?>" class="boldform-lite-form__label" for="<?php echo esc_attr( $field_name . $this->current_instance ); ?>">
 					<?php echo esc_html( $label ); ?>
@@ -2217,16 +2226,16 @@ class BoldForm_Lite_Shortcode {
 			// surfaces (front end, builder canvas, Style-tab live preview) share one
 			// selector. A field already rendering as a Switch keeps it: that is an
 			// explicit per-field choice, and the two treatments cannot compose.
-			$is_switch      = ( 'checkbox' === $type && 'switch' === $checkbox_style );
-			$field_style    = boldform_lite_field_choice_style( $field, $this->current_form_settings['choice_style'] ?? 'default' );
-			$is_button      = 'button' === $field_style && ! $is_switch;
+			$is_switch   = ( 'checkbox' === $type && 'switch' === $checkbox_style );
+			$field_style = boldform_lite_field_choice_style( $field, $this->current_form_settings['choice_style'] ?? 'default' );
+			$is_button   = 'button' === $field_style && ! $is_switch;
 			// The Button treatment also reaches a group through the FORM-level class,
 			// so a field pinned to Default inside a Button form needs an explicit
 			// opt-out modifier — the absence of `is-btn` is not enough.
-			$is_plain       = 'default' === $field_style
+			$is_plain      = 'default' === $field_style
 				&& 'button' === ( $this->current_form_settings['choice_style'] ?? 'default' )
 				&& ! $is_switch;
-			$choices_class  = 'boldform-lite-form__choices'
+			$choices_class = 'boldform-lite-form__choices'
 				. ( 'inline' === $options_layout ? ' is-inline' : '' )
 				. ( $is_switch ? ' is-switch' : '' )
 				. ( $is_button ? ' is-btn' : '' )

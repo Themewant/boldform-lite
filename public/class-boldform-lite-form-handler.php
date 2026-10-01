@@ -128,8 +128,8 @@ class BoldForm_Lite_Form_Handler {
 				// runs after that point and can replace the message with anything.
 				// Filtering at the boundary keeps that filter from becoming a way to
 				// put script on the page. The error branch below is printed as text.
-				'message'      => wp_kses_post( (string) $result['message'] ),
-				'redirectUrl'  => $result['redirect_url'],
+				'message'     => wp_kses_post( (string) $result['message'] ),
+				'redirectUrl' => $result['redirect_url'],
 			);
 
 			/**

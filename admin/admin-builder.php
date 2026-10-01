@@ -304,8 +304,10 @@ $boldform_lite_field_groups = apply_filters( 'boldform_builder_field_groups', $b
 												 * @param string $title Headline text.
 												 */
 												echo esc_html( apply_filters( 'boldform_library_lock_title', __( 'Premium fields', 'boldform-lite' ) ) );
-											?></strong>
-											<p class="boldform-library-lock__text"><?php
+											?>
+											</strong>
+											<p class="boldform-library-lock__text">
+											<?php
 												/**
 												 * Filters the body copy on the Field Library's lock overlay.
 												 *

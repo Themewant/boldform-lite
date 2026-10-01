@@ -174,6 +174,11 @@ class BoldForm_Lite_AI_Builder {
 			. '</svg>';
 	}
 
+	/**
+	 * Whether an API key is saved for the selected AI provider.
+	 *
+	 * @return bool
+	 */
 	public static function is_configured() {
 		return '' !== self::api_key_for( self::selected_provider() );
 	}
@@ -338,7 +343,7 @@ class BoldForm_Lite_AI_Builder {
 	 */
 	public static function providers() {
 		$providers = array(
-			'anthropic' => array(
+			'anthropic'  => array(
 				'label'    => 'Anthropic (Claude)',
 				'dialect'  => 'anthropic',
 				'endpoint' => 'https://api.anthropic.com/v1/messages',
@@ -346,7 +351,7 @@ class BoldForm_Lite_AI_Builder {
 				'key_url'  => 'https://console.anthropic.com/settings/keys',
 				'key_hint' => 'sk-ant-…',
 			),
-			'openai'    => array(
+			'openai'     => array(
 				'label'    => 'OpenAI',
 				'dialect'  => 'openai',
 				'endpoint' => 'https://api.openai.com/v1/chat/completions',
@@ -354,7 +359,7 @@ class BoldForm_Lite_AI_Builder {
 				'key_url'  => 'https://platform.openai.com/api-keys',
 				'key_hint' => 'sk-…',
 			),
-			'gemini'    => array(
+			'gemini'     => array(
 				'label'    => 'Google Gemini',
 				'dialect'  => 'gemini',
 				'endpoint' => 'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
@@ -1249,12 +1254,14 @@ class BoldForm_Lite_AI_Builder {
 	 */
 	private function decode_remote( $response, $provider = '' ) {
 		if ( is_wp_error( $response ) ) {
-			/* A timeout and an unreachable host arrive here identically, and
-			   telling someone to check their connection when the model simply
-			   took too long sends them to fix the wrong thing. Slow models are
-			   common — a heavily loaded one can sit well past a minute — so the
-			   two are worth separating, and the model is worth naming when the
-			   admin picked it. */
+			/*
+			A timeout and an unreachable host arrive here identically, and
+				telling someone to check their connection when the model simply
+				took too long sends them to fix the wrong thing. Slow models are
+				common — a heavily loaded one can sit well past a minute — so the
+				two are worth separating, and the model is worth naming when the
+				admin picked it.
+			 */
 			$detail = $response->get_error_message();
 
 			if ( false !== stripos( $detail, 'timed out' ) || false !== stripos( $detail, 'timeout' ) ) {
@@ -1612,38 +1619,38 @@ class BoldForm_Lite_AI_Builder {
 	 */
 	private static function type_glosses() {
 		return array(
-			'text'              => 'a single line of free text',
-			'name'              => 'a person’s name, with optional middle and last name parts',
-			'email'             => 'an email address, validated as one',
-			'number'            => 'a number, with optional min/max/step',
-			'textarea'          => 'several lines of free text',
-			'select'            => 'a dropdown the visitor picks one option from',
-			'multiselect'       => 'a dropdown the visitor can pick several options from',
-			'checkbox'          => 'tick boxes; the visitor can tick any number of them',
-			'radio'             => 'visible choices the visitor picks exactly one of',
-			'date'              => 'a single date, via a date picker',
-			'time'              => 'a time of day',
-			'tel'               => 'a telephone number',
-			'url'               => 'a web address',
-			'file'              => 'a file upload',
-			'address'           => 'a full postal address — street, city, state, postcode and country in one field',
-			'country'           => 'a country dropdown, pre-filled with every country',
-			'password_field'    => 'a masked text entry, for a password the visitor chooses',
-			'rich_text'         => 'multi-line text the visitor can format (bold, lists, links)',
-			'numeric'           => 'a number with controlled decimals and thousands separators, for money and quantities',
-			'date_range'        => 'a start date and an end date as one field, for bookings and stays',
-			'star_rating'       => 'a 1-to-5 star rating',
-			'nps'               => 'a 0-to-10 Net Promoter Score scale, for "how likely are you to recommend us"',
-			'slider_range'      => 'a slider the visitor drags between a minimum and a maximum',
-			'color'             => 'a colour picker',
-			'signature'         => 'a box the visitor signs with a mouse or finger',
-			'geolocation'       => 'captures the visitor’s geographic location',
-			'terms_conditions'  => 'a single consent tick box, for agreeing to terms or a privacy policy',
-			'custom_amount'     => 'the visitor types their own amount — use this for donations and pay-what-you-want',
-			'order_summary'     => 'a running total of the payment fields above it; place it last',
-			'section_break'     => 'a heading that divides a long form into labelled sections; collects no answer',
-			'paragraph'         => 'a block of explanatory text for the visitor to read; collects no answer',
-			'page_break'        => 'ends the current step and starts a new one; collects no answer',
+			'text'             => 'a single line of free text',
+			'name'             => 'a person’s name, with optional middle and last name parts',
+			'email'            => 'an email address, validated as one',
+			'number'           => 'a number, with optional min/max/step',
+			'textarea'         => 'several lines of free text',
+			'select'           => 'a dropdown the visitor picks one option from',
+			'multiselect'      => 'a dropdown the visitor can pick several options from',
+			'checkbox'         => 'tick boxes; the visitor can tick any number of them',
+			'radio'            => 'visible choices the visitor picks exactly one of',
+			'date'             => 'a single date, via a date picker',
+			'time'             => 'a time of day',
+			'tel'              => 'a telephone number',
+			'url'              => 'a web address',
+			'file'             => 'a file upload',
+			'address'          => 'a full postal address — street, city, state, postcode and country in one field',
+			'country'          => 'a country dropdown, pre-filled with every country',
+			'password_field'   => 'a masked text entry, for a password the visitor chooses',
+			'rich_text'        => 'multi-line text the visitor can format (bold, lists, links)',
+			'numeric'          => 'a number with controlled decimals and thousands separators, for money and quantities',
+			'date_range'       => 'a start date and an end date as one field, for bookings and stays',
+			'star_rating'      => 'a 1-to-5 star rating',
+			'nps'              => 'a 0-to-10 Net Promoter Score scale, for "how likely are you to recommend us"',
+			'slider_range'     => 'a slider the visitor drags between a minimum and a maximum',
+			'color'            => 'a colour picker',
+			'signature'        => 'a box the visitor signs with a mouse or finger',
+			'geolocation'      => 'captures the visitor’s geographic location',
+			'terms_conditions' => 'a single consent tick box, for agreeing to terms or a privacy policy',
+			'custom_amount'    => 'the visitor types their own amount — use this for donations and pay-what-you-want',
+			'order_summary'    => 'a running total of the payment fields above it; place it last',
+			'section_break'    => 'a heading that divides a long form into labelled sections; collects no answer',
+			'paragraph'        => 'a block of explanatory text for the visitor to read; collects no answer',
+			'page_break'       => 'ends the current step and starts a new one; collects no answer',
 		);
 	}
 
@@ -1865,7 +1872,7 @@ class BoldForm_Lite_AI_Builder {
 				$n = $index + 1;
 				do {
 					$ref = 'f' . $n;
-					$n++;
+					++$n;
 				} while ( isset( $seen[ $ref ] ) || isset( $claimed[ $ref ] ) );
 			}
 			$seen[ $ref ] = true;
